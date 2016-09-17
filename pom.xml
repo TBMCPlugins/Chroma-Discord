@@ -52,9 +52,9 @@
 						</goals>
 						<configuration>
 							<artifactSet>
-								<includes>
-									<include>com.github.austinv11:Discord4J</include>
-								</includes>
+								<excludes>
+									<exclude>org.spigotmc:spigot-api</exclude>
+								</excludes>
 							</artifactSet>
 							<pluginExecution>
 								<action>
