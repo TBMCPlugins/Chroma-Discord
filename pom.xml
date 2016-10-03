@@ -128,5 +128,12 @@
 			<!-- <classifier>shaded</classifier> --> <!-- Include this line if you want a shaded jar (all the Discord4J dependencies 
 				bundled into one jar) -->
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-jdk14</artifactId>
+			<version>1.7.21</version>
+		</dependency>
+
 	</dependencies>
 </project>
