@@ -134,6 +134,10 @@
 			<artifactId>slf4j-jdk14</artifactId>
 			<version>1.7.21</version>
 		</dependency>
-
+		<dependency>
+			<groupId>com.github.TBMCPlugins.ButtonCore</groupId>
+			<artifactId>ButtonCore</artifactId>
+			<version>master-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>
