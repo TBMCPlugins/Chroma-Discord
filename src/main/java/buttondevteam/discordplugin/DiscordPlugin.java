@@ -13,6 +13,7 @@ import buttondevteam.bucket.core.TBMCCoreAPI;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
+import sx.blah.discord.handle.obj.IChannel;
 
 /**
  * Hello world!
@@ -30,23 +31,26 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(IOUtils.toString(getClass().getResourceAsStream("/Token.txt"), Charsets.UTF_8));
 			IDiscordClient dc = cb.login();
 			dc.getDispatcher().registerListener(this);
-			Runnable r = new Runnable() {
-				public void run() {
-					FlairGetterThreadMethod();
-				}
-			};
-			Thread t = new Thread(r);
-			t.start();
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
 		}
 	}
 
+	private IChannel channel;
+
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			event.getClient().getGuilds().get(0).getChannelsByName("bot").get(0).sendMessage("Hi");
+			channel = event.getClient().getGuilds().get(0).getChannelsByName("bot").get(0);
+			channel.sendMessage("Minecraft server started up");
+			Runnable r = new Runnable() {
+				public void run() {
+					AnnouncementGetterThreadMethod();
+				}
+			};
+			Thread t = new Thread(r);
+			t.start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -57,7 +61,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		stop = true;
 	}
 
-	private void FlairGetterThreadMethod() {
+	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
 			try {
 				String body = TBMCCoreAPI.DownloadString(SubredditURL + ".json?limit=10"); // TODO: Save last announcement
