@@ -54,7 +54,8 @@
 							<artifactSet>
 								<excludes>
 									<exclude>org.spigotmc:spigot-api</exclude>
-								</excludes>
+									<exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
+								</excludes> <!-- TODO: http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
 							</artifactSet>
 							<pluginExecution>
 								<action>
