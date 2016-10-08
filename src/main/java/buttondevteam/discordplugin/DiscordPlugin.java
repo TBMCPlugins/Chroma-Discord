@@ -41,7 +41,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				lastannouncementtime = Long.parseLong(line);
 			}
 			ClientBuilder cb = new ClientBuilder();
-			cb.withToken(IOUtils.toString(getClass().getResourceAsStream("/Token.txt"), Charsets.UTF_8));
+			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
 		} catch (Exception e) {
@@ -55,7 +55,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			channel = event.getClient().getGuilds().get(0).getChannelsByName("bot").get(0);
+			channel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
 			channel.sendMessage("Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
