@@ -114,17 +114,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					System.out.println("title: " + title);
 					System.out.println("distinguished: " + distinguished);
 					System.out.println("url: " + url);
-					if (distinguished != null && distinguished.equals("moderator"))
-						msgsb.append("A new mod post was submitted to the subreddit");
-					else
-						msgsb.append("A new post was submitted to the subreddit");
-					msgsb.append("\nAuthor: ").append(author).append("\nFlair: ").append(flair).append("\nTitle: ")
-							.append(title).append("\n").append(url);
+					msgsb.insert(0, "A new post was submitted to the subreddit by " + author);
 					lastannouncementtime = date;
 					File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 					Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
-					channel.sendMessage(msgsb.toString()); // TODO: Mod msgsb for announcements
 				}
+				channel.sendMessage(msgsb.toString()); // TODO: Mod msgsb for announcements
 				try {
 					Thread.sleep(10000);
 				} catch (InterruptedException ex) {
