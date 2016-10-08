@@ -79,7 +79,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
 			try {
-				String body = TBMCCoreAPI.DownloadString(SubredditURL + "/new/.json?limit=10"); // TODO: Save last announcement
+				String body = TBMCCoreAPI.DownloadString(SubredditURL + "/new/.json?limit=10");
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 						.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
@@ -118,6 +118,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					lastannouncementtime = date;
 					File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 					Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
+					channel.sendMessage(msgsb.toString()); //TODO: Mod msgsb for announcements
 				}
 				try {
 					Thread.sleep(10000);
