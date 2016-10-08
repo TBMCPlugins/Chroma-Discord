@@ -88,8 +88,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 						.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
-				for (Object obj : json) {
-					JsonObject item = (JsonObject) obj;
+				for (int i = json.size() - 1; i >= 0; i--) {
+					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
 					String author = data.get("author").getAsString();
 					String title = data.get("title").getAsString();
@@ -106,15 +106,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 						distinguished = null;
 					else
 						distinguished = distinguishedjson.getAsString();
-					String url = data.get("url").getAsString();
+					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
 					if (date <= lastannouncementtime)
 						break;
-					System.out.println("author: " + author);
-					System.out.println("title: " + title);
-					System.out.println("distinguished: " + distinguished);
-					System.out.println("url: " + url);
-					msgsb.insert(0, "A new post was submitted to the subreddit by " + author);
+					msgsb.append("A new post was submitted to the subreddit by ").append(author).append("\n")
+							.append(permalink).append("\n");
 					lastannouncementtime = date;
 					File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 					Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
