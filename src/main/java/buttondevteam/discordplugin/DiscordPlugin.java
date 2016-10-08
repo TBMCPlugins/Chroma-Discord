@@ -95,7 +95,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 						flair = null;
 					else
 						flair = flairjson.getAsString();
-					String distinguished = data.get("distinguished").getAsString();
+					JsonElement distinguishedjson = data.get("distinguished");
+					String distinguished;
+					if (distinguishedjson.isJsonNull())
+						distinguished = null;
+					else
+						distinguished = distinguishedjson.getAsString();
 					String url = data.get("url").getAsString();
 					long date = data.get("created_utc").getAsLong();
 					if (date <= lastannouncementtime)
@@ -104,7 +109,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					System.out.println("title: " + title);
 					System.out.println("distinguished: " + distinguished);
 					System.out.println("url: " + url);
-					if (distinguished.equals("moderator"))
+					if (distinguished != null && distinguished.equals("moderator"))
 						msgsb.append("A new mod post was submitted to the subreddit");
 					else
 						msgsb.append("A new post was submitted to the subreddit");
