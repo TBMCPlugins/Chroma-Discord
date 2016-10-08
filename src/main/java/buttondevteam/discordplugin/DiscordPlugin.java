@@ -119,7 +119,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 					Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
 				}
-				channel.sendMessage(msgsb.toString()); // TODO: Mod msgsb for announcements
+				if (msgsb.length() > 0)
+					channel.sendMessage(msgsb.toString()); // TODO: Mod msgsb for announcements
 				try {
 					Thread.sleep(10000);
 				} catch (InterruptedException ex) {
