@@ -51,11 +51,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	private IChannel channel;
+	private IChannel modchannel;
 
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
 			channel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
+			modchannel = event.getClient().getGuilds().get(0).getChannelByID("126795071927353344"); // announcements
 			channel.sendMessage("Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
@@ -88,11 +90,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 						.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
+				StringBuilder modmsgsb = new StringBuilder();
+				long lastanntime = lastannouncementtime;
 				for (int i = json.size() - 1; i >= 0; i--) {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
 					String author = data.get("author").getAsString();
-					String title = data.get("title").getAsString();
+					// String title = data.get("title").getAsString();
 					// String stickied = data.get("stickied").getAsString();
 					JsonElement flairjson = data.get("link_flair_text");
 					String flair;
@@ -109,22 +113,26 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
 					if (date <= lastannouncementtime)
-						break;
-					msgsb.append("A new post was submitted to the subreddit by ").append(author).append("\n")
+						continue;
+					(distinguished != null && distinguished.equals("moderator") ? modmsgsb : msgsb)
+							.append("A new post was submitted to the subreddit by ").append(author).append("\n")
 							.append(permalink).append("\n");
-					lastannouncementtime = date;
-					File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
-					Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
+					lastanntime = date;
 				}
 				if (msgsb.length() > 0)
-					channel.sendMessage(msgsb.toString()); // TODO: Mod msgsb for announcements
-				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException ex) {
-					Thread.currentThread().interrupt();
-				}
+					channel.sendMessage(msgsb.toString());
+				if (modmsgsb.length() > 0)
+					modchannel.sendMessage(modmsgsb.toString());
+				lastannouncementtime = lastanntime; // If sending succeeded
+				File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
+				Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
 			} catch (Exception e) {
 				e.printStackTrace();
+			}
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
 			}
 		}
 	}
