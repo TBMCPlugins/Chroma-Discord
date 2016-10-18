@@ -50,15 +50,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		}
 	}
 
-	private IChannel channel;
-	private IChannel modchannel;
+	private IChannel botchannel;
+	private IChannel annchannel;
+	private IChannel genchannel;
 
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			channel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
-			modchannel = event.getClient().getGuilds().get(0).getChannelByID("126795071927353344"); // announcements
-			channel.sendMessage("Minecraft server started up");
+			botchannel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
+			annchannel = event.getClient().getGuilds().get(0).getChannelByID("126795071927353344"); // announcements
+			genchannel = event.getClient().getGuilds().get(0).getChannelByID("125813020357165056"); // general
+			botchannel.sendMessage("Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -120,9 +122,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					lastanntime = date;
 				}
 				if (msgsb.length() > 0)
-					channel.sendMessage(msgsb.toString());
-				if (modmsgsb.length() > 0)
-					modchannel.sendMessage(modmsgsb.toString());
+					genchannel.pin(genchannel.sendMessage(msgsb.toString()));
+				if (modmsgsb.length() > 0) //TODO: Wait for distinguish
+					annchannel.sendMessage(modmsgsb.toString());
 				lastannouncementtime = lastanntime; // If sending succeeded
 				File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 				Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
