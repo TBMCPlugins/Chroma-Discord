@@ -45,7 +45,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
-			dc.getDispatcher().registerListener(new CommandListener());
+			for (IListener<?> listener : CommandListener.getListeners())
+				dc.getDispatcher().registerListener(listener);
+			Bukkit.getPluginManager().registerEvents(new MCListener(), this);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
