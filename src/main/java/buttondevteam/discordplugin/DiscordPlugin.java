@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.base.Charsets;
@@ -28,7 +29,7 @@ import sx.blah.discord.handle.obj.IChannel;
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
 	private static boolean stop = false;
-	private static IDiscordClient dc;
+	public static IDiscordClient dc;
 
 	@Override
 	public void onEnable() {
@@ -50,9 +51,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		}
 	}
 
-	private IChannel botchannel;
-	private IChannel annchannel;
-	private IChannel genchannel;
+	public static IChannel botchannel;
+	public static IChannel annchannel;
+	public static IChannel genchannel;
 
 	@Override
 	public void handle(ReadyEvent event) {
