@@ -1,9 +1,11 @@
 package buttondevteam.discordplugin;
 
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerCommandEvent;
 
 public class MCListener implements Listener {
+	@EventHandler
 	public void onServerCommandPreprocess(ServerCommandEvent e) {
 		if (!DiscordPlugin.dc.isReady())
 			return;

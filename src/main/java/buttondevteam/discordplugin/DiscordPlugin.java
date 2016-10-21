@@ -21,6 +21,8 @@ import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.Status;
+import sx.blah.discord.handle.obj.Status.StatusType;
 
 /**
  * Hello world!
@@ -45,6 +47,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
+			dc.getDispatcher().registerListener(new CommandListener());
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -61,6 +64,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			botchannel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
 			annchannel = event.getClient().getGuilds().get(0).getChannelByID("126795071927353344"); // announcements
 			genchannel = event.getClient().getGuilds().get(0).getChannelByID("125813020357165056"); // general
+			dc.changeStatus(Status.game("on TBMC"));
 			botchannel.sendMessage("Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
@@ -124,7 +128,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				}
 				if (msgsb.length() > 0)
 					genchannel.pin(genchannel.sendMessage(msgsb.toString()));
-				if (modmsgsb.length() > 0) //TODO: Wait for distinguish
+				if (modmsgsb.length() > 0) // TODO: Wait for distinguish
 					annchannel.sendMessage(modmsgsb.toString());
 				lastannouncementtime = lastanntime; // If sending succeeded
 				File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
