@@ -3,13 +3,11 @@ package buttondevteam.discordplugin;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
-import org.apache.commons.io.IOUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -21,8 +19,8 @@ import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.Status;
-import sx.blah.discord.handle.obj.Status.StatusType;
 
 /**
  * Hello world!
@@ -73,6 +71,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			};
 			Thread t = new Thread(r);
 			t.start();
+			List<IMessage> msgs = genchannel.getPinnedMessages();
+			for (int i = msgs.size() - 1; i >= 10; i--) {
+				genchannel.unpin(msgs.get(i));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
