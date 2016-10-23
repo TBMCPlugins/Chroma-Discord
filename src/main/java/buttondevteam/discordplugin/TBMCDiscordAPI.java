@@ -7,7 +7,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 public final class TBMCDiscordAPI {
-	public static void SendException(Exception e, String sourcemessage) {
+	public static void SendException(Throwable e, String sourcemessage) {
 		try {
 			//System.out.println("A");
 			// ByteArrayOutputStream baos = new ByteArrayOutputStream();
