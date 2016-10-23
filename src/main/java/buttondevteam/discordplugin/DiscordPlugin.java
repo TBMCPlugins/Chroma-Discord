@@ -19,6 +19,7 @@ import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.Status;
 
@@ -57,15 +58,29 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel botchannel;
 	public static IChannel annchannel;
 	public static IChannel genchannel;
+	public static IChannel issuechannel;
+
+	public static final boolean Test = false;
 
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			botchannel = event.getClient().getGuilds().get(0).getChannelByID("209720707188260864"); // bot
-			annchannel = event.getClient().getGuilds().get(0).getChannelByID("126795071927353344"); // announcements
-			genchannel = event.getClient().getGuilds().get(0).getChannelByID("125813020357165056"); // general
+			final IGuild mainServer = event.getClient().getGuildByID("125813020357165056");
+			final IGuild devServer = event.getClient().getGuildByID("219529124321034241");
+			if (!Test) {
+				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
+				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
+				genchannel = mainServer.getChannelByID("125813020357165056"); // general
+				issuechannel = devServer.getChannelByID("219643416496046081"); // server_issues
+			} else {
+				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
+				annchannel = devServer.getChannelByID("239519012529111040"); // bottest
+				genchannel = devServer.getChannelByID("239519012529111040"); // bottest
+				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
+			}
 			dc.changeStatus(Status.game("on TBMC"));
 			botchannel.sendMessage("Minecraft server started up");
+			// TBMCDiscordAPI.SendException(new Exception("This is a test exception"), "This is a test error message");
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
