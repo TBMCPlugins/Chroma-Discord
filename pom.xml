@@ -137,7 +137,7 @@
 			<version>1.7.21</version>
 		</dependency>
 		<dependency>
-			<groupId>com.github.TBMCPlugins</groupId>
+			<groupId>com.github.TBMCPlugins.ButtonLib</groupId>
 			<artifactId>ButtonLib</artifactId>
 			<version>master-SNAPSHOT</version>
 			<scope>provided</scope>
