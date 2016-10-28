@@ -41,6 +41,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				BufferedReader reader = Files.newReader(file, StandardCharsets.UTF_8);
 				String line = reader.readLine();
 				lastannouncementtime = Long.parseLong(line);
+				file.delete();
+			} else {
+				lastannouncementtime = getConfig().getLong("lastannouncementtime");
+				lastseentime = getConfig().getLong("lastseentime");
 			}
 			ClientBuilder cb = new ClientBuilder();
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
@@ -79,8 +83,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
 			}
 			dc.changeStatus(Status.game("on TBMC"));
-			botchannel.sendMessage("Minecraft server started up");
-			// TBMCDiscordAPI.SendException(new Exception("This is a test exception"), "This is a test error message");
+			sendMessageToChannel(botchannel, "Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -108,6 +111,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	private long lastannouncementtime = 0;
+	private long lastseentime = 0;
 
 	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
@@ -122,14 +126,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
 					String author = data.get("author").getAsString();
-					// String title = data.get("title").getAsString();
-					// String stickied = data.get("stickied").getAsString();
-					JsonElement flairjson = data.get("link_flair_text");
-					String flair;
-					if (flairjson.isJsonNull())
-						flair = null;
-					else
-						flair = flairjson.getAsString();
 					JsonElement distinguishedjson = data.get("distinguished");
 					String distinguished;
 					if (distinguishedjson.isJsonNull())
@@ -138,20 +134,22 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 						distinguished = distinguishedjson.getAsString();
 					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
-					if (date <= lastannouncementtime)
-						continue;
-					(distinguished != null && distinguished.equals("moderator") ? modmsgsb : msgsb)
-							.append("A new post was submitted to the subreddit by ").append(author).append("\n")
-							.append(permalink).append("\n");
-					lastanntime = date;
+					if (date > lastseentime)
+						lastseentime = date;
+					else if (date > lastannouncementtime) {
+						(distinguished != null && distinguished.equals("moderator") ? modmsgsb : msgsb)
+								.append("A new post was submitted to the subreddit by ").append(author).append("\n")
+								.append(permalink).append("\n");
+						lastanntime = date;
+					}
 				}
 				if (msgsb.length() > 0)
-					genchannel.pin(genchannel.sendMessage(msgsb.toString()));
-				if (modmsgsb.length() > 0) // TODO: Wait for distinguish
-					annchannel.sendMessage(modmsgsb.toString());
+					genchannel.pin(sendMessageToChannel(genchannel, msgsb.toString()));
+				if (modmsgsb.length() > 0)
+					sendMessageToChannel(annchannel, modmsgsb.toString());
 				lastannouncementtime = lastanntime; // If sending succeeded
-				File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
-				Files.write(lastannouncementtime + "", file, StandardCharsets.UTF_8);
+				getConfig().set("lastannouncementtime", lastannouncementtime);
+				getConfig().set("lastseentime", lastseentime);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -161,5 +159,26 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				Thread.currentThread().interrupt();
 			}
 		}
+	}
+
+	public static IMessage sendMessageToChannel(IChannel channel, String message) {
+		for (int i = 0; i < 10; i++) {
+			try {
+				Thread.sleep(i * 100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			try {
+				return channel.sendMessage(message);
+			} catch (Exception e) {
+				if (i == 9) {
+					Bukkit.getLogger().warning("Failed to deliver message to Discord! Channel: " + channel.getName()
+							+ " Message: " + message);
+					throw new RuntimeException(e);
+				} else
+					continue;
+			}
+		}
+		return null;
 	}
 }

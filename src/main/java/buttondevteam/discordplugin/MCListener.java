@@ -11,9 +11,9 @@ public class MCListener implements Listener {
 			return;
 		try {
 			if (e.getCommand().equalsIgnoreCase("stop"))
-				DiscordPlugin.botchannel.sendMessage("Minecraft server shutting down!");
+				DiscordPlugin.sendMessageToChannel(DiscordPlugin.botchannel, "Minecraft server shutting down!");
 			else if (e.getCommand().equalsIgnoreCase("restart"))
-				DiscordPlugin.botchannel.sendMessage("Minecraft server restarting");
+				DiscordPlugin.sendMessageToChannel(DiscordPlugin.botchannel, "Minecraft server restarting");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
