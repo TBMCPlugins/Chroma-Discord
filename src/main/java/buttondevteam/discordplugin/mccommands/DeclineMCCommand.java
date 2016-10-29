@@ -1,11 +1,7 @@
 package buttondevteam.discordplugin.mccommands;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
-import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
-import buttondevteam.lib.TBMCPlayer;
 
 public class DeclineMCCommand extends DiscordMCCommandBase {
 
