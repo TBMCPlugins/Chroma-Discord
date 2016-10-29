@@ -41,6 +41,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				BufferedReader reader = Files.newReader(file, StandardCharsets.UTF_8);
 				String line = reader.readLine();
 				lastannouncementtime = Long.parseLong(line);
+				reader.close();
 				file.delete();
 			} else {
 				lastannouncementtime = getConfig().getLong("lastannouncementtime");
@@ -147,9 +148,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					genchannel.pin(sendMessageToChannel(genchannel, msgsb.toString()));
 				if (modmsgsb.length() > 0)
 					sendMessageToChannel(annchannel, modmsgsb.toString());
-				lastannouncementtime = lastanntime; // If sending succeeded
-				getConfig().set("lastannouncementtime", lastannouncementtime);
-				getConfig().set("lastseentime", lastseentime);
+				if (lastannouncementtime != lastanntime) {
+					lastannouncementtime = lastanntime; // If sending succeeded
+					getConfig().set("lastannouncementtime", lastannouncementtime);
+					getConfig().set("lastseentime", lastseentime);
+					saveConfig();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
