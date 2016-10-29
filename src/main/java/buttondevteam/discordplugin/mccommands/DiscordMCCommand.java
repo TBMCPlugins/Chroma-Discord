@@ -6,21 +6,22 @@ import org.bukkit.entity.Player;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayer;
+import buttondevteam.lib.chat.TBMCCommandBase;
 
-public class AcceptMCCommand extends DiscordMCCommandBase {
+public class DiscordMCCommand extends TBMCCommandBase {
 
 	@Override
-	public String GetDiscordCommandPath() {
-		return "accept";
+	public String GetCommandPath() {
+		return "discord";
 	}
 
 	@Override
 	public String[] GetHelpText(String alias) {
-		return new String[] { //
-				"§6---- Accept Discord connection ----", //
-				"Accept a pending connection between your Discord and Minecraft account.", //
+		return new String[] { // TODO
+				"§6---- Decline Discord connection ----", //
+				"Decline a pending connection between your Discord and Minecraft account.", //
 				"To start the connection process, do §b@ChromaBot connect <MCname>§r in the #bot channel on Discord", //
-				"Usage: /" + alias + " accept" //
+				"Usage: /" + alias + " decline" //
 		};
 	}
 
@@ -36,12 +37,11 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 
 	@Override
 	public boolean OnCommand(CommandSender sender, String alias, String[] args) {
-		String did = ConnectCommand.WaitingToConnect.get(sender.getName());
+		String did = ConnectCommand.WaitingToConnect.remove(sender.getName());
 		if (did == null) {
 			sender.sendMessage("§cYou don't have a pending connection to Discord.");
 			return true;
 		}
-		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscrodID(did);
 		return true;
 	}
 

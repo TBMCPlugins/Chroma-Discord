@@ -2,10 +2,12 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCPlayer;
 
-public class DiscordPlayer {
-	private TBMCPlayer player;
-
+public class DiscordPlayer extends TBMCPlayer {
 	public String getDiscordID() {
-		return null; // TODO: Return player.getData("discordid") or similar
+		return getData();
+	}
+
+	public void setDiscrodID(String id) {
+		setData(id);
 	}
 }
