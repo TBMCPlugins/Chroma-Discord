@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.commands;
 
 import java.util.HashMap;
 
+import buttondevteam.discordplugin.DiscordPlugin;
 import sx.blah.discord.handle.obj.IMessage;
 
 public abstract class DiscordCommandBase {
@@ -11,14 +12,17 @@ public abstract class DiscordCommandBase {
 
 	private static final HashMap<String, DiscordCommandBase> commands = new HashMap<String, DiscordCommandBase>();
 
-	protected void respond(IMessage message, String messagetosend) {
-	}
-
 	static {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
 	}
 
-	public static final void runCommand(IMessage message) {
-
+	public static void runCommand(String cmd, String args, IMessage message) {
+		DiscordCommandBase command = commands.get(cmd);
+		if (command == null) {
+			// TODO: Help command
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Unknown command: " + cmd + " with args: " + args);
+			return;
+		}
+		command.run(message, args);
 	}
 }
