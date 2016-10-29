@@ -64,7 +64,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel genchannel;
 	public static IChannel issuechannel;
 
-	public static final boolean Test = false;
+	public static final boolean Test = true;
 
 	@Override
 	public void handle(ReadyEvent event) {
