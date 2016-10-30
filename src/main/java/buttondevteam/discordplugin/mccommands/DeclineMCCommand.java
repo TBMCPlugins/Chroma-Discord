@@ -37,6 +37,7 @@ public class DeclineMCCommand extends DiscordMCCommandBase {
 			sender.sendMessage("§cYou don't have a pending connection to Discord.");
 			return true;
 		}
+		sender.sendMessage("§bPending connection declined.");
 		return true;
 	}
 

@@ -42,6 +42,8 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 			return true;
 		}
 		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscrodID(did);
+		ConnectCommand.WaitingToConnect.remove(sender.getName());
+		sender.sendMessage("§bAccounts connected.");
 		return true;
 	}
 
