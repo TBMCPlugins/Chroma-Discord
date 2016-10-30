@@ -34,9 +34,12 @@ public class CommandListener {
 
 	private static void runCommand(IMessage message) {
 		String cmdwithargs = message.getContent();
-		final String mention = DiscordPlugin.dc.getOurUser().mention();
-		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
-			cmdwithargs = cmdwithargs.substring(mention.length());
+		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
+		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
+		if (message.getContent().startsWith(mention) && cmdwithargs.length() > mention.length() + 1) // TODO: Resolve mentions: Compound arguments, either a mention or text
+			cmdwithargs = cmdwithargs.substring(mention.length() + 1);
+		if (message.getContent().startsWith(mentionNick) && cmdwithargs.length() > mentionNick.length() + 1)
+			cmdwithargs = cmdwithargs.substring(mentionNick.length() + 1);
 		int index = cmdwithargs.indexOf(' ');
 		String cmd;
 		String args;
@@ -45,7 +48,7 @@ public class CommandListener {
 			args = "";
 		} else {
 			cmd = cmdwithargs.substring(0, index);
-			args = cmdwithargs.substring(index);
+			args = cmdwithargs.substring(index + 1);
 		}
 		DiscordCommandBase.runCommand(cmd, args, message);
 	}

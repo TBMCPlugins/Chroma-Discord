@@ -14,7 +14,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.TBMCChatAPI;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
@@ -54,6 +56,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
 			Bukkit.getPluginManager().registerEvents(new MCListener(), this);
+			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
