@@ -14,6 +14,7 @@ public abstract class DiscordCommandBase {
 
 	static {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
+		commands.put("userinfo", new UserinfoCommand());
 	}
 
 	public static void runCommand(String cmd, String args, IMessage message) {
