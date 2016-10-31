@@ -7,7 +7,7 @@ public class DiscordPlayer extends TBMCPlayer {
 		return getData();
 	}
 
-	public void setDiscrodID(String id) {
+	public void setDiscordID(String id) {
 		setData(id);
 	}
 }
