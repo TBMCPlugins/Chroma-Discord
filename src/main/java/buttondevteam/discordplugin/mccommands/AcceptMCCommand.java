@@ -41,7 +41,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 			sender.sendMessage("§cYou don't have a pending connection to Discord.");
 			return true;
 		}
-		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscrodID(did);
+		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscordID(did);
 		ConnectCommand.WaitingToConnect.remove(sender.getName());
 		sender.sendMessage("§bAccounts connected.");
 		return true;
