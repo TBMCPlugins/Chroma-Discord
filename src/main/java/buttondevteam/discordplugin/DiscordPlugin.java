@@ -80,13 +80,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server_issues
+				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				annchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				genchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
+				dc.changeStatus(Status.game("testing"));
 			}
-			dc.changeStatus(Status.game("on TBMC"));
 			sendMessageToChannel(botchannel, "Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
@@ -108,6 +109,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public void onDisable() {
 		stop = true;
 		try {
+			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();
 		} catch (Exception e) {
 			e.printStackTrace();
