@@ -7,7 +7,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerCommandEvent;
 
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
+import sx.blah.discord.handle.obj.IUser;
 
 public class MCListener implements Listener {
 	@EventHandler
@@ -30,5 +32,15 @@ public class MCListener implements Listener {
 		p.sendMessage("§bTo connect with the Discord account "
 				+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
 		p.sendMessage("§bIf it wasn't you, do /discord decline");
+	}
+
+	@EventHandler
+	public void onGetInfo(TBMCPlayerGetInfoEvent e) {
+		DiscordPlayer dp = e.getPlayer().asPluginPlayer(DiscordPlayer.class);
+		if (dp.getDiscordID() == null || dp.getDiscordID() == "")
+			return;
+		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
+		e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());
+		e.addInfo("Discord status: " + user.getStatus());
 	}
 }

@@ -2,13 +2,10 @@ package buttondevteam.discordplugin.commands;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCPlayer;
-import sx.blah.discord.handle.impl.obj.Guild;
+import buttondevteam.lib.TBMCPlayer.InfoTarget;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -63,11 +60,13 @@ public class UserinfoCommand extends DiscordCommandBase {
 			}
 			target = targets.get(0);
 		}
-		for (Player p : Bukkit.getOnlinePlayers()) {
-			DiscordPlayer dp = TBMCPlayer.getPlayer(p).asPluginPlayer(DiscordPlayer.class);
+		for (TBMCPlayer player : TBMCPlayer.getLoadedPlayers().values()) {
+			DiscordPlayer dp = player.asPluginPlayer(DiscordPlayer.class);
 			if (target.getID().equals(dp.getDiscordID())) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "User info for " + target.getName());
-				break; // TODO: Get user data
+				StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":");
+				uinfo.append(player.getInfo(InfoTarget.Discord));
+				DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
+				break;
 			}
 		}
 	}
