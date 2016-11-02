@@ -8,7 +8,7 @@ import com.google.common.collect.HashBiMap;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.TBMCDiscordAPI;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCPlayer;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -53,7 +53,7 @@ public class ConnectCommand extends DiscordCommandBase {
 				return;
 			}
 		} catch (Exception e) {
-			TBMCDiscordAPI.SendException(e, "An error occured while connecting a Discord account!");
+			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An internal error occured!\n" + e);
 		}
 		WaitingToConnect.put(args, message.getAuthor().getID());

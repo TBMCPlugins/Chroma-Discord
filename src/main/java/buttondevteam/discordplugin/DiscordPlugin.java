@@ -55,7 +55,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			dc.getDispatcher().registerListener(this);
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
-			Bukkit.getPluginManager().registerEvents(new MCListener(), this);
+			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
+			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 		} catch (Exception e) {
 			e.printStackTrace();

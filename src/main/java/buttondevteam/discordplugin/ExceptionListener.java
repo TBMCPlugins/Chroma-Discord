@@ -1,8 +1,17 @@
 package buttondevteam.discordplugin;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
-public final class TBMCDiscordAPI {
+import buttondevteam.lib.TBMCExceptionEvent;
+
+public class ExceptionListener implements Listener {
+	@EventHandler
+	public void onException(TBMCExceptionEvent e) {
+		SendException(e.getException(), e.getSourceMessage());
+	}
+
 	public static void SendException(Throwable e, String sourcemessage) {
 		try {
 			StringBuilder sb = new StringBuilder();
