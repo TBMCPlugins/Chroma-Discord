@@ -17,7 +17,10 @@ public class ExceptionListener implements Listener {
 			StringBuilder sb = new StringBuilder();
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
-			sb.append(ExceptionUtils.getStackTrace(e)).append("\n");
+			String stackTrace = ExceptionUtils.getStackTrace(e);
+			if (stackTrace.length() > 2000)
+				stackTrace = stackTrace.substring(0, 2000);
+			sb.append(stackTrace).append("\n");
 			sb.append("```");
 			DiscordPlugin.sendMessageToChannel(DiscordPlugin.issuechannel, sb.toString());
 		} catch (Exception ex) {

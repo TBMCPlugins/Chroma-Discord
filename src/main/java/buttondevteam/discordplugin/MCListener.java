@@ -10,6 +10,7 @@ import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.Status.StatusType;
 
 public class MCListener implements Listener {
 	@EventHandler
@@ -29,9 +30,11 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
 		final Player p = Bukkit.getPlayer(e.GetPlayer().getUuid());
-		p.sendMessage("§bTo connect with the Discord account "
-				+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
-		p.sendMessage("§bIf it wasn't you, do /discord decline");
+		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().getPlayerName())) {
+			p.sendMessage("§bTo connect with the Discord account "
+					+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
+			p.sendMessage("§bIf it wasn't you, do /discord decline");
+		}
 	}
 
 	@EventHandler
@@ -41,6 +44,12 @@ public class MCListener implements Listener {
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
 		e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());
-		e.addInfo("Discord status: " + user.getStatus());
+		if (!user.getStatus().getType().equals(StatusType.NONE)) {
+			if (user.getStatus().getType().equals(StatusType.GAME))
+				e.addInfo("Discord status: Playing " + user.getStatus().getStatusMessage());
+			else if (user.getStatus().getType().equals(StatusType.STREAM))
+				e.addInfo("Discord status: Streaming " + user.getStatus().getStatusMessage() + " - "
+						+ user.getStatus().getUrl());
+		}
 	}
 }

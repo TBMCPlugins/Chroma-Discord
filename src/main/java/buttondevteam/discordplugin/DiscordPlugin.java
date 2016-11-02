@@ -74,8 +74,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			final IGuild mainServer = event.getClient().getGuildByID("125813020357165056");
-			final IGuild devServer = event.getClient().getGuildByID("219529124321034241");
+			IGuild mainServer;
+			IGuild devServer;
+			do {
+				mainServer = event.getClient().getGuildByID("125813020357165056");
+				devServer = event.getClient().getGuildByID("219529124321034241");
+				Thread.sleep(100);
+			} while (mainServer == null || devServer == null);
 			if (!Test) {
 				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements

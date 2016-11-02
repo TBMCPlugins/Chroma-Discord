@@ -40,17 +40,17 @@ public class UserinfoCommand extends DiscordCommandBase {
 					target = ptarget;
 					break;
 				}
-				if (target == null) {
-					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-							"The user cannot be found (by discriminator): " + args + "(Found " + targets.size()
-									+ " users with the name.)");
-					return;
-				}
+			}
+			if (target == null) {
+				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found (by discriminator): "
+						+ args + "(Found " + targets.size() + " users with the name.)");
+				return;
 			}
 		} else {
 			final List<IUser> targets = message.getGuild().getUsersByName(args, true);
 			if (targets.size() == 0) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found: " + args);
+				DiscordPlugin.sendMessageToChannel(message.getChannel(),
+						"The user cannot be found on Discord: " + args);
 				return;
 			}
 			if (targets.size() > 1) {
@@ -60,15 +60,20 @@ public class UserinfoCommand extends DiscordCommandBase {
 			}
 			target = targets.get(0);
 		}
+		boolean found = false;
 		for (TBMCPlayer player : TBMCPlayer.getLoadedPlayers().values()) {
 			DiscordPlayer dp = player.asPluginPlayer(DiscordPlayer.class);
 			if (target.getID().equals(dp.getDiscordID())) {
-				StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":");
+				StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
 				uinfo.append(player.getInfo(InfoTarget.Discord));
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
+				found = true;
 				break;
 			}
 		}
+		if (!found)
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"The user is not found in our system (player has to be on the MC server for now)!");
 	}
 
 }

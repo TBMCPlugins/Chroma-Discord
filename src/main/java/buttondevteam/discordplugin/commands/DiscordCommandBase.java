@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.commands;
 import java.util.HashMap;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 
 public abstract class DiscordCommandBase {
@@ -10,7 +11,7 @@ public abstract class DiscordCommandBase {
 
 	public abstract void run(IMessage message, String args);
 
-	private static final HashMap<String, DiscordCommandBase> commands = new HashMap<String, DiscordCommandBase>();
+	static final HashMap<String, DiscordCommandBase> commands = new HashMap<String, DiscordCommandBase>();
 
 	static {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
@@ -24,6 +25,12 @@ public abstract class DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Unknown command: " + cmd + " with args: " + args);
 			return;
 		}
-		command.run(message, args);
+		try {
+			command.run(message, args);
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"An internal error occured while executing this command. For more technical details see the server-issues channel on the dev Discord.");
+		}
 	}
 }
