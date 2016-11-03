@@ -10,9 +10,10 @@ public class ExceptionListener implements Listener {
 	@EventHandler
 	public void onException(TBMCExceptionEvent e) {
 		SendException(e.getException(), e.getSourceMessage());
+		e.setHandled();
 	}
 
-	public static void SendException(Throwable e, String sourcemessage) {
+	private static void SendException(Throwable e, String sourcemessage) {
 		try {
 			StringBuilder sb = new StringBuilder();
 			sb.append(sourcemessage).append("\n");

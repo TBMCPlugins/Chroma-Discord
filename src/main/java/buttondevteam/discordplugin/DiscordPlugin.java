@@ -106,6 +106,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			for (int i = msgs.size() - 1; i >= 10; i--) {
 				genchannel.unpin(msgs.get(i));
 			}
+			TBMCCoreAPI.SendUnsentExceptions();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
