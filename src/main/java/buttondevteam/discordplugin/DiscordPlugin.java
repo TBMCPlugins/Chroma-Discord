@@ -49,9 +49,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				lastannouncementtime = getConfig().getLong("lastannouncementtime");
 				lastseentime = getConfig().getLong("lastseentime");
 				Test = getConfig().getBoolean("test", true);
-				getConfig().set("lastannouncementtime", lastannouncementtime);
-				getConfig().set("lastseentime", lastseentime);
-				getConfig().set("test", Test); // TODO: TMP
 				saveConfig();
 			}
 			ClientBuilder cb = new ClientBuilder();

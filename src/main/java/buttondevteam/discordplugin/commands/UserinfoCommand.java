@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -47,7 +48,12 @@ public class UserinfoCommand extends DiscordCommandBase {
 				return;
 			}
 		} else {
-			final List<IUser> targets = message.getGuild().getUsersByName(args, true);
+			final List<IUser> targets;
+			if (message.getChannel().isPrivate())
+				targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))
+						.collect(Collectors.toList());
+			else
+				targets = message.getGuild().getUsersByName(args, true);
 			if (targets.size() == 0) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"The user cannot be found on Discord: " + args);
