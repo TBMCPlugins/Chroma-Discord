@@ -6,7 +6,7 @@ public abstract class DiscordMCCommandBase extends TBMCCommandBase {
 
 	@Override
 	public String GetCommandPath() {
-		return "discord/" + GetDiscordCommandPath();
+		return "discord " + GetDiscordCommandPath();
 	}
 
 	public abstract String GetDiscordCommandPath();
