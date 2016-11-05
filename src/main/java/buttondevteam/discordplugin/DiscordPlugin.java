@@ -49,6 +49,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				lastannouncementtime = getConfig().getLong("lastannouncementtime");
 				lastseentime = getConfig().getLong("lastseentime");
 				Test = getConfig().getBoolean("test", true);
+				getConfig().set("lastannouncementtime", lastannouncementtime);
+				getConfig().set("lastseentime", lastseentime);
+				getConfig().set("test", Test); // TODO: TMP
+				saveConfig();
 			}
 			ClientBuilder cb = new ClientBuilder();
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
@@ -95,7 +99,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
 				dc.changeStatus(Status.game("testing"));
 			}
-			//sendMessageToChannel(botchannel, "Minecraft server started up");
+			// sendMessageToChannel(botchannel, "Minecraft server started up");
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -116,6 +120,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void onDisable() {
 		stop = true;
+		getConfig().set("lastannouncementtime", lastannouncementtime);
+		getConfig().set("lastseentime", lastseentime);
+		saveConfig();
 		try {
 			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();
