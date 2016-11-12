@@ -36,10 +36,16 @@ public class CommandListener {
 		String cmdwithargs = message.getContent();
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		if (message.getContent().startsWith(mention) && cmdwithargs.length() > mention.length() + 1) // TODO: Resolve mentions: Compound arguments, either a mention or text
-			cmdwithargs = cmdwithargs.substring(mention.length() + 1);
-		if (message.getContent().startsWith(mentionNick) && cmdwithargs.length() > mentionNick.length() + 1)
-			cmdwithargs = cmdwithargs.substring(mentionNick.length() + 1);
+		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
+			if (cmdwithargs.length() > mention.length() + 1)
+				cmdwithargs = cmdwithargs.substring(mention.length() + 1);
+			else
+				cmdwithargs = "help";
+		if (message.getContent().startsWith(mentionNick))
+			if (cmdwithargs.length() > mentionNick.length() + 1)
+				cmdwithargs = cmdwithargs.substring(mentionNick.length() + 1);
+			else
+				cmdwithargs = "help";
 		int index = cmdwithargs.indexOf(' ');
 		String cmd;
 		String args;

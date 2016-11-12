@@ -82,4 +82,13 @@ public class UserinfoCommand extends DiscordCommandBase {
 					"The user is not found in our system (player has to be on the MC server for now)!");
 	}
 
+	@Override
+	public String[] getHelpText() {
+		return new String[] { //
+				"---- User information ----", //
+				"Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.", //
+				"Usage: userinfo <Discordname>" //
+		};
+	}
+
 }
