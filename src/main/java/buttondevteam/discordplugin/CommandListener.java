@@ -25,8 +25,6 @@ public class CommandListener {
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
-				if (event.getMessage().getChannel().getID().equals("219626707458457603"))
-					Bukkit.getLogger().info("Message in dev: " + event.getMessage().getContent());
 				if (!event.getMessage().getChannel().isPrivate())
 					return;
 				if (event.getMessage().getAuthor().isBot())
