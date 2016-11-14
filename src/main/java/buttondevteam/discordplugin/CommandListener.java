@@ -1,5 +1,7 @@
 package buttondevteam.discordplugin;
 
+import org.bukkit.Bukkit;
+
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MentionEvent;
@@ -23,6 +25,8 @@ public class CommandListener {
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
+				if (event.getMessage().getChannel().getID().equals("219626707458457603"))
+					Bukkit.getLogger().info("Message in dev: " + event.getMessage().getContent());
 				if (!event.getMessage().getChannel().isPrivate())
 					return;
 				if (event.getMessage().getAuthor().isBot())
@@ -33,6 +37,7 @@ public class CommandListener {
 	}
 
 	private static void runCommand(IMessage message) {
+		message.getChannel().setTypingStatus(true);
 		String cmdwithargs = message.getContent();
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
@@ -57,5 +62,6 @@ public class CommandListener {
 			args = cmdwithargs.substring(index + 1);
 		}
 		DiscordCommandBase.runCommand(cmd, args, message);
+		message.getChannel().setTypingStatus(false);
 	}
 }
