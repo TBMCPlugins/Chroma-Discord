@@ -1,5 +1,7 @@
 package buttondevteam.discordplugin;
 
+import java.util.stream.Collectors;
+
 import org.bukkit.Bukkit;
 
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
@@ -25,6 +27,10 @@ public class CommandListener {
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
+				if (event.getMessage().getChannel().getID().equals("219626707458457603"))
+					Bukkit.getLogger().info("Attachment in dev: " + event.getMessage().getAttachments().stream().map(
+							a -> a.getFilename() + " - " + a.getFilesize() + " - " + a.getId() + " - " + a.getUrl())
+							.collect(Collectors.joining(", ")));
 				if (!event.getMessage().getChannel().isPrivate())
 					return;
 				if (event.getMessage().getAuthor().isBot())
