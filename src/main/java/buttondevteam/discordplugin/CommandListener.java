@@ -27,6 +27,12 @@ public class CommandListener {
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
+				if (event.getMessage().getChannel().getID().equals("219626707458457603"))
+					Bukkit.getLogger().info("Embedded in dev: " + event.getMessage().getEmbedded().stream()
+							.map(a -> a.getDescription() + " - " + a.getThumbnail() + " - " + a.getTitle() + " - "
+									+ a.getType() + " - " + a.getUrl() + " - " + a.getEmbedProvider().getName() + " - "
+									+ a.getEmbedProvider().getUrl())
+							.collect(Collectors.joining(", ")));
 				if (!event.getMessage().getChannel().isPrivate())
 					return;
 				if (event.getMessage().getAuthor().isBot())
