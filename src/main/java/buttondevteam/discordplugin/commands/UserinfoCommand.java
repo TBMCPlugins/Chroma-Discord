@@ -31,7 +31,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			target = message.getMentions().get(0);
 		else if (args.contains("#")) {
 			String[] targettag = args.split("#");
-			final List<IUser> targets = message.getGuild().getUsersByName(targettag[0], true);
+			final List<IUser> targets = getUsers(message, args);
 			if (targets.size() == 0) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found (by name): " + args);
 				return;
@@ -48,12 +48,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 				return;
 			}
 		} else {
-			final List<IUser> targets;
-			if (message.getChannel().isPrivate())
-				targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))
-						.collect(Collectors.toList());
-			else
-				targets = message.getGuild().getUsersByName(args, true);
+			final List<IUser> targets = getUsers(message, args);
 			if (targets.size() == 0) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"The user cannot be found on Discord: " + args);
@@ -80,6 +75,16 @@ public class UserinfoCommand extends DiscordCommandBase {
 		if (!found)
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"The user is not found in our system (player has to be on the MC server for now)!");
+	}
+
+	private List<IUser> getUsers(IMessage message, String args) {
+		final List<IUser> targets;
+		if (message.getChannel().isPrivate())
+			targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))
+					.collect(Collectors.toList());
+		else
+			targets = message.getGuild().getUsersByName(args, true);
+		return targets;
 	}
 
 	@Override
