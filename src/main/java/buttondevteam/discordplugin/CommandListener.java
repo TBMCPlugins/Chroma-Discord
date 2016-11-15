@@ -1,9 +1,5 @@
 package buttondevteam.discordplugin;
 
-import java.util.stream.Collectors;
-
-import org.bukkit.Bukkit;
-
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MentionEvent;
@@ -41,16 +37,10 @@ public class CommandListener {
 		String cmdwithargs = message.getContent();
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
-			if (cmdwithargs.length() > mention.length() + 1)
-				cmdwithargs = cmdwithargs.substring(mention.length() + 1);
-			else
-				cmdwithargs = "help";
-		if (message.getContent().startsWith(mentionNick))
-			if (cmdwithargs.length() > mentionNick.length() + 1)
-				cmdwithargs = cmdwithargs.substring(mentionNick.length() + 1);
-			else
-				cmdwithargs = "help";
+		checkanddeletemention(cmdwithargs, mention, message);
+		checkanddeletemention(cmdwithargs, mentionNick, message);
+		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
+			cmdwithargs = checkanddeletemention(cmdwithargs, mentionRole, message);
 		int index = cmdwithargs.indexOf(' ');
 		String cmd;
 		String args;
@@ -63,5 +53,15 @@ public class CommandListener {
 		}
 		DiscordCommandBase.runCommand(cmd, args, message);
 		message.getChannel().setTypingStatus(false);
+	}
+
+	private static String checkanddeletemention(String cmdwithargs, String mention, IMessage message) {
+		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
+			if (cmdwithargs.length() > mention.length() + 1)
+				cmdwithargs = cmdwithargs.substring(
+						cmdwithargs.charAt(mention.length() + 1) == ' ' ? mention.length() + 1 : mention.length());
+			else
+				cmdwithargs = "help";
+		return cmdwithargs;
 	}
 }
