@@ -37,8 +37,8 @@ public class CommandListener {
 		String cmdwithargs = message.getContent();
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		checkanddeletemention(cmdwithargs, mention, message);
-		checkanddeletemention(cmdwithargs, mentionNick, message);
+		cmdwithargs = checkanddeletemention(cmdwithargs, mention, message);
+		cmdwithargs = checkanddeletemention(cmdwithargs, mentionNick, message);
 		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
 			cmdwithargs = checkanddeletemention(cmdwithargs, mentionRole, message);
 		int index = cmdwithargs.indexOf(' ');
@@ -62,6 +62,8 @@ public class CommandListener {
 						cmdwithargs.charAt(mention.length() + 1) == ' ' ? mention.length() + 1 : mention.length());
 			else
 				cmdwithargs = "help";
+		if (cmdwithargs.length() == 0)
+			cmdwithargs = "help";
 		return cmdwithargs;
 	}
 }
