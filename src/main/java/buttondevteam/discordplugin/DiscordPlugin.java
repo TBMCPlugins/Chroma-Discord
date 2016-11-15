@@ -14,6 +14,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import buttondevteam.discordplugin.listeners.ChatListener;
 import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.listeners.ExceptionListener;
 import buttondevteam.discordplugin.listeners.MCListener;
@@ -60,6 +61,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			dc.getDispatcher().registerListener(this);
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
+			dc.getDispatcher().registerListener(new ChatListener());
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
@@ -73,6 +75,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel annchannel;
 	public static IChannel genchannel;
 	public static IChannel issuechannel;
+	public static IChannel chatchannel;
 
 	public static boolean Test = true;
 
@@ -91,12 +94,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server_issues
+				chatchannel = mainServer.getChannelByID("248184577582039041"); // minecraft_chat
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				annchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				genchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
+				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
 				dc.changeStatus(Status.game("testing"));
 			}
 			// sendMessageToChannel(botchannel, "Minecraft server started up");
