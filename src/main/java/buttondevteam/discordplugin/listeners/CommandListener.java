@@ -1,5 +1,6 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MentionEvent;
