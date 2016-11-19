@@ -31,7 +31,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			target = message.getMentions().get(0);
 		else if (args.contains("#")) {
 			String[] targettag = args.split("#");
-			final List<IUser> targets = getUsers(message, args);
+			final List<IUser> targets = getUsers(message, targettag[0]);
 			if (targets.size() == 0) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found (by name): " + args);
 				return;
