@@ -94,7 +94,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server_issues
-				chatchannel = mainServer.getChannelByID("248184577582039041"); // minecraft_chat
+				chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
