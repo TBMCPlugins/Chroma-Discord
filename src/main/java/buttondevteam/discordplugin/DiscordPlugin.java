@@ -70,6 +70,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel annchannel;
 	public static IChannel genchannel;
 	public static IChannel issuechannel;
+	public static IChannel debugchannel;
 
 	public static boolean Test = true;
 
@@ -87,13 +88,15 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
-				issuechannel = devServer.getChannelByID("219643416496046081"); // server_issues
+				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
+				debugchannel = devServer.getChannelByID("250332016199860224"); // debug-channel
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				annchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				genchannel = devServer.getChannelByID("239519012529111040"); // bottest
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bottest
+				debugchannel = devServer.getChannelByID("239519012529111040"); //bottest
 				dc.changeStatus(Status.game("testing"));
 			}
 			// sendMessageToChannel(botchannel, "Minecraft server started up");
@@ -109,6 +112,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				genchannel.unpin(msgs.get(i));
 			}
 			TBMCCoreAPI.SendUnsentExceptions();
+			TBMCCoreAPI.SendUnsentDebugMessages();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
