@@ -1,9 +1,10 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.listeners;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCExceptionEvent;
 
 public class ExceptionListener implements Listener {

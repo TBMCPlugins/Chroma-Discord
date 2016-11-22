@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -6,6 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerCommandEvent;
 
+import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;

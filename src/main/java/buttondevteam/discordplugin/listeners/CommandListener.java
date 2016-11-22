@@ -1,5 +1,6 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MentionEvent;
@@ -33,13 +34,14 @@ public class CommandListener {
 	}
 
 	private static void runCommand(IMessage message) {
+		message.getChannel().setTypingStatus(true);
 		String cmdwithargs = message.getContent();
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		if (message.getContent().startsWith(mention) && cmdwithargs.length() > mention.length() + 1) // TODO: Resolve mentions: Compound arguments, either a mention or text
-			cmdwithargs = cmdwithargs.substring(mention.length() + 1);
-		if (message.getContent().startsWith(mentionNick) && cmdwithargs.length() > mentionNick.length() + 1)
-			cmdwithargs = cmdwithargs.substring(mentionNick.length() + 1);
+		cmdwithargs = checkanddeletemention(cmdwithargs, mention, message);
+		cmdwithargs = checkanddeletemention(cmdwithargs, mentionNick, message);
+		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
+			cmdwithargs = checkanddeletemention(cmdwithargs, mentionRole, message);
 		int index = cmdwithargs.indexOf(' ');
 		String cmd;
 		String args;
@@ -51,5 +53,18 @@ public class CommandListener {
 			args = cmdwithargs.substring(index + 1);
 		}
 		DiscordCommandBase.runCommand(cmd, args, message);
+		message.getChannel().setTypingStatus(false);
+	}
+
+	private static String checkanddeletemention(String cmdwithargs, String mention, IMessage message) {
+		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
+			if (cmdwithargs.length() > mention.length() + 1)
+				cmdwithargs = cmdwithargs.substring(
+						cmdwithargs.charAt(mention.length() + 1) == ' ' ? mention.length() + 1 : mention.length());
+			else
+				cmdwithargs = "help";
+		if (cmdwithargs.length() == 0)
+			cmdwithargs = "help";
+		return cmdwithargs;
 	}
 }

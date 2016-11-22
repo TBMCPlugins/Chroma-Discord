@@ -65,4 +65,13 @@ public class ConnectCommand extends DiscordCommandBase {
 					+ message.getAuthor().getDiscriminator() + " do /discord accept");
 	}
 
+	@Override
+	public String[] getHelpText() {
+		return new String[] { //
+				"---- Connect command ----", //
+				"This commands let's you connect your acoount with a Minecraft account. This'd allow using the Minecraft chat and other things.", //
+				"Usage: connect <Minecraftname>" //
+		};
+	}
+
 }

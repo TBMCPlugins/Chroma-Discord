@@ -10,19 +10,22 @@ public abstract class DiscordCommandBase {
 	public abstract String getCommandName();
 
 	public abstract void run(IMessage message, String args);
+	
+	public abstract String[] getHelpText();
 
 	static final HashMap<String, DiscordCommandBase> commands = new HashMap<String, DiscordCommandBase>();
 
 	static {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
 		commands.put("userinfo", new UserinfoCommand());
+		commands.put("help", new HelpCommand());
 	}
 
 	public static void runCommand(String cmd, String args, IMessage message) {
 		DiscordCommandBase command = commands.get(cmd);
 		if (command == null) {
-			// TODO: Help command
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Unknown command: " + cmd + " with args: " + args);
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"Unknown command: " + cmd + " with args: " + args + "\nDo @ChromaBot help for help");
 			return;
 		}
 		try {
