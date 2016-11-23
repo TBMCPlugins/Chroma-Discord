@@ -20,7 +20,7 @@ public class DebugMessageListener implements Listener{
 				message = message.substring(0, 2000);
 			sb.append(message).append("\n");
 			sb.append("```");
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.botroomchannel, sb.toString());
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.botchannel, sb.toString());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
