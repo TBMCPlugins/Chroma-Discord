@@ -75,6 +75,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel annchannel;
 	public static IChannel genchannel;
 	public static IChannel chatchannel;
+	public static IChannel botroomchannel;
 
 	public static boolean Test = true;
 
@@ -93,11 +94,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
+				botroomchannel = devServer.getChannelByID("239519012529111040");//bot-room
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
-				botchannel = devServer.getChannelByID("239519012529111040"); // bottest
-				annchannel = devServer.getChannelByID("239519012529111040"); // bottest
-				genchannel = devServer.getChannelByID("239519012529111040"); // bottest
+				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+				annchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+				genchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+				botroomchannel = devServer.getChannelByID("239519012529111040");//bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
 				dc.changeStatus(Status.game("testing"));
 			}
