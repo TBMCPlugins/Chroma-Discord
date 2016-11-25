@@ -207,7 +207,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e.printStackTrace();
 			}
 			try {
-				return channel.sendMessage(message);
+				return channel
+						.sendMessage(Test ? "*The following message is from a test server*\n" + message : message);
 			} catch (Exception e) {
 				if (i == 9) {
 					Bukkit.getLogger().warning("Failed to deliver message to Discord! Channel: " + channel.getName()
