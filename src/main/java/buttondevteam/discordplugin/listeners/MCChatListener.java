@@ -20,6 +20,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	@Override
 	public void handle(MessageReceivedEvent event) {
-		TBMCChatAPI.SendChatMessage(Channel.GlobalChat, Bukkit.getConsoleSender(), event.getMessage().getContent());
+		if (event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID()))
+			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, Bukkit.getConsoleSender(), event.getMessage().getContent());
 	}
 }
