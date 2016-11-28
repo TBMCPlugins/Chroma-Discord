@@ -78,13 +78,12 @@ public class DiscordSender implements CommandSender {
 	}
 
 	@Override
-	public boolean isOp() {
-		return perm.isOp();
+	public boolean isOp() { //TODO: Connect with TBMC acc
+		return false;
 	}
 
 	@Override
-	public void setOp(boolean value) {
-		perm.setOp(value);
+	public void setOp(boolean value) { //TODO: Connect with TBMC acc
 	}
 
 	@Override

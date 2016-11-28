@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.lib.TBMCChatEvent;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import sx.blah.discord.api.events.IListener;
@@ -26,8 +27,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public void handle(MessageReceivedEvent event) {
 		if (event.getMessage().getAuthor().isBot())
 			return;
-		if (event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID()))
-			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, new DiscordSender(event.getMessage().getAuthor()),
-					event.getMessage().getContent());
+		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID()))
+			return;
+		final DiscordSender dsender = new DiscordSender(event.getMessage().getAuthor());
+		if (event.getMessage().getContent().startsWith("/")) {
+			final String cmd = event.getMessage().getContent().substring(1);
+			try {
+				Bukkit.dispatchCommand(dsender, cmd);
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
+				return;
+			}
+		} else
+			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, event.getMessage().getContent());
 	}
 }
