@@ -1,6 +1,8 @@
 package buttondevteam.discordplugin;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -107,8 +109,7 @@ public class DiscordSender implements CommandSender {
 
 	@Override
 	public void sendMessage(String[] messages) {
-		for (String message : messages)
-			sendMessage(message);
+		sendMessage(Arrays.stream(messages).collect(Collectors.joining("\n")));
 	}
 
 	@Override
