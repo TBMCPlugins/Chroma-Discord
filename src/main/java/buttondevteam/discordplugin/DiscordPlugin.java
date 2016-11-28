@@ -80,14 +80,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel issuechannel;
 	public static IChannel debugchannel;
 	public static IChannel botroomchannel;
+	public static IGuild mainServer;
+	public static IGuild devServer;
 
 	public static boolean Test = true;
 
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			IGuild mainServer;
-			IGuild devServer;
 			do {
 				mainServer = event.getClient().getGuildByID("125813020357165056");
 				devServer = event.getClient().getGuildByID("219529124321034241");
