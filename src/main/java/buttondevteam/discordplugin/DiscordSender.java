@@ -12,14 +12,24 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 public class DiscordSender implements CommandSender {
 	private PermissibleBase perm = new PermissibleBase(this);
 	private IUser user;
+	private IChannel channel;
 
 	public DiscordSender(IUser user) {
 		this.user = user;
+	}
+
+	public IChannel getChannel() {
+		return channel;
+	}
+
+	public void setChannel(IChannel channel) {
+		this.channel = channel;
 	}
 
 	@Override
@@ -78,18 +88,18 @@ public class DiscordSender implements CommandSender {
 	}
 
 	@Override
-	public boolean isOp() { //TODO: Connect with TBMC acc
+	public boolean isOp() { // TODO: Connect with TBMC acc
 		return false;
 	}
 
 	@Override
-	public void setOp(boolean value) { //TODO: Connect with TBMC acc
+	public void setOp(boolean value) { // TODO: Connect with TBMC acc
 	}
 
 	@Override
 	public void sendMessage(String message) {
 		try {
-			DiscordPlugin.sendMessageToChannel(user.getOrCreatePMChannel(), message);
+			DiscordPlugin.sendMessageToChannel(channel, message);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}

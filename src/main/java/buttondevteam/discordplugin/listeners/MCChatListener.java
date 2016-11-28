@@ -27,9 +27,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public void handle(MessageReceivedEvent event) {
 		if (event.getMessage().getAuthor().isBot())
 			return;
-		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID()))
+		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
+		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
 		final DiscordSender dsender = new DiscordSender(event.getMessage().getAuthor());
+		dsender.setChannel(event.getMessage().getChannel());
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
 			try {
