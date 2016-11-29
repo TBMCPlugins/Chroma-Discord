@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.io.Files;
@@ -21,6 +22,7 @@ import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
@@ -126,6 +128,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			for (int i = msgs.size() - 1; i >= 10; i--) {
 				genchannel.unpin(msgs.get(i));
 			}
+			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
 		} catch (Exception e) {
@@ -222,5 +225,21 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			}
 		}
 		return null;
+	}
+
+	public static Permission perms;
+
+	public boolean setupProviders() {
+		try {
+			Class.forName("net.milkbowl.vault.permission.Permission");
+			Class.forName("net.milkbowl.vault.chat.Chat");
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
+
+		RegisteredServiceProvider<Permission> permsProvider = Bukkit.getServer().getServicesManager()
+				.getRegistration(Permission.class);
+		perms = permsProvider.getProvider();
+		return perms != null;
 	}
 }
