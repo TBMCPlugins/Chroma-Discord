@@ -37,11 +37,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
 	private static boolean stop = false;
 	public static IDiscordClient dc;
+	public static DiscordPlugin plugin;
 
 	@Override
 	public void onEnable() {
 		try {
 			Bukkit.getLogger().info("Initializing DiscordPlugin...");
+			plugin = this;
 			final File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
 			if (file.exists()) {
 				BufferedReader reader = Files.newReader(file, StandardCharsets.UTF_8);
