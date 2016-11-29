@@ -114,7 +114,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
 				dc.changeStatus(Status.game("testing"));
 			}
-			// sendMessageToChannel(botchannel, "Minecraft server started up");
+			sendMessageToChannel(chatchannel, "Server started - chat connected.");
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -139,6 +139,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		saveConfig();
+		sendMessageToChannel(chatchannel, "Server restarting/stopping");
 		try {
 			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();

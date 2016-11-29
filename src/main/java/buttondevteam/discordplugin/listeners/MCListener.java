@@ -11,6 +11,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
+import buttondevteam.lib.TBMCPlayerQuitEvent;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
 
@@ -23,6 +24,13 @@ public class MCListener implements Listener {
 					+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
 		}
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
+				e.GetPlayer().getPlayerName() + " joined the game");
+	}
+
+	@EventHandler
+	public void onPlayerLeave(TBMCPlayerQuitEvent e) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.GetPlayer().getPlayerName() + " left the game");
 	}
 
 	@EventHandler
