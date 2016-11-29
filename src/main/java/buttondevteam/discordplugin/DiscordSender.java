@@ -46,6 +46,8 @@ public class DiscordSender implements CommandSender {
 
 	@Override
 	public boolean hasPermission(String name) {
+		if (name.contains("essentials") && !name.equals("essentials.list"))
+			return false;
 		return perm.hasPermission(name);
 	}
 
