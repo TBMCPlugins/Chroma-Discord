@@ -1,5 +1,7 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.util.Arrays;
+
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,6 +25,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					"<" + e.getSender().getName() + "> " + e.getMessage());
 	}
 
+	private final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip" };
+
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
 		if (event.getMessage().getAuthor().isBot())
@@ -35,7 +39,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
 			try {
-				Bukkit.dispatchCommand(dsender, cmd);
+				if (false) // Connected?
+				{ // TODO
+					// Execute as ingame player
+				} else {
+					if (Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
+						// Command not whitelisted
+						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
+								"Sorry, you don't have your accounts connected (or you have, this part doesn't work yet), you can only access these commands:\n"
+										+ Arrays.toString(UnconnectedCmds));
+					}
+					Bukkit.dispatchCommand(dsender, cmd);
+				}
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
 				return;
