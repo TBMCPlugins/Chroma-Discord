@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -56,6 +57,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				return;
 			}
 		} else
-			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, event.getMessage().getContent());
+			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
+					event.getMessage().getContent()
+							+ (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
+									.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
 	}
 }
