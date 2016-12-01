@@ -3,9 +3,9 @@ package buttondevteam.discordplugin.listeners;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.server.ServerCommandEvent;
-
+import org.bukkit.event.entity.PlayerDeathEvent;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
@@ -47,5 +47,10 @@ public class MCListener implements Listener {
 				e.addInfo("Discord status: Streaming " + user.getStatus().getStatusMessage() + " - "
 						+ user.getStatus().getUrl());
 		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void onPlayerDeath(PlayerDeathEvent e) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getDeathMessage());
 	}
 }
