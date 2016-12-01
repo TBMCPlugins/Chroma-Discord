@@ -44,13 +44,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				{ // TODO
 					// Execute as ingame player
 				} else {
-					if (Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
+					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
 						// Command not whitelisted
 						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
 								"Sorry, you don't have your accounts connected (or you have, this part doesn't work yet), you can only access these commands:\n"
 										+ Arrays.toString(UnconnectedCmds));
-					}
-					Bukkit.dispatchCommand(dsender, cmd);
+					} else
+						Bukkit.dispatchCommand(dsender, cmd);
 				}
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
