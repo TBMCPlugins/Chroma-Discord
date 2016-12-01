@@ -60,7 +60,7 @@ public class CommandListener {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1)
 				cmdwithargs = cmdwithargs.substring(
-						cmdwithargs.charAt(mention.length() + 1) == ' ' ? mention.length() + 1 : mention.length());
+						cmdwithargs.charAt(mention.length()) == ' ' ? mention.length() + 1 : mention.length());
 			else
 				cmdwithargs = "help";
 		if (cmdwithargs.length() == 0)

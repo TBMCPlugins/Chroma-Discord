@@ -103,7 +103,7 @@ public class DiscordSender implements CommandSender {
 	@Override
 	public void sendMessage(String message) {
 		try {
-			final boolean broadcast = new Exception().getStackTrace()[1].getMethodName().contains("broadcast");
+			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
 			String sanitizedMsg = "";
 			for (int i = 0; i < message.length(); i++) {
 				if (message.charAt(i) != '§') {
