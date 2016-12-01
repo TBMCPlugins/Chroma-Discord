@@ -103,8 +103,18 @@ public class DiscordSender implements CommandSender {
 	@Override
 	public void sendMessage(String message) {
 		try {
-			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin,
-					() -> DiscordPlugin.sendMessageToChannel(channel, message));
+			final boolean broadcast = new Exception().getStackTrace()[1].getMethodName().contains("broadcast");
+			String sanitizedMsg = "";
+			for (int i = 0; i < message.length(); i++) {
+				if (message.charAt(i) != '§') {
+					sanitizedMsg += message.charAt(i);
+				} else {
+					i++;
+				}
+			}
+			final String sendmsg = sanitizedMsg;
+			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> DiscordPlugin
+					.sendMessageToChannel(channel, (broadcast ? user.mention() + " " : "") + sendmsg));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}
