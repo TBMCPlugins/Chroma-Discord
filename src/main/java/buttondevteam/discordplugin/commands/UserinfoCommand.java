@@ -73,8 +73,8 @@ public class UserinfoCommand extends DiscordCommandBase {
 			}
 		}
 		if (!found)
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"The user is not found in our system (player has to be on the MC server for now)!");
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user (" + target.getName()
+					+ ") is not found in our system (player has to be on the MC server for now)!");
 	}
 
 	private List<IUser> getUsers(IMessage message, String args) {
