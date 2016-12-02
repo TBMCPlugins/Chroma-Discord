@@ -4,21 +4,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.io.Files;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
-import buttondevteam.discordplugin.listeners.CommandListener;
-import buttondevteam.discordplugin.listeners.ExceptionListener;
-import buttondevteam.discordplugin.listeners.MCChatListener;
-import buttondevteam.discordplugin.listeners.MCListener;
+import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -26,10 +19,8 @@ import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.Status;
+import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.RateLimitException;
 
 /**
  * Hello world!
@@ -209,12 +200,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		for (int i = 0; i < 10; i++) {
 			try {
 				Thread.sleep(i * 100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			} catch (InterruptedException e2) {
+				e2.printStackTrace();
 			}
 			try {
 				return channel
 						.sendMessage(Test ? "*The following message is from a test server*\n" + message : message);
+			} catch (RateLimitException e) {
+				try {
+					Thread.sleep(e.getRetryDelay());
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			} catch (Exception e) {
 				if (i == 9) {
 					Bukkit.getLogger().warning("Failed to deliver message to Discord! Channel: " + channel.getName()
