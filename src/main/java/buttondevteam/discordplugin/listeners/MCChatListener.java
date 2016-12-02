@@ -1,20 +1,26 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCPlayer;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.obj.IUser;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
 	@EventHandler // Minecraft
@@ -26,23 +32,37 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					"<" + e.getSender().getName() + "> " + e.getMessage());
 	}
 
-	private final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip" };
+	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip" };
+
+	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
-		if (event.getMessage().getAuthor().isBot())
+		final IUser author = event.getMessage().getAuthor();
+		if (author.isBot())
 			return;
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
-		final DiscordSender dsender = new DiscordSender(event.getMessage().getAuthor());
+		if (!UnconnectedSenders.containsKey(author.getID()))
+			UnconnectedSenders.put(author.getID(), new DiscordSender(author));
+		final DiscordSender dsender = UnconnectedSenders.get(author.getID());
 		dsender.setChannel(event.getMessage().getChannel());
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
+			Stream<? extends Player> str = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
+				try (DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class)) {
+					return author.getID().equals(dp.getDiscordID());
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occured while getting Discord player for chat", e);
+					return false;
+				}
+			});
 			try {
-				if (false) // Connected?
-				{ // TODO
+				if (str.count() > 0) // Connected?
+				{
 					// Execute as ingame player
+					Bukkit.dispatchCommand(str.findAny().get(), cmd);
 				} else {
 					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
 						// Command not whitelisted

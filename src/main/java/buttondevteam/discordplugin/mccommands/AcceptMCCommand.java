@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.TBMCPlayer;
 
 public class AcceptMCCommand extends DiscordMCCommandBase {
@@ -43,6 +44,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		}
 		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscordID(did);
 		ConnectCommand.WaitingToConnect.remove(sender.getName());
+		MCChatListener.UnconnectedSenders.remove(did);
 		sender.sendMessage("§bAccounts connected.");
 		return true;
 	}
