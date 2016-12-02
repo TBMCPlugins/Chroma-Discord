@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.commands;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -27,39 +28,45 @@ public class UserinfoCommand extends DiscordCommandBase {
 		IUser target = null;
 		if (args.length() == 0)
 			target = message.getAuthor();
-		else if (message.getMentions().size() > 0)
-			target = message.getMentions().get(0);
-		else if (args.contains("#")) {
-			String[] targettag = args.split("#");
-			final List<IUser> targets = getUsers(message, targettag[0]);
-			if (targets.size() == 0) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found (by name): " + args);
-				return;
-			}
-			for (IUser ptarget : targets) {
-				if (ptarget.getDiscriminator().equalsIgnoreCase(targettag[1])) {
-					target = ptarget;
-					break;
+		else {
+			final Stream<IUser> mentions = message.getMentions().stream()
+					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID()));
+			if (mentions.findFirst().isPresent())
+				target = mentions.findFirst().get();
+			else if (args.contains("#")) {
+				String[] targettag = args.split("#");
+				final List<IUser> targets = getUsers(message, targettag[0]);
+				if (targets.size() == 0) {
+					DiscordPlugin.sendMessageToChannel(message.getChannel(),
+							"The user cannot be found (by name): " + args);
+					return;
 				}
+				for (IUser ptarget : targets) {
+					if (ptarget.getDiscriminator().equalsIgnoreCase(targettag[1])) {
+						target = ptarget;
+						break;
+					}
+				}
+				if (target == null) {
+					DiscordPlugin.sendMessageToChannel(message.getChannel(),
+							"The user cannot be found (by discriminator): " + args + "(Found " + targets.size()
+									+ " users with the name.)");
+					return;
+				}
+			} else {
+				final List<IUser> targets = getUsers(message, args);
+				if (targets.size() == 0) {
+					DiscordPlugin.sendMessageToChannel(message.getChannel(),
+							"The user cannot be found on Discord: " + args);
+					return;
+				}
+				if (targets.size() > 1) {
+					DiscordPlugin.sendMessageToChannel(message.getChannel(),
+							"Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.");
+					return;
+				}
+				target = targets.get(0);
 			}
-			if (target == null) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user cannot be found (by discriminator): "
-						+ args + "(Found " + targets.size() + " users with the name.)");
-				return;
-			}
-		} else {
-			final List<IUser> targets = getUsers(message, args);
-			if (targets.size() == 0) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"The user cannot be found on Discord: " + args);
-				return;
-			}
-			if (targets.size() > 1) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.");
-				return;
-			}
-			target = targets.get(0);
 		}
 		boolean found = false;
 		for (TBMCPlayer player : TBMCPlayer.getLoadedPlayers().values()) {
