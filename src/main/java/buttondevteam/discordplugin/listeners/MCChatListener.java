@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.listeners;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,19 +51,19 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		dsender.setChannel(event.getMessage().getChannel());
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
-			Stream<? extends Player> str = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
+			Optional<? extends Player> str = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
 				try (DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class)) {
 					return author.getID().equals(dp.getDiscordID());
 				} catch (Exception e) {
 					TBMCCoreAPI.SendException("An error occured while getting Discord player for chat", e);
 					return false;
 				}
-			});
+			}).findAny();
 			try {
-				if (str.count() > 0) // Connected?
+				if (str.isPresent()) // Connected?
 				{
 					// Execute as ingame player
-					Bukkit.dispatchCommand(str.findAny().get(), cmd);
+					Bukkit.dispatchCommand(str.get(), cmd);
 				} else {
 					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
 						// Command not whitelisted
