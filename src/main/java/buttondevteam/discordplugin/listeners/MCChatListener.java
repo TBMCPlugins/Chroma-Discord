@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -51,15 +49,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
-			Optional<? extends Player> str = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
+			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
 				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
 				return author.getID().equals(dp.getDiscordID());
 			}).findAny();
 			try {
-				if (str.isPresent()) // Connected?
+				if (player.isPresent()) // Connected?
 				{
 					if (!ConnectedSenders.containsKey(author.getID()))
-						ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, str.get()));
+						ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, player.get()));
 					final DiscordPlayerSender dsender = ConnectedSenders.get(author.getID());
 					dsender.setChannel(event.getMessage().getChannel());
 					// Execute as ingame player
