@@ -33,7 +33,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					"<" + e.getSender().getName() + "> " + e.getMessage());
 	}
 
-	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip" };
+	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki" };
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 

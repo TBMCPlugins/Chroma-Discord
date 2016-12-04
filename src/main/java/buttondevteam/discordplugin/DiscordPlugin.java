@@ -73,7 +73,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel genchannel;
 	public static IChannel chatchannel;
 	public static IChannel issuechannel;
-	public static IChannel debugchannel;
 	public static IChannel botroomchannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
@@ -83,18 +82,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
+			int retryc = 0;
 			do {
 				mainServer = event.getClient().getGuildByID("125813020357165056");
 				devServer = event.getClient().getGuildByID("219529124321034241");
 				Thread.sleep(100);
-			} while (mainServer == null || devServer == null);
+			} while ((mainServer == null || devServer == null) && retryc++ < 10);
 			if (!Test) {
 				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
-				debugchannel = devServer.getChannelByID("250332016199860224"); // debug-channel
 				botroomchannel = devServer.getChannelByID("239519012529111040");// bot-room
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
@@ -103,11 +102,11 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				genchannel = devServer.getChannelByID("239519012529111040"); // bot-room
 				botroomchannel = devServer.getChannelByID("239519012529111040");// bot-room
 				issuechannel = devServer.getChannelByID("239519012529111040"); // bot-room
-				debugchannel = devServer.getChannelByID("239519012529111040"); // bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
 				dc.changeStatus(Status.game("testing"));
 			}
-			sendMessageToChannel(chatchannel, "Server started - chat connected.");
+			Bukkit.getScheduler().runTaskAsynchronously(this,
+					() -> sendMessageToChannel(chatchannel, "Server started - chat connected."));
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -116,14 +115,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Thread t = new Thread(r);
 			t.start();
 			List<IMessage> msgs = genchannel.getPinnedMessages();
-			for (int i = msgs.size() - 1; i >= 10; i--) {
+			for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
 				genchannel.unpin(msgs.get(i));
 			}
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
 		} catch (Exception e) {
-			e.printStackTrace();
+			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
 	}
 
@@ -138,7 +137,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();
 		} catch (Exception e) {
-			e.printStackTrace();
+			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
 		}
 	}
 
