@@ -317,10 +317,10 @@ public class DiscordPlayerSender implements Player {
 
 	// Find: " (\w+)\((\w+) (\w+), (\w+) (\w+), (\w+) (\w+), (\w+) (\w+), (\w+) (\w+), (\w+) (\w+)\) \{\s+\/\/ TO\DO Auto-generated method stub\s" - Replace: " $1($2 $3, $4 $5, $6 $7, $8 $9, $10 $11,
 	// $12 $13) { player.$1($3, $5, $7, $9, $11, $13);"
+
 	@Override
 	public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
-		// TODO Auto-generated method stub
-		return false;
+		return player.sendChunkChange(loc, sx, sy, sz, data);
 	}
 
 	@Override
@@ -330,8 +330,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public void sendSignChange(Location loc, String[] lines) throws IllegalArgumentException {
-		// TODO Auto-generated method stub
-
+		player.sendSignChange(loc, lines);
 	}
 
 	@Override
@@ -444,8 +443,7 @@ public class DiscordPlayerSender implements Player {
 	@Override
 	public void incrementStatistic(Statistic statistic, EntityType entityType, int amount)
 			throws IllegalArgumentException {
-		// TODO Auto-generated method stub
-
+		player.incrementStatistic(statistic, entityType, amount);
 	}
 
 	@Override
@@ -744,57 +742,49 @@ public class DiscordPlayerSender implements Player {
 	@Override
 	public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ);
 	}
 
 	@Override
 	public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, offsetX, y, z, count, offsetX, offsetY, offsetZ);
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, T data) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, location, count, data);
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, T data) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, data);
 	}
 
 	@Override
 	public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, double extra) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, extra);
 	}
 
 	@Override
 	public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, double extra) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra);
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, double extra, T data) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, extra, data);
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, double extra, T data) {
-		// TODO Auto-generated method stub
-
+		player.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data);
 	}
 
 	@Override
@@ -944,38 +934,32 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getLineOfSight(transparent, maxDistance);
 	}
 
 	@Override
 	public List<Block> getLineOfSight(Set<Material> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getLineOfSight(transparent, maxDistance);
 	}
 
 	@Override
 	public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getTargetBlock(transparent, maxDistance);
 	}
 
 	@Override
 	public Block getTargetBlock(Set<Material> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getTargetBlock(transparent, maxDistance);
 	}
 
 	@Override
 	public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getLastTwoTargetBlocks(transparent, maxDistance);
 	}
 
 	@Override
 	public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getLastTwoTargetBlocks(transparent, maxDistance);
 	}
 
 	@Override
@@ -1063,8 +1047,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean addPotionEffects(Collection<PotionEffect> effects) {
-		// TODO Auto-generated method stub
-		return false;
+		return player.addPotionEffects(effects);
 	}
 
 	@Override
@@ -1127,8 +1110,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public Entity getLeashHolder() throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
+		return player.getLeashHolder();
 	}
 
 	@Override
@@ -1531,14 +1513,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.launchProjectile(projectile);
 	}
 
 	@Override
 	public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-		// TODO Auto-generated method stub
-		return null;
+		return player.launchProjectile(projectile, velocity);
 	}
 
 	@Override
@@ -1621,8 +1601,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public void sendPluginMessage(Plugin source, String channel, byte[] message) {
-		// TODO Auto-generated method stub
-
+		player.sendPluginMessage(source, channel, message);
 	}
 
 	@Override
