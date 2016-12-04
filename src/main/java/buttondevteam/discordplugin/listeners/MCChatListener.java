@@ -47,50 +47,44 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
-		if (event.getMessage().getContent().startsWith("/")) {
-			final String cmd = event.getMessage().getContent().substring(1);
+		try {
 			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
 				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
 				return author.getID().equals(dp.getDiscordID());
 			}).findAny();
-			try {
-				if (player.isPresent()) // Connected?
-				{
-					if (!ConnectedSenders.containsKey(author.getID()))
-						ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, player.get()));
-					final DiscordPlayerSender dsender = ConnectedSenders.get(author.getID());
-					dsender.setChannel(event.getMessage().getChannel());
-					// Execute as ingame player
-					Bukkit.dispatchCommand(dsender, cmd);
-				} else {
-					if (!UnconnectedSenders.containsKey(author.getID()))
-						UnconnectedSenders.put(author.getID(), new DiscordSender(author));
-					final DiscordSender dsender = UnconnectedSenders.get(author.getID());
-					dsender.setChannel(event.getMessage().getChannel());
-					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
-						// Command not whitelisted
-						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
-								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
-										+ Arrays.toString(UnconnectedCmds));
-					} else
-						Bukkit.dispatchCommand(dsender, cmd);
-				}
-			} catch (Exception e) {
-				TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
-				return;
-			}
-		} else {
-			CommandSender dsender = UnconnectedSenders.get(author.getID());
-			if (dsender == null)
+			final CommandSender dsender;
+			if (player.isPresent()) // Connected?
+			{ // Execute as ingame player
+				if (!ConnectedSenders.containsKey(author.getID()))
+					ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, player.get()));
 				dsender = ConnectedSenders.get(author.getID());
-			if (dsender == null) {
-				UnconnectedSenders.put(author.getID(), new DiscordSender(author));
+				((DiscordPlayerSender) dsender).setChannel(event.getMessage().getChannel());
+			} else {
+				if (!UnconnectedSenders.containsKey(author.getID()))
+					UnconnectedSenders.put(author.getID(), new DiscordSender(author));
 				dsender = UnconnectedSenders.get(author.getID());
+				((DiscordSender) dsender).setChannel(event.getMessage().getChannel());
 			}
-			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
-					event.getMessage().getContent()
-							+ (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
-									.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
+			if (event.getMessage().getContent().startsWith("/")) {
+				final String cmd = event.getMessage().getContent().substring(1);
+				if (!player.isPresent()) {
+					// Command not whitelisted
+					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
+							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
+									+ Arrays.toString(UnconnectedCmds));
+					return;
+				}
+				Bukkit.dispatchCommand(dsender, cmd);
+			} else
+				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
+						event.getMessage().getContent()
+								+ (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
+										.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
+		} catch (
+
+		Exception e) {
+			TBMCCoreAPI.SendException("An error occured while handling " + event.getMessage().getContent() + "!", e);
+			return;
 		}
 	}
 }
