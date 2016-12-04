@@ -114,7 +114,7 @@ public class DiscordSender implements CommandSender {
 			}
 			final String sendmsg = sanitizedMsg;
 			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> DiscordPlugin
-					.sendMessageToChannel(channel, (broadcast ? user.mention() + " " : "") + sendmsg));
+					.sendMessageToChannel(channel, (!broadcast ? user.mention() + " " : "") + sendmsg));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}
