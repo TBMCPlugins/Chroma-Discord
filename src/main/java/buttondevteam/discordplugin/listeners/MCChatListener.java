@@ -72,7 +72,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
 						// Command not whitelisted
 						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
-								"Sorry, you don't have your accounts connected (or... idk, this part doesn't work yet), you can only access these commands:\n"
+								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
 										+ Arrays.toString(UnconnectedCmds));
 					} else
 						Bukkit.dispatchCommand(dsender, cmd);
