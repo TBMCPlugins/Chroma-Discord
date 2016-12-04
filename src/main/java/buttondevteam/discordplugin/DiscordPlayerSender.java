@@ -103,12 +103,12 @@ public class DiscordPlayerSender implements Player {
 	}
 
 	@Override
-	public boolean isOp() { // TODO: Connect with TBMC acc
+	public boolean isOp() {
 		return player.isOp();
 	}
 
 	@Override
-	public void setOp(boolean value) { // TODO: Connect with TBMC acc
+	public void setOp(boolean value) {
 		player.setOp(value);
 	}
 
@@ -130,6 +130,7 @@ public class DiscordPlayerSender implements Player {
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}
+		player.sendMessage(message);
 	}
 
 	@Override
@@ -201,8 +202,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean performCommand(String command) {
-		player.performCommand(command);
-		return false;
+		return player.performCommand(command);
 	}
 
 	// Find: " (\w+)\(\) \{\s+\/\/ TO\DO Auto-generated method stub\s+return false;" - Replace: " $1() { return player.$1();"
@@ -356,8 +356,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean hasAchievement(Achievement achievement) {
-		player.hasAchievement(achievement);
-		return false;
+		return player.hasAchievement(achievement);
 	}
 
 	@Override
@@ -388,8 +387,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getStatistic(Statistic statistic) throws IllegalArgumentException {
-		player.getStatistic(statistic);
-		return 0;
+		return player.getStatistic(statistic);
 	}
 
 	@Override
@@ -404,8 +402,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
-		player.getStatistic(statistic, material);
-		return 0;
+		return player.getStatistic(statistic, material);
 	}
 
 	// Find: " (\w+)\((\w+) (\w+), (\w+) (\w+), (\w+) (\w+)\)(.+)\{\s+\/\/ TO\DO Auto-generated method stub\s" - Replace: " $1($2 $3, $4 $5, $6 $7) $8 { player.$1($3, $5, $7);"
@@ -436,8 +433,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
-		player.getStatistic(statistic, entityType);
-		return 0;
+		return player.getStatistic(statistic, entityType);
 	}
 
 	@Override
@@ -466,14 +462,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public long getPlayerTime() {
-		player.getPlayerTime();
-		return 0;
+		return player.getPlayerTime();
 	}
 
 	@Override
 	public long getPlayerTimeOffset() {
-		player.getPlayerTimeOffset();
-		return 0;
+		return player.getPlayerTimeOffset();
 	}
 
 	@Override
@@ -513,8 +507,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public float getExp() {
-		player.getExp();
-		return 0;
+		return player.getExp();
 	}
 
 	@Override
@@ -524,8 +517,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getLevel() {
-		player.getLevel();
-		return 0;
+		return player.getLevel();
 	}
 
 	@Override
@@ -535,8 +527,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getTotalExperience() {
-		player.getTotalExperience();
-		return 0;
+		return player.getTotalExperience();
 	}
 
 	@Override
@@ -546,8 +537,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public float getExhaustion() {
-		player.getExhaustion();
-		return 0;
+		return player.getExhaustion();
 	}
 
 	@Override
@@ -557,8 +547,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public float getSaturation() {
-		player.getSaturation();
-		return 0;
+		return player.getSaturation();
 	}
 
 	@Override
@@ -568,8 +557,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getFoodLevel() {
-		player.getFoodLevel();
-		return 0;
+		return player.getFoodLevel();
 	}
 
 	@Override
@@ -614,8 +602,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean canSee(Player player) {
-		player.canSee(player);
-		return false;
+		return player.canSee(player);
 	}
 
 	@Override
@@ -643,16 +630,15 @@ public class DiscordPlayerSender implements Player {
 		player.setWalkSpeed(value);
 	}
 
+	// Find: "\{\s+(.+)\s+return (?:(?:0)|(?:null)|(?:false));" - Replace: "{ return $1"
 	@Override
 	public float getFlySpeed() {
-		player.getFlySpeed();
-		return 0;
+		return player.getFlySpeed();
 	}
 
 	@Override
 	public float getWalkSpeed() {
-		player.getWalkSpeed();
-		return 0;
+		return player.getWalkSpeed();
 	}
 
 	@Override
@@ -693,8 +679,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public double getHealthScale() {
-		player.getHealthScale();
-		return 0;
+		return player.getHealthScale();
 	}
 
 	@Override
@@ -809,8 +794,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean setWindowProperty(Property prop, int value) {
-		player.setWindowProperty(prop, value);
-		return false;
+		return player.setWindowProperty(prop, value);
 	}
 
 	@Override
@@ -820,20 +804,17 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public InventoryView openInventory(Inventory inventory) {
-		player.openInventory(inventory);
-		return null;
+		return player.openInventory(inventory);
 	}
 
 	@Override
 	public InventoryView openWorkbench(Location location, boolean force) {
-		player.openWorkbench(location, force);
-		return null;
+		return player.openWorkbench(location, force);
 	}
 
 	@Override
 	public InventoryView openEnchanting(Location location, boolean force) {
-		player.openEnchanting(location, force);
-		return null;
+		return player.openEnchanting(location, force);
 	}
 
 	@Override
@@ -843,14 +824,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public InventoryView openMerchant(Villager trader, boolean force) {
-		player.openMerchant(trader, force);
-		return null;
+		return player.openMerchant(trader, force);
 	}
 
 	@Override
 	public InventoryView openMerchant(Merchant merchant, boolean force) {
-		player.openMerchant(merchant, force);
-		return null;
+		return player.openMerchant(merchant, force);
 	}
 
 	@Override
@@ -885,8 +864,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getSleepTicks() {
-		player.getSleepTicks();
-		return 0;
+		return player.getSleepTicks();
 	}
 
 	@Override
@@ -911,20 +889,17 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getExpToLevel() {
-		player.getExpToLevel();
-		return 0;
+		return player.getExpToLevel();
 	}
 
 	@Override
 	public double getEyeHeight() {
-		player.getEyeHeight();
-		return 0;
+		return player.getEyeHeight();
 	}
 
 	@Override
 	public double getEyeHeight(boolean ignoreSneaking) {
-		player.getEyeHeight(ignoreSneaking);
-		return 0;
+		return player.getEyeHeight(ignoreSneaking);
 	}
 
 	@Override
@@ -964,8 +939,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getRemainingAir() {
-		player.getRemainingAir();
-		return 0;
+		return player.getRemainingAir();
 	}
 
 	@Override
@@ -975,8 +949,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getMaximumAir() {
-		player.getMaximumAir();
-		return 0;
+		return player.getMaximumAir();
 	}
 
 	@Override
@@ -986,8 +959,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getMaximumNoDamageTicks() {
-		player.getMaximumNoDamageTicks();
-		return 0;
+		return player.getMaximumNoDamageTicks();
 	}
 
 	@Override
@@ -997,14 +969,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public double getLastDamage() {
-		player.getLastDamage();
-		return 0;
+		return player.getLastDamage();
 	}
 
 	@Override
 	public int _INVALID_getLastDamage() {
-		player._INVALID_getLastDamage();
-		return 0;
+		return player._INVALID_getLastDamage();
 	}
 
 	@Override
@@ -1019,8 +989,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getNoDamageTicks() {
-		player.getNoDamageTicks();
-		return 0;
+		return player.getNoDamageTicks();
 	}
 
 	@Override
@@ -1035,14 +1004,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean addPotionEffect(PotionEffect effect) {
-		player.addPotionEffect(effect);
-		return false;
+		return player.addPotionEffect(effect);
 	}
 
 	@Override
 	public boolean addPotionEffect(PotionEffect effect, boolean force) {
-		player.addPotionEffect(effect, force);
-		return false;
+		return player.addPotionEffect(effect, force);
 	}
 
 	@Override
@@ -1052,14 +1019,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean hasPotionEffect(PotionEffectType type) {
-		player.hasPotionEffect(type);
-		return false;
+		return player.hasPotionEffect(type);
 	}
 
 	@Override
 	public PotionEffect getPotionEffect(PotionEffectType type) {
-		player.getPotionEffect(type);
-		return null;
+		return player.getPotionEffect(type);
 	}
 
 	@Override
@@ -1074,8 +1039,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean hasLineOfSight(Entity other) {
-		player.hasLineOfSight(other);
-		return false;
+		return player.hasLineOfSight(other);
 	}
 
 	@Override
@@ -1115,8 +1079,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean setLeashHolder(Entity holder) {
-		player.setLeashHolder(holder);
-		return false;
+		return player.setLeashHolder(holder);
 	}
 
 	@Override
@@ -1151,8 +1114,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public AttributeInstance getAttribute(Attribute attribute) {
-		player.getAttribute(attribute);
-		return null;
+		return player.getAttribute(attribute);
 	}
 
 	@Override
@@ -1162,8 +1124,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public Location getLocation(Location loc) {
-		player.getLocation(loc);
-		return null;
+		return player.getLocation(loc);
 	}
 
 	@Override
@@ -1183,50 +1144,42 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean teleport(Location location) {
-		player.teleport(location);
-		return false;
+		return player.teleport(location);
 	}
 
 	@Override
 	public boolean teleport(Location location, TeleportCause cause) {
-		player.teleport(location, cause);
-		return false;
+		return player.teleport(location, cause);
 	}
 
 	@Override
 	public boolean teleport(Entity destination) {
-		player.teleport(destination);
-		return false;
+		return player.teleport(destination);
 	}
 
 	@Override
 	public boolean teleport(Entity destination, TeleportCause cause) {
-		player.teleport(destination, cause);
-		return false;
+		return player.teleport(destination, cause);
 	}
 
 	@Override
 	public List<Entity> getNearbyEntities(double x, double y, double z) {
-		player.getNearbyEntities(x, y, z);
-		return null;
+		return player.getNearbyEntities(x, y, z);
 	}
 
 	@Override
 	public int getEntityId() {
-		player.getEntityId();
-		return 0;
+		return player.getEntityId();
 	}
 
 	@Override
 	public int getFireTicks() {
-		player.getFireTicks();
-		return 0;
+		return player.getFireTicks();
 	}
 
 	@Override
 	public int getMaxFireTicks() {
-		player.getMaxFireTicks();
-		return 0;
+		return player.getMaxFireTicks();
 	}
 
 	@Override
@@ -1256,8 +1209,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean setPassenger(Entity passenger) {
-		player.setPassenger(passenger);
-		return false;
+		return player.setPassenger(passenger);
 	}
 
 	@Override
@@ -1272,8 +1224,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public float getFallDistance() {
-		player.getFallDistance();
-		return 0;
+		return player.getFallDistance();
 	}
 
 	@Override
@@ -1298,8 +1249,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getTicksLived() {
-		player.getTicksLived();
-		return 0;
+		return player.getTicksLived();
 	}
 
 	@Override
@@ -1384,8 +1334,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public int getPortalCooldown() {
-		player.getPortalCooldown();
-		return 0;
+		return player.getPortalCooldown();
 	}
 
 	@Override
@@ -1400,14 +1349,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean addScoreboardTag(String tag) {
-		player.addScoreboardTag(tag);
-		return false;
+		return player.addScoreboardTag(tag);
 	}
 
 	@Override
 	public boolean removeScoreboardTag(String tag) {
-		player.removeScoreboardTag(tag);
-		return false;
+		return player.removeScoreboardTag(tag);
 	}
 
 	@Override
@@ -1417,14 +1364,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public List<MetadataValue> getMetadata(String metadataKey) {
-		player.getMetadata(metadataKey);
-		return null;
+		return player.getMetadata(metadataKey);
 	}
 
 	@Override
 	public boolean hasMetadata(String metadataKey) {
-		player.hasMetadata(metadataKey);
-		return false;
+		return player.hasMetadata(metadataKey);
 	}
 
 	@Override
@@ -1464,14 +1409,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public double getHealth() {
-		player.getHealth();
-		return 0;
+		return player.getHealth();
 	}
 
 	@Override
 	public int _INVALID_getHealth() {
-		player._INVALID_getHealth();
-		return 0;
+		return player._INVALID_getHealth();
 	}
 
 	@Override
@@ -1486,14 +1429,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public double getMaxHealth() {
-		player.getMaxHealth();
-		return 0;
+		return player.getMaxHealth();
 	}
 
 	@Override
 	public int _INVALID_getMaxHealth() {
-		player._INVALID_getMaxHealth();
-		return 0;
+		return player._INVALID_getMaxHealth();
 	}
 
 	@Override
@@ -1533,8 +1474,7 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public boolean beginConversation(Conversation conversation) {
-		player.beginConversation(conversation);
-		return false;
+		return player.beginConversation(conversation);
 	}
 
 	@Override
@@ -1579,14 +1519,12 @@ public class DiscordPlayerSender implements Player {
 
 	@Override
 	public long getFirstPlayed() {
-		player.getFirstPlayed();
-		return 0;
+		return player.getFirstPlayed();
 	}
 
 	@Override
 	public long getLastPlayed() {
-		player.getLastPlayed();
-		return 0;
+		return player.getLastPlayed();
 	}
 
 	@Override

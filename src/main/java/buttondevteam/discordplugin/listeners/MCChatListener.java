@@ -7,11 +7,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlayerSender;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.lib.TBMCChatEvent;
@@ -33,9 +35,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					"<" + e.getSender().getName() + "> " + e.getMessage());
 	}
 
-	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki" };
+	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
+			"mwiki" };
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
+	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
 
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
@@ -45,26 +49,26 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
-		if (!UnconnectedSenders.containsKey(author.getID()))
-			UnconnectedSenders.put(author.getID(), new DiscordSender(author));
-		final DiscordSender dsender = UnconnectedSenders.get(author.getID());
-		dsender.setChannel(event.getMessage().getChannel());
 		if (event.getMessage().getContent().startsWith("/")) {
 			final String cmd = event.getMessage().getContent().substring(1);
 			Optional<? extends Player> str = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
-				try (DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class)) {
-					return author.getID().equals(dp.getDiscordID());
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while getting Discord player for chat", e);
-					return false;
-				}
+				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
+				return author.getID().equals(dp.getDiscordID());
 			}).findAny();
 			try {
 				if (str.isPresent()) // Connected?
 				{
+					if (!ConnectedSenders.containsKey(author.getID()))
+						ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, str.get()));
+					final DiscordPlayerSender dsender = ConnectedSenders.get(author.getID());
+					dsender.setChannel(event.getMessage().getChannel());
 					// Execute as ingame player
-					Bukkit.dispatchCommand(str.get(), cmd);
+					Bukkit.dispatchCommand(dsender, cmd);
 				} else {
+					if (!UnconnectedSenders.containsKey(author.getID()))
+						UnconnectedSenders.put(author.getID(), new DiscordSender(author));
+					final DiscordSender dsender = UnconnectedSenders.get(author.getID());
+					dsender.setChannel(event.getMessage().getChannel());
 					if (!Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s))) {
 						// Command not whitelisted
 						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
@@ -77,10 +81,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				TBMCCoreAPI.SendException("An error occured while executing command " + cmd + "!", e);
 				return;
 			}
-		} else
+		} else {
+			CommandSender dsender = UnconnectedSenders.get(author.getID());
+			if (dsender == null)
+				dsender = ConnectedSenders.get(author.getID());
+			if (dsender == null) {
+				UnconnectedSenders.put(author.getID(), new DiscordSender(author));
+				dsender = UnconnectedSenders.get(author.getID());
+			}
 			TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 					event.getMessage().getContent()
 							+ (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
 									.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
+		}
 	}
 }
