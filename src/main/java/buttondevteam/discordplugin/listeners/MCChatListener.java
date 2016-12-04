@@ -29,8 +29,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (e.getSender() instanceof DiscordSender)
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-					"<" + e.getSender().getName() + "> " + e.getMessage());
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "<" + (e.getSender() instanceof Player
+					? ((Player) e.getSender()).getDisplayName() : e.getSender().getName()) + "> " + e.getMessage());
 	}
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
