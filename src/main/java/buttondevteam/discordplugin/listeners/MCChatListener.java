@@ -66,8 +66,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				((DiscordSender) dsender).setChannel(event.getMessage().getChannel());
 			}
 			if (event.getMessage().getContent().startsWith("/")) {
-				final String cmd = event.getMessage().getContent().substring(1);
-				if (!player.isPresent() && !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.startsWith(s + " "))) {
+				final String cmd = event.getMessage().getContent().substring(1).toLowerCase();
+				if (!player.isPresent() && !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 					// Command not whitelisted
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
 							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
