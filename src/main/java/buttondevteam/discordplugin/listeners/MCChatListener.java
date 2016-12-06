@@ -30,8 +30,22 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
 			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "<" + (e.getSender() instanceof Player
-					? ((Player) e.getSender()).getDisplayName() : e.getSender().getName()) + "> " + e.getMessage());
+					? sanitizeString(((Player) e.getSender()).getDisplayName()) : 
+						sanitizeString(e.getSender().getName())) + "> " + sanitizeString(e.getMessage()));
 	}
+	/**Removes §[char] colour codes from strings*/
+	private String sanitizeString(String string){
+		String sanitizedString = "";
+		for(int i = 0; i < string.length(); i++){
+			if (string.charAt(i) == '§'){
+				i++;//Skips the data value, the 4 in "§4Alisolarflare"
+			}else{
+				sanitizedString += string.charAt(i);
+			}
+		}
+		return sanitizedString;
+	}
+
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
 			"mwiki" };
