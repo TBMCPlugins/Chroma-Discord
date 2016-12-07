@@ -20,8 +20,8 @@ public class ExceptionListener implements Listener {
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
 			String stackTrace = ExceptionUtils.getStackTrace(e);
-			if (stackTrace.length() > 2000)
-				stackTrace = stackTrace.substring(0, 2000);
+			if (stackTrace.length() > 1800)
+				stackTrace = stackTrace.substring(0, 1800);
 			sb.append(stackTrace).append("\n");
 			sb.append("```");
 			DiscordPlugin.sendMessageToChannel(DiscordPlugin.botroomchannel, sb.toString());

@@ -5,15 +5,11 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.DiscordPlayerSender;
-import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.DiscordSender;
+import buttondevteam.discordplugin.*;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCPlayer;
@@ -29,23 +25,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "<" + (e.getSender() instanceof Player
-					? sanitizeString(((Player) e.getSender()).getDisplayName()) : 
-						sanitizeString(e.getSender().getName())) + "> " + sanitizeString(e.getMessage()));
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
+					"<" + (e.getSender() instanceof Player
+							? DiscordPlugin.sanitizeString(((Player) e.getSender()).getDisplayName())
+							: DiscordPlugin.sanitizeString(e.getSender().getName())) + "> "
+							+ DiscordPlugin.sanitizeString(e.getMessage()));
 	}
-	/**Removes §[char] colour codes from strings*/
-	private String sanitizeString(String string){
-		String sanitizedString = "";
-		for(int i = 0; i < string.length(); i++){
-			if (string.charAt(i) == '§'){
-				i++;//Skips the data value, the 4 in "§4Alisolarflare"
-			}else{
-				sanitizedString += string.charAt(i);
-			}
-		}
-		return sanitizedString;
-	}
-
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
 			"mwiki" };
@@ -66,26 +51,28 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
 				return author.getID().equals(dp.getDiscordID());
 			}).findAny();
-			final CommandSender dsender;
+			final DiscordSenderBase dsender;
 			if (player.isPresent()) // Connected?
 			{ // Execute as ingame player
 				if (!ConnectedSenders.containsKey(author.getID()))
-					ConnectedSenders.put(author.getID(), new DiscordPlayerSender(author, player.get()));
+					ConnectedSenders.put(author.getID(),
+							new DiscordPlayerSender(author, event.getMessage().getChannel(), player.get()));
 				dsender = ConnectedSenders.get(author.getID());
-				((DiscordPlayerSender) dsender).setChannel(event.getMessage().getChannel());
 			} else {
 				if (!UnconnectedSenders.containsKey(author.getID()))
-					UnconnectedSenders.put(author.getID(), new DiscordSender(author));
+					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel()));
 				dsender = UnconnectedSenders.get(author.getID());
-				((DiscordSender) dsender).setChannel(event.getMessage().getChannel());
 			}
 			if (event.getMessage().getContent().startsWith("/")) {
 				final String cmd = event.getMessage().getContent().substring(1).toLowerCase();
-				if (!player.isPresent() && !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
+				if (!player.isPresent()
+						&& !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 					// Command not whitelisted
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
 							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
-									+ Arrays.toString(UnconnectedCmds));
+									+ Arrays.toString(UnconnectedCmds)
+									+ "\nTo connect your accounts, use @ChromaBot connect in "
+									+ DiscordPlugin.botchannel.mention());
 					return;
 				}
 				Bukkit.dispatchCommand(dsender, cmd);

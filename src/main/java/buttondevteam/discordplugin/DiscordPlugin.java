@@ -196,6 +196,11 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	public static IMessage sendMessageToChannel(IChannel channel, String message) {
+		if (message.length() > 1900) {
+			message = message.substring(0, 1900);
+			Bukkit.getLogger()
+					.warning("Message was too long to send to discord and got truncated. In " + channel.getName());
+		}
 		for (int i = 0; i < 10; i++) {
 			try {
 				Thread.sleep(i * 100);
@@ -237,5 +242,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				.getRegistration(Permission.class);
 		perms = permsProvider.getProvider();
 		return perms != null;
+	}
+
+	/** Removes §[char] colour codes from strings */
+	public static String sanitizeString(String string) {
+		String sanitizedString = "";
+		for (int i = 0; i < string.length(); i++) {
+			if (string.charAt(i) == '§') {
+				i++;// Skips the data value, the 4 in "§4Alisolarflare"
+			} else {
+				sanitizedString += string.charAt(i);
+			}
+		}
+		return sanitizedString;
 	}
 }

@@ -2,8 +2,6 @@ package buttondevteam.discordplugin;
 
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.stream.Collectors;
-
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -24,27 +22,16 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 
-import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 @SuppressWarnings("deprecation")
-public class DiscordPlayerSender implements Player {
-	private IUser user;
-	private IChannel channel;
+public class DiscordPlayerSender extends DiscordSenderBase implements Player {
 	private Player player;
 
-	public DiscordPlayerSender(IUser user, Player player) {
-		this.user = user;
+	public DiscordPlayerSender(IUser user, IChannel channel, Player player) {
+		super(user, channel);
 		this.player = player;
-	}
-
-	public IChannel getChannel() {
-		return channel;
-	}
-
-	public void setChannel(IChannel channel) {
-		this.channel = channel;
 	}
 
 	@Override
@@ -110,32 +97,6 @@ public class DiscordPlayerSender implements Player {
 	@Override
 	public void setOp(boolean value) {
 		player.setOp(value);
-	}
-
-	@Override
-	public void sendMessage(String message) {
-		try {
-			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
-			String sanitizedMsg = "";
-			for (int i = 0; i < message.length(); i++) {
-				if (message.charAt(i) != '§') {
-					sanitizedMsg += message.charAt(i);
-				} else {
-					i++;
-				}
-			}
-			final String sendmsg = sanitizedMsg;
-			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> DiscordPlugin
-					.sendMessageToChannel(channel, (broadcast ? user.mention() + " " : "") + sendmsg));
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
-		}
-		player.sendMessage(message);
-	}
-
-	@Override
-	public void sendMessage(String[] messages) {
-		sendMessage(Arrays.stream(messages).collect(Collectors.joining("\n")));
 	}
 
 	@Override

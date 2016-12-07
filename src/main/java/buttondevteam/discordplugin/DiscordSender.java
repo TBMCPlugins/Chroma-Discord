@@ -1,37 +1,20 @@
 package buttondevteam.discordplugin;
 
-import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
-import org.bukkit.permissions.PermissibleBase;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.permissions.PermissionAttachmentInfo;
+import org.bukkit.permissions.*;
 import org.bukkit.plugin.Plugin;
 
-import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
-public class DiscordSender implements CommandSender {
+public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	private PermissibleBase perm = new PermissibleBase(this);
-	private IUser user;
-	private IChannel channel;
 
-	public DiscordSender(IUser user) {
-		this.user = user;
-	}
-
-	public IChannel getChannel() {
-		return channel;
-	}
-
-	public void setChannel(IChannel channel) {
-		this.channel = channel;
+	public DiscordSender(IUser user, IChannel channel) {
+		super(user, channel);
 	}
 
 	@Override
@@ -98,31 +81,6 @@ public class DiscordSender implements CommandSender {
 
 	@Override
 	public void setOp(boolean value) { // TODO: Connect with TBMC acc
-	}
-
-	@Override
-	public void sendMessage(String message) {
-		try {
-			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
-			String sanitizedMsg = "";
-			for (int i = 0; i < message.length(); i++) {
-				if (message.charAt(i) != '§') {
-					sanitizedMsg += message.charAt(i);
-				} else {
-					i++;
-				}
-			}
-			final String sendmsg = sanitizedMsg;
-			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> DiscordPlugin
-					.sendMessageToChannel(channel, (!broadcast ? user.mention() + " " : "") + sendmsg));
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
-		}
-	}
-
-	@Override
-	public void sendMessage(String[] messages) {
-		sendMessage(Arrays.stream(messages).collect(Collectors.joining("\n")));
 	}
 
 	@Override
