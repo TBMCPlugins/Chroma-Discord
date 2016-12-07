@@ -26,7 +26,7 @@ import sx.blah.discord.handle.obj.IUser;
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
 	@EventHandler // Minecraft
 	public void onMCChat(TBMCChatEvent e) {
-		if (e.getSender() instanceof DiscordSender)
+		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
 			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "<" + (e.getSender() instanceof Player
