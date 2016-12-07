@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
-
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.IDiscordSender;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
-public abstract class DiscordSenderBase implements CommandSender {
+public abstract class DiscordSenderBase implements IDiscordSender {
 	protected IUser user;
 	protected IChannel channel;
 
