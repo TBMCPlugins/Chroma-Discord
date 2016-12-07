@@ -12,6 +12,7 @@ import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
 import buttondevteam.lib.TBMCPlayerQuitEvent;
+import buttondevteam.lib.TBMCYEEHAWEvent;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
 
@@ -52,5 +53,10 @@ public class MCListener implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerDeath(PlayerDeathEvent e) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getDeathMessage());
+	}
+
+	@EventHandler
+	public void onPlayerYEEHAW(TBMCYEEHAWEvent e) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getSender() + " YEEHAWs");
 	}
 }
