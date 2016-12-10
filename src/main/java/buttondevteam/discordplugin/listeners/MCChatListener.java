@@ -46,6 +46,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
+		String dmessage = event.getMessage().getContent();
 		try {
 			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
 				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
@@ -63,8 +64,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel()));
 				dsender = UnconnectedSenders.get(author.getID());
 			}
-			if (event.getMessage().getContent().startsWith("/")) {
-				final String cmd = event.getMessage().getContent().substring(1).toLowerCase();
+
+			for (IUser u : event.getMessage().getMentions()) {
+				dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
+				final Optional<String> nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
+				dmessage = dmessage.replace(u.mention(true), "@" + (nick.isPresent() ? nick.get() : u.getName()));
+			}
+
+			if (dmessage.startsWith("/")) {
+				final String cmd = dmessage.substring(1).toLowerCase();
 				if (!player.isPresent()
 						&& !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 					// Command not whitelisted
@@ -78,13 +86,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				Bukkit.dispatchCommand(dsender, cmd);
 			} else
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
-						event.getMessage().getContent()
-								+ (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
-										.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
+						dmessage + (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
+								.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
 		} catch (
 
 		Exception e) {
-			TBMCCoreAPI.SendException("An error occured while handling " + event.getMessage().getContent() + "!", e);
+			TBMCCoreAPI.SendException("An error occured while handling " + dmessage + "!", e);
 			return;
 		}
 	}
