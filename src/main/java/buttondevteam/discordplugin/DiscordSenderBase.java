@@ -20,7 +20,7 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 		this.channel = channel;
 	}
 
-	private List<String> broadcasts = new ArrayList<>();
+	private static volatile List<String> broadcasts = new ArrayList<>();
 
 	@Override
 	public void sendMessage(String message) {
