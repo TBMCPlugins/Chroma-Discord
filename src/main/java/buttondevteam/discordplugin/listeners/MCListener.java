@@ -13,6 +13,7 @@ import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
 import buttondevteam.lib.TBMCPlayerQuitEvent;
 import buttondevteam.lib.TBMCYEEHAWEvent;
+import net.ess3.api.events.AfkStatusChangeEvent;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
 
@@ -58,5 +59,10 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerYEEHAW(TBMCYEEHAWEvent e) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getSender() + " YEEHAWs");
+	}
+
+	public void onPlayerAFK(AfkStatusChangeEvent e) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
+				e.getAffected().getBase().getDisplayName() + " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
 	}
 }
