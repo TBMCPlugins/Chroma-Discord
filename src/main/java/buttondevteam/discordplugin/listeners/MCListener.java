@@ -61,8 +61,8 @@ public class MCListener implements Listener {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getSender() + " YEEHAWs");
 	}
 
-	/*public void onPlayerAFK(AfkStatusChangeEvent e) {
+	public void onPlayerAFK(AfkStatusChangeEvent e) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
 				e.getAffected().getBase().getDisplayName() + " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
-	}*/
+	}
 }
