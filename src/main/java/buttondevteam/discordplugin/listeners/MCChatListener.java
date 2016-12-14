@@ -33,7 +33,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	}
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
-			"mwiki" };
+			"mwiki", "t" };
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
