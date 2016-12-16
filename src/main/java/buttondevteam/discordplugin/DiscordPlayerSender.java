@@ -1507,4 +1507,10 @@ public class DiscordPlayerSender extends DiscordSenderBase implements Player {
 	public Set<String> getListeningPluginChannels() {
 		return player.getListeningPluginChannels();
 	}
+
+	@Override
+	public void sendTitle(String arg0, String arg1, int arg2, int arg3, int arg4) {
+		player.sendTitle(arg0, arg1, arg2, arg3, arg4);
+
+	}
 }
