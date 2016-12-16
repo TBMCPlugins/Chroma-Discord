@@ -1,5 +1,8 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,7 +22,11 @@ public class ExceptionListener implements Listener {
 			StringBuilder sb = new StringBuilder();
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
-			String stackTrace = ExceptionUtils.getStackTrace(e);
+			String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
+					.filter(s -> !(s.contains("java.util") || s.contains("java.lang")
+							|| s.contains("net.minecraft.server") || s.contains("sun.reflect")
+							|| s.contains("org.bukkit")))
+					.collect(Collectors.joining("\n"));
 			if (stackTrace.length() > 1800)
 				stackTrace = stackTrace.substring(0, 1800);
 			sb.append(stackTrace).append("\n");
