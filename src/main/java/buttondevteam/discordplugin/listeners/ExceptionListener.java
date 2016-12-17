@@ -23,10 +23,13 @@ public class ExceptionListener implements Listener {
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
 			String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
-					.filter(s -> !(s.contains("java.util") || s.contains("java.lang")
-							|| s.contains("net.minecraft.server") || s.contains("sun.reflect")
-							|| s.contains("org.bukkit")))
-					.collect(Collectors.joining("\n"));
+					.filter(s -> !(s.contains(" at ") && ( //
+					s.contains("java.util") //
+							|| s.contains("java.lang") //
+							|| s.contains("net.minecraft.server") //
+							|| s.contains("sun.reflect") //
+							|| s.contains("org.bukkit") //
+					))).collect(Collectors.joining("\n"));
 			if (stackTrace.length() > 1800)
 				stackTrace = stackTrace.substring(0, 1800);
 			sb.append(stackTrace).append("\n");
