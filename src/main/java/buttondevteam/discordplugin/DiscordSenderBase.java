@@ -39,10 +39,10 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 				broadcasts.add(message);
 			}
 			final String sendmsg = DiscordPlugin.sanitizeString(message);
-			msgtosend += sendmsg;
+			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-					DiscordPlugin.sendMessageToChannel(channel, (!broadcast ? user.mention() + "\n" : "") + msgtosend);
+					DiscordPlugin.sendMessageToChannel(channel, (!broadcast ? user.mention() + "\n" : "") + msgtosend.trim());
 					sendtask = null;
 					msgtosend = "";
 				}, 10); // Waits a half second to gather all/most of the different messages
