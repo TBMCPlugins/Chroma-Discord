@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitTask;
+
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.IDiscordSender;
 import sx.blah.discord.handle.obj.IChannel;
@@ -22,6 +24,9 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 
 	private static volatile List<String> broadcasts = new ArrayList<>();
 
+	private volatile String msgtosend = "";
+	private volatile BukkitTask sendtask;
+
 	@Override
 	public void sendMessage(String message) {
 		try {
@@ -34,8 +39,13 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 				broadcasts.add(message);
 			}
 			final String sendmsg = DiscordPlugin.sanitizeString(message);
-			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> DiscordPlugin
-					.sendMessageToChannel(channel, (!broadcast ? user.mention() + " " : "") + sendmsg));
+			msgtosend += sendmsg;
+			if (sendtask == null)
+				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
+					DiscordPlugin.sendMessageToChannel(channel, (!broadcast ? user.mention() + "\n" : "") + msgtosend);
+					sendtask = null;
+					msgtosend = "";
+				}, 10); // Waits a half second to gather all/most of the different messages
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}
