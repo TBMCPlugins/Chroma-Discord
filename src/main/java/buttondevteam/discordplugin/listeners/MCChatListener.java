@@ -22,6 +22,8 @@ import sx.blah.discord.handle.obj.IUser;
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
 	@EventHandler // Minecraft
 	public void onMCChat(TBMCChatEvent e) {
+		if (e.isCancelled())
+			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
@@ -32,8 +34,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							+ DiscordPlugin.sanitizeString(e.getMessage()));
 	}
 
-	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip",
-			"mwiki", "t" };
+	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
+			"t" };
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
