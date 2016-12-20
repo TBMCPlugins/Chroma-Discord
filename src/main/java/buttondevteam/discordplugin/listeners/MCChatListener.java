@@ -92,7 +92,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
-			event.getMessage().addReaction(":white_check_mark:");
+			event.getMessage().addReaction("%E2%9C%85");
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling " + dmessage + "!", e);
 			return;
