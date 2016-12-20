@@ -80,7 +80,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					// Command not whitelisted
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
 							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
-									+ Arrays.toString(UnconnectedCmds)
+									+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
+											.collect(Collectors.joining(", "))
 									+ "\nTo connect your accounts, use @ChromaBot connect in "
 									+ DiscordPlugin.botchannel.mention());
 					return;
@@ -88,11 +89,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				Bukkit.dispatchCommand(dsender, cmd);
 			} else
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
-						dmessage + (event.getMessage().getAttachments().size() > 0 ? event.getMessage().getAttachments()
-								.stream().map(a -> a.getUrl()).collect(Collectors.joining("\n")) : ""));
-		} catch (
-
-		Exception e) {
+						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
+								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+								: ""));
+			event.getMessage().addReaction(DiscordPlugin.mainServer.getEmojiByName("white_check_mark"));
+		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling " + dmessage + "!", e);
 			return;
 		}

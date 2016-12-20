@@ -27,6 +27,14 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	private volatile String msgtosend = "";
 	private volatile BukkitTask sendtask;
 
+	public IUser getUser() {
+		return user;
+	}
+
+	public IChannel getChannel() {
+		return channel;
+	}
+
 	@Override
 	public void sendMessage(String message) {
 		try {
@@ -42,7 +50,8 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-					DiscordPlugin.sendMessageToChannel(channel, (!broadcast ? user.mention() + "\n" : "") + msgtosend.trim());
+					DiscordPlugin.sendMessageToChannel(channel,
+							(!broadcast ? user.mention() + "\n" : "") + msgtosend.trim());
 					sendtask = null;
 					msgtosend = "";
 				}, 10); // Waits a half second to gather all/most of the different messages
