@@ -104,8 +104,16 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			event.getMessage().getChannel().getMessages().stream().forEach(m -> {
 				try {
 					final IReaction reaction = m.getReactionByName(DELIVERED_REACTION);
-					if (reaction != null)
-						m.removeReaction(reaction);
+					if (reaction != null) {
+						while (true)
+							try {
+								m.removeReaction(reaction);
+								Thread.sleep(100);
+								break;
+							} catch (RateLimitException e) {
+								Thread.sleep(e.getRetryDelay());
+							}
+					}
 				} catch (Exception e) {
 					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 				}
