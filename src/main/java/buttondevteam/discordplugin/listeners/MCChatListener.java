@@ -17,9 +17,16 @@ import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.obj.IReaction;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.EmbedBuilder;
+import sx.blah.discord.util.MissingPermissionsException;
+import sx.blah.discord.util.RateLimitException;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
+	private static final String DELIVERED_REACTION = "✅";
+
 	@EventHandler // Minecraft
 	public void onMCChat(TBMCChatEvent e) {
 		if (e.isCancelled())
@@ -92,9 +99,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
-			event.getMessage().addReaction("✅");
+			event.getMessage().addReaction(DELIVERED_REACTION);
+			event.getMessage().getChannel().getMessages().stream().forEach(m -> {
+				try {
+					final IReaction reaction = m.getReactionByName(DELIVERED_REACTION);
+					if (reaction != null)
+						m.removeReaction(reaction);
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+				}
+			});
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while handling " + dmessage + "!", e);
+			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
 			return;
 		}
 	}
