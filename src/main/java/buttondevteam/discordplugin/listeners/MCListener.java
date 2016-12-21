@@ -56,14 +56,10 @@ public class MCListener implements Listener {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getDeathMessage());
 	}
 
-	/*@EventHandler
-	public void onPlayerYEEHAW(TBMCYEEHAWEvent e) {
-		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.getSender() + " YEEHAWs");
-	}*/ // It's broadcasted now
-
 	@EventHandler
 	public void onPlayerAFK(AfkStatusChangeEvent e) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-				e.getAffected().getBase().getDisplayName() + " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
+				DiscordPlugin.sanitizeString(e.getAffected().getBase().getDisplayName()) + " is "
+						+ (e.getValue() ? "now" : "no longer") + " AFK.");
 	}
 }

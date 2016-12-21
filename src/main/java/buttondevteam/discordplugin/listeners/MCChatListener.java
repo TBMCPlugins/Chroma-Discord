@@ -35,14 +35,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat))
 			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-					"<" + (e.getSender() instanceof Player
-							? DiscordPlugin.sanitizeString(((Player) e.getSender()).getDisplayName())
-							: DiscordPlugin.sanitizeString(e.getSender().getName())) + "> "
-							+ DiscordPlugin.sanitizeString(e.getMessage()));
+					DiscordPlugin.sanitizeString("<" + (e.getSender() instanceof Player //
+							? ((Player) e.getSender()).getDisplayName() //
+							: e.getSender().getName()) + "> " + e.getMessage()));
 	}
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
-			"t" };
+			"yeehaw" };
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
@@ -54,6 +53,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
+			return;
+		if (CommandListener.runCommand(event.getMessage(), true))
 			return;
 		String dmessage = event.getMessage().getContent();
 		try {
@@ -89,7 +90,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
 									+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
 											.collect(Collectors.joining(", "))
-									+ "\nTo connect your accounts, use @ChromaBot connect in "
+									+ "\nTo connect your accounts, use @ChromaBot connect here or in "
 									+ DiscordPlugin.botchannel.mention());
 					return;
 				}

@@ -19,7 +19,7 @@ public class CommandListener {
 				final IChannel channel = event.getMessage().getChannel();
 				if (!channel.getID().equals(DiscordPlugin.botchannel.getID()) && !channel.isPrivate())
 					return;
-				runCommand(event.getMessage());
+				runCommand(event.getMessage(), true);
 			}
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
@@ -28,25 +28,38 @@ public class CommandListener {
 					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
-				runCommand(event.getMessage());
+				runCommand(event.getMessage(), false);
 			}
 		} };
 	}
 
-	private static void runCommand(IMessage message) {
+	/**
+	 * Runs a ChromaBot command.
+	 * 
+	 * @param message
+	 *            The Discord message
+	 * @param mentionedonly
+	 *            Only run the command if ChromaBot is mentioned at the start of the message
+	 * @return Whether it ran the command (always true if mentionedonly is false)
+	 */
+	public static boolean runCommand(IMessage message, boolean mentionedonly) {
 		message.getChannel().setTypingStatus(true);
-		String cmdwithargs = message.getContent();
+		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		cmdwithargs = checkanddeletemention(cmdwithargs, mention, message);
-		cmdwithargs = checkanddeletemention(cmdwithargs, mentionNick, message);
+		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
+		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message);
 		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
-			cmdwithargs = checkanddeletemention(cmdwithargs, mentionRole, message);
-		int index = cmdwithargs.indexOf(' ');
+			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message);
+		if (mentionedonly && !gotmention) {
+			message.getChannel().setTypingStatus(false);
+			return false;
+		}
+		int index = cmdwithargs.indexOf(" ");
 		String cmd;
 		String args;
 		if (index == -1) {
-			cmd = cmdwithargs;
+			cmd = cmdwithargs.toString();
 			args = "";
 		} else {
 			cmd = cmdwithargs.substring(0, index);
@@ -54,17 +67,20 @@ public class CommandListener {
 		}
 		DiscordCommandBase.runCommand(cmd, args, message);
 		message.getChannel().setTypingStatus(false);
+		return true;
 	}
 
-	private static String checkanddeletemention(String cmdwithargs, String mention, IMessage message) {
+	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1)
-				cmdwithargs = cmdwithargs.substring(
+				cmdwithargs = cmdwithargs.delete(0,
 						cmdwithargs.charAt(mention.length()) == ' ' ? mention.length() + 1 : mention.length());
 			else
-				cmdwithargs = "help";
+				cmdwithargs.replace(0, cmdwithargs.length(), "help");
+		else
+			return false;
 		if (cmdwithargs.length() == 0)
-			cmdwithargs = "help";
-		return cmdwithargs;
+			cmdwithargs.replace(0, cmdwithargs.length(), "help");
+		return true;
 	}
 }
