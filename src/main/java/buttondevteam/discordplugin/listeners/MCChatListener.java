@@ -111,7 +111,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 								Thread.sleep(100);
 								break;
 							} catch (RateLimitException e) {
-								Thread.sleep(e.getRetryDelay());
+								if (e.getRetryDelay() > 0)
+									Thread.sleep(e.getRetryDelay());
 							}
 					}
 				} catch (Exception e) {
