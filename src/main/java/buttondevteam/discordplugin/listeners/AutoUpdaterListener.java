@@ -7,7 +7,7 @@ import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 	@Override
 	public void handle(MessageReceivedEvent event) {
-		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.officechannel))
+		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.officechannel.getID()))
 			return;
 		if (event.getMessage().getWebhookID() == null)
 			return;
