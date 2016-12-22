@@ -47,7 +47,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			} else {
 				lastannouncementtime = getConfig().getLong("lastannouncementtime");
 				lastseentime = getConfig().getLong("lastseentime");
-				Test = getConfig().getBoolean("test", true);
 				saveConfig();
 			}
 			ClientBuilder cb = new ClientBuilder();
@@ -79,8 +78,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
-	public static boolean Test = true;
-
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
@@ -90,7 +87,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				devServer = event.getClient().getGuildByID("219529124321034241");
 				Thread.sleep(100);
 			} while ((mainServer == null || devServer == null) && retryc++ < 10);
-			if (!Test) {
+			if (!TBMCCoreAPI.IsTestServer()) {
 				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
 				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
@@ -211,7 +208,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
-				return channel.sendMessage(Test && channel != chatchannel
+				return channel.sendMessage(TBMCCoreAPI.IsTestServer() && channel != chatchannel
 						? "*The following message is from a test server*\n" + message : message);
 			} catch (RateLimitException e) {
 				try {
