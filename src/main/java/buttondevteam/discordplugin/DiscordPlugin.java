@@ -74,6 +74,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel chatchannel;
 	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
+	public static IChannel officechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
@@ -94,7 +95,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				genchannel = mainServer.getChannelByID("125813020357165056"); // general
 				chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
-				botroomchannel = devServer.getChannelByID("239519012529111040");// bot-room
+				botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
