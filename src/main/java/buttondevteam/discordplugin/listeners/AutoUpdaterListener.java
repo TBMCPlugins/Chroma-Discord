@@ -21,6 +21,6 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 		String branch = title.substring(title.indexOf(':') + 1, title.indexOf(']'));
 		String project = title.substring(title.indexOf('[') + 1, title.indexOf(':'));
 		if (branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev")))
-			TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.officechannel));
+			TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.chatchannel), branch);
 	}
 }
