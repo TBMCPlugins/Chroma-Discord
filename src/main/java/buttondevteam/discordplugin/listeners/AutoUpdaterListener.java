@@ -21,13 +21,14 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 			return;
 		String branch = title.substring(title.indexOf(':') + 1, title.indexOf(']'));
 		String project = title.substring(title.indexOf('[') + 1, title.indexOf(':'));
-		if (branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev")))
-			if (TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.chatchannel), branch))
-				try {
-					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
-				} catch (RateLimitException e) { // TODO: Handle
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while reacting to plugin update!", e);
-				}
+		if (branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev"))
+				&& TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.chatchannel), branch)
+				&& (!TBMCCoreAPI.IsTestServer() || !branch.equals("master")))
+			try {
+				event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
+			} catch (RateLimitException e) { // TODO: Handle
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("An error occured while reacting to plugin update!", e);
+			}
 	}
 }
