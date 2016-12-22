@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.util.RateLimitException;
 
 public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 	@Override
@@ -21,6 +22,12 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 		String branch = title.substring(title.indexOf(':') + 1, title.indexOf(']'));
 		String project = title.substring(title.indexOf('[') + 1, title.indexOf(':'));
 		if (branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev")))
-			TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.chatchannel), branch);
+			if (TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, DiscordPlugin.chatchannel), branch))
+				try {
+					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
+				} catch (RateLimitException e) { // TODO: Handle
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occured while reacting to plugin update!", e);
+				}
 	}
 }

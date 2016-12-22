@@ -12,7 +12,6 @@ import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.TBMCPlayerJoinEvent;
 import buttondevteam.lib.TBMCPlayerQuitEvent;
-import buttondevteam.lib.TBMCYEEHAWEvent;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;

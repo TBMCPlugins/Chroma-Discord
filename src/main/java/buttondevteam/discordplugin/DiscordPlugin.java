@@ -144,6 +144,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 
 	private long lastannouncementtime = 0;
 	private long lastseentime = 0;
+	public static final String DELIVERED_REACTION = "✅";
 
 	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
