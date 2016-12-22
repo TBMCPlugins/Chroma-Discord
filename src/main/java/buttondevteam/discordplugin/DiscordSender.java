@@ -90,6 +90,8 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 
 	@Override
 	public String getName() {
+		if (user == null)
+			return "Discord user";
 		return user.getDisplayName(DiscordPlugin.mainServer);
 	}
 

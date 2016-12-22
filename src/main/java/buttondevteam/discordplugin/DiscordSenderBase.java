@@ -14,6 +14,9 @@ import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 public abstract class DiscordSenderBase implements IDiscordSender {
+	/**
+	 * May be null.
+	 */
 	protected IUser user;
 	protected IChannel channel;
 
@@ -27,6 +30,11 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	private volatile String msgtosend = "";
 	private volatile BukkitTask sendtask;
 
+	/**
+	 * Returns the user. May be null.
+	 * 
+	 * @return The user or null.
+	 */
 	public IUser getUser() {
 		return user;
 	}
@@ -51,7 +59,7 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
 					DiscordPlugin.sendMessageToChannel(channel,
-							(!broadcast ? user.mention() + "\n" : "") + msgtosend.trim());
+							(!broadcast && user != null ? user.mention() + "\n" : "") + msgtosend.trim());
 					sendtask = null;
 					msgtosend = "";
 				}, 10); // Waits a half second to gather all/most of the different messages

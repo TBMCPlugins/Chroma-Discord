@@ -106,7 +106,7 @@ public class DiscordPlayerSender extends DiscordSenderBase implements Player {
 
 	@Override
 	public String getName() {
-		return user.getDisplayName(DiscordPlugin.mainServer);
+		return player.getName();
 	}
 
 	// Find: " (\w+)\(\) \{\s+\/\/ TO\DO Auto-generated method stub\s+return null;" - Replace: " $1() { return player.$1();"
