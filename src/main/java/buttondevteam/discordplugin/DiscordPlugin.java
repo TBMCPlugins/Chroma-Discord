@@ -208,8 +208,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
-				return channel
-						.sendMessage(Test ? "*The following message is from a test server*\n" + message : message);
+				return channel.sendMessage(Test && channel != chatchannel
+						? "*The following message is from a test server*\n" + message : message);
 			} catch (RateLimitException e) {
 				try {
 					Thread.sleep(e.getRetryDelay());
