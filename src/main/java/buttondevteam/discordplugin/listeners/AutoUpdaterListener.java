@@ -16,6 +16,11 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 			System.out.println("No embed");
 			return;
 		}
-		System.out.println(event.getMessage().getEmbedded().get(0).getDescription());
+		final String title = event.getMessage().getEmbedded().get(0).getTitle();
+		System.out.println(title);
+		System.out.println(title.indexOf(':'));
+		System.out.println(title.indexOf(']'));
+		System.out.println(title.substring(title.indexOf(':') + 1, title.indexOf(']')));
+		System.out.println(title.contains("new commit"));
 	}
 }
