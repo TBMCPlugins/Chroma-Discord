@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -18,8 +19,10 @@ import buttondevteam.lib.chat.TBMCChatAPI;
 import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
 
 /**
@@ -106,8 +109,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 				dc.changeStatus(Status.game("testing"));
 			}
-			Bukkit.getScheduler().runTaskAsynchronously(this,
-					() -> sendMessageToChannel(chatchannel, "Server started - chat connected."));
+			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
+					new EmbedBuilder().withColor(Color.BLUE).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -198,6 +201,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	public static IMessage sendMessageToChannel(IChannel channel, String message) {
+		return sendMessageToChannel(channel, message, null);
+	}
+
+	public static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
 		if (message.length() > 1900) {
 			message = message.substring(0, 1900);
 			Bukkit.getLogger()
@@ -210,8 +217,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
-				return channel.sendMessage(TBMCCoreAPI.IsTestServer() && channel != chatchannel
-						? "*The following message is from a test server*\n" + message : message);
+				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
+						? "*The following message is from a test server*\n" + message : message;
+				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
 			} catch (RateLimitException e) {
 				try {
 					Thread.sleep(e.getRetryDelay());
