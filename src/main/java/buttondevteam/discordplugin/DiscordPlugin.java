@@ -78,6 +78,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
 	public static IChannel officechannel;
+	public static IChannel coffeechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
@@ -98,6 +99,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
 				botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
 				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+				coffeechannel = devServer.getChannelByID("219530035365675010"); // coffee-table
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
@@ -106,7 +108,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botroomchannel = botchannel;// bot-room
 				issuechannel = botchannel; // bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
-				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+				officechannel = botchannel; // bot-room
+				coffeechannel = botchannel; // bot-room
 				dc.changeStatus(Status.game("testing"));
 			}
 			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
