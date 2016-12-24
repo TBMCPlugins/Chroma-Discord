@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.listeners;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
@@ -11,17 +10,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import buttondevteam.discordplugin.*;
-import buttondevteam.lib.TBMCChatEvent;
-import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.TBMCPlayer;
+import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import sx.blah.discord.api.events.IListener;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IReaction;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.*;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
 	@EventHandler // Minecraft
@@ -31,20 +27,40 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
 		if (e.getChannel().equals(Channel.GlobalChat)) {
-			final EmbedBuilder embed = new EmbedBuilder()
-					.withAuthorName(DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
-							? ((Player) e.getSender()).getDisplayName() //
-							: e.getSender().getName()))
-					.withDescription(e.getMessage());
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "",
-					e.getSender() instanceof Player ? embed
-							.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
-							.build() : embed.build());
+			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
+					? ((Player) e.getSender()).getDisplayName() //
+					: e.getSender().getName());
+			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage());
+			final EmbedObject embedObject = e.getSender() instanceof Player
+					? embed.withAuthorIcon(
+							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png").build()
+					: embed.build();
+			final long nanoTime = System.nanoTime();
+			if (lastmessage == null || lastmessage.isDeleted()
+					|| !authorPlayer.equals(lastmessage.getEmbedded().get(0).getAuthor().getName())
+					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
+				/*System.out.println("lastmsgtime: " + lastmsgtime);
+				System.out.println("Current: " + nanoTime);
+				System.out.println("2 mins before: " + (nanoTime - 120 * 1000000000));
+				System.out.println("Diff: " + (nanoTime - (nanoTime - 120 * 1000000000)));*/
+				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
+				lastmsgtime = nanoTime;
+			} else
+				try {
+					embedObject.description = lastmessage.getEmbedded().get(0).getDescription() + "\n"
+							+ embedObject.description;
+					lastmessage.edit("", embedObject);
+				} catch (MissingPermissionsException | RateLimitException | DiscordException e1) {
+					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+				}
 		} // TODO: Author URL
 	}
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw" };
+
+	private static IMessage lastmessage = null;
+	private static long lastmsgtime = 0;
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
@@ -57,6 +73,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
+		lastmessage = null;
 		if (CommandListener.runCommand(event.getMessage(), true))
 			return;
 		String dmessage = event.getMessage().getContent();

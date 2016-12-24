@@ -56,15 +56,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
-			for (IListener<?> listener : CommandListener.getListeners())
-				dc.getDispatcher().registerListener(listener);
-			MCChatListener mcchat = new MCChatListener();
-			dc.getDispatcher().registerListener(mcchat);
-			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-			dc.getDispatcher().registerListener(new AutoUpdaterListener());
-			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
-			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -112,6 +103,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				coffeechannel = botchannel; // bot-room
 				dc.changeStatus(Status.game("testing"));
 			}
+			
+			for (IListener<?> listener : CommandListener.getListeners())
+				dc.getDispatcher().registerListener(listener);
+			MCChatListener mcchat = new MCChatListener();
+			dc.getDispatcher().registerListener(mcchat);
+			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
+			dc.getDispatcher().registerListener(new AutoUpdaterListener());
+			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
+			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
+			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
+			
 			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
 					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
