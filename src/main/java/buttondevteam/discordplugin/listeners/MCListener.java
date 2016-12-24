@@ -6,6 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.server.ServerCommandEvent;
+
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
@@ -60,5 +62,10 @@ public class MCListener implements Listener {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
 				DiscordPlugin.sanitizeString(e.getAffected().getBase().getDisplayName()) + " is "
 						+ (e.getValue() ? "now" : "no longer") + " AFK.");
+	}
+
+	@EventHandler
+	public void onServerCommand(ServerCommandEvent e) {
+		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
 	}
 }

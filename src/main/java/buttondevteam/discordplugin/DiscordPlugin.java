@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -18,8 +19,10 @@ import buttondevteam.lib.chat.TBMCChatAPI;
 import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
+import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
 
 /**
@@ -53,15 +56,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
-			for (IListener<?> listener : CommandListener.getListeners())
-				dc.getDispatcher().registerListener(listener);
-			MCChatListener mcchat = new MCChatListener();
-			dc.getDispatcher().registerListener(mcchat);
-			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-			dc.getDispatcher().registerListener(new AutoUpdaterListener());
-			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
-			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -75,6 +69,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
 	public static IChannel officechannel;
+	public static IChannel coffeechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
@@ -95,6 +90,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
 				botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
 				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+				coffeechannel = devServer.getChannelByID("219530035365675010"); // coffee-table
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
@@ -103,11 +99,23 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botroomchannel = botchannel;// bot-room
 				issuechannel = botchannel; // bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
-				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+				officechannel = botchannel; // bot-room
+				coffeechannel = botchannel; // bot-room
 				dc.changeStatus(Status.game("testing"));
 			}
-			Bukkit.getScheduler().runTaskAsynchronously(this,
-					() -> sendMessageToChannel(chatchannel, "Server started - chat connected."));
+			
+			for (IListener<?> listener : CommandListener.getListeners())
+				dc.getDispatcher().registerListener(listener);
+			MCChatListener mcchat = new MCChatListener();
+			dc.getDispatcher().registerListener(mcchat);
+			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
+			dc.getDispatcher().registerListener(new AutoUpdaterListener());
+			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
+			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
+			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
+			
+			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
+					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -127,13 +135,19 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		}
 	}
 
+	/**
+	 * Always true, except when running "stop" from console
+	 */
+	public static boolean Restart;
+
 	@Override
 	public void onDisable() {
 		stop = true;
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		saveConfig();
-		sendMessageToChannel(chatchannel, "Server restarting/stopping");
+		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
 		try {
 			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();
@@ -198,6 +212,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	public static IMessage sendMessageToChannel(IChannel channel, String message) {
+		return sendMessageToChannel(channel, message, null);
+	}
+
+	public static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
 		if (message.length() > 1900) {
 			message = message.substring(0, 1900);
 			Bukkit.getLogger()
@@ -210,8 +228,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
-				return channel.sendMessage(TBMCCoreAPI.IsTestServer() && channel != chatchannel
-						? "*The following message is from a test server*\n" + message : message);
+				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
+						? "*The following message is from a test server*\n" + message : message;
+				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
 			} catch (RateLimitException e) {
 				try {
 					Thread.sleep(e.getRetryDelay());
