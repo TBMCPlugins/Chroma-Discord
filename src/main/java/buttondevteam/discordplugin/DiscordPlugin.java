@@ -113,7 +113,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				dc.changeStatus(Status.game("testing"));
 			}
 			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
-					new EmbedBuilder().withColor(Color.BLUE).withTitle("Server started - chat connected.").build()));
+					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
@@ -133,13 +133,19 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		}
 	}
 
+	/**
+	 * Always true, except when running "stop" from console
+	 */
+	public static boolean Restart;
+
 	@Override
 	public void onDisable() {
 		stop = true;
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		saveConfig();
-		sendMessageToChannel(chatchannel, "Server restarting/stopping");
+		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
 		try {
 			dc.changeStatus(Status.game("on TBMC"));
 			dc.logout();

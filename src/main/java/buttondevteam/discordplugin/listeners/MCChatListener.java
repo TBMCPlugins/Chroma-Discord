@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IReaction;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
@@ -28,11 +30,17 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
-		if (e.getChannel().equals(Channel.GlobalChat))
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-					DiscordPlugin.sanitizeString("<" + (e.getSender() instanceof Player //
+		if (e.getChannel().equals(Channel.GlobalChat)) {
+			final EmbedBuilder embed = new EmbedBuilder()
+					.withAuthorName(DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
 							? ((Player) e.getSender()).getDisplayName() //
-							: e.getSender().getName()) + "> " + e.getMessage()));
+							: e.getSender().getName()))
+					.withDescription(e.getMessage());
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "",
+					e.getSender() instanceof Player ? embed
+							.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
+							.build() : embed.build());
+		} // TODO: Author URL
 	}
 
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
