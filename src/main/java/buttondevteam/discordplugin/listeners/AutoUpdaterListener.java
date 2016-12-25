@@ -21,8 +21,13 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 			return;
 		String branch = title.substring(title.indexOf(':') + 1, title.indexOf(']'));
 		String project = title.substring(title.indexOf('[') + 1, title.indexOf(':'));
-		if (branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev"))
-				&& TBMCCoreAPI.UpdatePlugin(project, new DiscordSender(null, TBMCCoreAPI.IsTestServer()?DiscordPlugin.chatchannel:DiscordPlugin.coffeechannel), branch)
+		if ((branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev")))
+				&& TBMCCoreAPI.UpdatePlugin(project,
+						new DiscordSender(null,
+								TBMCCoreAPI.IsTestServer() //
+										? DiscordPlugin.chatchannel //
+										: DiscordPlugin.coffeechannel),
+						branch)
 				&& (!TBMCCoreAPI.IsTestServer() || !branch.equals("master")))
 			try {
 				event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
