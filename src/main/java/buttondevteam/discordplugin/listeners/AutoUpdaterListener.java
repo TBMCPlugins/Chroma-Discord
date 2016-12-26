@@ -26,7 +26,7 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 						new DiscordSender(null,
 								TBMCCoreAPI.IsTestServer() //
 										? DiscordPlugin.chatchannel //
-										: DiscordPlugin.coffeechannel),
+										: DiscordPlugin.updatechannel),
 						branch)
 				&& (!TBMCCoreAPI.IsTestServer() || !branch.equals("master")))
 			try {

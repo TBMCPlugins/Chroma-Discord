@@ -39,10 +39,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			if (lastmessage == null || lastmessage.isDeleted()
 					|| !authorPlayer.equals(lastmessage.getEmbedded().get(0).getAuthor().getName())
 					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
-				/*System.out.println("lastmsgtime: " + lastmsgtime);
-				System.out.println("Current: " + nanoTime);
-				System.out.println("2 mins before: " + (nanoTime - 120 * 1000000000));
-				System.out.println("Diff: " + (nanoTime - (nanoTime - 120 * 1000000000)));*/
 				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
 				lastmsgtime = nanoTime;
 			} else
@@ -65,15 +61,19 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
 
+	public static void resetLastMessage() {
+		lastmessage = null;
+	}
+
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
-		if (author.isBot())
-			return;
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
 		lastmessage = null;
+		if (author.isBot())
+			return;
 		if (CommandListener.runCommand(event.getMessage(), true))
 			return;
 		String dmessage = event.getMessage().getContent();

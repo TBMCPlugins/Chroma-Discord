@@ -70,6 +70,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel botroomchannel;
 	public static IChannel officechannel;
 	public static IChannel coffeechannel;
+	public static IChannel updatechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
@@ -91,6 +92,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
 				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 				coffeechannel = devServer.getChannelByID("219530035365675010"); // coffee-table
+				updatechannel = devServer.getChannelByID("233724163519414272"); // server-updates
 				dc.changeStatus(Status.game("on TBMC"));
 			} else {
 				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
@@ -101,9 +103,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
 				officechannel = botchannel; // bot-room
 				coffeechannel = botchannel; // bot-room
+				updatechannel = botchannel;
 				dc.changeStatus(Status.game("testing"));
 			}
-			
+
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
 			MCChatListener mcchat = new MCChatListener();
@@ -113,7 +116,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
-			
+
 			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
 					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
@@ -228,6 +231,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
+				if (TBMCCoreAPI.IsTestServer() && channel == chatchannel)
+					MCChatListener.resetLastMessage();
 				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
 						? "*The following message is from a test server*\n" + message : message;
 				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
