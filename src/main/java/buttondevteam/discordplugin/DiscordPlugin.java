@@ -25,10 +25,6 @@ import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
 
-/**
- * Hello world!
- *
- */
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
 	private static boolean stop = false;
@@ -231,8 +227,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
-				if (TBMCCoreAPI.IsTestServer() && channel == chatchannel)
-					MCChatListener.resetLastMessage();
+				if (channel == chatchannel)
+					MCChatListener.resetLastMessage(); //If this is a chat message, it'll be set again
 				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
 						? "*The following message is from a test server*\n" + message : message;
 				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
