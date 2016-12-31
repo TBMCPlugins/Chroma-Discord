@@ -60,6 +60,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
+	public static short ListC = 0;
 
 	public static void resetLastMessage() {
 		lastmessage = null;
@@ -110,17 +111,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
 									+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
 											.collect(Collectors.joining(", "))
-									+ "\nTo connect your accounts, use @ChromaBot connect here or in "
+									+ "\nTo connect your accounts, use @ChromaBot connect in "
 									+ DiscordPlugin.botchannel.mention());
 					return;
 				}
-				Bukkit.dispatchCommand(dsender, cmd);
+				if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == 0 && ListC++ > 2) // Lowered already
+				{
+					dsender.sendMessage("Stop it. You know the answer.");
+					ListC = 0;
+				} else
+					Bukkit.dispatchCommand(dsender, cmd);
 			} else
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
-			event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
 			event.getMessage().getChannel().getMessages().stream().forEach(m -> {
 				try {
 					final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
@@ -139,6 +144,16 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 				}
 			});
+			while (true)
+				try {
+					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
+					break;
+				} catch (RateLimitException e) {
+					if (e.getRetryDelay() > 0)
+						Thread.sleep(e.getRetryDelay());
+					else
+						Thread.sleep(100);
+				}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
 			return;

@@ -64,6 +64,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel chatchannel;
 	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
+	/**
+	 * Don't send messages, just receive, the same channel is used when testing
+	 */
 	public static IChannel officechannel;
 	public static IChannel coffeechannel;
 	public static IChannel updatechannel;
@@ -97,7 +100,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botroomchannel = botchannel;// bot-room
 				issuechannel = botchannel; // bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
-				officechannel = botchannel; // bot-room
+				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 				coffeechannel = botchannel; // bot-room
 				updatechannel = botchannel;
 				dc.changeStatus(Status.game("testing"));
@@ -228,7 +231,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			}
 			try {
 				if (channel == chatchannel)
-					MCChatListener.resetLastMessage(); //If this is a chat message, it'll be set again
+					MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
 				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
 						? "*The following message is from a test server*\n" + message : message;
 				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
@@ -269,11 +272,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	/** Removes §[char] colour codes from strings */
 	public static String sanitizeString(String string) {
 		String sanitizedString = "";
+		boolean random = false;
 		for (int i = 0; i < string.length(); i++) {
 			if (string.charAt(i) == '§') {
 				i++;// Skips the data value, the 4 in "§4Alisolarflare"
+				if (string.charAt(i) == 'k')
+					random = true;
+				else
+					random = false;
 			} else {
-				sanitizedString += string.charAt(i);
+				if (!random) // Skip random/obfuscated characters
+					sanitizedString += string.charAt(i);
 			}
 		}
 		return sanitizedString;

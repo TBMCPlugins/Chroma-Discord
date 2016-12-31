@@ -29,6 +29,7 @@ public class MCListener implements Listener {
 		}
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
 				e.GetPlayer().getPlayerName() + " joined the game");
+		MCChatListener.ListC = 0;
 	}
 
 	@EventHandler
