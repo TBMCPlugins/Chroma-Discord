@@ -60,6 +60,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
+	public static short ListC = 0;
 
 	public static void resetLastMessage() {
 		lastmessage = null;
@@ -114,7 +115,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 									+ DiscordPlugin.botchannel.mention());
 					return;
 				}
-				Bukkit.dispatchCommand(dsender, cmd);
+				if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == 0 && ListC++ > 2) // Lowered already
+				{
+					dsender.sendMessage("Stop it. You know the answer.");
+					ListC = 0;
+				} else
+					Bukkit.dispatchCommand(dsender, cmd);
 			} else
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
