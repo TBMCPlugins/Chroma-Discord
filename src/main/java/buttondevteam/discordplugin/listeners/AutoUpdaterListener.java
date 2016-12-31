@@ -51,9 +51,8 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 							throw new Exception("No PR found");
 					} catch (Exception e) {
 						DiscordPlugin.sendMessageToChannel(DiscordPlugin.updatechannel, "",
-								new EmbedBuilder().withColor(Color.WHITE).withTitle(
-										"Update detauls: " + embed.getDescription() + " (" + e.getMessage() + ")")
-										.build());
+								new EmbedBuilder().withColor(Color.WHITE).withTitle("Update details:")
+										.withDescription(embed.getDescription() + " (" + e.getMessage() + ")").build());
 					}
 					return true;
 				}).get() && (!TBMCCoreAPI.IsTestServer() || !branch.equals("master")))
