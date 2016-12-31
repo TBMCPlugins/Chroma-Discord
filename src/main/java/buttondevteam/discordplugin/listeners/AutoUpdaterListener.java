@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.awt.Color;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -16,6 +15,8 @@ import sx.blah.discord.util.RateLimitException;
 public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 	@Override
 	public void handle(MessageReceivedEvent event) {
+		if (DiscordPlugin.SafeMode)
+			return;
 		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.officechannel.getID()))
 			return;
 		if (!"239123781401051138".equals(event.getMessage().getWebhookID()))

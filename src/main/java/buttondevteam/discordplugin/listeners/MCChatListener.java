@@ -57,6 +57,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	private static IMessage lastmessage = null;
 	private static long lastmsgtime = 0;
+	private static short lastlist = 0;
+	private static short lastlistp = 0;
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
@@ -73,6 +75,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
 		lastmessage = null;
+		lastlist++;
 		if (author.isBot())
 			return;
 		if (CommandListener.runCommand(event.getMessage(), true))
@@ -115,12 +118,17 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 									+ DiscordPlugin.botchannel.mention());
 					return;
 				}
-				if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == 0 && ListC++ > 2) // Lowered already
+				if (lastlist > 5) {
+					ListC = 0;
+					lastlist = 0;
+				}
+				if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
 				{
 					dsender.sendMessage("Stop it. You know the answer.");
-					ListC = 0;
+					lastlist = 0;
 				} else
 					Bukkit.dispatchCommand(dsender, cmd);
+				lastlistp = (short) Bukkit.getOnlinePlayers().size();
 			} else
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()

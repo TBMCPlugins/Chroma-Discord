@@ -14,6 +14,8 @@ public class CommandListener {
 		return new IListener[] { new IListener<MentionEvent>() {
 			@Override
 			public void handle(MentionEvent event) {
+				if (DiscordPlugin.SafeMode)
+					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				final IChannel channel = event.getMessage().getChannel();
@@ -24,6 +26,8 @@ public class CommandListener {
 		}, new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
+				if (DiscordPlugin.SafeMode)
+					return;
 				if (!event.getMessage().getChannel().isPrivate())
 					return;
 				if (event.getMessage().getAuthor().isBot())
@@ -43,6 +47,8 @@ public class CommandListener {
 	 * @return Whether it ran the command (always true if mentionedonly is false)
 	 */
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
+		if (DiscordPlugin.SafeMode)
+			return true;
 		message.getChannel().setTypingStatus(true);
 		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);

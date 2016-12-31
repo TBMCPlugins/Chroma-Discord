@@ -39,6 +39,8 @@ public class MCListener implements Listener {
 
 	@EventHandler
 	public void onGetInfo(TBMCPlayerGetInfoEvent e) {
+		if (DiscordPlugin.SafeMode)
+			return;
 		DiscordPlayer dp = e.getPlayer().asPluginPlayer(DiscordPlayer.class);
 		if (dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;

@@ -13,6 +13,8 @@ public class DebugMessageListener implements Listener{
 	}
 
 	private static void SendMessage(String message) {
+		if (DiscordPlugin.SafeMode)
+			return;
 		try {
 			StringBuilder sb = new StringBuilder();
 			sb.append("```").append("\n");

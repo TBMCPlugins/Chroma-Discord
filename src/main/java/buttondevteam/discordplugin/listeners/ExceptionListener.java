@@ -18,6 +18,8 @@ public class ExceptionListener implements Listener {
 
 	@EventHandler
 	public void onException(TBMCExceptionEvent e) {
+		if (DiscordPlugin.SafeMode)
+			return;
 		if (lastthrown.stream()
 				.anyMatch(ex -> Arrays.equals(e.getException().getStackTrace(), ex.getStackTrace())
 						&& e.getException().getMessage().equals(ex.getMessage()))

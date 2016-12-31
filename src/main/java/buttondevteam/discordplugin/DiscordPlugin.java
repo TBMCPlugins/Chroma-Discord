@@ -8,6 +8,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import com.google.common.io.Files;
 import com.google.gson.*;
@@ -30,6 +31,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static boolean stop = false;
 	public static IDiscordClient dc;
 	public static DiscordPlugin plugin;
+	public static boolean SafeMode = true;
 
 	@Override
 	public void onEnable() {
@@ -62,50 +64,53 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel annchannel;
 	public static IChannel genchannel;
 	public static IChannel chatchannel;
-	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
 	/**
 	 * Don't send messages, just receive, the same channel is used when testing
 	 */
 	public static IChannel officechannel;
-	public static IChannel coffeechannel;
 	public static IChannel updatechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
+	private static volatile BukkitTask task;
+
 	@Override
 	public void handle(ReadyEvent event) {
 		try {
-			int retryc = 0;
-			do {
-				mainServer = event.getClient().getGuildByID("125813020357165056");
-				devServer = event.getClient().getGuildByID("219529124321034241");
-				Thread.sleep(100);
-			} while ((mainServer == null || devServer == null) && retryc++ < 10);
-			if (!TBMCCoreAPI.IsTestServer()) {
-				botchannel = mainServer.getChannelByID("209720707188260864"); // bot
-				annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
-				genchannel = mainServer.getChannelByID("125813020357165056"); // general
-				chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
-				issuechannel = devServer.getChannelByID("219643416496046081"); // server-issues
-				botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
-				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
-				coffeechannel = devServer.getChannelByID("219530035365675010"); // coffee-table
-				updatechannel = devServer.getChannelByID("233724163519414272"); // server-updates
-				dc.changeStatus(Status.game("on TBMC"));
-			} else {
-				botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
-				annchannel = botchannel; // bot-room
-				genchannel = botchannel; // bot-room
-				botroomchannel = botchannel;// bot-room
-				issuechannel = botchannel; // bot-room
-				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
-				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
-				coffeechannel = botchannel; // bot-room
-				updatechannel = botchannel;
-				dc.changeStatus(Status.game("testing"));
-			}
-
+			task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+				if (mainServer == null || devServer == null) {
+					mainServer = event.getClient().getGuildByID("125813020357165056");
+					devServer = event.getClient().getGuildByID("219529124321034241");
+				}
+				if (mainServer == null || devServer == null)
+					return; // Retry
+				if (!TBMCCoreAPI.IsTestServer()) {
+					botchannel = mainServer.getChannelByID("209720707188260864"); // bot
+					annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
+					genchannel = mainServer.getChannelByID("125813020357165056"); // general
+					chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
+					botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+					updatechannel = devServer.getChannelByID("233724163519414272"); // server-updates
+					dc.changeStatus(Status.game("on TBMC"));
+				} else {
+					botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+					annchannel = botchannel; // bot-room
+					genchannel = botchannel; // bot-room
+					botroomchannel = botchannel;// bot-room
+					chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
+					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+					updatechannel = botchannel;
+					dc.changeStatus(Status.game("testing"));
+				}
+				if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
+						|| chatchannel == null || officechannel == null || updatechannel == null)
+					return; // Retry
+				SafeMode = false;
+				if (task != null)
+					task.cancel();
+			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
 			MCChatListener mcchat = new MCChatListener();
@@ -165,6 +170,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
 			try {
+				if (SafeMode) {
+					Thread.sleep(10000);
+					continue;
+				}
 				String body = TBMCCoreAPI.DownloadString(SubredditURL + "/new/.json?limit=10");
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 						.get("children").getAsJsonArray();
@@ -230,6 +239,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				e2.printStackTrace();
 			}
 			try {
+				if (SafeMode)
+					return null;
 				if (channel == chatchannel)
 					MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
 				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
