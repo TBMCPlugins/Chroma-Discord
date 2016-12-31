@@ -64,6 +64,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IChannel chatchannel;
 	public static IChannel issuechannel;
 	public static IChannel botroomchannel;
+	/**
+	 * Don't send messages, just receive, the same channel is used when testing
+	 */
 	public static IChannel officechannel;
 	public static IChannel coffeechannel;
 	public static IChannel updatechannel;
@@ -97,7 +100,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				botroomchannel = botchannel;// bot-room
 				issuechannel = botchannel; // bot-room
 				chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
-				officechannel = botchannel; // bot-room
+				officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 				coffeechannel = botchannel; // bot-room
 				updatechannel = botchannel;
 				dc.changeStatus(Status.game("testing"));
