@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.listeners.MCChatListener;
-import buttondevteam.lib.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayer;
 
 public class AcceptMCCommand extends DiscordMCCommandBase {
 

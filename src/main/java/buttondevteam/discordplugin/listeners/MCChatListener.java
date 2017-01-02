@@ -13,6 +13,7 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;

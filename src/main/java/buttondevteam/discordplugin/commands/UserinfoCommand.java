@@ -6,8 +6,8 @@ import java.util.stream.Stream;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.lib.TBMCPlayer;
-import buttondevteam.lib.TBMCPlayer.InfoTarget;
+import buttondevteam.lib.player.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayer.InfoTarget;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 

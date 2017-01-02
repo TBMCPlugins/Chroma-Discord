@@ -9,7 +9,7 @@ import com.google.common.collect.HashBiMap;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class ConnectCommand extends DiscordCommandBase {
