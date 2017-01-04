@@ -74,6 +74,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IGuild devServer;
 
 	private static volatile BukkitTask task;
+	private static volatile boolean sent = false;
 
 	@Override
 	public void handle(ReadyEvent event) {
@@ -110,6 +111,11 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				SafeMode = false;
 				if (task != null)
 					task.cancel();
+				if (!sent) {
+					sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
+							.withTitle("Server started - chat connected.").build());
+					sent = true;
+				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
@@ -120,9 +126,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
-
-			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
-					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
 			Runnable r = new Runnable() {
 				public void run() {
 					AnnouncementGetterThreadMethod();
