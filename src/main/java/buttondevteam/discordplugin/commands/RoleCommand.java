@@ -1,7 +1,13 @@
 package buttondevteam.discordplugin.commands;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IRole;
+import sx.blah.discord.util.RateLimitException;
 
 public class RoleCommand extends DiscordCommandBase {
 
@@ -24,6 +30,40 @@ public class RoleCommand extends DiscordCommandBase {
 						"This command adds a game role to your account.\nUsage: add <rolename>");
 				return;
 			}
+			if (!DiscordPlugin.GameRoles.contains(argsa[1].toLowerCase())) {
+				DiscordPlugin.sendMessageToChannel(message.getChannel(),
+						"That game role cannot be found.\nList of game roles:\n"
+								+ DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
+				return;
+			}
+			final List<IRole> roles = (TBMCCoreAPI.IsTestServer() ? DiscordPlugin.devServer : DiscordPlugin.mainServer)
+					.getRolesByName(argsa[1]);
+			if (roles.size() == 0) {
+				DiscordPlugin.sendMessageToChannel(message.getChannel(),
+						"The specified role cannot be found on Discord! Removing from the list.");
+				DiscordPlugin.GameRoles.remove(argsa[1].toLowerCase());
+				return;
+			}
+			if (roles.size() > 1) {
+				DiscordPlugin.sendMessageToChannel(message.getChannel(),
+						"There are more roles with this name. Why are there more roles with this name?");
+				return;
+			}
+			while (true) {
+				try {
+					message.getAuthor().addRole(roles.get(0));
+					break;
+				} catch (RateLimitException e) {
+					try {
+						Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
+					} catch (InterruptedException e1) {
+					}
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("Error while adding role!", e);
+					DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while adding the role.");
+					break;
+				}
+			}
 		} else if (argsa[0].equalsIgnoreCase("remove")) {
 			if (argsa.length < 2) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -31,7 +71,8 @@ public class RoleCommand extends DiscordCommandBase {
 				return;
 			}
 		} else if (argsa[0].equalsIgnoreCase("list")) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "List of game roles:");
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
 		}
 	}
 

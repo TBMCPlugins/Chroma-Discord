@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -32,24 +33,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IDiscordClient dc;
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
+	public static List<String> GameRoles;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
 		try {
 			Bukkit.getLogger().info("Initializing DiscordPlugin...");
 			plugin = this;
-			final File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
-			if (file.exists()) {
-				BufferedReader reader = Files.newReader(file, StandardCharsets.UTF_8);
-				String line = reader.readLine();
-				lastannouncementtime = Long.parseLong(line);
-				reader.close();
-				file.delete();
-			} else {
-				lastannouncementtime = getConfig().getLong("lastannouncementtime");
-				lastseentime = getConfig().getLong("lastseentime");
-				saveConfig();
-			}
+			lastannouncementtime = getConfig().getLong("lastannouncementtime");
+			lastseentime = getConfig().getLong("lastseentime");
+			GameRoles = (List<String>) getConfig().getList("gameroles", new ArrayList<String>());
+			saveConfig();
 			ClientBuilder cb = new ClientBuilder();
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
@@ -114,6 +109,15 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				if (!sent) {
 					sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
 							.withTitle("Server started - chat connected.").build());
+					try {
+						List<IMessage> msgs = genchannel.getPinnedMessages();
+						for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
+							genchannel.unpin(msgs.get(i));
+							Thread.sleep(10);
+						}
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("Error occured while unpinning messages!", e);
+					}
 					sent = true;
 				}
 			}, 0, 10);
@@ -126,17 +130,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
-			Runnable r = new Runnable() {
-				public void run() {
-					AnnouncementGetterThreadMethod();
-				}
-			};
-			Thread t = new Thread(r);
-			t.start();
-			List<IMessage> msgs = genchannel.getPinnedMessages();
-			for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
-				genchannel.unpin(msgs.get(i));
-			}
+			new Thread(() -> AnnouncementGetterThreadMethod()).start();
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
@@ -155,6 +149,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		stop = true;
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
+		getConfig().set("gameroles", GameRoles);
 		saveConfig();
 		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
 				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
