@@ -7,7 +7,6 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.util.RateLimitException;
 
 public class RoleCommand extends DiscordCommandBase {
 
@@ -49,22 +48,15 @@ public class RoleCommand extends DiscordCommandBase {
 						"There are more roles with this name. Why are there more roles with this name?");
 				return;
 			}
-			while (true) {
-				try {
-					message.getAuthor().addRole(roles.get(0));
-					break;
-				} catch (RateLimitException e) {
-					try {
-						Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
-					} catch (InterruptedException e1) {
-					}
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("Error while adding role!", e);
-					DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while adding the role.");
-					break;
-				}
+			try {
+				DiscordPlugin.perform(() -> message.getAuthor().addRole(roles.get(0)));
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("Error while adding role!", e);
+				DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while adding the role.");
 			}
-		} else if (argsa[0].equalsIgnoreCase("remove")) {
+		} else if (argsa[0].equalsIgnoreCase("remove"))
+
+		{
 			if (argsa.length < 2) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"This command removes a game role from your account.\nUsage: remove <rolename>");

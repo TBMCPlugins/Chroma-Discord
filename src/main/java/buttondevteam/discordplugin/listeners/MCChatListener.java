@@ -46,8 +46,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				try {
 					embedObject.description = lastmessage.getEmbedded().get(0).getDescription() + "\n"
 							+ embedObject.description;
-					lastmessage.edit("", embedObject);
-				} catch (MissingPermissionsException | RateLimitException | DiscordException e1) {
+					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
+				} catch (MissingPermissionsException | DiscordException e1) {
 					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 				}
 		} // TODO: Author URL
@@ -130,39 +130,24 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				} else
 					Bukkit.dispatchCommand(dsender, cmd);
 				lastlistp = (short) Bukkit.getOnlinePlayers().size();
-			} else
+				if (!event.getMessage().isDeleted())
+					event.getMessage().delete();
+			} else {
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
-			event.getMessage().getChannel().getMessages().stream().forEach(m -> {
-				try {
-					final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
-					if (reaction != null) {
-						while (true)
-							try {
-								m.removeReaction(reaction);
-								Thread.sleep(100);
-								break;
-							} catch (RateLimitException e) {
-								if (e.getRetryDelay() > 0)
-									Thread.sleep(e.getRetryDelay());
-							}
+				event.getMessage().getChannel().getMessages().stream().forEach(m -> {
+					try {
+						final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
+						if (reaction != null)
+							DiscordPlugin.perform(() -> m.removeReaction(reaction));
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 					}
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
-				}
-			});
-			while (true)
-				try {
-					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
-					break;
-				} catch (RateLimitException e) {
-					if (e.getRetryDelay() > 0)
-						Thread.sleep(e.getRetryDelay());
-					else
-						Thread.sleep(100);
-				}
+				});
+				DiscordPlugin.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
 			return;

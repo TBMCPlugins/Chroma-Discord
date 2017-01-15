@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin;
 
 import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -24,7 +23,9 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
+import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
@@ -230,36 +231,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getLogger()
 					.warning("Message was too long to send to discord and got truncated. In " + channel.getName());
 		}
-		for (int i = 0; i < 10; i++) {
-			try {
-				Thread.sleep(i * 100);
-			} catch (InterruptedException e2) {
-				e2.printStackTrace();
-			}
-			try {
-				if (SafeMode)
-					return null;
-				if (channel == chatchannel)
-					MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
-				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
-						? "*The following message is from a test server*\n" + message : message;
-				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay());
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			} catch (Exception e) {
-				if (i == 9) {
-					Bukkit.getLogger().warning("Failed to deliver message to Discord! Channel: " + channel.getName()
-							+ " Message: " + message);
-					throw new RuntimeException(e);
-				} else
-					continue;
-			}
+		try {
+			if (channel == chatchannel)
+				MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
+			final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
+					? "*The following message is from a test server*\n" + message : message;
+			return perform(
+					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
+		} catch (Exception e) {
+			Bukkit.getLogger().warning(
+					"Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	public static Permission perms;
@@ -295,5 +278,44 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			}
 		}
 		return sanitizedString;
+	}
+
+	/**
+	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
+	 */
+	public static <T extends IDiscordObject<T>> T perform(DiscordSupplier<T> action)
+			throws DiscordException, MissingPermissionsException {
+		for (int i = 0; i < 20; i++)
+			try {
+				if (SafeMode)
+					return null;
+				return action.get();
+			} catch (RateLimitException e) {
+				try {
+					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
+		return null;
+	}
+
+	/**
+	 * Performs Discord actions, retrying when ratelimited.
+	 */
+	public static void perform(DiscordRunnable action) throws DiscordException, MissingPermissionsException {
+		for (int i = 0; i < 20; i++)
+			try {
+				if (SafeMode)
+					return;
+				action.run();
+				return; // Gotta escape that loop
+			} catch (RateLimitException e) {
+				try {
+					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
 	}
 }
