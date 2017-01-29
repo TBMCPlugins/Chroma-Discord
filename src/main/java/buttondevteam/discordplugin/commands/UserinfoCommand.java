@@ -6,8 +6,9 @@ import java.util.stream.Stream;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.lib.player.TBMCPlayer;
-import buttondevteam.lib.player.TBMCPlayer.InfoTarget;
+import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.player.ChromaGamerBase;
+import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -68,20 +69,13 @@ public class UserinfoCommand extends DiscordCommandBase {
 				target = targets.get(0);
 			}
 		}
-		boolean found = false;
-		for (TBMCPlayer player : TBMCPlayer.getLoadedPlayers().values()) {
-			DiscordPlayer dp = player.asPluginPlayer(DiscordPlayer.class);
-			if (target.getID().equals(dp.getDiscordID())) {
-				StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
-				uinfo.append(player.getInfo(InfoTarget.Discord));
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
-				found = true;
-				break;
-			}
+		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getID(), DiscordPlayer.class)) {
+			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
+			uinfo.append(dp.getInfo(InfoTarget.Discord));
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Error while getting info about " + target.getName() + "!", e);
 		}
-		if (!found)
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user (" + target.getName()
-					+ ") is not found in our system (player has to be on the MC server for now)!");
 	}
 
 	private List<IUser> getUsers(IMessage message, String args) {

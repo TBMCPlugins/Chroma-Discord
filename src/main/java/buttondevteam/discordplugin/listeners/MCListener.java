@@ -11,17 +11,15 @@ import org.bukkit.event.server.ServerCommandEvent;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
-import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
-import buttondevteam.lib.player.TBMCPlayerJoinEvent;
-import buttondevteam.lib.player.TBMCPlayerQuitEvent;
-import net.ess3.api.events.AfkStatusChangeEvent;
+import buttondevteam.lib.player.*;
+import net.ess3.api.events.*;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
 
 public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
-		final Player p = Bukkit.getPlayer(e.GetPlayer().getUuid());
+		final Player p = Bukkit.getPlayer(e.GetPlayer().getUUID());
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().getPlayerName())) {
 			p.sendMessage("§bTo connect with the Discord account "
 					+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
@@ -41,7 +39,7 @@ public class MCListener implements Listener {
 	public void onGetInfo(TBMCPlayerGetInfoEvent e) {
 		if (DiscordPlugin.SafeMode)
 			return;
-		DiscordPlayer dp = e.getPlayer().asPluginPlayer(DiscordPlayer.class);
+		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
 		if (dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
@@ -71,4 +69,9 @@ public class MCListener implements Listener {
 	public void onServerCommand(ServerCommandEvent e) {
 		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
 	}
+
+	/*@EventHandler
+	public void onPlayerMute(MuteStatusChangeEvent e) {
+		e.getAffected()
+	}*/
 }

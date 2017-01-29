@@ -9,7 +9,7 @@ import com.google.common.collect.HashBiMap;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.player.TBMCPlayer;
+import buttondevteam.lib.player.ChromaGamerBase;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class ConnectCommand extends DiscordCommandBase {
@@ -47,8 +47,8 @@ public class ConnectCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
 			return;
 		}
-		try (TBMCPlayer pl = TBMCPlayer.getPlayer(p)) {
-			if (message.getAuthor().getID().equals(pl.asPluginPlayer(DiscordPlayer.class).getDiscordID())) {
+		try (DiscordPlayer pl = ChromaGamerBase.getUser(message.getAuthor().getID(), DiscordPlayer.class)) {
+			if (message.getAuthor().getID().equals(pl.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
 				return;
 			}

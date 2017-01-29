@@ -13,6 +13,7 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -83,20 +84,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		String dmessage = event.getMessage().getContent();
 		try {
-			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
-				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
-				return author.getID().equals(dp.getDiscordID());
-			}).findAny();
+			DiscordPlayer dp = ChromaGamerBase.getUser(author.getID(), DiscordPlayer.class);
 			final DiscordSenderBase dsender;
-			if (player.isPresent()) // Connected?
-			{ // Execute as ingame player
+			Player mcp = null; // Offline players can't really run commands
+			final String cid;
+			if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
+					&& (mcp = Bukkit.getPlayer(cid)) != null) { // Execute as ingame player, if online
 				if (!ConnectedSenders.containsKey(author.getID()))
 					ConnectedSenders.put(author.getID(),
-							new DiscordPlayerSender(author, event.getMessage().getChannel(), player.get()));
+							new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
 				dsender = ConnectedSenders.get(author.getID());
 			} else {
+				TBMCPlayer p = dp.getAs(TBMCPlayer.class);
 				if (!UnconnectedSenders.containsKey(author.getID()))
-					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel()));
+					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel(),
+							p == null ? null : p.getPlayerName())); // Display the playername, if found
 				dsender = UnconnectedSenders.get(author.getID());
 			}
 
@@ -108,7 +110,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 			if (dmessage.startsWith("/")) {
 				final String cmd = dmessage.substring(1).toLowerCase();
-				if (!player.isPresent()
+				if (mcp == null
 						&& !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 					// Command not whitelisted
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
