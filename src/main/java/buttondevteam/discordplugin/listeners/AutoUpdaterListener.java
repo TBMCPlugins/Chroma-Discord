@@ -33,7 +33,7 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 						new DiscordSender(null,
 								TBMCCoreAPI.IsTestServer() //
 										? DiscordPlugin.chatchannel //
-										: DiscordPlugin.updatechannel),
+										: DiscordPlugin.botroomchannel),
 						branch)
 				&& ((Supplier<Boolean>) () -> { // Best looking code I've ever written
 					try {
