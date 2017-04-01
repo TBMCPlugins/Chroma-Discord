@@ -6,7 +6,9 @@ import org.bukkit.entity.Player;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayerBase;
 
 public class AcceptMCCommand extends DiscordMCCommandBase {
 
@@ -42,7 +44,11 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 			sender.sendMessage("§cYou don't have a pending connection to Discord.");
 			return true;
 		}
-		TBMCPlayer.getPlayerAs((Player) sender, DiscordPlayer.class).setDiscordID(did);
+		DiscordPlayer dp = ChromaGamerBase.getUser(did, DiscordPlayer.class);
+		TBMCPlayer mcp = TBMCPlayerBase.getPlayer(((Player) sender).getUniqueId(), TBMCPlayer.class);
+		dp.connectWith(mcp); // TODO: Fix null.yml and empty playerinfos
+		dp.save();
+		mcp.save();
 		ConnectCommand.WaitingToConnect.remove(sender.getName());
 		MCChatListener.UnconnectedSenders.remove(did);
 		sender.sendMessage("§bAccounts connected.");

@@ -84,8 +84,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		String dmessage = event.getMessage().getContent();
 		try {
 			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
-				DiscordPlayer dp = TBMCPlayer.getPlayerAs(p, DiscordPlayer.class); // Online player, already loaded
-				return author.getID().equals(dp.getDiscordID());
+				DiscordPlayer dp = TBMCPlayer.getPlayer(p.getUniqueId(), TBMCPlayer.class).getAs(DiscordPlayer.class); // Not changing any data, don't need to save
+				return dp != null && author.getID().equals(dp.getDiscordID());
 			}).findAny();
 			final DiscordSenderBase dsender;
 			if (player.isPresent()) // Connected?

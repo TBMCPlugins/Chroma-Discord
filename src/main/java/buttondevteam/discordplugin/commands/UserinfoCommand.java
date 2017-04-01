@@ -1,13 +1,15 @@
 package buttondevteam.discordplugin.commands;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.lib.player.TBMCPlayer;
-import buttondevteam.lib.player.TBMCPlayer.InfoTarget;
+import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.player.ChromaGamerBase;
+import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -29,10 +31,11 @@ public class UserinfoCommand extends DiscordCommandBase {
 		if (args.length() == 0)
 			target = message.getAuthor();
 		else {
-			final Stream<IUser> mentions = message.getMentions().stream()
-					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID()));
-			if (mentions.findFirst().isPresent())
-				target = mentions.findFirst().get();
+
+			final Optional<IUser> firstmention = message.getMentions().stream()
+					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID())).findFirst();
+			if (firstmention.isPresent())
+				target = firstmention.get();
 			else if (args.contains("#")) {
 				String[] targettag = args.split("#");
 				final List<IUser> targets = getUsers(message, targettag[0]);
@@ -68,20 +71,14 @@ public class UserinfoCommand extends DiscordCommandBase {
 				target = targets.get(0);
 			}
 		}
-		boolean found = false;
-		for (TBMCPlayer player : TBMCPlayer.getLoadedPlayers().values()) {
-			DiscordPlayer dp = player.asPluginPlayer(DiscordPlayer.class);
-			if (target.getID().equals(dp.getDiscordID())) {
-				StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
-				uinfo.append(player.getInfo(InfoTarget.Discord));
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
-				found = true;
-				break;
-			}
+		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getID(), DiscordPlayer.class)) {
+			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
+			uinfo.append(dp.getInfo(InfoTarget.Discord));
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
+		} catch (Exception e) {
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while getting the user!");
+			TBMCCoreAPI.SendException("Error while getting DiscordPlayer info!", e);
 		}
-		if (!found)
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The user (" + target.getName()
-					+ ") is not found in our system (player has to be on the MC server for now)!");
 	}
 
 	private List<IUser> getUsers(IMessage message, String args) {

@@ -54,9 +54,9 @@ public class CommandListener {
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
-		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message);
+		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
 		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
-			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message);
+			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
 		if (mentionedonly && !gotmention) {
 			message.getChannel().setTypingStatus(false);
 			return false;

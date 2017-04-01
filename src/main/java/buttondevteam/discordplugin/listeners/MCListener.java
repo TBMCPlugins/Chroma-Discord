@@ -21,28 +21,31 @@ import sx.blah.discord.handle.obj.Status.StatusType;
 public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
-		final Player p = Bukkit.getPlayer(e.GetPlayer().getUuid());
-		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().getPlayerName())) {
-			p.sendMessage("§bTo connect with the Discord account "
-					+ ConnectCommand.WaitingToConnect.get(e.GetPlayer().getPlayerName()) + " do /discord accept");
+		final Player p = Bukkit.getPlayer(e.GetPlayer().getUUID());
+		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
+			IUser user = DiscordPlugin.dc
+					.getUserByID(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get()));
+			p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
+					+ " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
 		}
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-				e.GetPlayer().getPlayerName() + " joined the game");
+				e.GetPlayer().PlayerName().get() + " joined the game");
 		MCChatListener.ListC = 0;
 	}
 
 	@EventHandler
 	public void onPlayerLeave(TBMCPlayerQuitEvent e) {
-		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, e.GetPlayer().getPlayerName() + " left the game");
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
+				e.GetPlayer().PlayerName().get() + " left the game");
 	}
 
 	@EventHandler
 	public void onGetInfo(TBMCPlayerGetInfoEvent e) {
 		if (DiscordPlugin.SafeMode)
 			return;
-		DiscordPlayer dp = e.getPlayer().asPluginPlayer(DiscordPlayer.class);
-		if (dp.getDiscordID() == null || dp.getDiscordID() == "")
+		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
+		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
 		e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());

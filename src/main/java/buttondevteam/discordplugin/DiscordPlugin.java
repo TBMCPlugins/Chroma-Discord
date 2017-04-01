@@ -99,7 +99,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					annchannel = botchannel; // bot-room
 					genchannel = botchannel; // bot-room
 					botroomchannel = botchannel;// bot-room
-					chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
+					chatchannel = botchannel;// bot-room
 					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 					updatechannel = botchannel;
 					dc.changeStatus(Status.game("testing"));
@@ -120,6 +120,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
+			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
 
 			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
 					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
