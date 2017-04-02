@@ -1,18 +1,21 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.player.ChromaGamerBase;
+import buttondevteam.lib.player.UserClass;
 
+@UserClass(foldername = "discord")
 public class DiscordPlayer extends ChromaGamerBase {
-	public String getDiscordID() {
-		return plugindata.getString("id");
+	private String did;
+
+	public DiscordPlayer() {
 	}
 
-	public void setDiscordID(String id) {
-		plugindata.set("id", id);
+	public String getDiscordID() {
+		return did;
 	}
 
 	@Override
 	public String getFileName() {
-		return "discord";
+		return did;
 	}
 }

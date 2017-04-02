@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,10 +31,10 @@ public class UserinfoCommand extends DiscordCommandBase {
 		if (args.length() == 0)
 			target = message.getAuthor();
 		else {
-			final Stream<IUser> mentions = message.getMentions().stream()
-					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID()));
-			if (mentions.findFirst().isPresent())
-				target = mentions.findFirst().get();
+			final Optional<IUser> firstmention = message.getMentions().stream()
+					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID())).findFirst();
+			if (firstmention.isPresent())
+				target = firstmention.get();
 			else if (args.contains("#")) {
 				String[] targettag = args.split("#");
 				final List<IUser> targets = getUsers(message, targettag[0]);
@@ -74,6 +75,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			uinfo.append(dp.getInfo(InfoTarget.Discord));
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
 		} catch (Exception e) {
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while getting the user!");
 			TBMCCoreAPI.SendException("Error while getting info about " + target.getName() + "!", e);
 		}
 	}

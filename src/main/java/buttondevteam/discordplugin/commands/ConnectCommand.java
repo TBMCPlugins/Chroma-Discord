@@ -10,6 +10,8 @@ import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
+import buttondevteam.lib.player.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayerBase;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class ConnectCommand extends DiscordCommandBase {
@@ -47,8 +49,9 @@ public class ConnectCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
 			return;
 		}
-		try (DiscordPlayer pl = ChromaGamerBase.getUser(message.getAuthor().getID(), DiscordPlayer.class)) {
-			if (message.getAuthor().getID().equals(pl.getDiscordID())) {
+		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
+			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
+			if (dp != null && message.getAuthor().getID().equals(dp.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
 				return;
 			}

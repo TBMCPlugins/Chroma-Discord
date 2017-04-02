@@ -96,7 +96,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					annchannel = botchannel; // bot-room
 					genchannel = botchannel; // bot-room
 					botroomchannel = botchannel;// bot-room
-					chatchannel = devServer.getChannelByID("248185455508455424"); // minecraft_chat_test
+					chatchannel = botchannel;// bot-room
 					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
 					updatechannel = botchannel;
 					dc.changeStatus(Status.game("testing"));
