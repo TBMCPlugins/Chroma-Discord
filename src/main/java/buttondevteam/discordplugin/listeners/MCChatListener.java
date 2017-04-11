@@ -98,7 +98,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				TBMCPlayer p = dp.getAs(TBMCPlayer.class);
 				if (!UnconnectedSenders.containsKey(author.getID()))
 					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel(),
-							p == null ? null : p.getPlayerName())); // Display the playername, if found
+							p == null ? null : p.PlayerName().get())); // Display the playername, if found
 				dsender = UnconnectedSenders.get(author.getID());
 			}
 

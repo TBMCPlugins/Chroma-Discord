@@ -46,7 +46,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		}
 		DiscordPlayer dp = ChromaGamerBase.getUser(did, DiscordPlayer.class);
 		TBMCPlayer mcp = TBMCPlayerBase.getPlayer(((Player) sender).getUniqueId(), TBMCPlayer.class);
-		dp.connectWith(mcp); // TODO: Fix null.yml and empty playerinfos
+		dp.connectWith(mcp);
 		dp.save();
 		mcp.save();
 		ConnectCommand.WaitingToConnect.remove(sender.getName());

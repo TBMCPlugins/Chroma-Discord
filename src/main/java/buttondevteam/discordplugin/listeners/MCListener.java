@@ -43,6 +43,9 @@ public class MCListener implements Listener {
 		if (DiscordPlugin.SafeMode)
 			return;
 		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
+		/*System.out.println("dp: " + dp);
+		if (dp != null)
+			System.out.println("dp.did: " + dp.getDiscordID());*/
 		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
@@ -73,8 +76,7 @@ public class MCListener implements Listener {
 		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
 	}
 
-	/*@EventHandler
-	public void onPlayerMute(MuteStatusChangeEvent e) {
-		e.getAffected()
-	}*/
+	/*
+	 * @EventHandler public void onPlayerMute(MuteStatusChangeEvent e) { e.getAffected() }
+	 */
 }
