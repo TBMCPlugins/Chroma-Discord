@@ -45,7 +45,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			lastannouncementtime = getConfig().getLong("lastannouncementtime");
 			lastseentime = getConfig().getLong("lastseentime");
 			GameRoles = (List<String>) getConfig().getList("gameroles", new ArrayList<String>());
-			saveConfig();
 			ClientBuilder cb = new ClientBuilder();
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
