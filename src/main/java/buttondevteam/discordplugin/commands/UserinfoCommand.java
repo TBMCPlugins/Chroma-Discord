@@ -31,7 +31,6 @@ public class UserinfoCommand extends DiscordCommandBase {
 		if (args.length() == 0)
 			target = message.getAuthor();
 		else {
-
 			final Optional<IUser> firstmention = message.getMentions().stream()
 					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID())).findFirst();
 			if (firstmention.isPresent())
@@ -77,7 +76,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
 		} catch (Exception e) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while getting the user!");
-			TBMCCoreAPI.SendException("Error while getting DiscordPlayer info!", e);
+			TBMCCoreAPI.SendException("Error while getting info about " + target.getName() + "!", e);
 		}
 	}
 

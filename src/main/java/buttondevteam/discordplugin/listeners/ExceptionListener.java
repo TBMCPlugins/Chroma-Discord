@@ -10,7 +10,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCExceptionEvent;
+import sx.blah.discord.handle.obj.IRole;
 
 public class ExceptionListener implements Listener {
 	private List<Throwable> lastthrown = new ArrayList<>();
@@ -35,9 +37,14 @@ public class ExceptionListener implements Listener {
 		e.setHandled();
 	}
 
+	private static IRole coderRole;
+
 	private static void SendException(Throwable e, String sourcemessage) {
 		try {
-			StringBuilder sb = new StringBuilder();
+			if (coderRole == null)
+				coderRole = DiscordPlugin.devServer.getRolesByName("Coder").get(0);
+			StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder()
+					: new StringBuilder(coderRole.mention()).append("\n");
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
 			String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))

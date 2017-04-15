@@ -13,8 +13,15 @@ import sx.blah.discord.handle.obj.IUser;
 public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	private PermissibleBase perm = new PermissibleBase(this);
 
+	private String name = null;
+
 	public DiscordSender(IUser user, IChannel channel) {
 		super(user, channel);
+	}
+
+	public DiscordSender(IUser user, IChannel channel, String name) {
+		super(user, channel);
+		this.name = name;
 	}
 
 	@Override
@@ -92,7 +99,7 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	public String getName() {
 		if (user == null)
 			return "Discord user";
-		return user.getDisplayName(DiscordPlugin.mainServer);
+		return name == null ? user.getDisplayName(DiscordPlugin.mainServer) : name;
 	}
 
 }

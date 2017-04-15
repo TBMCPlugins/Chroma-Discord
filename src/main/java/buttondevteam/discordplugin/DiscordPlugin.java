@@ -1,9 +1,9 @@
 package buttondevteam.discordplugin;
 
 import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -23,7 +23,9 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
+import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
+import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
@@ -32,24 +34,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IDiscordClient dc;
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
+	public static List<String> GameRoles;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
 		try {
 			Bukkit.getLogger().info("Initializing DiscordPlugin...");
 			plugin = this;
-			final File file = new File("TBMC", "DiscordRedditLastAnnouncement.txt");
-			if (file.exists()) {
-				BufferedReader reader = Files.newReader(file, StandardCharsets.UTF_8);
-				String line = reader.readLine();
-				lastannouncementtime = Long.parseLong(line);
-				reader.close();
-				file.delete();
-			} else {
-				lastannouncementtime = getConfig().getLong("lastannouncementtime");
-				lastseentime = getConfig().getLong("lastseentime");
-				saveConfig();
-			}
+			lastannouncementtime = getConfig().getLong("lastannouncementtime");
+			lastseentime = getConfig().getLong("lastseentime");
+			GameRoles = (List<String>) getConfig().getList("gameroles", new ArrayList<String>());
 			ClientBuilder cb = new ClientBuilder();
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
@@ -74,6 +69,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static IGuild devServer;
 
 	private static volatile BukkitTask task;
+	private static volatile boolean sent = false;
 
 	@Override
 	public void handle(ReadyEvent event) {
@@ -110,6 +106,20 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				SafeMode = false;
 				if (task != null)
 					task.cancel();
+				if (!sent) {
+					sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
+							.withTitle("Server started - chat connected.").build());
+					try {
+						List<IMessage> msgs = genchannel.getPinnedMessages();
+						for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
+							genchannel.unpin(msgs.get(i));
+							Thread.sleep(10);
+						}
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("Error occured while unpinning messages!", e);
+					}
+					sent = true;
+				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
 				dc.getDispatcher().registerListener(listener);
@@ -121,20 +131,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-
-			Bukkit.getScheduler().runTaskAsynchronously(this, () -> sendMessageToChannel(chatchannel, "",
-					new EmbedBuilder().withColor(Color.GREEN).withTitle("Server started - chat connected.").build()));
-			Runnable r = new Runnable() {
-				public void run() {
-					AnnouncementGetterThreadMethod();
-				}
-			};
-			Thread t = new Thread(r);
-			t.start();
-			List<IMessage> msgs = genchannel.getPinnedMessages();
-			for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
-				genchannel.unpin(msgs.get(i));
-			}
+			new Thread(() -> AnnouncementGetterThreadMethod()).start();
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
@@ -153,6 +150,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		stop = true;
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
+		getConfig().set("gameroles", GameRoles);
 		saveConfig();
 		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
 				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
@@ -233,36 +231,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			Bukkit.getLogger()
 					.warning("Message was too long to send to discord and got truncated. In " + channel.getName());
 		}
-		for (int i = 0; i < 10; i++) {
-			try {
-				Thread.sleep(i * 100);
-			} catch (InterruptedException e2) {
-				e2.printStackTrace();
-			}
-			try {
-				if (SafeMode)
-					return null;
-				if (channel == chatchannel)
-					MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
-				final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
-						? "*The following message is from a test server*\n" + message : message;
-				return embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false);
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay());
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			} catch (Exception e) {
-				if (i == 9) {
-					Bukkit.getLogger().warning("Failed to deliver message to Discord! Channel: " + channel.getName()
-							+ " Message: " + message);
-					throw new RuntimeException(e);
-				} else
-					continue;
-			}
+		try {
+			if (channel == chatchannel)
+				MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
+			final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
+					? "*The following message is from a test server*\n" + message : message;
+			return perform(
+					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
+		} catch (Exception e) {
+			Bukkit.getLogger().warning(
+					"Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	public static Permission perms;
@@ -298,5 +278,44 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			}
 		}
 		return sanitizedString;
+	}
+
+	/**
+	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
+	 */
+	public static <T extends IDiscordObject<T>> T perform(DiscordSupplier<T> action)
+			throws DiscordException, MissingPermissionsException {
+		for (int i = 0; i < 20; i++)
+			try {
+				if (SafeMode)
+					return null;
+				return action.get();
+			} catch (RateLimitException e) {
+				try {
+					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
+		return null;
+	}
+
+	/**
+	 * Performs Discord actions, retrying when ratelimited.
+	 */
+	public static void perform(DiscordRunnable action) throws DiscordException, MissingPermissionsException {
+		for (int i = 0; i < 20; i++)
+			try {
+				if (SafeMode)
+					return;
+				action.run();
+				return; // Gotta escape that loop
+			} catch (RateLimitException e) {
+				try {
+					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			}
 	}
 }

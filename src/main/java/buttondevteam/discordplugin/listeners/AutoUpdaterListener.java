@@ -10,7 +10,6 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IEmbed;
 import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.RateLimitException;
 
 public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 	@Override
@@ -34,7 +33,7 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 						new DiscordSender(null,
 								TBMCCoreAPI.IsTestServer() //
 										? DiscordPlugin.chatchannel //
-										: DiscordPlugin.updatechannel),
+										: DiscordPlugin.botroomchannel),
 						branch)
 				&& ((Supplier<Boolean>) () -> { // Best looking code I've ever written
 					try {
@@ -57,18 +56,10 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 					}
 					return true;
 				}).get() && (!TBMCCoreAPI.IsTestServer() || !branch.equals("master")))
-			while (true)
-				try {
-					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
-					break;
-				} catch (RateLimitException e) {
-					try {
-						if (e.getRetryDelay() > 0)
-							Thread.sleep(e.getRetryDelay());
-					} catch (InterruptedException ie) {
-					}
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while reacting to plugin update!", e);
-				}
+			try {
+				DiscordPlugin.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("An error occured while reacting to plugin update!", e);
+			}
 	}
 }

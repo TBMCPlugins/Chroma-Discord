@@ -13,6 +13,7 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -46,8 +47,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				try {
 					embedObject.description = lastmessage.getEmbedded().get(0).getDescription() + "\n"
 							+ embedObject.description;
-					lastmessage.edit("", embedObject);
-				} catch (MissingPermissionsException | RateLimitException | DiscordException e1) {
+					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
+				} catch (MissingPermissionsException | DiscordException e1) {
 					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 				}
 		} // TODO: Author URL
@@ -83,20 +84,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		String dmessage = event.getMessage().getContent();
 		try {
-			Optional<? extends Player> player = Bukkit.getOnlinePlayers().stream().filter(p -> { // TODO: Support offline players
-				DiscordPlayer dp = TBMCPlayer.getPlayer(p.getUniqueId(), TBMCPlayer.class).getAs(DiscordPlayer.class); // Not changing any data, don't need to save
-				return dp != null && author.getID().equals(dp.getDiscordID());
-			}).findAny();
+			DiscordPlayer dp = ChromaGamerBase.getUser(author.getID(), DiscordPlayer.class);
 			final DiscordSenderBase dsender;
-			if (player.isPresent()) // Connected?
-			{ // Execute as ingame player
+			Player mcp = null; // Offline players can't really run commands
+			final String cid;
+			if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
+					&& (mcp = Bukkit.getPlayer(cid)) != null) { // Execute as ingame player, if online
 				if (!ConnectedSenders.containsKey(author.getID()))
 					ConnectedSenders.put(author.getID(),
-							new DiscordPlayerSender(author, event.getMessage().getChannel(), player.get()));
+							new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
 				dsender = ConnectedSenders.get(author.getID());
 			} else {
+				TBMCPlayer p = dp.getAs(TBMCPlayer.class);
 				if (!UnconnectedSenders.containsKey(author.getID()))
-					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel()));
+					UnconnectedSenders.put(author.getID(), new DiscordSender(author, event.getMessage().getChannel(),
+							p == null ? null : p.PlayerName().get())); // Display the playername, if found
 				dsender = UnconnectedSenders.get(author.getID());
 			}
 
@@ -108,7 +110,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 			if (dmessage.startsWith("/")) {
 				final String cmd = dmessage.substring(1).toLowerCase();
-				if (!player.isPresent()
+				if (mcp == null
 						&& !Arrays.stream(UnconnectedCmds).anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 					// Command not whitelisted
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
@@ -130,39 +132,24 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				} else
 					Bukkit.dispatchCommand(dsender, cmd);
 				lastlistp = (short) Bukkit.getOnlinePlayers().size();
-			} else
+				if (!event.getMessage().isDeleted())
+					event.getMessage().delete();
+			} else {
 				TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 						dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
-			event.getMessage().getChannel().getMessages().stream().forEach(m -> {
-				try {
-					final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
-					if (reaction != null) {
-						while (true)
-							try {
-								m.removeReaction(reaction);
-								Thread.sleep(100);
-								break;
-							} catch (RateLimitException e) {
-								if (e.getRetryDelay() > 0)
-									Thread.sleep(e.getRetryDelay());
-							}
+				event.getMessage().getChannel().getMessages().stream().forEach(m -> {
+					try {
+						final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
+						if (reaction != null)
+							DiscordPlugin.perform(() -> m.removeReaction(reaction));
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 					}
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
-				}
-			});
-			while (true)
-				try {
-					event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION);
-					break;
-				} catch (RateLimitException e) {
-					if (e.getRetryDelay() > 0)
-						Thread.sleep(e.getRetryDelay());
-					else
-						Thread.sleep(100);
-				}
+				});
+				DiscordPlugin.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
 			return;

@@ -11,10 +11,8 @@ import org.bukkit.event.server.ServerCommandEvent;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
-import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
-import buttondevteam.lib.player.TBMCPlayerJoinEvent;
-import buttondevteam.lib.player.TBMCPlayerQuitEvent;
-import net.ess3.api.events.AfkStatusChangeEvent;
+import buttondevteam.lib.player.*;
+import net.ess3.api.events.*;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
 
@@ -45,6 +43,9 @@ public class MCListener implements Listener {
 		if (DiscordPlugin.SafeMode)
 			return;
 		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
+		/*System.out.println("dp: " + dp);
+		if (dp != null)
+			System.out.println("dp.did: " + dp.getDiscordID());*/
 		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
@@ -74,4 +75,8 @@ public class MCListener implements Listener {
 	public void onServerCommand(ServerCommandEvent e) {
 		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
 	}
+
+	/*
+	 * @EventHandler public void onPlayerMute(MuteStatusChangeEvent e) { e.getAffected() }
+	 */
 }

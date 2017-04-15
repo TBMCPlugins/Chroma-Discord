@@ -21,6 +21,8 @@ public class CommandListener {
 				final IChannel channel = event.getMessage().getChannel();
 				if (!channel.getID().equals(DiscordPlugin.botchannel.getID()) && !channel.isPrivate())
 					return;
+				if (channel.getID().equals(DiscordPlugin.chatchannel.getID()))
+					return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
 				runCommand(event.getMessage(), true);
 			}
 		}, new IListener<MessageReceivedEvent>() {
