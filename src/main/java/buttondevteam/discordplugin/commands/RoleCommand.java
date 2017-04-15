@@ -55,8 +55,16 @@ public class RoleCommand extends DiscordCommandBase {
 						"You need to be a moderator to use this command.");
 				return;
 			}
+			if (argsa.length < 2) {
+				DiscordPlugin.sendMessageToChannel(message.getChannel(),
+						"Add a role to the game role list.\nUsage: " + argsa[0] + " <rolename>");
+				return;
+			}
+			String rolename = argsa[1];
+			for (int i = 2; i < argsa.length; i++)
+				rolename += " " + argsa[i];
 			final List<IRole> roles = (TBMCCoreAPI.IsTestServer() ? DiscordPlugin.devServer : DiscordPlugin.mainServer)
-					.getRolesByName(argsa[1]);
+					.getRolesByName(rolename);
 			if (roles.size() == 0) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "That role cannot be found on Discord.");
 				return;
@@ -76,18 +84,21 @@ public class RoleCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), usage + "\nUsage: " + argsa[0] + " <rolename>");
 			return null;
 		}
-		if (!DiscordPlugin.GameRoles.contains(argsa[1])) {
+		String rolename = argsa[1];
+		for (int i = 2; i < argsa.length; i++)
+			rolename += " " + argsa[i];
+		if (!DiscordPlugin.GameRoles.contains(rolename)) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"That game role cannot be found.\nList of game roles:\n"
 							+ DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
 			return null;
 		}
 		final List<IRole> roles = (TBMCCoreAPI.IsTestServer() ? DiscordPlugin.devServer : DiscordPlugin.mainServer)
-				.getRolesByName(argsa[1]);
+				.getRolesByName(rolename);
 		if (roles.size() == 0) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"The specified role cannot be found on Discord! Removing from the list.");
-			DiscordPlugin.GameRoles.remove(argsa[1].toLowerCase());
+			DiscordPlugin.GameRoles.remove(rolename);
 			return null;
 		}
 		if (roles.size() > 1) {
