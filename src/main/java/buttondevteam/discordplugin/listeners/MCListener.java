@@ -8,13 +8,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
+import com.earth2me.essentials.CommandSource;
+
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.player.*;
 import net.ess3.api.events.*;
+import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Status.StatusType;
+import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.MissingPermissionsException;
 
 public class MCListener implements Listener {
 	@EventHandler
@@ -43,9 +49,6 @@ public class MCListener implements Listener {
 		if (DiscordPlugin.SafeMode)
 			return;
 		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
-		/*System.out.println("dp: " + dp);
-		if (dp != null)
-			System.out.println("dp.did: " + dp.getDiscordID());*/
 		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
 		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
@@ -66,6 +69,8 @@ public class MCListener implements Listener {
 
 	@EventHandler
 	public void onPlayerAFK(AfkStatusChangeEvent e) {
+		if (e.isCancelled())
+			return;
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
 				DiscordPlugin.sanitizeString(e.getAffected().getBase().getDisplayName()) + " is "
 						+ (e.getValue() ? "now" : "no longer") + " AFK.");
@@ -76,7 +81,25 @@ public class MCListener implements Listener {
 		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
 	}
 
-	/*
-	 * @EventHandler public void onPlayerMute(MuteStatusChangeEvent e) { e.getAffected() }
-	 */
+	@EventHandler
+	public void onPlayerMute(MuteStatusChangeEvent e) {
+		try {
+			DiscordPlugin.perform(() -> {
+				final IRole role = DiscordPlugin.dc.getRoleByID("164090010461667328");
+				final CommandSource source = e.getAffected().getSource();
+				if (!source.isPlayer())
+					return;
+				final IUser user = DiscordPlugin.dc
+						.getUserByID(TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
+								.getAs(DiscordPlayer.class).getDiscordID());
+				if (e.getValue())
+					user.addRole(role);
+				else
+					user.removeRole(role);
+			});
+		} catch (DiscordException | MissingPermissionsException ex) {
+			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
+					ex);
+		}
+	}
 }

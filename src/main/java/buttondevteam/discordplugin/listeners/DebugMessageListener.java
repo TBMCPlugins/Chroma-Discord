@@ -7,7 +7,7 @@ import buttondevteam.lib.TBMCDebugMessageEvent;
 
 public class DebugMessageListener implements Listener{
 	@EventHandler
-	public void onException(TBMCDebugMessageEvent e) {
+	public void onDebugMessage(TBMCDebugMessageEvent e) {
 		SendMessage(e.getDebugMessage());
 		e.setSent();
 	}
