@@ -76,29 +76,29 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		try {
 			task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
 				if (mainServer == null || devServer == null) {
-					mainServer = event.getClient().getGuildByID("125813020357165056");
-					devServer = event.getClient().getGuildByID("219529124321034241");
+					mainServer = event.getClient().getGuildByID(125813020357165056L);
+					devServer = event.getClient().getGuildByID(219529124321034241L);
 				}
 				if (mainServer == null || devServer == null)
 					return; // Retry
 				if (!TBMCCoreAPI.IsTestServer()) {
-					botchannel = mainServer.getChannelByID("209720707188260864"); // bot
-					annchannel = mainServer.getChannelByID("126795071927353344"); // announcements
-					genchannel = mainServer.getChannelByID("125813020357165056"); // general
-					chatchannel = mainServer.getChannelByID("249663564057411596"); // minecraft_chat
-					botroomchannel = devServer.getChannelByID("239519012529111040"); // bot-room
-					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
-					updatechannel = devServer.getChannelByID("233724163519414272"); // server-updates
-					dc.changeStatus(Status.game("on TBMC"));
+					botchannel = mainServer.getChannelByID(209720707188260864L); // bot
+					annchannel = mainServer.getChannelByID(126795071927353344L); // announcements
+					genchannel = mainServer.getChannelByID(125813020357165056L); // general
+					chatchannel = mainServer.getChannelByID(249663564057411596L); // minecraft_chat
+					botroomchannel = devServer.getChannelByID(239519012529111040L); // bot-room
+					officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
+					updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
+					dc.online("on TBMC");
 				} else {
-					botchannel = devServer.getChannelByID("239519012529111040"); // bot-room
+					botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
 					annchannel = botchannel; // bot-room
 					genchannel = botchannel; // bot-room
 					botroomchannel = botchannel;// bot-room
 					chatchannel = botchannel;// bot-room
-					officechannel = devServer.getChannelByID("219626707458457603"); // developers-office
+					officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
 					updatechannel = botchannel;
-					dc.changeStatus(Status.game("testing"));
+					dc.online("testing");
 				}
 				if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
 						|| chatchannel == null || officechannel == null || updatechannel == null)
@@ -155,7 +155,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
 				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
 		try {
-			dc.changeStatus(Status.game("on TBMC"));
+			dc.online("on TBMC");
 			dc.logout();
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);

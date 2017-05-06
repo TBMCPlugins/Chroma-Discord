@@ -30,7 +30,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			target = message.getAuthor();
 		else {
 			final Optional<IUser> firstmention = message.getMentions().stream()
-					.filter(m -> !m.getID().equals(DiscordPlugin.dc.getOurUser().getID())).findFirst();
+					.filter(m -> !m.getStringID().equals(DiscordPlugin.dc.getOurUser().getStringID())).findFirst();
 			if (firstmention.isPresent())
 				target = firstmention.get();
 			else if (args.contains("#")) {
@@ -68,7 +68,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 				target = targets.get(0);
 			}
 		}
-		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getID(), DiscordPlayer.class)) {
+		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getStringID(), DiscordPlayer.class)) {
 			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
 			uinfo.append(dp.getInfo(InfoTarget.Discord));
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());

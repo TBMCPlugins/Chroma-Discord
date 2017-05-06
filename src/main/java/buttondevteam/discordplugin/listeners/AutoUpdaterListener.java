@@ -7,7 +7,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IEmbed;
 import sx.blah.discord.util.EmbedBuilder;
 
@@ -16,13 +16,13 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 	public void handle(MessageReceivedEvent event) {
 		if (DiscordPlugin.SafeMode)
 			return;
-		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.officechannel.getID()))
+		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.officechannel.getStringID()))
 			return;
-		if (!"239123781401051138".equals(event.getMessage().getWebhookID()))
+		if (239123781401051138L != event.getMessage().getWebhookLongID())
 			return;
-		if (event.getMessage().getEmbedded().size() == 0)
+		if (event.getMessage().getEmbeds().size() == 0)
 			return;
-		final IEmbed embed = event.getMessage().getEmbedded().get(0);
+		final IEmbed embed = event.getMessage().getEmbeds().get(0);
 		final String title = embed.getTitle();
 		if (!title.contains("new commit"))
 			return;

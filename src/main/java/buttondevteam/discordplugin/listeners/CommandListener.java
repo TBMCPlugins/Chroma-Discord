@@ -3,8 +3,8 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.handle.impl.events.MentionEvent;
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -19,9 +19,9 @@ public class CommandListener {
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				final IChannel channel = event.getMessage().getChannel();
-				if (!channel.getID().equals(DiscordPlugin.botchannel.getID()) && !channel.isPrivate())
+				if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID()) && !channel.isPrivate())
 					return;
-				if (channel.getID().equals(DiscordPlugin.chatchannel.getID()))
+				if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
 					return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
 				runCommand(event.getMessage(), true);
 			}

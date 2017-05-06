@@ -2,7 +2,6 @@ package buttondevteam.discordplugin.listeners;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,7 +16,7 @@ import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.*;
 
@@ -41,13 +40,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					: embed.build();
 			final long nanoTime = System.nanoTime();
 			if (lastmessage == null || lastmessage.isDeleted()
-					|| !authorPlayer.equals(lastmessage.getEmbedded().get(0).getAuthor().getName())
+					|| !authorPlayer.equals(lastmessage.getEmbeds().get(0).getAuthor().getName())
 					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
 				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
 				lastmsgtime = nanoTime;
 			} else
 				try {
-					embedObject.description = lastmessage.getEmbedded().get(0).getDescription() + "\n"
+					embedObject.description = lastmessage.getEmbeds().get(0).getDescription() + "\n"
 							+ embedObject.description;
 					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
 				} catch (MissingPermissionsException | DiscordException e1) {
@@ -73,9 +72,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	}
 
 	@Override // Discord
-	public void handle(MessageReceivedEvent event) {
+	public void handle(sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
-		if (!event.getMessage().getChannel().getID().equals(DiscordPlugin.chatchannel.getID())
+		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
 		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
 			return;
 		lastmessage = null;
@@ -87,28 +86,28 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		String dmessage = event.getMessage().getContent();
 		synchronized (this) {
 			try {
-				DiscordPlayer dp = ChromaGamerBase.getUser(author.getID(), DiscordPlayer.class);
+				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
 				final DiscordSenderBase dsender;
 				Player mcp = null; // Offline players can't really run commands
 				final String cid;
 				if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
 						&& (mcp = Bukkit.getPlayer(cid)) != null) { // Execute as ingame player, if online
-					if (!ConnectedSenders.containsKey(author.getID()))
-						ConnectedSenders.put(author.getID(),
+					if (!ConnectedSenders.containsKey(author.getStringID()))
+						ConnectedSenders.put(author.getStringID(),
 								new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
-					dsender = ConnectedSenders.get(author.getID());
+					dsender = ConnectedSenders.get(author.getStringID());
 				} else {
 					TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-					if (!UnconnectedSenders.containsKey(author.getID()))
-						UnconnectedSenders.put(author.getID(), new DiscordSender(author,
+					if (!UnconnectedSenders.containsKey(author.getStringID()))
+						UnconnectedSenders.put(author.getStringID(), new DiscordSender(author,
 								event.getMessage().getChannel(), p == null ? null : p.PlayerName().get())); // Display the playername, if found
-					dsender = UnconnectedSenders.get(author.getID());
+					dsender = UnconnectedSenders.get(author.getStringID());
 				}
 
 				for (IUser u : event.getMessage().getMentions()) {
 					dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
-					final Optional<String> nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
-					dmessage = dmessage.replace(u.mention(true), "@" + (nick.isPresent() ? nick.get() : u.getName()));
+					final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
+					dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
 				}
 
 				if (dmessage.startsWith("/")) {
@@ -142,9 +141,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 									.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 									: ""));
-					event.getMessage().getChannel().getMessages().stream().forEach(m -> {
+					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
-							final IReaction reaction = m.getReactionByName(DiscordPlugin.DELIVERED_REACTION);
+							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
 							if (reaction != null)
 								DiscordPlugin.perform(() -> m.removeReaction(reaction));
 						} catch (Exception e) {

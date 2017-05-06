@@ -18,7 +18,6 @@ import buttondevteam.lib.player.*;
 import net.ess3.api.events.*;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.Status.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 
@@ -28,7 +27,7 @@ public class MCListener implements Listener {
 		final Player p = Bukkit.getPlayer(e.GetPlayer().getUUID());
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
 			IUser user = DiscordPlugin.dc
-					.getUserByID(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get()));
+					.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
 			p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
 					+ " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
@@ -51,15 +50,13 @@ public class MCListener implements Listener {
 		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
 		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
 			return;
-		IUser user = DiscordPlugin.dc.getUserByID(dp.getDiscordID());
+		IUser user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
 		e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());
-		if (!user.getStatus().getType().equals(StatusType.NONE)) {
-			if (user.getStatus().getType().equals(StatusType.GAME))
-				e.addInfo("Discord status: Playing " + user.getStatus().getStatusMessage());
-			else if (user.getStatus().getType().equals(StatusType.STREAM))
-				e.addInfo("Discord status: Streaming " + user.getStatus().getStatusMessage() + " - "
-						+ user.getStatus().getUrl());
-		}
+		e.addInfo(user.getPresence().getStatus().toString());
+		if (user.getPresence().getPlayingText().isPresent())
+			e.addInfo("Playing " + user.getPresence().getPlayingText().get());
+		else if (user.getPresence().getStreamingUrl().isPresent())
+			e.addInfo("Streaming " + user.getPresence().getStreamingUrl().get());
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -85,13 +82,13 @@ public class MCListener implements Listener {
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
 			DiscordPlugin.perform(() -> {
-				final IRole role = DiscordPlugin.dc.getRoleByID("164090010461667328");
+				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())
 					return;
-				final IUser user = DiscordPlugin.dc
-						.getUserByID(TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
-								.getAs(DiscordPlayer.class).getDiscordID());
+				final IUser user = DiscordPlugin.dc.getUserByID(
+						Long.parseLong(TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
+								.getAs(DiscordPlayer.class).getDiscordID())); // TODO: Use long
 				if (e.getValue())
 					user.addRole(role);
 				else

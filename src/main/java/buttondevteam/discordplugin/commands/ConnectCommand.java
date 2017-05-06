@@ -37,10 +37,10 @@ public class ConnectCommand extends DiscordCommandBase {
 					"Too many arguments.\nUsage: connect <Minecraftname>");
 			return;
 		}
-		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getID())) {
+		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getID()) + " with " + args);
-			WaitingToConnect.inverse().remove(message.getAuthor().getID());
+					"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getStringID()) + " with " + args);
+			WaitingToConnect.inverse().remove(message.getAuthor().getStringID());
 		}
 		@SuppressWarnings("deprecation")
 		OfflinePlayer p = Bukkit.getOfflinePlayer(args);
@@ -50,7 +50,7 @@ public class ConnectCommand extends DiscordCommandBase {
 		}
 		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
 			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
-			if (dp != null && message.getAuthor().getID().equals(dp.getDiscordID())) {
+			if (dp != null && message.getAuthor().getStringID().equals(dp.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
 				return;
 			}
@@ -58,7 +58,7 @@ public class ConnectCommand extends DiscordCommandBase {
 			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An internal error occured!\n" + e);
 		}
-		WaitingToConnect.put(p.getName(), message.getAuthor().getID());
+		WaitingToConnect.put(p.getName(), message.getAuthor().getStringID());
 		DiscordPlugin.sendMessageToChannel(message.getChannel(),
 				"Pending connection - accept connection in Minecraft from the account " + args
 						+ " before the server gets restarted. You can also adjust the Minecraft name you want to connect to with the same command.");

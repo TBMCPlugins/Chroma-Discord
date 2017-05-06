@@ -37,7 +37,8 @@ public class AppTest extends TestCase {
 	public void testApp() {
 		/*String sourcemessage = "Test message";
 		Exception e = new Exception("Test exception");
-		StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder() : new StringBuilder("").append("\n");
+		StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder()
+				: new StringBuilder("Coder role").append("\n");
 		sb.append(sourcemessage).append("\n");
 		sb.append("```").append("\n");
 		String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
@@ -52,7 +53,8 @@ public class AppTest extends TestCase {
 			stackTrace = stackTrace.substring(0, 1800);
 		sb.append(stackTrace).append("\n");
 		sb.append("```");
-		System.out.println(sb.toString());		*/
+		System.out.println(sb.toString());
+		assertTrue(sb.toString().contains("Coder role"));*/
 		assertTrue(true);
 	}
 }
