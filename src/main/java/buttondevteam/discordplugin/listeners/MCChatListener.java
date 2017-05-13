@@ -44,10 +44,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
 				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
 				lastmsgtime = nanoTime;
+				lastmsg = e.getMessage();
 			} else
 				try {
-					embedObject.description = lastmessage.getEmbeds().get(0).getDescription() + "\n"
-							+ embedObject.description;
+					lastmsg = embedObject.description = lastmsg + "\n" + embedObject.description;
 					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
 				} catch (MissingPermissionsException | DiscordException e1) {
 					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
@@ -55,11 +55,39 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		} // TODO: Author URL
 	}
 
+	@EventHandler
+	public void onChatPreprocess(TBMCChatPreprocessEvent event) {
+		int start = -1;
+		// System.out.println("A");
+		while ((start = event.getMessage().indexOf('@', start + 1)) != -1) {
+			// System.out.println("Start: " + start);
+			int mid = event.getMessage().indexOf('#', start + 1);
+			// System.out.println("Mid: " + mid);
+			if (mid == -1)
+				return;
+			int end_ = event.getMessage().indexOf(' ', mid + 1);
+			// System.out.println("End: " + end_);
+			if (end_ == -1)
+				end_ = event.getMessage().length();
+			final int end = end_;
+			final int startF = start;
+			// System.out.println("Name: " + event.getMessage().substring(start, mid));
+			// System.out.println("Disc: " + event.getMessage().substring(mid, end));
+			DiscordPlugin.dc.getUsersByName(event.getMessage().substring(start + 1, mid)).stream()
+					.filter(u -> u.getDiscriminator().equals(event.getMessage().substring(mid + 1, end))).findAny()
+					.ifPresent(user -> event.setMessage(event.getMessage().substring(0, startF) + "@" + user.getName()
+							+ (event.getMessage().length() > end ? event.getMessage().substring(end)
+									: ""))); // TODO: Add formatting
+			start = end; // Skip any @s inside the mention
+		}
+	}
+
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw" };
 
 	private static IMessage lastmessage = null;
 	private static long lastmsgtime = 0;
+	private static String lastmsg;
 	private static short lastlist = 0;
 	private static short lastlistp = 0;
 
