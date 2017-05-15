@@ -23,13 +23,13 @@ public class CommandListener {
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
 		private static final long serialVersionUID = 2213771460909848770L;
 		{
-			createUsableServerReadyStrings();
+			createUsableServerReadyStrings(this);
 		}
 	};
 
-	private static void createUsableServerReadyStrings() {
+	private static void createUsableServerReadyStrings(ArrayList<Short> list) {
 		for (short i = 0; i < serverReadyStrings.length; i++)
-			usableServerReadyStrings.add(i);
+			list.add(i);
 	}
 
 	public static IListener<?>[] getListeners() {
@@ -60,7 +60,7 @@ public class CommandListener {
 					 * (next == j) next++; if (next >= serverReadyStrings.length) next = 0; } lastServerReadyStrings.add(next); }
 					 */
 					if (usableServerReadyStrings.size() == 0)
-						createUsableServerReadyStrings();
+						createUsableServerReadyStrings(usableServerReadyStrings);
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), serverReadyStrings[next]);
 				}
