@@ -1,14 +1,12 @@
 package buttondevteam.discordplugin.mccommands;
 
-import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.lib.chat.CommandClass;
 
+@CommandClass(modOnly = false, path = "decline")
 public class DeclineMCCommand extends DiscordMCCommandBase {
-
-	@Override
-	public String GetDiscordCommandPath() {
-		return "decline";
-	}
 
 	@Override
 	public String[] GetHelpText(String alias) {
@@ -21,23 +19,13 @@ public class DeclineMCCommand extends DiscordMCCommandBase {
 	}
 
 	@Override
-	public boolean GetModOnly() {
-		return false;
-	}
-
-	@Override
-	public boolean GetPlayerOnly() {
-		return true;
-	}
-
-	@Override
-	public boolean OnCommand(CommandSender sender, String alias, String[] args) {
-		String did = ConnectCommand.WaitingToConnect.remove(sender.getName());
+	public boolean OnCommand(Player player, String alias, String[] args) {
+		String did = ConnectCommand.WaitingToConnect.remove(player.getName());
 		if (did == null) {
-			sender.sendMessage("§cYou don't have a pending connection to Discord.");
+			player.sendMessage("§cYou don't have a pending connection to Discord.");
 			return true;
 		}
-		sender.sendMessage("§bPending connection declined.");
+		player.sendMessage("§bPending connection declined.");
 		return true;
 	}
 

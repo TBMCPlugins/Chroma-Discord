@@ -1,14 +1,9 @@
 package buttondevteam.discordplugin.mccommands;
 
-import buttondevteam.lib.chat.TBMCCommandBase;
+import buttondevteam.lib.chat.CommandClass;
+import buttondevteam.lib.chat.PlayerCommandBase;
 
-public abstract class DiscordMCCommandBase extends TBMCCommandBase {
-
-	@Override
-	public String GetCommandPath() {
-		return "discord " + GetDiscordCommandPath();
-	}
-
-	public abstract String GetDiscordCommandPath();
+@CommandClass(modOnly = false, path = "discord")
+public abstract class DiscordMCCommandBase extends PlayerCommandBase {
 
 }

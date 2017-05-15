@@ -50,7 +50,7 @@ public class RoleCommand extends DiscordCommandBase {
 					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
 		} else if (argsa[0].equalsIgnoreCase("addrole")) {
 			if (!message.getAuthor().getRolesForGuild(DiscordPlugin.mainServer).stream()
-					.anyMatch(r -> r.getName().equals("Moderator"))) {
+					.anyMatch(r -> r.getLongID() == 126030201472811008L)) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"You need to be a moderator to use this command.");
 				return;

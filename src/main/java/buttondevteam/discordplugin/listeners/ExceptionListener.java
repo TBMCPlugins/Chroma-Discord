@@ -48,7 +48,7 @@ public class ExceptionListener implements Listener {
 			sb.append(sourcemessage).append("\n");
 			sb.append("```").append("\n");
 			String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
-					.filter(s -> !(s.contains(" at ") && ( //
+					.filter(s -> !(s.contains("\tat ") && ( //
 					s.contains("java.util") //
 							|| s.contains("java.lang") //
 							|| s.contains("net.minecraft.server") //
