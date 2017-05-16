@@ -17,6 +17,13 @@ public class CommandListener {
 			"Between now and the heat-death of the universe.", // Ghostise
 			"Soon™", "Ask again this time next month", // Ghostise
 			"In about 3 seconds", // Nicolai
+			"Right after we finish coding 7 plugins",//Ali
+			"It'll be done tomorrow.",//Ali
+			"We just need  to complete one tiiiny feature",//Ali
+			"In 18 commits",//Ali
+			"After we finish strangling Towny",//Ali
+			"When we kill every bug in the system",//Ali
+			"Once the server stops screaming error messages.",//Ali
 	};
 
 	private static final Random serverReadyRandom = new Random();
