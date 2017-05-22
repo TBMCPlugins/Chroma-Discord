@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.listeners;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -116,10 +117,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			try {
 				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
 				final DiscordSenderBase dsender;
-				Player mcp = null; // Offline players can't really run commands
+				Player mcp = null; // Offline players can't really run commands, or can they?
 				final String cid;
 				if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
-						&& (mcp = Bukkit.getPlayer(cid)) != null) { // Execute as ingame player, if online
+						&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
 					if (!ConnectedSenders.containsKey(author.getStringID()))
 						ConnectedSenders.put(author.getStringID(),
 								new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
