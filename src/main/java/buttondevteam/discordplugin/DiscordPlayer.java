@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.player.ChromaGamerBase;
+import buttondevteam.lib.player.PlayerData;
 import buttondevteam.lib.player.UserClass;
 
 @UserClass(foldername = "discord")
@@ -14,5 +15,9 @@ public class DiscordPlayer extends ChromaGamerBase {
 		if (did == null)
 			did = plugindata.getString(getFolder() + "_id");
 		return did;
+	}
+
+	public PlayerData<Boolean> minecraftChat() {
+		return data();
 	}
 }

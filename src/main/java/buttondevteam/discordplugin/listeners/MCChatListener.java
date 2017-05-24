@@ -59,21 +59,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	@EventHandler
 	public void onChatPreprocess(TBMCChatPreprocessEvent event) {
 		int start = -1;
-		// System.out.println("A");
 		while ((start = event.getMessage().indexOf('@', start + 1)) != -1) {
-			// System.out.println("Start: " + start);
 			int mid = event.getMessage().indexOf('#', start + 1);
-			// System.out.println("Mid: " + mid);
 			if (mid == -1)
 				return;
 			int end_ = event.getMessage().indexOf(' ', mid + 1);
-			// System.out.println("End: " + end_);
 			if (end_ == -1)
 				end_ = event.getMessage().length();
 			final int end = end_;
 			final int startF = start;
-			// System.out.println("Name: " + event.getMessage().substring(start, mid));
-			// System.out.println("Disc: " + event.getMessage().substring(mid, end));
 			DiscordPlugin.dc.getUsersByName(event.getMessage().substring(start + 1, mid)).stream()
 					.filter(u -> u.getDiscriminator().equals(event.getMessage().substring(mid + 1, end))).findAny()
 					.ifPresent(user -> event.setMessage(event.getMessage().substring(0, startF) + "@" + user.getName()
@@ -104,7 +98,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public void handle(sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
+				&& !(event.getMessage().getChannel().isPrivate()
+						&& DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class).minecraftChat().get()))
 			return;
 		lastmessage = null;
 		lastlist++;
@@ -117,7 +112,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			try {
 				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
 				final DiscordSenderBase dsender;
-				Player mcp = null; // Offline players can't really run commands, or can they?
+				Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
 				final String cid;
 				if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
 						&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player

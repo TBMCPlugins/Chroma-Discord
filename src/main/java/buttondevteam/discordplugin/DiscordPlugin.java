@@ -4,7 +4,10 @@ import java.awt.Color;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Random;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -135,6 +138,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
+			final Calendar currentCal = Calendar.getInstance();
+			final Calendar newCal = Calendar.getInstance();
+			currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
+					currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
+			if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
+				Random rand = new Random();
+				sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
+						"You could make a religion out of this");
+			}
+
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
