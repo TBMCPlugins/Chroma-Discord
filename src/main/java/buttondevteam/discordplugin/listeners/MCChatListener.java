@@ -1,8 +1,10 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -28,8 +30,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
-		if (!e.getChannel().equals(Channel.GlobalChat))
-			return;
 		synchronized (this) {
 			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
 					? ((Player) e.getSender()).getDisplayName() //
@@ -40,20 +40,45 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png").build()
 					: embed.build();
 			final long nanoTime = System.nanoTime();
-			if (lastmessage == null || lastmessage.isDeleted()
-					|| !authorPlayer.equals(lastmessage.getEmbeds().get(0).getAuthor().getName())
-					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
-				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
-				lastmsgtime = nanoTime;
-				lastmsg = e.getMessage();
-			} else
-				try {
-					lastmsg = embedObject.description = lastmsg + "\n" + embedObject.description;
-					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
-				} catch (MissingPermissionsException | DiscordException e1) {
-					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-				}
+			Consumer<LastMsgData> doit = lastmsgdata -> {
+				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+						|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120) {
+					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel,
+							lastmsgdata.channel.isPrivate() ? e.getChannel().DisplayName : "", embedObject);
+					lastmsgdata.time = nanoTime;
+				} else
+					try {
+						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+								+ embedObject.description;// The message object doesn't get updated
+						final LastMsgData _lastmsgdata = lastmsgdata;
+						DiscordPlugin.perform(() -> _lastmsgdata.message.edit("", embedObject));
+					} catch (MissingPermissionsException | DiscordException e1) {
+						TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+					}
+			};
+			if (e.getChannel().equals(Channel.GlobalChat))
+				doit.accept(lastmsgdata);
+
+			for (LastMsgData data : lastmsgPerUser) {
+				final DiscordPlayer user = DiscordPlayer.getUser(data.channel.getUsersHere().stream()
+						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get()
+						.getStringID(), DiscordPlayer.class);
+				if (user.minecraftChat().get() && e.shouldSendTo()) // TODO!
+					doit.accept(data);
+			} // TODO: CHeck if user should get the message (get user from channel)
 		} // TODO: Author URL
+	}
+
+	private static class LastMsgData {
+		public IMessage message;
+		public long time;
+		public String content;
+		public IChannel channel;
+
+		public LastMsgData(IChannel channel) {
+			this.channel = channel;
+		}
 	}
 
 	@EventHandler
@@ -80,28 +105,30 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw" };
 
-	private static IMessage lastmessage = null;
-	private static long lastmsgtime = 0;
-	private static String lastmsg;
+	private static LastMsgData lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel);
 	private static short lastlist = 0;
 	private static short lastlistp = 0;
+	/**
+	 * Used for messages in PMs (mcchat).
+	 */
+	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
-		lastmessage = null;
+		lastmsgdata.message = null; // Don't set the whole object to null, the player and channel information should be preserved
 	}
 
 	@Override // Discord
-	public void handle(sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event) {
+	public void handle(MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
 				&& !(event.getMessage().getChannel().isPrivate()
 						&& DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class).minecraftChat().get()))
 			return;
-		lastmessage = null;
+		resetLastMessage();
 		lastlist++;
 		if (author.isBot())
 			return;

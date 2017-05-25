@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -17,14 +18,17 @@ public class CommandListener {
 			"Between now and the heat-death of the universe.", // Ghostise
 			"Soon™", "Ask again this time next month", // Ghostise
 			"In about 3 seconds", // Nicolai
-			"Right after we finish coding 7 plugins",//Ali
-			"It'll be done tomorrow.",//Ali
-			"We just need  to complete one tiiiny feature",//Ali
-			"In 18 commits",//Ali
-			"After we finish strangling Towny",//Ali
-			"When we kill every bug in the system",//Ali
-			"Once the server stops screaming error messages.",//Ali
+			"Right after we finish coding 7 plugins", // Ali
+			"It'll be done tomorrow.", // Ali
+			"We just need  to complete one tiiiny feature", // Ali
+			"In 18 commits", // Ali
+			"After we finish strangling Towny", // Ali
+			"When we kill every bug in the system", // Ali
+			"Once the server stops screaming error messages.",// Ali
 	};
+
+	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
+			"when will the server be ready", "when's the server ready", "when's the server open" };
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
@@ -59,13 +63,9 @@ public class CommandListener {
 			public void handle(MessageReceivedEvent event) {
 				if (DiscordPlugin.SafeMode)
 					return;
-				if (event.getMessage().getContent().toLowerCase().contains("when will the server be open?")) {
+				final String msglowercase = event.getMessage().getContent().toLowerCase();
+				if (Arrays.stream(serverReadyQuestions).anyMatch(s -> msglowercase.contains(s))) {
 					int next;
-					/*
-					 * if (serverReadyStrings.length <= lastServerReadyStrings.size()) { next = lastServerReadyStrings.get(0); lastServerReadyStrings.clear(); } else { next = (short) serverReadyRandom
-					 * .nextInt(serverReadyStrings.length - lastServerReadyStrings.size()); for (short i = 0; i < lastServerReadyStrings.size(); i++) { short j = lastServerReadyStrings.get(i); if
-					 * (next == j) next++; if (next >= serverReadyStrings.length) next = 0; } lastServerReadyStrings.add(next); }
-					 */
 					if (usableServerReadyStrings.size() == 0)
 						createUsableServerReadyStrings(usableServerReadyStrings);
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
