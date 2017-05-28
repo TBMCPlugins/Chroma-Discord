@@ -61,12 +61,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				doit.accept(lastmsgdata);
 
 			for (LastMsgData data : lastmsgPerUser) {
-				final DiscordPlayer user = DiscordPlayer.getUser(data.channel.getUsersHere().stream()
-						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get()
-						.getStringID(), DiscordPlayer.class);
-				if (user.minecraftChat().get() && e.shouldSendTo()) // TODO!
+				final IUser iUser = data.channel.getUsersHere().stream()
+						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
+				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
+				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
 					doit.accept(data);
-			} // TODO: CHeck if user should get the message (get user from channel)
+			}
 		} // TODO: Author URL
 	}
 
@@ -138,22 +138,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		synchronized (this) {
 			try {
 				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
-				final DiscordSenderBase dsender;
-				Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
-				final String cid;
-				if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
-						&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
-					if (!ConnectedSenders.containsKey(author.getStringID()))
-						ConnectedSenders.put(author.getStringID(),
-								new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
-					dsender = ConnectedSenders.get(author.getStringID());
-				} else {
-					TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-					if (!UnconnectedSenders.containsKey(author.getStringID()))
-						UnconnectedSenders.put(author.getStringID(), new DiscordSender(author,
-								event.getMessage().getChannel(), p == null ? null : p.PlayerName().get())); // Display the playername, if found
-					dsender = UnconnectedSenders.get(author.getStringID());
-				}
+				final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), author, dp);
 
 				for (IUser u : event.getMessage().getMentions()) {
 					dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
@@ -163,7 +148,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 				if (dmessage.startsWith("/")) {
 					final String cmd = dmessage.substring(1).toLowerCase();
-					if (mcp == null && !Arrays.stream(UnconnectedCmds)
+					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
 							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 						// Command not whitelisted
 						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
@@ -208,5 +193,24 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				return;
 			}
 		}
+	}
+
+	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+		final DiscordSenderBase dsender;
+		Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
+		final String cid;
+		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
+				&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
+			if (!ConnectedSenders.containsKey(author.getStringID()))
+				ConnectedSenders.put(author.getStringID(), new DiscordPlayerSender(author, channel, mcp));
+			dsender = ConnectedSenders.get(author.getStringID());
+		} else {
+			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
+			if (!UnconnectedSenders.containsKey(author.getStringID()))
+				UnconnectedSenders.put(author.getStringID(),
+						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
+			dsender = UnconnectedSenders.get(author.getStringID());
+		}
+		return dsender;
 	}
 }
