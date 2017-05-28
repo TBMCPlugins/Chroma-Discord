@@ -64,7 +64,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				final IUser iUser = data.channel.getUsersHere().stream()
 						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
 				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+				if (user.minecraftChat().getOrDefault(false) && e.shouldSendTo(getSender(data.channel, iUser, user)))
 					doit.accept(data);
 			}
 		} // TODO: Author URL
@@ -125,8 +125,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public void handle(MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate()
-						&& DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class).minecraftChat().get()))
+				&& !(event.getMessage().getChannel().isPrivate() && DiscordPlayer
+						.getUser(author.getStringID(), DiscordPlayer.class).minecraftChat().getOrDefault(false)))
 			return;
 		resetLastMessage();
 		lastlist++;

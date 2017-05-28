@@ -20,6 +20,7 @@ public abstract class DiscordCommandBase {
 		commands.put("userinfo", new UserinfoCommand());
 		commands.put("help", new HelpCommand());
 		commands.put("role", new RoleCommand());
+		commands.put("mcchat", new MCChatCommand());
 	}
 
 	public static void runCommand(String cmd, String args, IMessage message) {

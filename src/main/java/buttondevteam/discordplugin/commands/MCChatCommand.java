@@ -19,7 +19,7 @@ public class MCChatCommand extends DiscordCommandBase {
 		}
 		PlayerData<Boolean> mcchat = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)
 				.minecraftChat();
-		mcchat.set(!mcchat.get());
+		mcchat.set(!mcchat.getOrDefault(false));
 		message.reply("Minecraft chat " + (mcchat.get() ? "enabled." : "disabled."));
 	}
 
