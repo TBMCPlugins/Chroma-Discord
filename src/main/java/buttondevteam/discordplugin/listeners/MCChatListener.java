@@ -147,11 +147,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				}
 
 				if (dmessage.startsWith("/")) {
+					DiscordPlugin.perform(() -> {
+						if (!event.getMessage().isDeleted())
+							event.getMessage().delete();
+					});
 					final String cmd = dmessage.substring(1).toLowerCase();
 					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
 							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 						// Command not whitelisted
-						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
+						dsender.sendMessage( // TODO
 								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
 										+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
 												.collect(Collectors.joining(", "))
@@ -170,8 +174,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					} else
 						Bukkit.dispatchCommand(dsender, cmd);
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
-					if (!event.getMessage().isDeleted())
-						event.getMessage().delete();
 				} else {
 					TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
 							dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
