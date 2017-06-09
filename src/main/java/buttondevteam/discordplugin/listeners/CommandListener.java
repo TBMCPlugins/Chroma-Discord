@@ -25,10 +25,19 @@ public class CommandListener {
 			"After we finish strangling Towny", // Ali
 			"When we kill every bug in the system", // Ali
 			"Once the server stops screaming error messages.",// Ali
+			"After HL3 comes out", //Ali
+			"It'll be ready next time you ask", //Ali
 	};
 
-	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
-			"when will the server be ready", "when's the server ready", "when's the server open" };
+	private static final String[] serverReadyQuestions = new String[] { 
+			"when will the server be open",
+			"when will the server be ready", 
+			"when will the server be done",
+			"when will the server be complete",
+			"when will the server be finished",
+			"when's the server ready", 
+			"when's the server open"
+			};
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
