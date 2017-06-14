@@ -27,7 +27,9 @@ public abstract class DiscordCommandBase {
 		DiscordCommandBase command = commands.get(cmd);
 		if (command == null) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Unknown command: " + cmd + " with args: " + args + "\nDo @ChromaBot help for help");
+					"Unknown command: " + cmd + " with args: " + args + "\nDo '"
+							+ (message.getChannel().isPrivate() ? "" : message.getClient().getOurUser().mention() + " ")
+							+ "help' for help");
 			return;
 		}
 		try {

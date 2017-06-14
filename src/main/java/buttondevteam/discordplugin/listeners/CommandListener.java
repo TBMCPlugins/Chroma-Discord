@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.api.events.IListener;
@@ -24,20 +25,14 @@ public class CommandListener {
 			"In 18 commits", // Ali
 			"After we finish strangling Towny", // Ali
 			"When we kill every bug in the system", // Ali
-			"Once the server stops screaming error messages.",// Ali
-			"After HL3 comes out", //Ali
-			"It'll be ready next time you ask", //Ali
+			"Once the server stops screaming error messages.", // Ali
+			"After HL3 comes out", // Ali
+			"It'll be ready next time you ask", // Ali
 	};
 
-	private static final String[] serverReadyQuestions = new String[] { 
-			"when will the server be open",
-			"when will the server be ready", 
-			"when will the server be done",
-			"when will the server be complete",
-			"when will the server be finished",
-			"when's the server ready", 
-			"when's the server open"
-			};
+	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
+			"when will the server be ready", "when will the server be done", "when will the server be complete",
+			"when will the server be finished", "when's the server ready", "when's the server open" };
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
@@ -65,6 +60,9 @@ public class CommandListener {
 					return;
 				if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
 					return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
+				if (DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat()
+						.getOrDefault(false)) // Let the MCChatListener handle it
+					return;
 				runCommand(event.getMessage(), true);
 			}
 		}, new IListener<MessageReceivedEvent>() {
@@ -80,7 +78,9 @@ public class CommandListener {
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), serverReadyStrings[next]);
 				}
-				if (!event.getMessage().getChannel().isPrivate())
+				if (!event.getMessage().getChannel().isPrivate()
+						|| DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat()
+								.getOrDefault(false))
 					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;

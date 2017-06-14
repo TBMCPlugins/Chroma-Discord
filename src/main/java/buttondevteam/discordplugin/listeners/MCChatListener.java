@@ -15,7 +15,6 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
-import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -124,9 +123,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
 		final IUser author = event.getMessage().getAuthor();
+		final DiscordPlayer user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && DiscordPlayer
-						.getUser(author.getStringID(), DiscordPlayer.class).minecraftChat().getOrDefault(false)))
+				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().getOrDefault(false)))
 			return;
 		resetLastMessage();
 		lastlist++;
@@ -137,8 +136,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		String dmessage = event.getMessage().getContent();
 		synchronized (this) {
 			try {
-				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
-				final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), author, dp);
+				final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), author, user);
 
 				for (IUser u : event.getMessage().getMentions()) {
 					dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
@@ -148,7 +146,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 				if (dmessage.startsWith("/")) {
 					DiscordPlugin.perform(() -> {
-						if (!event.getMessage().isDeleted())
+						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
 							event.getMessage().delete();
 					});
 					final String cmd = dmessage.substring(1).toLowerCase();
