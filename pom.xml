@@ -162,5 +162,10 @@
 			<artifactId>Essentials</artifactId>
 			<version>2.13.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.github.xaanit</groupId>
+			<artifactId>D4J-OAuth</artifactId>
+			<version>master-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>

@@ -13,6 +13,9 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.github.xaanit.d4j.oauth.Scope;
+import com.github.xaanit.d4j.oauth.handle.IDiscordOAuth;
+import com.github.xaanit.d4j.oauth.util.DiscordOAuthBuilder;
 import com.google.common.io.Files;
 import com.google.gson.*;
 
@@ -20,6 +23,7 @@ import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import io.vertx.core.http.HttpServerOptions;
 import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
@@ -147,7 +151,23 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
 						"You could make a religion out of this");
 			}
-
+			IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041")
+					.withClientSecret(getConfig().getString("appsecret"))
+					.withRedirectUrl("https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
+							+ ":8081/callback")
+					.withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
+					.withSuccessHandler((rc, user) -> {
+						rc.response().headers().add("Location",
+								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
+										+ ":8080/login?type=discord");
+						rc.response().close();
+					}).withFailureHandler(rc -> {
+						rc.response().headers().add("Location",
+								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
+										+ ":8080/login?type=discord"); // TODO
+						rc.response().close();
+					}).build();
+			getLogger().info("Auth URL: " + doa.buildAuthUrl());
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
