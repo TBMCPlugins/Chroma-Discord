@@ -34,6 +34,7 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.util.RequestBuffer;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
@@ -159,15 +160,21 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					.withSuccessHandler((rc, user) -> {
 						rc.response().headers().add("Location",
 								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
-										+ ":8080/login?type=discord");
+										+ ":8080/login?type=discord&" + rc.request().query());
+						rc.response().setStatusCode(303);
+						rc.response().end("Redirecting");
 						rc.response().close();
 					}).withFailureHandler(rc -> {
 						rc.response().headers().add("Location",
 								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
-										+ ":8080/login?type=discord"); // TODO
+										+ ":8080/login?type=discord&" + rc.request().query());
+						rc.response().setStatusCode(303);
+						rc.response().end("Redirecting");
 						rc.response().close();
 					}).build();
 			getLogger().info("Auth URL: " + doa.buildAuthUrl());
+			Void v = RequestBuffer.request(System.out::println).get(); // TODO: Remove
+			System.out.println(v);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
