@@ -33,7 +33,7 @@ public class CommandListener {
 
 	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
 			"when will the server be ready", "when will the server be done", "when will the server be complete",
-			"when will the server be finished", "when's the server ready", "when's the server open" };
+			"when will the server be finished", "when's the server ready", "when's the server open", "Vhen vill ze server be open?" };
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
