@@ -19,15 +19,16 @@ public class CommandListener {
 			"Between now and the heat-death of the universe.", // Ghostise
 			"Soon™", "Ask again this time next month", // Ghostise
 			"In about 3 seconds", // Nicolai
-			"Right after we finish coding 7 plugins", // Ali
-			"It'll be done tomorrow.", // Ali
-			"We just need  to complete one tiiiny feature", // Ali
-			"In 18 commits", // Ali
+			"After we finish 8 plugins", // Ali
+			"Tomorrow.", // Ali
+			"After one tiiiny feature", // Ali
+			"Next commit", // Ali
 			"After we finish strangling Towny", // Ali
-			"When we kill every bug in the system", // Ali
-			"Once the server stops screaming error messages.", // Ali
+			"When we kill every *fucking* bug", // Ali
+			"Once the server stops screaming.", // Ali
 			"After HL3 comes out", // Ali
-			"It'll be ready next time you ask", // Ali
+			"Next time you ask", // Ali
+			"When will *you* be open?" //Ali
 	};
 
 	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
