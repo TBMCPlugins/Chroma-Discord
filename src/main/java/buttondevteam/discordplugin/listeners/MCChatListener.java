@@ -173,10 +173,16 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						Bukkit.dispatchCommand(dsender, cmd);
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
 				} else {
-					TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
-							dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-									.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
-									: ""));
+					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
+						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
+					else
+						TBMCChatAPI
+								.SendChatMessage(Channel.GlobalChat,
+										dsender, dmessage
+												+ (event.getMessage().getAttachments().size() > 0
+														? "\n" + event.getMessage().getAttachments().stream()
+																.map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+														: ""));
 					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
 							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
