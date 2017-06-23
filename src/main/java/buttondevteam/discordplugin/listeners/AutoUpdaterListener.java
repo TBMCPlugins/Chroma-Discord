@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
+import buttondevteam.lib.PluginUpdater;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -29,13 +30,14 @@ public class AutoUpdaterListener implements IListener<MessageReceivedEvent> {
 		String branch = title.substring(title.indexOf(':') + 1, title.indexOf(']'));
 		String project = title.substring(title.indexOf('[') + 1, title.indexOf(':'));
 		if ((branch.equals("master") || (TBMCCoreAPI.IsTestServer() && branch.equals("dev")))
+				&& PluginUpdater.isMaven(project, branch)
 				&& TBMCCoreAPI.UpdatePlugin(project,
 						new DiscordSender(null,
 								TBMCCoreAPI.IsTestServer() //
 										? DiscordPlugin.chatchannel //
 										: DiscordPlugin.botroomchannel),
 						branch)
-				&& ((Supplier<Boolean>) () -> { // Best looking code I've ever written
+				&& ((Supplier<Boolean>) () -> {
 					try {
 						int hi, ei, prnum;
 						if ((hi = embed.getDescription().indexOf('#')) > -1
