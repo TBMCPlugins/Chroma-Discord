@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.player.PlayerData;
 import sx.blah.discord.handle.obj.IMessage;
@@ -20,8 +21,9 @@ public class MCChatCommand extends DiscordCommandBase {
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
 			PlayerData<Boolean> mcchat = user.minecraftChat();
-			mcchat.set(!mcchat.getOrDefault(false));
-			message.reply("Minecraft chat " + (mcchat.getOrDefault(false) //
+			mcchat.set(!mcchat.get());
+			MCChatListener.privateMCChat(message.getChannel(), mcchat.get());
+			message.reply("Minecraft chat " + (mcchat.get() //
 					? "enabled. Use '" + message.getClient().getOurUser().mention()
 							+ " mcchat' (with the mention) to disable." //
 					: "disabled."));

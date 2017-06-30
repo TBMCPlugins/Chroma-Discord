@@ -18,6 +18,6 @@ public class DiscordPlayer extends ChromaGamerBase {
 	}
 
 	public PlayerData<Boolean> minecraftChat() {
-		return data();
+		return data(false);
 	}
 }

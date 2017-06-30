@@ -65,7 +65,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				final IUser iUser = data.channel.getUsersHere().stream()
 						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
 				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-				if (user.minecraftChat().getOrDefault(false) && e.shouldSendTo(getSender(data.channel, iUser, user)))
+				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
 					doit.accept(data);
 			}
 		} // TODO: Author URL
@@ -115,12 +115,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 */
 	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
 
-	public static boolean startPrivateMCChat(IChannel channel) {
-		return lastmsgPerUser.add(new LastMsgData(channel));
-	}
-
-	public static boolean stopPrivateMCChat(IChannel channel) {
-		return lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
+	public static boolean privateMCChat(IChannel channel, boolean start) {
+		return start ? lastmsgPerUser.add(new LastMsgData(channel))
+				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
@@ -136,7 +133,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		final IUser author = event.getMessage().getAuthor();
 		final DiscordPlayer user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().getOrDefault(false)))
+				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()))
 			return;
 		resetLastMessage();
 		lastlist++;
@@ -225,7 +222,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
 			if (!UnconnectedSenders.containsKey(author.getStringID()))
 				UnconnectedSenders.put(author.getStringID(),
-						new DiscordSender(author, channel, p == null ? null : p.PlayerName().getOrDefault(null))); // Display the playername, if found
+						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
 			dsender = UnconnectedSenders.get(author.getStringID());
 		}
 		return dsender;
