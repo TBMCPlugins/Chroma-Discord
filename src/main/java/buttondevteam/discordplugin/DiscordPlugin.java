@@ -13,9 +13,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import com.github.xaanit.d4j.oauth.Scope;
-import com.github.xaanit.d4j.oauth.handle.IDiscordOAuth;
-import com.github.xaanit.d4j.oauth.util.DiscordOAuthBuilder;
 import com.google.common.io.Files;
 import com.google.gson.*;
 
@@ -23,18 +20,15 @@ import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.TBMCChatAPI;
-import io.vertx.core.http.HttpServerOptions;
 import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
-import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RateLimitException;
-import sx.blah.discord.util.RequestBuffer;
+import sx.blah.discord.util.*;
+import sx.blah.discord.util.RequestBuffer.IVoidRequest;
+import sx.blah.discord.util.RequestBuffer.RequestFuture;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
@@ -134,25 +128,27 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			MCChatListener mcchat = new MCChatListener();
 			dc.getDispatcher().registerListener(mcchat);
 			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-			dc.getDispatcher().registerListener(new AutoUpdaterListener());
+			TBMCCoreAPI.RegisterEventsForExceptions(new AutoUpdaterListener(), this);
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-			new Thread(() -> AnnouncementGetterThreadMethod()).start();
+			new Thread(this::AnnouncementGetterThreadMethod).start();
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
-			final Calendar currentCal = Calendar.getInstance();
-			final Calendar newCal = Calendar.getInstance();
-			currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
-					currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
-			if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
-				Random rand = new Random();
-				sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
-						"You could make a religion out of this");
+			if (!TBMCCoreAPI.IsTestServer()) {
+				final Calendar currentCal = Calendar.getInstance();
+				final Calendar newCal = Calendar.getInstance();
+				currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
+						currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
+				if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
+					Random rand = new Random();
+					sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
+							"You could make a religion out of this");
+				}
 			}
-			IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041")
+			/*IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041")
 					.withClientSecret(getConfig().getString("appsecret"))
 					.withRedirectUrl("https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
 							+ ":8081/callback")
@@ -172,9 +168,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 						rc.response().end("Redirecting");
 						rc.response().close();
 					}).build();
-			getLogger().info("Auth URL: " + doa.buildAuthUrl());
-			Void v = RequestBuffer.request(System.out::println).get(); // TODO: Remove
-			System.out.println(v);
+			getLogger().info("Auth URL: " + doa.buildAuthUrl());*/
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
@@ -343,19 +337,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	/**
 	 * Performs Discord actions, retrying when ratelimited.
 	 */
-	public static void perform(DiscordRunnable action) throws DiscordException, MissingPermissionsException {
-		for (int i = 0; i < 20; i++)
-			try {
-				if (SafeMode)
-					return;
-				action.run();
-				return; // Gotta escape that loop
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			}
+	public static <T> RequestFuture<Void> perform(IVoidRequest action)
+			throws DiscordException, MissingPermissionsException {
+		if (SafeMode)
+			return null;
+		return RequestBuffer.request(action); // Let the pros handle this
 	}
 }

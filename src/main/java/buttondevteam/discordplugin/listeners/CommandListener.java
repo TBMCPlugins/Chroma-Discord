@@ -7,6 +7,7 @@ import java.util.Random;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -73,7 +74,8 @@ public class CommandListener {
 				if (DiscordPlugin.SafeMode)
 					return;
 				final String msglowercase = event.getMessage().getContent().toLowerCase();
-				if (Arrays.stream(serverReadyQuestions).anyMatch(s -> msglowercase.contains(s))) {
+				if (!TBMCCoreAPI.IsTestServer()
+						&& Arrays.stream(serverReadyQuestions).anyMatch(s -> msglowercase.contains(s))) {
 					int next;
 					if (usableServerReadyStrings.size() == 0)
 						createUsableServerReadyStrings(usableServerReadyStrings);

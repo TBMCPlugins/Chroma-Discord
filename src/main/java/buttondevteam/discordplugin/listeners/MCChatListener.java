@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,7 +34,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
 					? ((Player) e.getSender()).getDisplayName() //
 					: e.getSender().getName());
-			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage());
+			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage())
+					.withColor(new Color(e.getChannel().color.getRed(), e.getChannel().color.getGreen(),
+							e.getChannel().color.getBlue()));
 			if (e.getSender() instanceof Player)
 				embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
 			final long nanoTime = System.nanoTime();
