@@ -34,24 +34,26 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					? ((Player) e.getSender()).getDisplayName() //
 					: e.getSender().getName());
 			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage());
-			final EmbedObject embedObject = e.getSender() instanceof Player
-					? embed.withAuthorIcon(
-							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png").build()
-					: embed.build();
+			if (e.getSender() instanceof Player)
+				embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
 			final long nanoTime = System.nanoTime();
 			Consumer<LastMsgData> doit = lastmsgdata -> {
+				final EmbedObject embedObject = embed.build();
+				String msg = lastmsgdata.channel.isPrivate() ? DiscordPlugin.sanitizeString(e.getChannel().DisplayName)
+						: "";
 				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
 						|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
-						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120) {
-					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel,
-							lastmsgdata.channel.isPrivate() ? e.getChannel().DisplayName : "", embedObject);
+						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+						|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
 					lastmsgdata.time = nanoTime;
+					lastmsgdata.mcchannel = e.getChannel();
 				} else
 					try {
 						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
 								+ embedObject.description;// The message object doesn't get updated
 						final LastMsgData _lastmsgdata = lastmsgdata;
-						DiscordPlugin.perform(() -> _lastmsgdata.message.edit("", embedObject));
+						DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
 					} catch (MissingPermissionsException | DiscordException e1) {
 						TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 					}
@@ -74,6 +76,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		public long time;
 		public String content;
 		public IChannel channel;
+		public Channel mcchannel;
 
 		public LastMsgData(IChannel channel) {
 			this.channel = channel;
@@ -111,6 +114,14 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 * Used for messages in PMs (mcchat).
 	 */
 	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
+
+	public static boolean startPrivateMCChat(IChannel channel) {
+		return lastmsgPerUser.add(new LastMsgData(channel));
+	}
+
+	public static boolean stopPrivateMCChat(IChannel channel) {
+		return lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
+	}
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
@@ -214,7 +225,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
 			if (!UnconnectedSenders.containsKey(author.getStringID()))
 				UnconnectedSenders.put(author.getStringID(),
-						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
+						new DiscordSender(author, channel, p == null ? null : p.PlayerName().getOrDefault(null))); // Display the playername, if found
 			dsender = UnconnectedSenders.get(author.getStringID());
 		}
 		return dsender;

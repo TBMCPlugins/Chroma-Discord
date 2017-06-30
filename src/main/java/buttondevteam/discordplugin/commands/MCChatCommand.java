@@ -21,9 +21,10 @@ public class MCChatCommand extends DiscordCommandBase {
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
 			PlayerData<Boolean> mcchat = user.minecraftChat();
 			mcchat.set(!mcchat.getOrDefault(false));
-			message.reply(
-					"Minecraft chat " + (mcchat.get() ? "enabled. Use '" + message.getClient().getOurUser().mention()
-							+ " mcchat' (with the mention) to disable." : "disabled."));
+			message.reply("Minecraft chat " + (mcchat.getOrDefault(false) //
+					? "enabled. Use '" + message.getClient().getOurUser().mention()
+							+ " mcchat' (with the mention) to disable." //
+					: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
 		}

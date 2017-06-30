@@ -1,11 +1,5 @@
 package buttondevteam.DiscordPlugin;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang.exception.ExceptionUtils;
-
-import buttondevteam.lib.TBMCCoreAPI;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -35,26 +29,6 @@ public class AppTest extends TestCase {
 	 * Rigourous Test :-)
 	 */
 	public void testApp() {
-		/*String sourcemessage = "Test message";
-		Exception e = new Exception("Test exception");
-		StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder()
-				: new StringBuilder("Coder role").append("\n");
-		sb.append(sourcemessage).append("\n");
-		sb.append("```").append("\n");
-		String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
-				.filter(s -> !(s.contains("\tat ") && ( //
-				s.contains("java.util") //
-						|| s.contains("java.lang") //
-						|| s.contains("net.minecraft.server") //
-						|| s.contains("sun.reflect") //
-						|| s.contains("org.bukkit") //
-				))).collect(Collectors.joining("\n"));
-		if (stackTrace.length() > 1800)
-			stackTrace = stackTrace.substring(0, 1800);
-		sb.append(stackTrace).append("\n");
-		sb.append("```");
-		System.out.println(sb.toString());
-		assertTrue(sb.toString().contains("Coder role"));*/
 		assertTrue(true);
 	}
 }

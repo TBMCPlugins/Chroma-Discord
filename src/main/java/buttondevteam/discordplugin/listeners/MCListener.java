@@ -25,22 +25,22 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
 		final Player p = Bukkit.getPlayer(e.GetPlayer().getUUID());
-		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
-			IUser user = DiscordPlugin.dc
-					.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
+		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().getOrDefault(null))) {
+			IUser user = DiscordPlugin.dc.getUserByID(
+					Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().getOrDefault(null))));
 			p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
 					+ " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
 		}
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-				e.GetPlayer().PlayerName().get() + " joined the game");
+				e.GetPlayer().PlayerName().getOrDefault(null) + " joined the game");
 		MCChatListener.ListC = 0;
 	}
 
 	@EventHandler
 	public void onPlayerLeave(TBMCPlayerQuitEvent e) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-				e.GetPlayer().PlayerName().get() + " left the game");
+				e.GetPlayer().PlayerName().getOrDefault(null) + " left the game");
 	}
 
 	@EventHandler

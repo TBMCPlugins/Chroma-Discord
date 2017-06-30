@@ -28,12 +28,13 @@ public class CommandListener {
 			"Once the server stops screaming.", // Ali
 			"After HL3 comes out", // Ali
 			"Next time you ask", // Ali
-			"When will *you* be open?" //Ali
+			"When will *you* be open?" // Ali
 	};
 
 	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
 			"when will the server be ready", "when will the server be done", "when will the server be complete",
-			"when will the server be finished", "when's the server ready", "when's the server open", "Vhen vill ze server be open?" };
+			"when will the server be finished", "when's the server ready", "when's the server open",
+			"Vhen vill ze server be open?" };
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
@@ -64,6 +65,7 @@ public class CommandListener {
 				if (DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat()
 						.getOrDefault(false)) // Let the MCChatListener handle it
 					return;
+				event.getMessage().getChannel().setTypingStatus(true); // Fun
 				runCommand(event.getMessage(), true);
 			}
 		}, new IListener<MessageReceivedEvent>() {
@@ -102,7 +104,6 @@ public class CommandListener {
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
 		if (DiscordPlugin.SafeMode)
 			return true;
-		message.getChannel().setTypingStatus(true);
 		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
@@ -114,6 +115,7 @@ public class CommandListener {
 			message.getChannel().setTypingStatus(false);
 			return false;
 		}
+		message.getChannel().setTypingStatus(true);
 		int index = cmdwithargs.indexOf(" ");
 		String cmd;
 		String args;
