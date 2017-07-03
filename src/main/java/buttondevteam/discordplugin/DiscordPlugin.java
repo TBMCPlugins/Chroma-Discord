@@ -27,8 +27,8 @@ import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.*;
+import sx.blah.discord.util.RequestBuffer.IRequest;
 import sx.blah.discord.util.RequestBuffer.IVoidRequest;
-import sx.blah.discord.util.RequestBuffer.RequestFuture;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
@@ -148,27 +148,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 							"You could make a religion out of this");
 				}
 			}
-			/*IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041")
-					.withClientSecret(getConfig().getString("appsecret"))
-					.withRedirectUrl("https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
-							+ ":8081/callback")
-					.withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
-					.withSuccessHandler((rc, user) -> {
-						rc.response().headers().add("Location",
-								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
-										+ ":8080/login?type=discord&" + rc.request().query());
-						rc.response().setStatusCode(303);
-						rc.response().end("Redirecting");
-						rc.response().close();
-					}).withFailureHandler(rc -> {
-						rc.response().headers().add("Location",
-								"https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com")
-										+ ":8080/login?type=discord&" + rc.request().query());
-						rc.response().setStatusCode(303);
-						rc.response().end("Redirecting");
-						rc.response().close();
-					}).build();
-			getLogger().info("Auth URL: " + doa.buildAuthUrl());*/
+			/*
+			 * IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041") .withClientSecret(getConfig().getString("appsecret")) .withRedirectUrl("https://" +
+			 * (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8081/callback") .withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
+			 * .withSuccessHandler((rc, user) -> { rc.response().headers().add("Location", "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&"
+			 * + rc.request().query()); rc.response().setStatusCode(303); rc.response().end("Redirecting"); rc.response().close(); }).withFailureHandler(rc -> { rc.response().headers().add("Location",
+			 * "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&" + rc.request().query()); rc.response().setStatusCode(303);
+			 * rc.response().end("Redirecting"); rc.response().close(); }).build(); getLogger().info("Auth URL: " + doa.buildAuthUrl());
+			 */
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
@@ -317,30 +304,18 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	/**
 	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
 	 */
-	public static <T extends IDiscordObject<T>> T perform(DiscordSupplier<T> action)
-			throws DiscordException, MissingPermissionsException {
-		for (int i = 0; i < 20; i++)
-			try {
-				if (SafeMode)
-					return null;
-				return action.get();
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			}
-		return null;
+	public static <T> T perform(IRequest<T> action) {
+		if (SafeMode)
+			return null;
+		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 
 	/**
 	 * Performs Discord actions, retrying when ratelimited.
 	 */
-	public static <T> RequestFuture<Void> perform(IVoidRequest action)
-			throws DiscordException, MissingPermissionsException {
+	public static Void perform(IVoidRequest action) {
 		if (SafeMode)
 			return null;
-		return RequestBuffer.request(action); // Let the pros handle this
+		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 }
