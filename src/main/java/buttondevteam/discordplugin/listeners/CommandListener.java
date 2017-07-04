@@ -1,10 +1,13 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
+import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -17,14 +20,22 @@ public class CommandListener {
 			"Between now and the heat-death of the universe.", // Ghostise
 			"Soon™", "Ask again this time next month", // Ghostise
 			"In about 3 seconds", // Nicolai
-			"Right after we finish coding 7 plugins",//Ali
-			"It'll be done tomorrow.",//Ali
-			"We just need  to complete one tiiiny feature",//Ali
-			"In 18 commits",//Ali
-			"After we finish strangling Towny",//Ali
-			"When we kill every bug in the system",//Ali
-			"Once the server stops screaming error messages.",//Ali
+			"After we finish 8 plugins", // Ali
+			"Tomorrow.", // Ali
+			"After one tiiiny feature", // Ali
+			"Next commit", // Ali
+			"After we finish strangling Towny", // Ali
+			"When we kill every *fucking* bug", // Ali
+			"Once the server stops screaming.", // Ali
+			"After HL3 comes out", // Ali
+			"Next time you ask", // Ali
+			"When will *you* be open?" // Ali
 	};
+
+	private static final String[] serverReadyQuestions = new String[] { "when will the server be open",
+			"when will the server be ready", "when will the server be done", "when will the server be complete",
+			"when will the server be finished", "when's the server ready", "when's the server open",
+			"Vhen vill ze server be open?" };
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<Short>(serverReadyStrings.length) {
@@ -48,10 +59,14 @@ public class CommandListener {
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				final IChannel channel = event.getMessage().getChannel();
-				if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID()) && !channel.isPrivate())
+				if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID())
+						&& (!channel.isPrivate() || DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 					return;
 				if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
 					return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
+				if (DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat().get()) // Let the MCChatListener handle it
+					return;
+				event.getMessage().getChannel().setTypingStatus(true); // Fun
 				runCommand(event.getMessage(), true);
 			}
 		}, new IListener<MessageReceivedEvent>() {
@@ -59,19 +74,19 @@ public class CommandListener {
 			public void handle(MessageReceivedEvent event) {
 				if (DiscordPlugin.SafeMode)
 					return;
-				if (event.getMessage().getContent().toLowerCase().contains("when will the server be open?")) {
+				final String msglowercase = event.getMessage().getContent().toLowerCase();
+				if (!TBMCCoreAPI.IsTestServer()
+						&& Arrays.stream(serverReadyQuestions).anyMatch(s -> msglowercase.contains(s))) {
 					int next;
-					/*
-					 * if (serverReadyStrings.length <= lastServerReadyStrings.size()) { next = lastServerReadyStrings.get(0); lastServerReadyStrings.clear(); } else { next = (short) serverReadyRandom
-					 * .nextInt(serverReadyStrings.length - lastServerReadyStrings.size()); for (short i = 0; i < lastServerReadyStrings.size(); i++) { short j = lastServerReadyStrings.get(i); if
-					 * (next == j) next++; if (next >= serverReadyStrings.length) next = 0; } lastServerReadyStrings.add(next); }
-					 */
 					if (usableServerReadyStrings.size() == 0)
 						createUsableServerReadyStrings(usableServerReadyStrings);
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), serverReadyStrings[next]);
 				}
-				if (!event.getMessage().getChannel().isPrivate())
+				if (!event.getMessage().getChannel().isPrivate() //
+						|| DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat()
+								.get()
+						|| DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent())
 					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
@@ -92,7 +107,6 @@ public class CommandListener {
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
 		if (DiscordPlugin.SafeMode)
 			return true;
-		message.getChannel().setTypingStatus(true);
 		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
@@ -104,6 +118,7 @@ public class CommandListener {
 			message.getChannel().setTypingStatus(false);
 			return false;
 		}
+		message.getChannel().setTypingStatus(true);
 		int index = cmdwithargs.indexOf(" ");
 		String cmd;
 		String args;

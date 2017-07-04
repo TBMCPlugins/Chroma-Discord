@@ -97,9 +97,12 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 
 	@Override
 	public String getName() {
-		if (user == null)
-			return "Discord user";
-		return name == null ? user.getDisplayName(DiscordPlugin.mainServer) : name;
+		return name == null ? user == null ? "Discord user" : user.getDisplayName(DiscordPlugin.mainServer) : name;
+	}
+
+	@Override
+	public Spigot spigot() {
+		return new CommandSender.Spigot();
 	}
 
 }

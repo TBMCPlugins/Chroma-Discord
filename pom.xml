@@ -11,7 +11,9 @@
 	<url>http://maven.apache.org</url>
 
 	<build>
-		<sourceDirectory>src/main/java</sourceDirectory>
+		<!-- <sourceDirectory>target/generated-sources/delombok</sourceDirectory> 
+			<testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory> -->
+			<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
 				<directory>src</directory>
@@ -89,6 +91,14 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- <plugin> <groupId>org.projectlombok</groupId> <artifactId>lombok-maven-plugin</artifactId> 
+				<version>1.16.16.0</version> <executions> <execution> <id>delombok</id> <phase>generate-sources</phase> 
+				<goals> <goal>delombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory> 
+				<sourceDirectory>src/main/java</sourceDirectory> <verbose>true</verbose> 
+				</configuration> </execution> <execution> <id>test-delombok</id> <phase>generate-test-sources</phase> 
+				<goals> <goal>testDelombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory> 
+				<sourceDirectory>src/test/java</sourceDirectory> </configuration> </execution> 
+				</executions> </plugin> -->
 		</plugins>
 	</build>
 
@@ -117,6 +127,10 @@
 			<id>Essentials</id>
 			<url>http://repo.ess3.net/content/repositories/essrel/</url>
 		</repository>
+		<repository>
+			<id>projectlombok.org</id>
+			<url>http://projectlombok.org/mavenrepo</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -129,7 +143,7 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.11-R0.1-SNAPSHOT</version>
+			<version>1.12-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -154,13 +168,25 @@
 		<dependency>
 			<groupId>com.github.milkbowl</groupId> <!-- net.milkbowl.vault -->
 			<artifactId>VaultAPI</artifactId>
-			<version>master-SNAPSHOT</version> <!--  1.6 -->
+			<version>master-SNAPSHOT</version> <!-- 1.6 -->
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.ess3</groupId>
 			<artifactId>Essentials</artifactId>
 			<version>2.13.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.xaanit</groupId>
+			<artifactId>D4J-OAuth</artifactId>
+			<version>master-SNAPSHOT</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.16.16</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

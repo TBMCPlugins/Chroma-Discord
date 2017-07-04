@@ -4,7 +4,10 @@ import java.awt.Color;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Random;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,10 +26,9 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.*;
-import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.util.*;
+import sx.blah.discord.util.RequestBuffer.IRequest;
+import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
@@ -126,15 +128,34 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			MCChatListener mcchat = new MCChatListener();
 			dc.getDispatcher().registerListener(mcchat);
 			TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-			dc.getDispatcher().registerListener(new AutoUpdaterListener());
+			TBMCCoreAPI.RegisterEventsForExceptions(new AutoUpdaterListener(), this);
 			Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-			new Thread(() -> AnnouncementGetterThreadMethod()).start();
+			new Thread(this::AnnouncementGetterThreadMethod).start();
 			setupProviders();
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
+			if (!TBMCCoreAPI.IsTestServer()) {
+				final Calendar currentCal = Calendar.getInstance();
+				final Calendar newCal = Calendar.getInstance();
+				currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
+						currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
+				if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
+					Random rand = new Random();
+					sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
+							"You could make a religion out of this");
+				}
+			}
+			/*
+			 * IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041") .withClientSecret(getConfig().getString("appsecret")) .withRedirectUrl("https://" +
+			 * (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8081/callback") .withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
+			 * .withSuccessHandler((rc, user) -> { rc.response().headers().add("Location", "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&"
+			 * + rc.request().query()); rc.response().setStatusCode(303); rc.response().end("Redirecting"); rc.response().close(); }).withFailureHandler(rc -> { rc.response().headers().add("Location",
+			 * "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&" + rc.request().query()); rc.response().setStatusCode(303);
+			 * rc.response().end("Redirecting"); rc.response().close(); }).build(); getLogger().info("Auth URL: " + doa.buildAuthUrl());
+			 */
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
@@ -234,7 +255,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		try {
 			if (channel == chatchannel)
 				MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
-			final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel
+			final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel || channel == botroomchannel // Both are the same for testing
 					? "*The following message is from a test server*\n" + message : message;
 			return perform(
 					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
@@ -283,39 +304,23 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	/**
 	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
 	 */
-	public static <T extends IDiscordObject<T>> T perform(DiscordSupplier<T> action)
-			throws DiscordException, MissingPermissionsException {
-		for (int i = 0; i < 20; i++)
-			try {
-				if (SafeMode)
-					return null;
-				return action.get();
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			}
-		return null;
+	public static <T> T perform(IRequest<T> action) {
+		if (SafeMode)
+			return null;
+		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 
 	/**
 	 * Performs Discord actions, retrying when ratelimited.
 	 */
-	public static void perform(DiscordRunnable action) throws DiscordException, MissingPermissionsException {
-		for (int i = 0; i < 20; i++)
-			try {
-				if (SafeMode)
-					return;
-				action.run();
-				return; // Gotta escape that loop
-			} catch (RateLimitException e) {
-				try {
-					Thread.sleep(e.getRetryDelay() > 0 ? e.getRetryDelay() : 10);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-			}
+	public static Void perform(IVoidRequest action) {
+		if (SafeMode)
+			return null;
+		return RequestBuffer.request(action).get(); // Let the pros handle this
+	}
+
+	public static boolean checkIfSomeoneIsTestingWhileWeArent() {
+		return !TBMCCoreAPI.IsTestServer()
+				&& dc.getOurUser().getPresence().getPlayingText().orElse("").equals("testing");
 	}
 }

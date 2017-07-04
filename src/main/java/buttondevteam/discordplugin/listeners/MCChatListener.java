@@ -1,8 +1,11 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -13,8 +16,8 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
-import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
+import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -28,52 +31,75 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
-		if (!e.getChannel().equals(Channel.GlobalChat))
-			return;
 		synchronized (this) {
 			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
 					? ((Player) e.getSender()).getDisplayName() //
 					: e.getSender().getName());
-			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage());
-			final EmbedObject embedObject = e.getSender() instanceof Player
-					? embed.withAuthorIcon(
-							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png").build()
-					: embed.build();
+			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage())
+					.withColor(new Color(e.getChannel().color.getRed(), e.getChannel().color.getGreen(),
+							e.getChannel().color.getBlue()));
+			if (e.getSender() instanceof Player)
+				embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
 			final long nanoTime = System.nanoTime();
-			if (lastmessage == null || lastmessage.isDeleted()
-					|| !authorPlayer.equals(lastmessage.getEmbeds().get(0).getAuthor().getName())
-					|| lastmsgtime / 1000000000f < nanoTime / 1000000000f - 120) {
-				lastmessage = DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, "", embedObject);
-				lastmsgtime = nanoTime;
-				lastmsg = e.getMessage();
-			} else
-				try {
-					lastmsg = embedObject.description = lastmsg + "\n" + embedObject.description;
-					DiscordPlugin.perform(() -> lastmessage.edit("", embedObject));
-				} catch (MissingPermissionsException | DiscordException e1) {
-					TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-				}
+			Consumer<LastMsgData> doit = lastmsgdata -> {
+				final EmbedObject embedObject = embed.build();
+				String msg = lastmsgdata.channel.isPrivate() ? DiscordPlugin.sanitizeString(e.getChannel().DisplayName)
+						: "";
+				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+						|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+						|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
+					lastmsgdata.time = nanoTime;
+					lastmsgdata.mcchannel = e.getChannel();
+				} else
+					try {
+						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+								+ embedObject.description;// The message object doesn't get updated
+						final LastMsgData _lastmsgdata = lastmsgdata;
+						DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
+					} catch (MissingPermissionsException | DiscordException e1) {
+						TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+					}
+			};
+			if (e.getChannel().equals(Channel.GlobalChat))
+				doit.accept(
+						lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata);
+
+			for (LastMsgData data : lastmsgPerUser) {
+				final IUser iUser = data.channel.getUsersHere().stream()
+						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
+				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
+				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+					doit.accept(data);
+			}
 		} // TODO: Author URL
+	}
+
+	private static class LastMsgData {
+		public IMessage message;
+		public long time;
+		public String content;
+		public IChannel channel;
+		public Channel mcchannel;
+
+		public LastMsgData(IChannel channel) {
+			this.channel = channel;
+		}
 	}
 
 	@EventHandler
 	public void onChatPreprocess(TBMCChatPreprocessEvent event) {
 		int start = -1;
-		// System.out.println("A");
 		while ((start = event.getMessage().indexOf('@', start + 1)) != -1) {
-			// System.out.println("Start: " + start);
 			int mid = event.getMessage().indexOf('#', start + 1);
-			// System.out.println("Mid: " + mid);
 			if (mid == -1)
 				return;
 			int end_ = event.getMessage().indexOf(' ', mid + 1);
-			// System.out.println("End: " + end_);
 			if (end_ == -1)
 				end_ = event.getMessage().length();
 			final int end = end_;
 			final int startF = start;
-			// System.out.println("Name: " + event.getMessage().substring(start, mid));
-			// System.out.println("Disc: " + event.getMessage().substring(mid, end));
 			DiscordPlugin.dc.getUsersByName(event.getMessage().substring(start + 1, mid)).stream()
 					.filter(u -> u.getDiscriminator().equals(event.getMessage().substring(mid + 1, end))).findAny()
 					.ifPresent(user -> event.setMessage(event.getMessage().substring(0, startF) + "@" + user.getName()
@@ -86,27 +112,36 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw" };
 
-	private static IMessage lastmessage = null;
-	private static long lastmsgtime = 0;
-	private static String lastmsg;
+	private static LastMsgData lastmsgdata;
 	private static short lastlist = 0;
 	private static short lastlistp = 0;
+	/**
+	 * Used for messages in PMs (mcchat).
+	 */
+	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
+
+	public static boolean privateMCChat(IChannel channel, boolean start) {
+		return start ? lastmsgPerUser.add(new LastMsgData(channel))
+				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
+	}
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
-		lastmessage = null;
-	}
+		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata).message = null; // Don't set the whole object to null, the player and channel information should
+	} // be preserved
 
 	@Override // Discord
-	public void handle(sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event) {
-		final IUser author = event.getMessage().getAuthor();
+	public void handle(MessageReceivedEvent event) {
+		val author = event.getMessage().getAuthor();
+		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-		/* && !(event.getMessage().getChannel().isPrivate() && privatechat) */)
+				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()
+						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 			return;
-		lastmessage = null;
+		resetLastMessage();
 		lastlist++;
 		if (author.isBot())
 			return;
@@ -115,23 +150,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		String dmessage = event.getMessage().getContent();
 		synchronized (this) {
 			try {
-				DiscordPlayer dp = ChromaGamerBase.getUser(author.getStringID(), DiscordPlayer.class);
-				final DiscordSenderBase dsender;
-				Player mcp = null; // Offline players can't really run commands, or can they?
-				final String cid;
-				if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
-						&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
-					if (!ConnectedSenders.containsKey(author.getStringID()))
-						ConnectedSenders.put(author.getStringID(),
-								new DiscordPlayerSender(author, event.getMessage().getChannel(), mcp));
-					dsender = ConnectedSenders.get(author.getStringID());
-				} else {
-					TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-					if (!UnconnectedSenders.containsKey(author.getStringID()))
-						UnconnectedSenders.put(author.getStringID(), new DiscordSender(author,
-								event.getMessage().getChannel(), p == null ? null : p.PlayerName().get())); // Display the playername, if found
-					dsender = UnconnectedSenders.get(author.getStringID());
-				}
+				final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), author, user);
 
 				for (IUser u : event.getMessage().getMentions()) {
 					dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
@@ -140,11 +159,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				}
 
 				if (dmessage.startsWith("/")) {
+					DiscordPlugin.perform(() -> {
+						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
+							event.getMessage().delete();
+					});
 					final String cmd = dmessage.substring(1).toLowerCase();
-					if (mcp == null && !Arrays.stream(UnconnectedCmds)
+					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
 							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 						// Command not whitelisted
-						DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), // TODO
+						dsender.sendMessage( // TODO
 								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
 										+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
 												.collect(Collectors.joining(", "))
@@ -163,13 +186,17 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					} else
 						Bukkit.dispatchCommand(dsender, cmd);
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
-					if (!event.getMessage().isDeleted())
-						event.getMessage().delete();
 				} else {
-					TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender,
-							dmessage + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-									.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
-									: ""));
+					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
+						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
+					else
+						TBMCChatAPI
+								.SendChatMessage(Channel.GlobalChat,
+										dsender, dmessage
+												+ (event.getMessage().getAttachments().size() > 0
+														? "\n" + event.getMessage().getAttachments().stream()
+																.map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+														: ""));
 					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
 							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
@@ -186,5 +213,24 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				return;
 			}
 		}
+	}
+
+	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+		final DiscordSenderBase dsender;
+		Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
+		final String cid;
+		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
+				&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
+			if (!ConnectedSenders.containsKey(author.getStringID()))
+				ConnectedSenders.put(author.getStringID(), new DiscordPlayerSender(author, channel, mcp));
+			dsender = ConnectedSenders.get(author.getStringID());
+		} else {
+			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
+			if (!UnconnectedSenders.containsKey(author.getStringID()))
+				UnconnectedSenders.put(author.getStringID(),
+						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
+			dsender = UnconnectedSenders.get(author.getStringID());
+		}
+		return dsender;
 	}
 }
