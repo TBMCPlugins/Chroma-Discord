@@ -11,7 +11,8 @@
 	<url>http://maven.apache.org</url>
 
 	<build>
-		<sourceDirectory>src/main/java</sourceDirectory>
+		<sourceDirectory>target/generated-sources/delombok</sourceDirectory>
+		<testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory>
 		<resources>
 			<resource>
 				<directory>src</directory>
@@ -85,6 +86,36 @@
 									<directory>resources</directory>
 								</resource>
 							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok-maven-plugin</artifactId>
+				<version>1.16.16.0</version>
+				<executions>
+					<execution>
+						<id>delombok</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>delombok</goal>
+						</goals>
+						<configuration>
+							<addOutputDirectory>false</addOutputDirectory>
+							<sourceDirectory>src/main/java</sourceDirectory>
+							<verbose>true</verbose>
+						</configuration>
+					</execution>
+					<execution>
+						<id>test-delombok</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>testDelombok</goal>
+						</goals>
+						<configuration>
+							<addOutputDirectory>false</addOutputDirectory>
+							<sourceDirectory>src/test/java</sourceDirectory>
 						</configuration>
 					</execution>
 				</executions>
