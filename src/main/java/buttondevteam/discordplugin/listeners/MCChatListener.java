@@ -52,7 +52,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
 					lastmsgdata.time = nanoTime;
 					lastmsgdata.mcchannel = e.getChannel();
-					lastmsgdata.content = "";
+					lastmsgdata.content = embedObject.description;
 				} else
 					try {
 						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
