@@ -17,6 +17,7 @@ import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
+import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -62,7 +63,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					}
 			};
 			if (e.getChannel().equals(Channel.GlobalChat))
-				doit.accept(lastmsgdata);
+				doit.accept(
+						lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata);
 
 			for (LastMsgData data : lastmsgPerUser) {
 				final IUser iUser = data.channel.getUsersHere().stream()
@@ -110,7 +112,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	private static final String[] UnconnectedCmds = new String[] { "list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw" };
 
-	private static LastMsgData lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel);
+	private static LastMsgData lastmsgdata;
 	private static short lastlist = 0;
 	private static short lastlistp = 0;
 	/**
@@ -128,15 +130,16 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
-		lastmsgdata.message = null; // Don't set the whole object to null, the player and channel information should be preserved
-	}
+		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata).message = null; // Don't set the whole object to null, the player and channel information should
+	} // be preserved
 
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
-		final IUser author = event.getMessage().getAuthor();
-		final DiscordPlayer user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
+		val author = event.getMessage().getAuthor();
+		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()))
+				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()
+						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 			return;
 		resetLastMessage();
 		lastlist++;

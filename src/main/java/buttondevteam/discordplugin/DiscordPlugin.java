@@ -318,4 +318,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			return null;
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
+
+	public static boolean checkIfSomeoneIsTestingWhileWeArent() {
+		return !TBMCCoreAPI.IsTestServer()
+				&& dc.getOurUser().getPresence().getPlayingText().orElse("").equals("testing");
+	}
 }

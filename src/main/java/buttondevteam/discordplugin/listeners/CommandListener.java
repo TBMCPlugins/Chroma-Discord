@@ -59,7 +59,8 @@ public class CommandListener {
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				final IChannel channel = event.getMessage().getChannel();
-				if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID()) && !channel.isPrivate())
+				if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID())
+						&& (!channel.isPrivate() || DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 					return;
 				if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
 					return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
@@ -82,8 +83,10 @@ public class CommandListener {
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), serverReadyStrings[next]);
 				}
-				if (!event.getMessage().getChannel().isPrivate() || DiscordPlayer
-						.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat().get())
+				if (!event.getMessage().getChannel().isPrivate() //
+						|| DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class).minecraftChat()
+								.get()
+						|| DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent())
 					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
