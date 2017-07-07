@@ -6,16 +6,10 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.InventoryView.Property;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.MainHand;
-import org.bukkit.inventory.Merchant;
-import org.bukkit.inventory.PlayerInventory;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
@@ -25,15 +19,18 @@ public abstract class DiscordHumanEntity extends DiscordLivingEntity implements 
 		super(user, channel, entityId, uuid);
 	}
 
+	private PlayerInventory inv = new DiscordPlayerInventory(this);
+
 	@Override
-	public PlayerInventory getInventory() { // TODO
-		return null;
+	public PlayerInventory getInventory() {
+		return inv;
 	}
+
+	private Inventory enderchest = new DiscordInventory(this);
 
 	@Override
 	public Inventory getEnderChest() {
-		// TODO Auto-generated method stub
-		return null;
+		return enderchest;
 	}
 
 	@Override
@@ -47,159 +44,125 @@ public abstract class DiscordHumanEntity extends DiscordLivingEntity implements 
 	}
 
 	@Override
-	public InventoryView getOpenInventory() {
-		// TODO Auto-generated method stub
+	public InventoryView getOpenInventory() { // TODO: Test
 		return null;
 	}
 
 	@Override
 	public InventoryView openInventory(Inventory inventory) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public InventoryView openWorkbench(Location location, boolean force) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public InventoryView openEnchanting(Location location, boolean force) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void openInventory(InventoryView inventory) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public InventoryView openMerchant(Villager trader, boolean force) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public InventoryView openMerchant(Merchant merchant, boolean force) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void closeInventory() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
-	public ItemStack getItemInHand() {
-		// TODO Auto-generated method stub
+	public ItemStack getItemInHand() { // TODO: Test all ItemStack methods
 		return null;
 	}
 
 	@Override
 	public void setItemInHand(ItemStack item) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public ItemStack getItemOnCursor() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setItemOnCursor(ItemStack item) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public boolean hasCooldown(Material material) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int getCooldown(Material material) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public void setCooldown(Material material, int ticks) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public boolean isSleeping() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int getSleepTicks() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public GameMode getGameMode() {
-		// TODO Auto-generated method stub
-		return null;
+		return GameMode.SPECTATOR;
 	}
 
 	@Override
 	public void setGameMode(GameMode mode) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public boolean isBlocking() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean isHandRaised() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int getExpToLevel() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public Entity getShoulderEntityLeft() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setShoulderEntityLeft(Entity entity) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public Entity getShoulderEntityRight() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setShoulderEntityRight(Entity entity) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

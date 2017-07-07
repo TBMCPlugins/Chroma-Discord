@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -127,7 +129,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	}
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, DiscordConnectedPlayer> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, DiscordPlayerSender> OnlineSenders = new HashMap<>();
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
@@ -216,21 +219,28 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		}
 	}
 
-	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+	@SuppressWarnings("unchecked")
+	private <T extends DiscordSenderBase> DiscordSenderBase getSender(IChannel channel, final IUser author,
+			DiscordPlayer dp) {
 		final DiscordSenderBase dsender;
-		Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
+		final Player mcp;
 		final String cid;
-		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
-				&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
-			if (!ConnectedSenders.containsKey(author.getStringID()))
-				ConnectedSenders.put(author.getStringID(), new DiscordPlayerSender(author, channel, mcp));
-			dsender = ConnectedSenders.get(author.getStringID());
-		} else {
+		BiFunction<HashMap<String, T>, Supplier<T>, DiscordSenderBase> getsender = (senders, maker) -> {
+			if (!senders.containsKey(author.getStringID()))
+				senders.put(author.getStringID(), maker.get());
+			return senders.get(author.getStringID());
+		};
+		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null) { // Connected?
+			if ((mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) // Online? - Execute as ingame player
+				dsender = getsender.apply((HashMap<String, T>) OnlineSenders,
+						() -> (T) new DiscordPlayerSender(author, channel, mcp));
+			else // Offline
+				dsender = getsender.apply((HashMap<String, T>) ConnectedSenders,
+						() -> (T) new DiscordConnectedPlayer(author, channel, UUID.fromString(cid)));
+		} else { // Not connected
 			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-			if (!UnconnectedSenders.containsKey(author.getStringID()))
-				UnconnectedSenders.put(author.getStringID(),
-						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
-			dsender = UnconnectedSenders.get(author.getStringID());
+			dsender = getsender.apply((HashMap<String, T>) UnconnectedSenders,
+					() -> (T) new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
 		}
 		return dsender;
 	}
