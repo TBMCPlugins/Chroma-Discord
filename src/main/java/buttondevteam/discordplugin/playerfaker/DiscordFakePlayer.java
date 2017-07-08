@@ -2,7 +2,6 @@ package buttondevteam.discordplugin.playerfaker;
 
 import java.net.InetSocketAddress;
 import java.util.*;
-
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
@@ -15,13 +14,22 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import lombok.experimental.Delegate;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid) {
 		super(user, channel, entityId, uuid);
+		/*
+		 * try { perm = new PEXPermissible(this, (PermissionsExPlugin) Bukkit.getPluginManager().getPlugin("PermissionsEx")); } catch (ExecutionException | InterruptedException e) {
+		 * e.printStackTrace(); }
+		 */
+		perm = new VaultPermissibleBase(this);
 	}
+
+	@Delegate
+	private VaultPermissibleBase perm;
 
 	@Override
 	public String getName() {
@@ -120,7 +128,7 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 
 	@Override
 	public String getDisplayName() {
-		return user.getNicknameForGuild(DiscordPlugin.mainServer);
+		return user.getDisplayName(DiscordPlugin.mainServer);
 	}
 
 	@Override
@@ -632,18 +640,15 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	@Override
 	public void spawnParticle(Particle particle, double x, double y, double z, int count) {
 
-
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, Location location, int count, T data) {
 
-
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, T data) {
-
 
 	}
 
@@ -651,13 +656,11 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ) {
 
-
 	}
 
 	@Override
 	public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ) {
-
 
 	}
 
@@ -665,13 +668,11 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, T data) {
 
-
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, T data) {
-
 
 	}
 
@@ -679,13 +680,11 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, double extra) {
 
-
 	}
 
 	@Override
 	public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, double extra) {
-
 
 	}
 
@@ -693,13 +692,11 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY,
 			double offsetZ, double extra, T data) {
 
-
 	}
 
 	@Override
 	public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX,
 			double offsetY, double offsetZ, double extra, T data) {
-
 
 	}
 

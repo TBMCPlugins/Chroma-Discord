@@ -1,31 +1,19 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-import org.bukkit.Bukkit;
-import org.bukkit.EntityEffect;
-import org.bukkit.Location;
-import org.bukkit.Server;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
-import org.bukkit.permissions.PermissibleBase;
-import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 import buttondevteam.discordplugin.DiscordSenderBase;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.experimental.Delegate;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -40,12 +28,7 @@ public abstract class DiscordEntity extends DiscordSenderBase implements Entity 
 
 	private HashMap<String, MetadataValue> metadata = new HashMap<String, MetadataValue>();
 
-	@Delegate
-	private PermissibleBase perm = new PermissibleBase(new ServerOperator() {
-		private @Getter @Setter boolean op;
-	});
-
-	private Location location;
+	private Location location = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
 	private Vector velocity;
 	private final int entityId;
 	private EntityDamageEvent lastDamageCause;
