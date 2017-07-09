@@ -13,6 +13,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.lib.*;
@@ -123,8 +125,20 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 */
 	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
 
-	public static boolean privateMCChat(IChannel channel, boolean start) {
-		return start ? lastmsgPerUser.add(new LastMsgData(channel))
+	public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
+		if (start) {
+			val sender = new DiscordConnectedPlayer(user, channel,
+					UUID.fromString(dp.getConnectedID(TBMCPlayer.class)));
+			ConnectedSenders.put(user.getStringID(), sender);
+			if (!OnlineSenders.containsKey(user.getStringID()))// If the player is online, that takes precedence
+				Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
+		} else {
+			val sender = ConnectedSenders.remove(user.getStringID());
+			if (!OnlineSenders.containsKey(user.getStringID()))// If the player is online, that takes precedence
+				Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
+		}
+		return start //
+				? lastmsgPerUser.add(new LastMsgData(channel)) //
 				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 

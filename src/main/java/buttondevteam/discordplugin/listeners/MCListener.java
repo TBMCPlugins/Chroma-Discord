@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.listeners;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -10,7 +9,9 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 import com.earth2me.essentials.CommandSource;
 
+import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlayerSender;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -24,7 +25,12 @@ import sx.blah.discord.util.MissingPermissionsException;
 public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
-		final Player p = Bukkit.getPlayer(e.GetPlayer().getUUID());
+		if (e.getPlayer() instanceof DiscordConnectedPlayer)
+			return; // Don't show the joined message for the fake player
+		final Player p = e.getPlayer();
+		DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
+		// if(dp!=null) //TODO
+		// MCChatListener.OnlineSenders.put(dp.getDiscordID(), new DiscordPlayerSender(DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()), channel, player))
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
 			IUser user = DiscordPlugin.dc
 					.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
@@ -39,6 +45,9 @@ public class MCListener implements Listener {
 
 	@EventHandler
 	public void onPlayerLeave(TBMCPlayerQuitEvent e) {
+		if (MCChatListener.OnlineSenders.entrySet()
+				.removeIf(entry -> entry.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())))
+			; // TODO
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
 				e.GetPlayer().PlayerName().get() + " left the game");
 	}

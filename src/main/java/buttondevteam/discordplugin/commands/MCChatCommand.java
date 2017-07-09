@@ -16,13 +16,13 @@ public class MCChatCommand extends DiscordCommandBase {
 	@Override
 	public void run(IMessage message, String args) {
 		if (!message.getChannel().isPrivate()) {
-			message.reply("This command can only be issued while DMing the bot.");
+			message.reply("This command can only be issued in a direct message with the bot.");
 			return;
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
 			PlayerData<Boolean> mcchat = user.minecraftChat();
 			mcchat.set(!mcchat.get());
-			MCChatListener.privateMCChat(message.getChannel(), mcchat.get());
+			MCChatListener.privateMCChat(message.getChannel(), mcchat.get(), message.getAuthor(), user);
 			message.reply("Minecraft chat " + (mcchat.get() //
 					? "enabled. Use '" + message.getClient().getOurUser().mention()
 							+ " mcchat' (with the mention) to disable." //
