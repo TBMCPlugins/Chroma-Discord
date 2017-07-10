@@ -126,21 +126,36 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
 
 	public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
-		if (start) {
-			val sender = new DiscordConnectedPlayer(user, channel,
-					UUID.fromString(dp.getConnectedID(TBMCPlayer.class)));
-			ConnectedSenders.put(user.getStringID(), sender);
-			if (!OnlineSenders.containsKey(user.getStringID()))// If the player is online, that takes precedence
-				Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
-		} else {
-			val sender = ConnectedSenders.remove(user.getStringID());
-			if (!OnlineSenders.containsKey(user.getStringID()))// If the player is online, that takes precedence
-				Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
+		TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
+		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
+			val p = Bukkit.getPlayer(mcp.getUUID());
+			if (start) {
+				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID());
+				ConnectedSenders.put(user.getStringID(), sender);
+				if (p == null)// If the player is online, that takes precedence
+					Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
+			} else {
+				val sender = ConnectedSenders.remove(user.getStringID());
+				if (p == null)// If the player is online, that takes precedence
+					Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
+			}
 		}
 		return start //
 				? lastmsgPerUser.add(new LastMsgData(channel)) //
 				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
+
+	//
+	// ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
+	// Offline public chat......x............................................
+	// Online public chat.......x...........................................x
+	// Offline private chat.....x.......................x....................
+	// Online private chat......x.......................x...................x
+	// If online and enabling private chat, don't login
+	// If leaving the server and private chat is enabled (has ConnectedPlayer), call login in a task on lowest priority
+	// If private chat is enabled and joining the server, logout the fake player on highest priority
+	// If online and disabling private chat, don't logout
+	// The maps may not contain the senders except for DiscordPlayerSender
 
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordConnectedPlayer> ConnectedSenders = new HashMap<>();
