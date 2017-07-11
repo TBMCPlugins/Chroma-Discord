@@ -9,7 +9,6 @@ import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.entity.*;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.ServerOperator;
@@ -29,7 +28,6 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 		perm = new PermissibleBase(new ServerOperator() {
 			private @Getter @Setter boolean op;
 		});
-		Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(this, "Discord fake player joined"));
 	}
 
 	@Delegate

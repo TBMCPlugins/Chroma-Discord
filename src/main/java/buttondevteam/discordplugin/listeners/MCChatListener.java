@@ -4,11 +4,12 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.function.BiFunction;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -75,7 +76,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				final IUser iUser = data.channel.getUsersHere().stream()
 						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
 				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+				if (user.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, iUser, user)))
 					doit.accept(data);
 			}
 		} // TODO: Author URL
@@ -132,11 +133,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			if (start) {
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID());
 				ConnectedSenders.put(user.getStringID(), sender);
-				if (p == null)// If the player is online, that takes precedence
+				if (p == null)// Player is offline - If the player is online, that takes precedence
 					Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
 			} else {
 				val sender = ConnectedSenders.remove(user.getStringID());
-				if (p == null)// If the player is online, that takes precedence
+				if (p == null)// Player is offline - If the player is online, that takes precedence
 					Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
 			}
 		}
@@ -145,7 +146,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 
-	//
 	// ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
 	// Offline public chat......x............................................
 	// Online public chat.......x...........................................x
@@ -155,10 +155,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	// If leaving the server and private chat is enabled (has ConnectedPlayer), call login in a task on lowest priority
 	// If private chat is enabled and joining the server, logout the fake player on highest priority
 	// If online and disabling private chat, don't logout
-	// The maps may not contain the senders except for DiscordPlayerSender
+	// The maps may not contain the senders for UnconnectedSenders
 
+	public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
+		return lastmsgPerUser.stream().anyMatch(
+				lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(dp.getDiscordID()));
+	}
+
+	/**
+	 * May contain P&lt;DiscordID&gt; as key for public chat
+	 */
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
 	public static final HashMap<String, DiscordConnectedPlayer> ConnectedSenders = new HashMap<>();
+	/**
+	 * May contain P&lt;DiscordID&gt; as key for public chat
+	 */
 	public static final HashMap<String, DiscordPlayerSender> OnlineSenders = new HashMap<>();
 	public static short ListC = 0;
 
@@ -166,12 +177,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata).message = null; // Don't set the whole object to null, the player and channel information should
 	} // be preserved
 
+	public static void sendSystemMessageToChat(String msg) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, msg);
+		for (LastMsgData data : lastmsgPerUser)
+			DiscordPlugin.sendMessageToChannel(data.channel, msg);
+	}
+
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
 		val author = event.getMessage().getAuthor();
 		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()
+				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()
 						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 			return;
 		resetLastMessage();
@@ -200,12 +217,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
 							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 						// Command not whitelisted
-						dsender.sendMessage( // TODO
-								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
-										+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
-												.collect(Collectors.joining(", "))
-										+ "\nTo connect your accounts, use @ChromaBot connect in "
-										+ DiscordPlugin.botchannel.mention());
+						dsender.sendMessage("Sorry, you can only access these commands:\n"
+								+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc).collect(Collectors.joining(", "))
+								+ (user.getConnectedID(TBMCPlayer.class) == null
+										? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
+												+ DiscordPlugin.botchannel.mention()
+												+ "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
+										: "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
 						return;
 					}
 					if (lastlist > 5) {
@@ -248,29 +266,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private <T extends DiscordSenderBase> DiscordSenderBase getSender(IChannel channel, final IUser author,
-			DiscordPlayer dp) {
-		final DiscordSenderBase dsender;
-		final Player mcp;
-		final String cid;
-		BiFunction<HashMap<String, T>, Supplier<T>, DiscordSenderBase> getsender = (senders, maker) -> {
-			if (!senders.containsKey(author.getStringID()))
-				senders.put(author.getStringID(), maker.get());
-			return senders.get(author.getStringID());
-		};
-		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null) { // Connected?
-			if ((mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) // Online? - Execute as ingame player
-				dsender = getsender.apply((HashMap<String, T>) OnlineSenders,
-						() -> (T) new DiscordPlayerSender(author, channel, mcp));
-			else // Offline
-				dsender = getsender.apply((HashMap<String, T>) ConnectedSenders,
-						() -> (T) new DiscordConnectedPlayer(author, channel, UUID.fromString(cid)));
-		} else { // Not connected
-			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-			dsender = getsender.apply((HashMap<String, T>) UnconnectedSenders,
-					() -> (T) new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
-		}
-		return dsender;
+	/**
+	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
+	 */
+	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+		val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
+		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
+				() -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null
+				() -> Optional.ofNullable(ConnectedSenders.get(author.getStringID())), // This doesn't support it
+				() -> Optional.ofNullable(UnconnectedSenders.get(key)), () -> {
+					val dsender = new DiscordSender(author, channel);
+					UnconnectedSenders.put(key, dsender);
+					return Optional.of(dsender);
+				}).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
 	}
 }

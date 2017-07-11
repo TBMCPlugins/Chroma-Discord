@@ -1,12 +1,13 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.player.ChromaGamerBase;
-import buttondevteam.lib.player.PlayerData;
 import buttondevteam.lib.player.UserClass;
 
 @UserClass(foldername = "discord")
 public class DiscordPlayer extends ChromaGamerBase {
 	private String did;
+	// private @Getter @Setter boolean minecraftChatEnabled;
 
 	public DiscordPlayer() {
 	}
@@ -17,7 +18,11 @@ public class DiscordPlayer extends ChromaGamerBase {
 		return did;
 	}
 
-	public PlayerData<Boolean> minecraftChat() {
-		return data(false);
+	/**
+	 * Returns true if player has the private Minecraft chat enabled. For setting the value, see
+	 * {@link MCChatListener#privateMCChat(sx.blah.discord.handle.obj.IChannel, boolean, sx.blah.discord.handle.obj.IUser, DiscordPlayer)}
+	 */
+	public boolean isMinecraftChatEnabled() {
+		return MCChatListener.isMinecraftChatEnabled(this);
 	}
 }
