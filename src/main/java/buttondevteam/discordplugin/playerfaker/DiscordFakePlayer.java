@@ -11,13 +11,10 @@ import org.bukkit.entity.*;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.PermissibleBase;
-import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
 
 import buttondevteam.discordplugin.DiscordPlugin;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Delegate;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
@@ -25,9 +22,7 @@ import sx.blah.discord.handle.obj.IUser;
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid) {
 		super(user, channel, entityId, uuid);
-		perm = new PermissibleBase(new ServerOperator() {
-			private @Getter @Setter boolean op;
-		});
+		perm = new PermissibleBase(Bukkit.getOfflinePlayer(uuid));
 	}
 
 	@Delegate

@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import buttondevteam.discordplugin.*;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -36,50 +37,53 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
-		synchronized (this) {
-			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
-					? ((Player) e.getSender()).getDisplayName() //
-					: e.getSender().getName());
-			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage())
-					.withColor(new Color(e.getChannel().color.getRed(), e.getChannel().color.getGreen(),
-							e.getChannel().color.getBlue()));
-			if (e.getSender() instanceof Player)
-				embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
-			final long nanoTime = System.nanoTime();
-			Consumer<LastMsgData> doit = lastmsgdata -> {
-				final EmbedObject embedObject = embed.build();
-				String msg = lastmsgdata.channel.isPrivate() ? DiscordPlugin.sanitizeString(e.getChannel().DisplayName)
-						: "";
-				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
-						|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
-						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-						|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
-					lastmsgdata.time = nanoTime;
-					lastmsgdata.mcchannel = e.getChannel();
-					lastmsgdata.content = embedObject.description;
-				} else
-					try {
-						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
-								+ embedObject.description;// The message object doesn't get updated
-						final LastMsgData _lastmsgdata = lastmsgdata;
-						DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
-					} catch (MissingPermissionsException | DiscordException e1) {
-						TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-					}
-			};
-			if (e.getChannel().equals(Channel.GlobalChat))
-				doit.accept(
-						lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata);
+		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+			synchronized (this) {
+				final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
+						? ((Player) e.getSender()).getDisplayName() //
+						: e.getSender().getName());
+				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
+						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
+								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+				if (e.getSender() instanceof Player)
+					embed.withAuthorIcon(
+							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
+				final long nanoTime = System.nanoTime();
+				Consumer<LastMsgData> doit = lastmsgdata -> {
+					final EmbedObject embedObject = embed.build();
+					String msg = lastmsgdata.channel.isPrivate()
+							? DiscordPlugin.sanitizeString(e.getChannel().DisplayName) : "";
+					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
+						lastmsgdata.time = nanoTime;
+						lastmsgdata.mcchannel = e.getChannel();
+						lastmsgdata.content = embedObject.description;
+					} else
+						try {
+							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+									+ embedObject.description;// The message object doesn't get updated
+							final LastMsgData _lastmsgdata = lastmsgdata;
+							DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
+						} catch (MissingPermissionsException | DiscordException e1) {
+							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+						}
+				};
+				if (e.getChannel().equals(Channel.GlobalChat))
+					doit.accept(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel)
+							: lastmsgdata);
 
-			for (LastMsgData data : lastmsgPerUser) {
-				final IUser iUser = data.channel.getUsersHere().stream()
-						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
-				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-				if (user.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, iUser, user)))
-					doit.accept(data);
+				for (LastMsgData data : lastmsgPerUser) {
+					final IUser iUser = data.channel.getUsersHere().stream()
+							.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
+					final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
+					if (user.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+						doit.accept(data);
+				}
 			}
-		} // TODO: Author URL
+		}); // TODO: Author URL
 	}
 
 	private static class LastMsgData {
@@ -235,7 +239,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						dsender.sendMessage("Stop it. You know the answer.");
 						lastlist = 0;
 					} else
-						Bukkit.dispatchCommand(dsender, cmd);
+						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
 				} else {
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
@@ -273,7 +277,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
 				() -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null
-				() -> Optional.ofNullable(ConnectedSenders.get(author.getStringID())), // This doesn't support it
+				() -> Optional.ofNullable(ConnectedSenders.get(key)), // This doesn't support the public chat, but it'll always return null for it
 				() -> Optional.ofNullable(UnconnectedSenders.get(key)), () -> {
 					val dsender = new DiscordSender(author, channel);
 					UnconnectedSenders.put(key, dsender);

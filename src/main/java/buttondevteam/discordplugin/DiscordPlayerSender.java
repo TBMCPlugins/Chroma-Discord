@@ -31,20 +31,33 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import lombok.Getter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 @SuppressWarnings("deprecation")
-public class DiscordPlayerSender extends DiscordSenderBase implements Player {
+public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<DiscordPlayerSender> {
 
 	protected Player player;
-	// protected @Delegate(excludes = ProjectileSource.class) Player player;
-	// protected @Delegate(excludes = { ProjectileSource.class, Permissible.class }) Player player;
-	// protected @Delegate(excludes = { ProjectileSource.class, CommandSender.class }) Player player;
+	private @Getter VanillaCommandListener<DiscordPlayerSender> vanillaCmdListener;
 
 	public DiscordPlayerSender(IUser user, IChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
+		vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
+	}
+
+	@Override
+	public void sendMessage(String message) {
+		player.sendMessage(message);
+		super.sendMessage(message);
+	}
+
+	@Override
+	public void sendMessage(String[] messages) {
+		player.sendMessage(messages);
+		super.sendMessage(messages);
 	}
 
 	@Override
