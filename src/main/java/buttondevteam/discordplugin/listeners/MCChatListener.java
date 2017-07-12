@@ -4,15 +4,21 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import buttondevteam.discordplugin.*;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -31,50 +37,53 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
-		synchronized (this) {
-			final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
-					? ((Player) e.getSender()).getDisplayName() //
-					: e.getSender().getName());
-			final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer).withDescription(e.getMessage())
-					.withColor(new Color(e.getChannel().color.getRed(), e.getChannel().color.getGreen(),
-							e.getChannel().color.getBlue()));
-			if (e.getSender() instanceof Player)
-				embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
-			final long nanoTime = System.nanoTime();
-			Consumer<LastMsgData> doit = lastmsgdata -> {
-				final EmbedObject embedObject = embed.build();
-				String msg = lastmsgdata.channel.isPrivate() ? DiscordPlugin.sanitizeString(e.getChannel().DisplayName)
-						: "";
-				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
-						|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
-						|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-						|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-					lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
-					lastmsgdata.time = nanoTime;
-					lastmsgdata.mcchannel = e.getChannel();
-					lastmsgdata.content = embedObject.description;
-				} else
-					try {
-						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
-								+ embedObject.description;// The message object doesn't get updated
-						final LastMsgData _lastmsgdata = lastmsgdata;
-						DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
-					} catch (MissingPermissionsException | DiscordException e1) {
-						TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-					}
-			};
-			if (e.getChannel().equals(Channel.GlobalChat))
-				doit.accept(
-						lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata);
+		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+			synchronized (this) {
+				final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
+						? ((Player) e.getSender()).getDisplayName() //
+						: e.getSender().getName());
+				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
+						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
+								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+				if (e.getSender() instanceof Player)
+					embed.withAuthorIcon(
+							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
+				final long nanoTime = System.nanoTime();
+				Consumer<LastMsgData> doit = lastmsgdata -> {
+					final EmbedObject embedObject = embed.build();
+					String msg = lastmsgdata.channel.isPrivate()
+							? DiscordPlugin.sanitizeString(e.getChannel().DisplayName) : "";
+					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
+						lastmsgdata.time = nanoTime;
+						lastmsgdata.mcchannel = e.getChannel();
+						lastmsgdata.content = embedObject.description;
+					} else
+						try {
+							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+									+ embedObject.description;// The message object doesn't get updated
+							final LastMsgData _lastmsgdata = lastmsgdata;
+							DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
+						} catch (MissingPermissionsException | DiscordException e1) {
+							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+						}
+				};
+				if (e.getChannel().equals(Channel.GlobalChat))
+					doit.accept(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel)
+							: lastmsgdata);
 
-			for (LastMsgData data : lastmsgPerUser) {
-				final IUser iUser = data.channel.getUsersHere().stream()
-						.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
-				final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-				if (user.minecraftChat().get() && e.shouldSendTo(getSender(data.channel, iUser, user)))
-					doit.accept(data);
+				for (LastMsgData data : lastmsgPerUser) {
+					final IUser iUser = data.channel.getUsersHere().stream()
+							.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
+					final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
+					if (user.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+						doit.accept(data);
+				}
 			}
-		} // TODO: Author URL
+		}); // TODO: Author URL
 	}
 
 	private static class LastMsgData {
@@ -121,25 +130,69 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 */
 	private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
 
-	public static boolean privateMCChat(IChannel channel, boolean start) {
-		return start ? lastmsgPerUser.add(new LastMsgData(channel))
+	public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
+		TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
+		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
+			val p = Bukkit.getPlayer(mcp.getUUID());
+			if (start) {
+				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID());
+				ConnectedSenders.put(user.getStringID(), sender);
+				if (p == null)// Player is offline - If the player is online, that takes precedence
+					Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
+			} else {
+				val sender = ConnectedSenders.remove(user.getStringID());
+				if (p == null)// Player is offline - If the player is online, that takes precedence
+					Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
+			}
+		}
+		return start //
+				? lastmsgPerUser.add(new LastMsgData(channel)) //
 				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 
+	// ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
+	// Offline public chat......x............................................
+	// Online public chat.......x...........................................x
+	// Offline private chat.....x.......................x....................
+	// Online private chat......x.......................x...................x
+	// If online and enabling private chat, don't login
+	// If leaving the server and private chat is enabled (has ConnectedPlayer), call login in a task on lowest priority
+	// If private chat is enabled and joining the server, logout the fake player on highest priority
+	// If online and disabling private chat, don't logout
+	// The maps may not contain the senders for UnconnectedSenders
+
+	public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
+		return lastmsgPerUser.stream().anyMatch(
+				lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(dp.getDiscordID()));
+	}
+
+	/**
+	 * May contain P&lt;DiscordID&gt; as key for public chat
+	 */
 	public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, DiscordPlayerSender> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, DiscordConnectedPlayer> ConnectedSenders = new HashMap<>();
+	/**
+	 * May contain P&lt;DiscordID&gt; as key for public chat
+	 */
+	public static final HashMap<String, DiscordPlayerSender> OnlineSenders = new HashMap<>();
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
 		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata).message = null; // Don't set the whole object to null, the player and channel information should
 	} // be preserved
 
+	public static void sendSystemMessageToChat(String msg) {
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, msg);
+		for (LastMsgData data : lastmsgPerUser)
+			DiscordPlugin.sendMessageToChannel(data.channel, msg);
+	}
+
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
 		val author = event.getMessage().getAuthor();
 		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.minecraftChat().get()
+				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()
 						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 			return;
 		resetLastMessage();
@@ -168,12 +221,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
 							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
 						// Command not whitelisted
-						dsender.sendMessage( // TODO
-								"Sorry, you need to be online on the server and have your accounts connected, you can only access these commands:\n"
-										+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
-												.collect(Collectors.joining(", "))
-										+ "\nTo connect your accounts, use @ChromaBot connect in "
-										+ DiscordPlugin.botchannel.mention());
+						dsender.sendMessage("Sorry, you can only access these commands:\n"
+								+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc).collect(Collectors.joining(", "))
+								+ (user.getConnectedID(TBMCPlayer.class) == null
+										? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
+												+ DiscordPlugin.botchannel.mention()
+												+ "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
+										: "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
 						return;
 					}
 					if (lastlist > 5) {
@@ -185,7 +239,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						dsender.sendMessage("Stop it. You know the answer.");
 						lastlist = 0;
 					} else
-						Bukkit.dispatchCommand(dsender, cmd);
+						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
 				} else {
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
@@ -216,22 +270,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		}
 	}
 
+	/**
+	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
+	 */
 	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
-		final DiscordSenderBase dsender;
-		Player mcp = null; // Offline players can't really run commands, or can they? No, they can't, really.
-		final String cid;
-		if ((cid = dp.getConnectedID(TBMCPlayer.class)) != null // Connected?
-				&& (mcp = Bukkit.getPlayer(UUID.fromString(cid))) != null) { // Execute as ingame player
-			if (!ConnectedSenders.containsKey(author.getStringID()))
-				ConnectedSenders.put(author.getStringID(), new DiscordPlayerSender(author, channel, mcp));
-			dsender = ConnectedSenders.get(author.getStringID());
-		} else {
-			TBMCPlayer p = dp.getAs(TBMCPlayer.class);
-			if (!UnconnectedSenders.containsKey(author.getStringID()))
-				UnconnectedSenders.put(author.getStringID(),
-						new DiscordSender(author, channel, p == null ? null : p.PlayerName().get())); // Display the playername, if found
-			dsender = UnconnectedSenders.get(author.getStringID());
-		}
-		return dsender;
+		val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
+		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
+				() -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null
+				() -> Optional.ofNullable(ConnectedSenders.get(key)), // This doesn't support the public chat, but it'll always return null for it
+				() -> Optional.ofNullable(UnconnectedSenders.get(key)), () -> {
+					val dsender = new DiscordSender(author, channel);
+					UnconnectedSenders.put(key, dsender);
+					return Optional.of(dsender);
+				}).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
 	}
 }

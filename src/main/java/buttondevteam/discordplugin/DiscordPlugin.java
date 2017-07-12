@@ -256,7 +256,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			if (channel == chatchannel)
 				MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
 			final String content = TBMCCoreAPI.IsTestServer() && channel != chatchannel || channel == botroomchannel // Both are the same for testing
-					? "*The following message is from a test server*\n" + message : message;
+					|| channel.isPrivate() //
+							? "*The following message is from a test server*\n" + message : message;
 			return perform(
 					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
 		} catch (Exception e) {

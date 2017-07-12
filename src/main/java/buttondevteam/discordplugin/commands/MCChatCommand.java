@@ -1,9 +1,9 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.player.PlayerData;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class MCChatCommand extends DiscordCommandBase {
@@ -16,17 +16,18 @@ public class MCChatCommand extends DiscordCommandBase {
 	@Override
 	public void run(IMessage message, String args) {
 		if (!message.getChannel().isPrivate()) {
-			message.reply("This command can only be issued while DMing the bot.");
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"This command can only be issued in a direct message with the bot.");
 			return;
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
-			PlayerData<Boolean> mcchat = user.minecraftChat();
-			mcchat.set(!mcchat.get());
-			MCChatListener.privateMCChat(message.getChannel(), mcchat.get());
-			message.reply("Minecraft chat " + (mcchat.get() //
-					? "enabled. Use '" + message.getClient().getOurUser().mention()
-							+ " mcchat' (with the mention) to disable." //
-					: "disabled."));
+			boolean mcchat = !user.isMinecraftChatEnabled();
+			MCChatListener.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
+			DiscordPlugin.sendMessageToChannel(message.getChannel(),
+					"Minecraft chat " + (mcchat //
+							? "enabled. Use '" + message.getClient().getOurUser().mention()
+									+ " mcchat' (with the mention) to disable." //
+							: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
 		}

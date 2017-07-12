@@ -13,7 +13,7 @@
 	<build>
 		<!-- <sourceDirectory>target/generated-sources/delombok</sourceDirectory> 
 			<testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory> -->
-			<sourceDirectory>src/main/java</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
 				<directory>src</directory>
@@ -131,6 +131,10 @@
 			<id>projectlombok.org</id>
 			<url>http://projectlombok.org/mavenrepo</url>
 		</repository>
+		<repository>
+			<id>pex-repo</id>
+			<url>http://pex-repo.aoeu.xyz</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -143,6 +147,12 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
+			<version>1.12-R0.1-SNAPSHOT</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.spigotmc</groupId>
+			<artifactId>spigot</artifactId>
 			<version>1.12-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
@@ -187,6 +197,18 @@
 			<artifactId>lombok</artifactId>
 			<version>1.16.16</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>ru.tehkode</groupId>
+			<artifactId>PermissionsEx</artifactId>
+			<version>1.23.1</version>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bukkit</groupId>
+					<artifactId>bukkit</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 </project>
