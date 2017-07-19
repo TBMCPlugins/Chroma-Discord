@@ -238,8 +238,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					{
 						dsender.sendMessage("Stop it. You know the answer.");
 						lastlist = 0;
-					} else
+					} else {
+						String topcmd = null; // TODO: Channels
 						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+					}
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
 				} else {
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)

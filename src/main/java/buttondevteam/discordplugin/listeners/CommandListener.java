@@ -8,11 +8,15 @@ import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
+import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.StatusType;
+import sx.blah.discord.util.EmbedBuilder;
 
 public class CommandListener {
 
@@ -88,6 +92,22 @@ public class CommandListener {
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				runCommand(event.getMessage(), false);
+			}
+		}, new IListener<sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent>() {
+			@Override
+			public void handle(PresenceUpdateEvent event) {
+				val devrole = DiscordPlugin.devServer.getRolesByName("Developer").get(0);
+				if (event.getOldPresence().getStatus().equals(StatusType.OFFLINE)
+						&& !event.getNewPresence().getStatus().equals(StatusType.OFFLINE)
+						&& event.getUser().getRolesForGuild(DiscordPlugin.devServer).stream()
+								.anyMatch(r -> r.getLongID() == devrole.getLongID())
+						&& DiscordPlugin.devServer.getUsersByRole(devrole).stream()
+								.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE)))
+					DiscordPlugin.sendMessageToChannel(DiscordPlugin.devofficechannel, "Full house!",
+							new EmbedBuilder()
+									.withImage(
+											"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
+									.build());
 			}
 		} };
 	}
