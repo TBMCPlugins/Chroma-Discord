@@ -146,7 +146,7 @@ public class CommandListener {
 			cmd = cmdwithargs.substring(0, index);
 			args = cmdwithargs.substring(index + 1);
 		}
-		DiscordCommandBase.runCommand(cmd, args, message);
+		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);
 		message.getChannel().setTypingStatus(false);
 		return true;
 	}

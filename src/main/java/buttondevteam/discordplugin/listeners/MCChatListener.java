@@ -1,12 +1,8 @@
 package buttondevteam.discordplugin.listeners;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -212,7 +208,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
 				}
 
-				if (dmessage.startsWith("/")) {
+				BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> TBMCChatAPI.SendChatMessage(channel,
+						dsender,
+						msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
+								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+								: ""));
+
+				if (dmessage.startsWith("/")) { // Ingame command
 					DiscordPlugin.perform(() -> {
 						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
 							event.getMessage().delete();
@@ -239,21 +241,35 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						dsender.sendMessage("Stop it. You know the answer.");
 						lastlist = 0;
 					} else {
-						String topcmd = null; // TODO: Channels
-						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+						int spi = cmd.indexOf(' ');
+						final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
+						Optional<Channel> ch = Channel.getChannels().stream().filter(c -> c.ID.equalsIgnoreCase(topcmd))
+								.findAny();
+						if (!ch.isPresent())
+							VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+						else // TO!DO: Only allow talking in general in public chat - A to-do from before I went to Greece
+						{
+							Channel chc = ch.get();
+							if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
+								dsender.sendMessage(
+										"You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
+							else {
+								if (spi == -1) // Switch channels
+								{
+									dsender.setMcchannel(chc);
+									dsender.sendMessage("You're now talking in: "
+											+ DiscordPlugin.sanitizeString(dsender.getMcchannel().DisplayName));
+								} else // Send single message
+									sendChatMessage.accept(chc, cmd.substring(spi + 1));
+							}
+						}
 					}
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
-				} else {
+				} else {// Not a command
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
 						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
 					else
-						TBMCChatAPI
-								.SendChatMessage(Channel.GlobalChat,
-										dsender, dmessage
-												+ (event.getMessage().getAttachments().size() > 0
-														? "\n" + event.getMessage().getAttachments().stream()
-																.map(a -> a.getUrl()).collect(Collectors.joining("\n"))
-														: ""));
+						sendChatMessage.accept(dsender.getMcchannel(), dmessage);
 					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
 							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
