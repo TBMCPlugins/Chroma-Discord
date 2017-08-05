@@ -134,11 +134,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID());
 				ConnectedSenders.put(user.getStringID(), sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(sender, ""));
+					MCListener.callEventExcluding(new PlayerJoinEvent(sender, ""), "ProtocolLib");
 			} else {
 				val sender = ConnectedSenders.remove(user.getStringID());
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(sender, ""));
+					MCListener.callEventExcluding(new PlayerQuitEvent(sender, ""), "ProtocolLib");
 			}
 		}
 		return start //
