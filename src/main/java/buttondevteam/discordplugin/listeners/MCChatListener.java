@@ -42,8 +42,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
 								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
 				if (e.getSender() instanceof Player)
-					embed.withAuthorIcon(
-							"https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png");
+					embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
+							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+									+ ((Player) e.getSender()).getUniqueId()); // TODO: Constant/method to get URLs like this
 				final long nanoTime = System.nanoTime();
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
@@ -79,7 +80,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						doit.accept(data);
 				}
 			}
-		}); // TODO: Author URL
+		});
 	}
 
 	private static class LastMsgData {
@@ -247,8 +248,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 								.findAny();
 						if (!ch.isPresent())
 							VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-						else // TO!DO: Only allow talking in general in public chat - A to-do from before I went to Greece
-						{
+						else {
 							Channel chc = ch.get();
 							if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
 								dsender.sendMessage(
@@ -266,7 +266,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					}
 					lastlistp = (short) Bukkit.getOnlinePlayers().size();
 				} else {// Not a command
-					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0)
+					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
+							&& !event.getChannel().isPrivate())
 						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
 					else
 						sendChatMessage.accept(dsender.getMcchannel(), dmessage);
