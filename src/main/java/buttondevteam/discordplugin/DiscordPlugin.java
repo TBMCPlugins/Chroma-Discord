@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.bukkit.Bukkit;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -183,6 +184,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void onDisable() {
 		stop = true;
+		for(val entry : MCChatListener.ConnectedSenders.entrySet())
+			MCListener.callEventExcluding(new PlayerQuitEvent(entry.getValue(), ""), "ProtocolLib");
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		getConfig().set("gameroles", GameRoles);
@@ -218,7 +221,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				for (int i = json.size() - 1; i >= 0; i--) {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
-					String author = "/u/" + data.get("author").getAsString();
+					String author = data.get("author").getAsString();
 					JsonElement distinguishedjson = data.get("distinguished");
 					String distinguished;
 					if (distinguishedjson.isJsonNull())
@@ -239,6 +242,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 							if (id != null)
 								author = "<@" + id + ">";
 						} while (false);
+						if (!author.startsWith("<"))
+							author = "/u/" + author;
 						(distinguished != null && distinguished.equals("moderator") ? modmsgsb : msgsb)
 								.append("A new post was submitted to the subreddit by ").append(author).append("\n")
 								.append(permalink).append("\n");
