@@ -26,6 +26,7 @@ import buttondevteam.discordplugin.DiscordPlayerSender;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.player.*;
 import lombok.val;
 import net.ess3.api.events.*;
@@ -128,6 +129,11 @@ public class MCListener implements Listener {
 			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
 					ex);
 		}
+	}
+
+	@EventHandler
+	public void onChatSystemMessage(TBMCSystemChatEvent event) {
+		MCChatListener.sendSystemMessageToChat(event);
 	}
 
 	/**

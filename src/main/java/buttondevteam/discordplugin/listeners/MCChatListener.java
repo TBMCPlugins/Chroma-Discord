@@ -17,6 +17,7 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
+import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
@@ -69,14 +70,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						}
 				};
 				if (e.getChannel().equals(Channel.GlobalChat))
-					doit.accept(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel)
-							: lastmsgdata);
+					doit.accept(lastmsgdata == null
+							? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null) : lastmsgdata);
 
 				for (LastMsgData data : lastmsgPerUser) {
-					final IUser iUser = data.channel.getUsersHere().stream()
-							.filter(u -> u.getLongID() != u.getClient().getOurUser().getLongID()).findFirst().get(); // Doesn't support group DMs
-					final DiscordPlayer user = DiscordPlayer.getUser(iUser.getStringID(), DiscordPlayer.class);
-					if (user.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, iUser, user)))
+					if (data.dp.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
 						doit.accept(data);
 				}
 			}
@@ -89,8 +87,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		public String content;
 		public IChannel channel;
 		public Channel mcchannel;
+		public IUser user;
+		public DiscordPlayer dp;
 
-		public LastMsgData(IChannel channel) {
+		public LastMsgData(IChannel channel, IUser user, DiscordPlayer dp) {
 			this.channel = channel;
 		}
 	}
@@ -143,7 +143,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			}
 		}
 		return start //
-				? lastmsgPerUser.add(new LastMsgData(channel)) //
+				? lastmsgPerUser.add(new LastMsgData(channel, user, dp)) // Doesn't support group DMs
 				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 
@@ -175,13 +175,25 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	public static short ListC = 0;
 
 	public static void resetLastMessage() {
-		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel) : lastmsgdata).message = null; // Don't set the whole object to null, the player and channel information should
-	} // be preserved
+		(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
+				: lastmsgdata).message = null;
+	} // Don't set the whole object to null, the player and channel information should be preserved
 
+	/**
+	 * This overload sends it to the global chat.
+	 */
 	public static void sendSystemMessageToChat(String msg) {
 		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, msg);
 		for (LastMsgData data : lastmsgPerUser)
 			DiscordPlugin.sendMessageToChannel(data.channel, msg);
+	}
+
+	public static void sendSystemMessageToChat(TBMCSystemChatEvent event) {
+		if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, event.getMessage());
+		for (LastMsgData data : lastmsgPerUser)
+			if (event.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+				DiscordPlugin.sendMessageToChannel(data.channel, event.getMessage());
 	}
 
 	@Override // Discord
@@ -256,7 +268,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							else {
 								if (spi == -1) // Switch channels
 								{
+									val oldch = dsender.getMcchannel();
+									if (oldch instanceof ChatRoom)
+										((ChatRoom) oldch).leaveRoom(dsender);
 									dsender.setMcchannel(chc);
+									if (chc instanceof ChatRoom)
+										((ChatRoom) chc).joinRoom(dsender);
 									dsender.sendMessage("You're now talking in: "
 											+ DiscordPlugin.sanitizeString(dsender.getMcchannel().DisplayName));
 								} else // Send single message
@@ -292,7 +309,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	/**
 	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
 	 */
-	private DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+	private static DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
 		val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
 				() -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null
