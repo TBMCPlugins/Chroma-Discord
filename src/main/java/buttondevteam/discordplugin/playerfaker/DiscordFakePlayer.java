@@ -16,22 +16,21 @@ import org.bukkit.scoreboard.Scoreboard;
 
 import buttondevteam.discordplugin.DiscordPlugin;
 import lombok.experimental.Delegate;
+import lombok.Getter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
-	protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid) {
+	protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid, String mcname) {
 		super(user, channel, entityId, uuid);
 		perm = new PermissibleBase(Bukkit.getOfflinePlayer(uuid));
+		name = mcname;
 	}
 
 	@Delegate
 	private PermissibleBase perm;
 
-	@Override
-	public String getName() {
-		return user.getName();
-	}
+	private @Getter String name;
 
 	@Override
 	public EntityType getType() {

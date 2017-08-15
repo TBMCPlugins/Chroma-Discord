@@ -12,8 +12,8 @@ public class DiscordConnectedPlayer extends DiscordFakePlayer implements IMCPlay
 	private static int nextEntityId = 10000;
 	private @Getter VanillaCommandListener<DiscordConnectedPlayer> vanillaCmdListener;
 
-	public DiscordConnectedPlayer(IUser user, IChannel channel, UUID uuid) {
-		super(user, channel, nextEntityId++, uuid);
+	public DiscordConnectedPlayer(IUser user, IChannel channel, UUID uuid, String mcname) {
+		super(user, channel, nextEntityId++, uuid, mcname);
 		vanillaCmdListener = new VanillaCommandListener<>(this);
 	}
 

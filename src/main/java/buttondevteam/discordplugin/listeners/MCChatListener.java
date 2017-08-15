@@ -20,6 +20,7 @@ import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -31,8 +32,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	@EventHandler // Minecraft
 	public void onMCChat(TBMCChatEvent e) {
 		if (e.isCancelled())
-			return;
-		if (e.getSender() instanceof DiscordSender || e.getSender() instanceof DiscordPlayerSender)
 			return;
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
 			synchronized (this) {
@@ -46,6 +45,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
 									+ ((Player) e.getSender()).getUniqueId()); // TODO: Constant/method to get URLs like this
+				else if (e.getSender() instanceof DiscordSenderBase)
+					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
+							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
+									+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
 				final long nanoTime = System.nanoTime();
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
@@ -69,30 +72,37 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 						}
 				};
-				if (e.getChannel().equals(Channel.GlobalChat))
+				Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
+						|| ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
+
+				if (e.getChannel().equals(Channel.GlobalChat) && isdifferentchannel.test(DiscordPlugin.chatchannel))
 					doit.accept(lastmsgdata == null
 							? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null) : lastmsgdata);
 
 				for (LastMsgData data : lastmsgPerUser) {
-					if (data.dp.isMinecraftChatEnabled() && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+					// System.out.println("Data: " + data);
+					// System.out.println("Data.channel: " + data.channel);
+					// System.out.println("Sender: " + e.getSender());
+					// System.out.println("Sender channel: " + ((DiscordSenderBase) e.getSender()).getChannel()); // TODO
+					// System.out.println("Predicate: " + isdifferentchannel);
+					// System.out.println("DP: " + data.dp); - Didn't update the constructor
+					if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
+							&& e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
 						doit.accept(data);
 				}
 			}
 		});
 	}
 
+	@RequiredArgsConstructor
 	private static class LastMsgData {
 		public IMessage message;
 		public long time;
 		public String content;
-		public IChannel channel;
+		public final IChannel channel;
 		public Channel mcchannel;
-		public IUser user;
-		public DiscordPlayer dp;
-
-		public LastMsgData(IChannel channel, IUser user, DiscordPlayer dp) {
-			this.channel = channel;
-		}
+		public final IUser user;
+		public final DiscordPlayer dp;
 	}
 
 	@EventHandler
@@ -131,8 +141,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
 		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
 			val p = Bukkit.getPlayer(mcp.getUUID());
+			val op = Bukkit.getOfflinePlayer(mcp.getUUID());
 			if (start) {
-				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID());
+				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
 				ConnectedSenders.put(user.getStringID(), sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
 					MCListener.callEventExcluding(new PlayerJoinEvent(sender, ""), "ProtocolLib");
@@ -227,6 +238,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
 								: ""));
 
+				boolean react = false;
+
 				if (dmessage.startsWith("/")) { // Ingame command
 					DiscordPlugin.perform(() -> {
 						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
@@ -276,8 +289,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 										((ChatRoom) chc).joinRoom(dsender);
 									dsender.sendMessage("You're now talking in: "
 											+ DiscordPlugin.sanitizeString(dsender.getMcchannel().DisplayName));
-								} else // Send single message
+								} else { // Send single message
 									sendChatMessage.accept(chc, cmd.substring(spi + 1));
+									react = true;
+								}
 							}
 						}
 					}
@@ -286,8 +301,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 							&& !event.getChannel().isPrivate())
 						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
-					else
+					else {
 						sendChatMessage.accept(dsender.getMcchannel(), dmessage);
+						react = true;
+					}
+				}
+				if (react) {
 					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
 							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
