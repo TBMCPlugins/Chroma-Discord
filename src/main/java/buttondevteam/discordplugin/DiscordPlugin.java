@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.bukkit.Bukkit;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -20,6 +21,8 @@ import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.TBMCChatAPI;
+import buttondevteam.lib.player.ChromaGamerBase;
+import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
@@ -67,6 +70,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	 */
 	public static IChannel officechannel;
 	public static IChannel updatechannel;
+	public static IChannel devofficechannel;
 	public static IGuild mainServer;
 	public static IGuild devServer;
 
@@ -91,6 +95,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					botroomchannel = devServer.getChannelByID(239519012529111040L); // bot-room
 					officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
 					updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
+					devofficechannel = officechannel; // developers-office
 					dc.online("on TBMC");
 				} else {
 					botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
@@ -100,6 +105,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					chatchannel = botchannel;// bot-room
 					officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
 					updatechannel = botchannel;
+					devofficechannel = botchannel;// bot-room
 					dc.online("testing");
 				}
 				if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
@@ -109,17 +115,26 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				if (task != null)
 					task.cancel();
 				if (!sent) {
-					sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
-							.withTitle("Server started - chat connected.").build());
-					try {
-						List<IMessage> msgs = genchannel.getPinnedMessages();
-						for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
-							genchannel.unpin(msgs.get(i));
-							Thread.sleep(10);
+					if (getConfig().getBoolean("serverup", false)) {
+						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.YELLOW)
+								.withTitle("Server recovered from a crash - chat connected.").build());
+						TBMCCoreAPI.SendException("The server crashed!", new Throwable(
+								"The server shut down unexpectedly. See the log of the previous run for more details."));
+					} else
+						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
+								.withTitle("Server started - chat connected.").build());
+					getConfig().set("serverup", true);
+					saveConfig();
+					perform(() -> {
+						try {
+							List<IMessage> msgs = genchannel.getPinnedMessages();
+							for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
+								genchannel.unpin(msgs.get(i));
+								Thread.sleep(10);
+							}
+						} catch (InterruptedException e) {
 						}
-					} catch (Exception e) {
-						TBMCCoreAPI.SendException("Error occured while unpinning messages!", e);
-					}
+					});
 					sent = true;
 				}
 			}, 0, 10);
@@ -169,9 +184,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void onDisable() {
 		stop = true;
+		for(val entry : MCChatListener.ConnectedSenders.entrySet())
+			MCListener.callEventExcluding(new PlayerQuitEvent(entry.getValue(), ""), "ProtocolLib");
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		getConfig().set("gameroles", GameRoles);
+		getConfig().set("serverup", false);
 		saveConfig();
 		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
 				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
@@ -215,6 +233,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					if (date > lastseentime)
 						lastseentime = date;
 					else if (date > lastannouncementtime) {
+						do {
+							val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit");
+							if (reddituserclass == null)
+								break;
+							val user = ChromaGamerBase.getUser(author, reddituserclass);
+							String id = user.getConnectedID(DiscordPlayer.class);
+							if (id != null)
+								author = "<@" + id + ">";
+						} while (false);
+						if (!author.startsWith("<"))
+							author = "/u/" + author;
 						(distinguished != null && distinguished.equals("moderator") ? modmsgsb : msgsb)
 								.append("A new post was submitted to the subreddit by ").append(author).append("\n")
 								.append(permalink).append("\n");

@@ -9,7 +9,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.IDiscordSender;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -19,6 +23,7 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	 */
 	protected IUser user;
 	protected IChannel channel;
+	private @Getter @Setter @NonNull Channel mcchannel = Channel.GlobalChat;
 
 	protected DiscordSenderBase(IUser user, IChannel channel) {
 		this.user = user;

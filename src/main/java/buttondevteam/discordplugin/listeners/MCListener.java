@@ -1,14 +1,22 @@
 package buttondevteam.discordplugin.listeners;
 
+import java.util.Arrays;
+import java.util.logging.Level;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.plugin.AuthorNagException;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredListener;
 
 import com.earth2me.essentials.CommandSource;
 
@@ -18,6 +26,7 @@ import buttondevteam.discordplugin.DiscordPlayerSender;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.player.*;
 import lombok.val;
 import net.ess3.api.events.*;
@@ -41,7 +50,7 @@ public class MCListener implements Listener {
 					new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p));
 			MCChatListener.ConnectedSenders.values().stream()
 					.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-					.ifPresent(dcp -> Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(dcp, "")));
+					.ifPresent(dcp -> callEventExcluding(new PlayerQuitEvent(dcp, ""), "ProtocolLib"));
 		}
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
 			IUser user = DiscordPlugin.dc
@@ -62,7 +71,7 @@ public class MCListener implements Listener {
 				.removeIf(entry -> entry.getValue().getUniqueId().equals(e.getPlayer().getUniqueId()));
 		MCChatListener.ConnectedSenders.values().stream()
 				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(dcp -> Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(dcp, "")));
+				.ifPresent(dcp -> callEventExcluding(new PlayerJoinEvent(dcp, ""), "ProtocolLib"));
 		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
 	}
 
@@ -119,6 +128,69 @@ public class MCListener implements Listener {
 		} catch (DiscordException | MissingPermissionsException ex) {
 			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
 					ex);
+		}
+	}
+
+	@EventHandler
+	public void onChatSystemMessage(TBMCSystemChatEvent event) {
+		MCChatListener.sendSystemMessageToChat(event);
+	}
+
+	/**
+	 * Calls an event with the given details.
+	 * <p>
+	 * This method only synchronizes when the event is not asynchronous.
+	 *
+	 * @param event
+	 *            Event details
+	 * @param plugins
+	 *            The plugins to exclude. Not case sensitive.
+	 */
+	public static void callEventExcluding(Event event, String... plugins) { // Copied from Spigot-API and modified a bit
+		if (event.isAsynchronous()) {
+			if (Thread.holdsLock(Bukkit.getPluginManager())) {
+				throw new IllegalStateException(
+						event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
+			}
+			if (Bukkit.getServer().isPrimaryThread()) {
+				throw new IllegalStateException(
+						event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+			}
+			fireEventExcluding(event, plugins);
+		} else {
+			synchronized (Bukkit.getPluginManager()) {
+				fireEventExcluding(event, plugins);
+			}
+		}
+	}
+
+	private static void fireEventExcluding(Event event, String... plugins) {
+		HandlerList handlers = event.getHandlers(); // Code taken from SimplePluginManager in Spigot-API
+		RegisteredListener[] listeners = handlers.getRegisteredListeners();
+		val server = Bukkit.getServer();
+
+		for (RegisteredListener registration : listeners) {
+			if (!registration.getPlugin().isEnabled()
+					|| Arrays.stream(plugins).anyMatch(p -> p.equalsIgnoreCase(registration.getPlugin().getName())))
+				continue; // Modified to exclude plugins
+
+			try {
+				registration.callEvent(event);
+			} catch (AuthorNagException ex) {
+				Plugin plugin = registration.getPlugin();
+
+				if (plugin.isNaggable()) {
+					plugin.setNaggable(false);
+
+					server.getLogger().log(Level.SEVERE,
+							String.format("Nag author(s): '%s' of '%s' about the following: %s",
+									plugin.getDescription().getAuthors(), plugin.getDescription().getFullName(),
+									ex.getMessage()));
+				}
+			} catch (Throwable ex) {
+				server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to "
+						+ registration.getPlugin().getDescription().getFullName(), ex);
+			}
 		}
 	}
 }
