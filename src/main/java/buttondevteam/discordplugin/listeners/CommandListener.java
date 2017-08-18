@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.listeners;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -54,6 +55,8 @@ public class CommandListener {
 			list.add(i);
 	}
 
+	private static long lasttime = 0;
+
 	public static IListener<?>[] getListeners() {
 		return new IListener[] { new IListener<MentionEvent>() {
 			@Override
@@ -102,12 +105,15 @@ public class CommandListener {
 						&& event.getUser().getRolesForGuild(DiscordPlugin.devServer).stream()
 								.anyMatch(r -> r.getLongID() == devrole.getLongID())
 						&& DiscordPlugin.devServer.getUsersByRole(devrole).stream()
-								.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE)))
+								.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
+						&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())) {
 					DiscordPlugin.sendMessageToChannel(DiscordPlugin.devofficechannel, "Full house!",
 							new EmbedBuilder()
 									.withImage(
 											"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
 									.build());
+					lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
+				}
 			}
 		} };
 	}

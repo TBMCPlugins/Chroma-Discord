@@ -136,6 +136,13 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 						}
 					});
 					sent = true;
+					if (TBMCCoreAPI.IsTestServer() && !dc.getOurUser().getName().toLowerCase().contains("test")) {
+						TBMCCoreAPI.SendException(
+								"Won't load because we're in testing mode and not using the separate account.",
+								new Exception(
+										"The plugin refuses to load until you change the token to the testing account."));
+						Bukkit.getPluginManager().disablePlugin(this);
+					}
 				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
@@ -184,7 +191,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	@Override
 	public void onDisable() {
 		stop = true;
-		for(val entry : MCChatListener.ConnectedSenders.entrySet())
+		for (val entry : MCChatListener.ConnectedSenders.entrySet())
 			MCListener.callEventExcluding(new PlayerQuitEvent(entry.getValue(), ""), "ProtocolLib");
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
@@ -284,9 +291,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		try {
 			if (channel == chatchannel)
 				MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
-			final String content = TBMCCoreAPI.IsTestServer() && (channel != chatchannel || channel == botroomchannel // Both are the same for testing
-					|| channel.isPrivate()) //
-							? "*The following message is from a test server*\n" + message : message;
+			else if (channel.isPrivate())
+				MCChatListener.resetLastMessage(channel);
+			final String content = message;
 			return perform(
 					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
 		} catch (Exception e) {

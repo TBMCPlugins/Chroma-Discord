@@ -190,6 +190,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				: lastmsgdata).message = null;
 	} // Don't set the whole object to null, the player and channel information should be preserved
 
+	public static void resetLastMessage(IChannel channel) {
+		for (LastMsgData data : lastmsgPerUser)
+			if (data.channel.getLongID() == channel.getLongID())
+				data.message = null; // Since only private channels are stored, only those will work anyways
+	}
+
 	/**
 	 * This overload sends it to the global chat.
 	 */
@@ -215,7 +221,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()
 						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
 			return;
-		resetLastMessage();
+		if (!event.getMessage().getChannel().isPrivate())
+			resetLastMessage();
+		else
+			resetLastMessage(event.getMessage().getChannel());
 		lastlist++;
 		if (author.isBot())
 			return;
@@ -284,9 +293,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 									val oldch = dsender.getMcchannel();
 									if (oldch instanceof ChatRoom)
 										((ChatRoom) oldch).leaveRoom(dsender);
-									dsender.setMcchannel(chc);
-									if (chc instanceof ChatRoom)
-										((ChatRoom) chc).joinRoom(dsender);
+									if (!oldch.ID.equals(chc.ID)) {
+										dsender.setMcchannel(chc);
+										if (chc instanceof ChatRoom)
+											((ChatRoom) chc).joinRoom(dsender);
+									} else
+										dsender.setMcchannel(Channel.GlobalChat);
 									dsender.sendMessage("You're now talking in: "
 											+ DiscordPlugin.sanitizeString(dsender.getMcchannel().DisplayName));
 								} else { // Send single message
