@@ -24,7 +24,8 @@ public class ExceptionListener implements Listener {
 			return;
 		if (lastthrown.stream()
 				.anyMatch(ex -> Arrays.equals(e.getException().getStackTrace(), ex.getStackTrace())
-						&& e.getException().getMessage().equals(ex.getMessage()))
+						&& e.getException().getMessage() == null ? ex.getMessage() == null
+								: e.getException().getMessage().equals(ex.getMessage())) // e.Exception.Message==ex.Message
 				&& lastsourcemsg.contains(e.getSourceMessage()))
 			return;
 		SendException(e.getException(), e.getSourceMessage());

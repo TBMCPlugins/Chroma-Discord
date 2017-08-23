@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.listeners;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -89,8 +90,7 @@ public class CommandListener {
 				}
 				if (!event.getMessage().getChannel().isPrivate() //
 						|| DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class)
-								.isMinecraftChatEnabled()
-						|| DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent())
+								.isMinecraftChatEnabled())
 					return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
@@ -99,6 +99,8 @@ public class CommandListener {
 		}, new IListener<sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent>() {
 			@Override
 			public void handle(PresenceUpdateEvent event) {
+				if (DiscordPlugin.SafeMode)
+					return;
 				val devrole = DiscordPlugin.devServer.getRolesByName("Developer").get(0);
 				if (event.getOldPresence().getStatus().equals(StatusType.OFFLINE)
 						&& !event.getNewPresence().getStatus().equals(StatusType.OFFLINE)
@@ -106,7 +108,8 @@ public class CommandListener {
 								.anyMatch(r -> r.getLongID() == devrole.getLongID())
 						&& DiscordPlugin.devServer.getUsersByRole(devrole).stream()
 								.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
-						&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())) {
+						&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
+						&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
 					DiscordPlugin.sendMessageToChannel(DiscordPlugin.devofficechannel, "Full house!",
 							new EmbedBuilder()
 									.withImage(

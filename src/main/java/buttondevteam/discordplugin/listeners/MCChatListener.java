@@ -41,6 +41,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
 						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
 								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+				// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
+				// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
 				if (e.getSender() instanceof Player)
 					embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
@@ -49,16 +51,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
 									+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
+				if (e.getSender() instanceof DiscordSenderBase)
+					embed.withAuthorName("[D]" + authorPlayer);
 				final long nanoTime = System.nanoTime();
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
-					String msg = lastmsgdata.channel.isPrivate()
+					final String dmsg = lastmsgdata.channel.isPrivate()
 							? DiscordPlugin.sanitizeString(e.getChannel().DisplayName) : "";
 					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, msg, embedObject);
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, dmsg, embedObject);
 						lastmsgdata.time = nanoTime;
 						lastmsgdata.mcchannel = e.getChannel();
 						lastmsgdata.content = embedObject.description;
@@ -67,7 +71,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
 									+ embedObject.description;// The message object doesn't get updated
 							final LastMsgData _lastmsgdata = lastmsgdata;
-							DiscordPlugin.perform(() -> _lastmsgdata.message.edit(msg, embedObject));
+							DiscordPlugin.perform(() -> _lastmsgdata.message.edit(dmsg, embedObject));
 						} catch (MissingPermissionsException | DiscordException e1) {
 							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 						}
@@ -218,8 +222,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		val author = event.getMessage().getAuthor();
 		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()
-						&& !DiscordPlugin.checkIfSomeoneIsTestingWhileWeArent()))
+				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()))
 			return;
 		if (!event.getMessage().getChannel().isPrivate())
 			resetLastMessage();
@@ -281,7 +284,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						Optional<Channel> ch = Channel.getChannels().stream().filter(c -> c.ID.equalsIgnoreCase(topcmd))
 								.findAny();
 						if (!ch.isPresent())
-							VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+							Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
+									() -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
 						else {
 							Channel chc = ch.get();
 							if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
@@ -312,7 +316,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				} else {// Not a command
 					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 							&& !event.getChannel().isPrivate())
-						TBMCChatAPI.SendChatMessage(Channel.GlobalChat, dsender, "pinned a message on Discord."); // TODO: Not chat message
+						TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
+								(dsender instanceof Player ? ((Player) dsender).getDisplayName() : dsender.getName())
+										+ " pinned a message on Discord.");
 					else {
 						sendChatMessage.accept(dsender.getMcchannel(), dmessage);
 						react = true;
