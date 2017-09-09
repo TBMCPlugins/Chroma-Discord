@@ -62,7 +62,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, dmsg, embedObject);
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, dmsg,
+								embedObject);
 						lastmsgdata.time = nanoTime;
 						lastmsgdata.mcchannel = e.getChannel();
 						lastmsgdata.content = embedObject.description;
@@ -76,10 +77,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 						}
 				};
+				// Checks if the given channel is different than where the message was sent from
 				Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
 						|| ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
-				if (e.getChannel().equals(Channel.GlobalChat) && isdifferentchannel.test(DiscordPlugin.chatchannel))
+				if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
+						&& isdifferentchannel.test(DiscordPlugin.chatchannel))
 					doit.accept(lastmsgdata == null
 							? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null) : lastmsgdata);
 
