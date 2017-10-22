@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -143,6 +145,20 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 										"The plugin refuses to load until you change the token to the testing account."));
 						Bukkit.getPluginManager().disablePlugin(this);
 					}
+					TBMCCoreAPI.SendUnsentExceptions();
+					TBMCCoreAPI.SendUnsentDebugMessages();
+					if (!TBMCCoreAPI.IsTestServer()) {
+						final Calendar currentCal = Calendar.getInstance();
+						final Calendar newCal = Calendar.getInstance();
+						currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
+								currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
+						if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
+							Random rand = new Random();
+							sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
+									"You could make a religion out of this");
+						}
+					}
+					updatePlayerList();
 				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
@@ -157,19 +173,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
 			new Thread(this::AnnouncementGetterThreadMethod).start();
 			setupProviders();
-			TBMCCoreAPI.SendUnsentExceptions();
-			TBMCCoreAPI.SendUnsentDebugMessages();
-			if (!TBMCCoreAPI.IsTestServer()) {
-				final Calendar currentCal = Calendar.getInstance();
-				final Calendar newCal = Calendar.getInstance();
-				currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
-						currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
-				if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
-					Random rand = new Random();
-					sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
-							"You could make a religion out of this");
-				}
-			}
 			/*
 			 * IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041") .withClientSecret(getConfig().getString("appsecret")) .withRedirectUrl("https://" +
 			 * (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8081/callback") .withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
@@ -354,5 +357,21 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		if (SafeMode)
 			return null;
 		return RequestBuffer.request(action).get(); // Let the pros handle this
+	}
+
+	public static void updatePlayerList() {
+		perform(() -> {
+			String[] s = chatchannel.getTopic().split("\\n----\\n");
+			//System.out.println("Len: " + s.length);
+			//System.out.println("s0: " + s[0]);
+			if (s.length < 3)
+				return;
+			s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
+					+ " online";
+			s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
+					.map(p -> DiscordPlugin.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
+			//System.out.println("s0 after: " + s[0]);
+			chatchannel.changeTopic(Arrays.stream(s).collect(Collectors.joining("\n----\n")));
+		});
 	}
 }

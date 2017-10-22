@@ -222,6 +222,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	@Override // Discord
 	public void handle(MessageReceivedEvent event) {
+		if (DiscordPlugin.SafeMode)
+			return;
 		val author = event.getMessage().getAuthor();
 		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())

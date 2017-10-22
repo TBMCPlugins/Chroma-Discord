@@ -61,6 +61,7 @@ public class MCListener implements Listener {
 		}
 		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
 		MCChatListener.ListC = 0;
+		DiscordPlugin.updatePlayerList();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -73,6 +74,7 @@ public class MCListener implements Listener {
 				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
 				.ifPresent(dcp -> callEventExcluding(new PlayerJoinEvent(dcp, ""), "ProtocolLib"));
 		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
+		DiscordPlugin.updatePlayerList();
 	}
 
 	@EventHandler
