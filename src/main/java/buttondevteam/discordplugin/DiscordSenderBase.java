@@ -1,8 +1,6 @@
 package buttondevteam.discordplugin;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -30,8 +28,6 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 		this.channel = channel;
 	}
 
-	private static volatile List<String> broadcasts = new ArrayList<>();
-
 	private volatile String msgtosend = "";
 	private volatile BukkitTask sendtask;
 
@@ -52,13 +48,8 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	public void sendMessage(String message) {
 		try {
 			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
-			if (broadcast) {
-				if (broadcasts.contains(message))
-					return;
-				if (broadcasts.size() > 10)
-					broadcasts.clear();
-				broadcasts.add(message);
-			}
+			if (broadcast)
+				return;
 			final String sendmsg = DiscordPlugin.sanitizeString(message);
 			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)

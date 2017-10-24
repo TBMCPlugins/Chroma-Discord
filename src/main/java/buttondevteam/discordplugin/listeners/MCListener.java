@@ -12,7 +12,10 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.Plugin;
@@ -36,6 +39,17 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 
 public class MCListener implements Listener {
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onPlayerLogin(PlayerLoginEvent e) {
+		if (e.getResult() != Result.ALLOWED)
+			return;
+		MCChatListener.ConnectedSenders.values().stream()
+				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny().ifPresent(dcp -> {
+					callEventExcludingSome(new PlayerQuitEvent(dcp, ""));
+					//dcp.sendMessage("Real login detected, logged fake player out.");
+				});
+	}
+
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
@@ -48,9 +62,6 @@ public class MCListener implements Listener {
 					new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
 			MCChatListener.OnlineSenders.put("P" + dp.getDiscordID(),
 					new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p));
-			MCChatListener.ConnectedSenders.values().stream()
-					.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-					.ifPresent(dcp -> callEventExcluding(new PlayerQuitEvent(dcp, ""), "ProtocolLib"));
 		}
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
 			IUser user = DiscordPlugin.dc
@@ -70,11 +81,12 @@ public class MCListener implements Listener {
 			return; // Only care about real users
 		MCChatListener.OnlineSenders.entrySet()
 				.removeIf(entry -> entry.getValue().getUniqueId().equals(e.getPlayer().getUniqueId()));
-		MCChatListener.ConnectedSenders.values().stream()
-				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(dcp -> callEventExcluding(new PlayerJoinEvent(dcp, ""), "ProtocolLib"));
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
+				() -> MCChatListener.ConnectedSenders.values().stream()
+						.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
+						.ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
 		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
-		DiscordPlugin.updatePlayerList();
+		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, DiscordPlugin::updatePlayerList, 5);
 	}
 
 	@EventHandler
@@ -138,6 +150,17 @@ public class MCListener implements Listener {
 		MCChatListener.sendSystemMessageToChat(event);
 	}
 
+	@EventHandler
+	public void onBroadcastMessage(BroadcastMessageEvent event) {
+		MCChatListener.sendSystemMessageToChat(event.getMessage());
+	}
+
+	private static final String[] EXCLUDED_PLUGINS = { "ProtocolLib", "LibsDisguises" };
+
+	public static void callEventExcludingSome(Event event) {
+		callEventExcluding(event, EXCLUDED_PLUGINS);
+	}
+
 	/**
 	 * Calls an event with the given details.
 	 * <p>
@@ -148,7 +171,7 @@ public class MCListener implements Listener {
 	 * @param plugins
 	 *            The plugins to exclude. Not case sensitive.
 	 */
-	public static void callEventExcluding(Event event, String... plugins) { // Copied from Spigot-API and modified a bit
+	private static void callEventExcluding(Event event, String... plugins) { // Copied from Spigot-API and modified a bit
 		if (event.isAsynchronous()) {
 			if (Thread.holdsLock(Bukkit.getPluginManager())) {
 				throw new IllegalStateException(

@@ -30,6 +30,7 @@ import sx.blah.discord.api.*;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
+import sx.blah.discord.handle.impl.obj.ReactionEmoji;
 import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.*;
 import sx.blah.discord.util.RequestBuffer.IRequest;
@@ -195,7 +196,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public void onDisable() {
 		stop = true;
 		for (val entry : MCChatListener.ConnectedSenders.entrySet())
-			MCListener.callEventExcluding(new PlayerQuitEvent(entry.getValue(), ""), "ProtocolLib");
+			MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
 		getConfig().set("lastannouncementtime", lastannouncementtime);
 		getConfig().set("lastseentime", lastseentime);
 		getConfig().set("gameroles", GameRoles);
@@ -213,7 +214,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 
 	private long lastannouncementtime = 0;
 	private long lastseentime = 0;
-	public static final String DELIVERED_REACTION = "✅";
+	public static final ReactionEmoji DELIVERED_REACTION = ReactionEmoji.of("✅");
 
 	private void AnnouncementGetterThreadMethod() {
 		while (!stop) {
@@ -362,15 +363,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static void updatePlayerList() {
 		perform(() -> {
 			String[] s = chatchannel.getTopic().split("\\n----\\n");
-			//System.out.println("Len: " + s.length);
-			//System.out.println("s0: " + s[0]);
 			if (s.length < 3)
 				return;
 			s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
 					+ " online";
 			s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
 					.map(p -> DiscordPlugin.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-			//System.out.println("s0 after: " + s[0]);
 			chatchannel.changeTopic(Arrays.stream(s).collect(Collectors.joining("\n----\n")));
 		});
 	}

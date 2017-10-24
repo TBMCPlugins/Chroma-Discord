@@ -153,11 +153,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
 				ConnectedSenders.put(user.getStringID(), sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					MCListener.callEventExcluding(new PlayerJoinEvent(sender, ""), "ProtocolLib");
+					MCListener.callEventExcludingSome(new PlayerJoinEvent(sender, ""));
 			} else {
 				val sender = ConnectedSenders.remove(user.getStringID());
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					MCListener.callEventExcluding(new PlayerQuitEvent(sender, ""), "ProtocolLib");
+					MCListener.callEventExcludingSome(new PlayerQuitEvent(sender, ""));
 			}
 		}
 		return start //
@@ -332,9 +332,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				if (react) {
 					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
 						try {
-							final IReaction reaction = m.getReactionByUnicode(DiscordPlugin.DELIVERED_REACTION);
+							final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
 							if (reaction != null)
-								DiscordPlugin.perform(() -> m.removeReaction(reaction));
+								DiscordPlugin.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
 						} catch (Exception e) {
 							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 						}
