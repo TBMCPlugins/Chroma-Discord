@@ -44,10 +44,8 @@ public class MCListener implements Listener {
 		if (e.getResult() != Result.ALLOWED)
 			return;
 		MCChatListener.ConnectedSenders.values().stream()
-				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny().ifPresent(dcp -> {
-					callEventExcludingSome(new PlayerQuitEvent(dcp, ""));
-					//dcp.sendMessage("Real login detected, logged fake player out.");
-				});
+				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
+				.ifPresent(dcp -> callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)

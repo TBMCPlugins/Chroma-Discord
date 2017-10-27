@@ -207,17 +207,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 * This overload sends it to the global chat.
 	 */
 	public static void sendSystemMessageToChat(String msg) {
-		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, msg);
+		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, DiscordPlugin.sanitizeString(msg));
 		for (LastMsgData data : lastmsgPerUser)
-			DiscordPlugin.sendMessageToChannel(data.channel, msg);
+			DiscordPlugin.sendMessageToChannel(data.channel, DiscordPlugin.sanitizeString(msg));
 	}
 
 	public static void sendSystemMessageToChat(TBMCSystemChatEvent event) {
 		if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, event.getMessage());
+			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
+					DiscordPlugin.sanitizeString(event.getMessage()));
 		for (LastMsgData data : lastmsgPerUser)
 			if (event.shouldSendTo(getSender(data.channel, data.user, data.dp)))
-				DiscordPlugin.sendMessageToChannel(data.channel, event.getMessage());
+				DiscordPlugin.sendMessageToChannel(data.channel, DiscordPlugin.sanitizeString(event.getMessage()));
 	}
 
 	@Override // Discord
@@ -229,15 +230,17 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
 				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()))
 			return;
+		if (author.isBot())
+			return;
+		if (event.getMessage().getContent().equalsIgnoreCase("mcchat"))
+			return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommandListener)
+		if (CommandListener.runCommand(event.getMessage(), true))
+			return;
 		if (!event.getMessage().getChannel().isPrivate())
 			resetLastMessage();
 		else
 			resetLastMessage(event.getMessage().getChannel());
 		lastlist++;
-		if (author.isBot())
-			return;
-		if (CommandListener.runCommand(event.getMessage(), true))
-			return;
 		String dmessage = event.getMessage().getContent();
 		synchronized (this) {
 			try {

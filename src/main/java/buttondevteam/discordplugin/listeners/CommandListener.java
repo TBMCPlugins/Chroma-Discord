@@ -87,11 +87,14 @@ public class CommandListener {
 						createUsableServerReadyStrings(usableServerReadyStrings);
 					next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
 					DiscordPlugin.sendMessageToChannel(event.getMessage().getChannel(), serverReadyStrings[next]);
-				}
-				if (!event.getMessage().getChannel().isPrivate() //
-						|| DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class)
-								.isMinecraftChatEnabled())
 					return;
+				}
+				if (!event.getMessage().getChannel().isPrivate()) //
+					return;
+				if (DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class)
+						.isMinecraftChatEnabled())
+					if (!event.getMessage().getContent().equalsIgnoreCase("mcchat"))
+						return;
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				runCommand(event.getMessage(), false);
