@@ -62,7 +62,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-						lastmsgdata.message = DiscordPlugin.sendMessageToChannel(lastmsgdata.channel, dmsg,
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, dmsg,
 								embedObject);
 						lastmsgdata.time = nanoTime;
 						lastmsgdata.mcchannel = e.getChannel();
@@ -87,12 +87,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null) : lastmsgdata);
 
 				for (LastMsgData data : lastmsgPerUser) {
-					// System.out.println("Data: " + data);
-					// System.out.println("Data.channel: " + data.channel);
-					// System.out.println("Sender: " + e.getSender());
-					// System.out.println("Sender channel: " + ((DiscordSenderBase) e.getSender()).getChannel()); // TODO
-					// System.out.println("Predicate: " + isdifferentchannel);
-					// System.out.println("DP: " + data.dp); - Didn't update the constructor
 					if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
 							&& e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
 						doit.accept(data);
@@ -337,12 +331,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						try {
 							final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
 							if (reaction != null)
-								DiscordPlugin.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
+								DiscordPlugin
+										.performNoWait(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
 						} catch (Exception e) {
 							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 						}
 					});
-					DiscordPlugin.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+					DiscordPlugin.performNoWait(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
 				}
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);

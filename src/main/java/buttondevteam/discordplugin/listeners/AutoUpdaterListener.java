@@ -13,7 +13,7 @@ public class AutoUpdaterListener implements Listener {
 		if (DiscordPlugin.SafeMode)
 			return;
 		try {
-			DiscordPlugin.perform(() -> DiscordPlugin.officechannel.getMessageHistory(10).stream()
+			DiscordPlugin.performNoWait(() -> DiscordPlugin.officechannel.getMessageHistory(10).stream()
 					.filter(m -> m.getWebhookLongID() == 239123781401051138L && m.getEmbeds().get(0).getTitle()
 							.contains(event.getData().get("repository").getAsJsonObject().get("name").getAsString()))
 					.findFirst().get().addReaction(DiscordPlugin.DELIVERED_REACTION));

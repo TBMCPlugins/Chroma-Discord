@@ -124,7 +124,7 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
-			DiscordPlugin.perform(() -> {
+			DiscordPlugin.performNoWait(() -> {
 				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())

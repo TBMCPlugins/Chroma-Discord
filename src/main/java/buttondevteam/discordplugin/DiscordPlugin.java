@@ -128,7 +128,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 								.withTitle("Server started - chat connected.").build());
 					getConfig().set("serverup", true);
 					saveConfig();
-					perform(() -> {
+					performNoWait(() -> {
 						try {
 							List<IMessage> msgs = genchannel.getPinnedMessages();
 							for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
@@ -262,7 +262,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					}
 				}
 				if (msgsb.length() > 0)
-					genchannel.pin(sendMessageToChannel(genchannel, msgsb.toString()));
+					genchannel.pin(sendMessageToChannelWait(genchannel, msgsb.toString()));
 				if (modmsgsb.length() > 0)
 					sendMessageToChannel(annchannel, modmsgsb.toString());
 				if (lastannouncementtime != lastanntime) {
@@ -282,11 +282,23 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		}
 	}
 
-	public static IMessage sendMessageToChannel(IChannel channel, String message) {
-		return sendMessageToChannel(channel, message, null);
+	public static void sendMessageToChannel(IChannel channel, String message) {
+		sendMessageToChannel(channel, message, null);
 	}
 
-	public static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
+	public static void sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
+		sendMessageToChannel(channel, message, null, false);
+	}
+
+	public static IMessage sendMessageToChannelWait(IChannel channel, String message) {
+		return sendMessageToChannelWait(channel, message, null);
+	}
+
+	public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed) {
+		return sendMessageToChannel(channel, message, null, true);
+	}
+
+	private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
 		if (message.length() > 1900) {
 			message = message.substring(0, 1900);
 			Bukkit.getLogger()
@@ -298,8 +310,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			else if (channel.isPrivate())
 				MCChatListener.resetLastMessage(channel);
 			final String content = message;
-			return perform(
-					() -> embed == null ? channel.sendMessage(content) : channel.sendMessage(content, embed, false));
+			RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
+					: channel.sendMessage(content, embed, false);
+			if (wait)
+				return perform(r);
+			else {
+				performNoWait(r);
+				return null;
+			}
 		} catch (Exception e) {
 			Bukkit.getLogger().warning(
 					"Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
@@ -360,8 +378,20 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 
+	public static void performNoWait(IVoidRequest action) {
+		if (SafeMode)
+			return;
+		RequestBuffer.request(action);
+	}
+
+	public static <T> void performNoWait(IRequest<T> action) {
+		if (SafeMode)
+			return;
+		RequestBuffer.request(action);
+	}
+
 	public static void updatePlayerList() {
-		perform(() -> {
+		performNoWait(() -> {
 			String[] s = chatchannel.getTopic().split("\\n----\\n");
 			if (s.length < 3)
 				return;
