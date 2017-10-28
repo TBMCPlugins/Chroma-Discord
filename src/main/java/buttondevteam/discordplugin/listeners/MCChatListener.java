@@ -44,9 +44,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
 				// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
 				if (e.getSender() instanceof Player)
-					embed.withAuthorIcon("https://minotar.net/avatar/" + ((Player) e.getSender()).getName() + "/32.png")
-							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-									+ ((Player) e.getSender()).getUniqueId()); // TODO: Constant/method to get URLs like this
+					DiscordPlugin
+							.embedWithHead(
+									embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+											+ ((Player) e.getSender()).getUniqueId()),
+									((Player) e.getSender()).getName());
 				else if (e.getSender() instanceof DiscordSenderBase)
 					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
@@ -331,8 +333,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						try {
 							final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
 							if (reaction != null)
-								DiscordPlugin
-										.performNoWait(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
+								DiscordPlugin.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
 						} catch (Exception e) {
 							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 						}

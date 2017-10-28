@@ -287,7 +287,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	public static void sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
-		sendMessageToChannel(channel, message, null, false);
+		sendMessageToChannel(channel, message, embed, false);
 	}
 
 	public static IMessage sendMessageToChannelWait(IChannel channel, String message) {
@@ -295,7 +295,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	}
 
 	public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed) {
-		return sendMessageToChannel(channel, message, null, true);
+		return sendMessageToChannel(channel, message, embed, true);
 	}
 
 	private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
@@ -323,6 +323,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					"Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static EmbedBuilder embedWithHead(EmbedBuilder builder, String playername) {
+		return builder.withAuthorIcon("https://minotar.net/avatar/" + playername + "/32.png");
 	}
 
 	public static Permission perms;
