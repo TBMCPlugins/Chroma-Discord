@@ -49,6 +49,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public void onEnable() {
 		try {
 			Bukkit.getLogger().info("Initializing DiscordPlugin...");
+			PlayerListWatcher.hookUp();
+			Bukkit.getLogger().info("Finished hooking into the player list");
 			plugin = this;
 			lastannouncementtime = getConfig().getLong("lastannouncementtime");
 			lastseentime = getConfig().getLong("lastseentime");
