@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_12_R1.util.CraftChatMessage;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.objenesis.ObjenesisStd;
 
@@ -17,6 +18,7 @@ import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import net.minecraft.server.v1_12_R1.AdvancementDataPlayer;
+import net.minecraft.server.v1_12_R1.ChatMessageType;
 import net.minecraft.server.v1_12_R1.DedicatedPlayerList;
 import net.minecraft.server.v1_12_R1.DedicatedServer;
 import net.minecraft.server.v1_12_R1.Entity;
@@ -31,6 +33,7 @@ import net.minecraft.server.v1_12_R1.NBTTagCompound;
 import net.minecraft.server.v1_12_R1.NetworkManager;
 import net.minecraft.server.v1_12_R1.OpList;
 import net.minecraft.server.v1_12_R1.Packet;
+import net.minecraft.server.v1_12_R1.PacketPlayOutChat;
 import net.minecraft.server.v1_12_R1.ScoreboardServer;
 import net.minecraft.server.v1_12_R1.ServerStatisticManager;
 import net.minecraft.server.v1_12_R1.WhiteList;
@@ -44,10 +47,39 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 		super(minecraftserver); // <-- Does some init stuff and calls Bukkit.setServer() so we have to use Objenesis
 	}
 
+	public void sendAll(Packet<?> packet) {
+		plist.sendAll(packet);
+		try { // Some messages get sent by directly constructing a packet
+			if (packet instanceof PacketPlayOutChat) {
+				Field msgf = PacketPlayOutChat.class.getDeclaredField("a");
+				msgf.setAccessible(true);
+				MCChatListener.sendSystemMessageToChat(((IChatBaseComponent) msgf.get(packet)).toPlainText());
+			}
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
+		}
+	}
+
 	@Override
-	public void sendMessage(IChatBaseComponent ichatbasecomponent, boolean flag) {
-		super.sendMessage(ichatbasecomponent, flag);
-		MCChatListener.sendSystemMessageToChat(ichatbasecomponent.toPlainText());
+	public void sendMessage(IChatBaseComponent ichatbasecomponent, boolean flag) { // Needed so it calls the overriden method
+		plist.getServer().sendMessage(ichatbasecomponent);
+		ChatMessageType chatmessagetype = flag ? ChatMessageType.SYSTEM : ChatMessageType.CHAT;
+
+		// CraftBukkit start - we run this through our processor first so we can get web links etc
+		this.sendAll(new PacketPlayOutChat(CraftChatMessage.fixComponent(ichatbasecomponent), chatmessagetype));
+		// CraftBukkit end
+	}
+
+	@Override
+	public void sendMessage(IChatBaseComponent ichatbasecomponent) { // Needed so it calls the overriden method
+		this.sendMessage(ichatbasecomponent, true);
+	}
+
+	@Override
+	public void sendMessage(IChatBaseComponent[] iChatBaseComponents) { // Needed so it calls the overriden method
+		for (IChatBaseComponent component : iChatBaseComponents) {
+			sendMessage(component, true);
+		}
 	}
 
 	public static void hookUp() {
@@ -65,6 +97,9 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 			modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
 			plf.set(plw, plw.plist.players);
 			server.a(plw);
+			Field pllf = CraftServer.class.getDeclaredField("playerList");
+			pllf.setAccessible(true);
+			pllf.set(Bukkit.getServer(), plw);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
 		}
@@ -72,10 +107,6 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 
 	public void a(EntityHuman entityhuman, IChatBaseComponent ichatbasecomponent) {
 		plist.a(entityhuman, ichatbasecomponent);
-	}
-
-	public ServerStatisticManager a(EntityHuman entityhuman) {
-		return plist.a(entityhuman);
 	}
 
 	public void a(EntityPlayer entityplayer, int i) {
@@ -297,18 +328,6 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 		plist.sendAll(packet, world);
 	}
 
-	public void sendAll(Packet<?> packet) {
-		plist.sendAll(packet);
-	}
-
-	public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-		plist.sendMessage(ichatbasecomponent);
-	}
-
-	public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
-		plist.sendMessage(iChatBaseComponents);
-	}
-
 	public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i,
 			Packet<?> packet) {
 		plist.sendPacketNearby(entityhuman, d0, d1, d2, d3, i, packet);
@@ -348,5 +367,9 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 
 	public List<EntityPlayer> v() {
 		return plist.v();
+	}
+
+	public ServerStatisticManager getStatisticManager(EntityPlayer entityhuman) {
+		return plist.getStatisticManager(entityhuman);
 	}
 }

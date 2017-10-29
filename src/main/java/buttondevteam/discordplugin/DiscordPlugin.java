@@ -39,6 +39,7 @@ import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
 	private static boolean stop = false;
+	private static Thread mainThread;
 	public static IDiscordClient dc;
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
@@ -59,6 +60,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
 			dc = cb.login();
 			dc.getDispatcher().registerListener(this);
+			mainThread = Thread.currentThread();
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -372,6 +374,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static <T> T perform(IRequest<T> action) {
 		if (SafeMode)
 			return null;
+		if (Thread.currentThread() == mainThread)
+			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 
@@ -381,6 +385,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static Void perform(IVoidRequest action) {
 		if (SafeMode)
 			return null;
+		if (Thread.currentThread() == mainThread)
+			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 
