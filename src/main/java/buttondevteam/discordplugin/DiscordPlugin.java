@@ -125,8 +125,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					if (getConfig().getBoolean("serverup", false)) {
 						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.YELLOW)
 								.withTitle("Server recovered from a crash - chat connected.").build());
-						TBMCCoreAPI.SendException("The server crashed!", new Throwable(
-								"The server shut down unexpectedly. See the log of the previous run for more details."));
+						val thr = new Throwable(
+								"The server shut down unexpectedly. See the log of the previous run for more details.");
+						thr.setStackTrace(new StackTraceElement[0]);
+						TBMCCoreAPI.SendException("The server crashed!", thr);
 					} else
 						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
 								.withTitle("Server started - chat connected.").build());
