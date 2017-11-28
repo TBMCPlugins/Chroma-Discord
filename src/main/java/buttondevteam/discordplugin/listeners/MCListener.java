@@ -68,7 +68,8 @@ public class MCListener implements Listener {
 					+ " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
 		}
-		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
 		MCChatListener.ListC = 0;
 		DiscordPlugin.updatePlayerList();
 	}
@@ -83,7 +84,8 @@ public class MCListener implements Listener {
 				() -> MCChatListener.ConnectedSenders.values().stream()
 						.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
 						.ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
-		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, DiscordPlugin::updatePlayerList, 5);
 	}
 
@@ -105,7 +107,8 @@ public class MCListener implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerDeath(PlayerDeathEvent e) {
-		MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
 	}
 
 	@EventHandler

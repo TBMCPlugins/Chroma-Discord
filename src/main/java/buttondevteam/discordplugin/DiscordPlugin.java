@@ -44,14 +44,21 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
 	public static List<String> GameRoles;
+	public static boolean hooked = false;
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
 		try {
 			Bukkit.getLogger().info("Initializing DiscordPlugin...");
-			PlayerListWatcher.hookUp();
-			Bukkit.getLogger().info("Finished hooking into the player list");
+			try {
+				PlayerListWatcher.hookUp();
+				hooked = true;
+				Bukkit.getLogger().info("Finished hooking into the player list");
+			} catch (Throwable e) {
+				e.printStackTrace();
+				Bukkit.getLogger().warning("Couldn't hook into the player list!");
+			}
 			plugin = this;
 			lastannouncementtime = getConfig().getLong("lastannouncementtime");
 			lastseentime = getConfig().getLong("lastseentime");
