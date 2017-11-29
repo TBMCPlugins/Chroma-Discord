@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.commands;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
@@ -28,7 +29,7 @@ public class RoleCommand extends DiscordCommandBase {
 			if (role == null)
 				return;
 			try {
-				DiscordPlugin.perform(() -> message.getAuthor().addRole(role));
+				DPUtils.perform(() -> message.getAuthor().addRole(role));
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "Added game role.");
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("Error while adding role!", e);
@@ -39,7 +40,7 @@ public class RoleCommand extends DiscordCommandBase {
 			if (role == null)
 				return;
 			try {
-				DiscordPlugin.perform(() -> message.getAuthor().removeRole(role));
+				DPUtils.perform(() -> message.getAuthor().removeRole(role));
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "Removed game role.");
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("Error while removing role!", e);

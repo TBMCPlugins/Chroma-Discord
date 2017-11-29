@@ -4,11 +4,9 @@ import java.awt.Color;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -33,13 +31,11 @@ import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.impl.obj.ReactionEmoji;
 import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.*;
-import sx.blah.discord.util.RequestBuffer.IRequest;
-import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
 	private static boolean stop = false;
-	private static Thread mainThread;
+	static Thread mainThread;
 	public static IDiscordClient dc;
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
@@ -141,7 +137,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 								.withTitle("Server started - chat connected.").build());
 					getConfig().set("serverup", true);
 					saveConfig();
-					performNoWait(() -> {
+					DPUtils.performNoWait(() -> {
 						try {
 							List<IMessage> msgs = genchannel.getPinnedMessages();
 							for (int i = msgs.size() - 1; i >= 10; i--) { // Unpin all pinned messages except the newest 10
@@ -172,7 +168,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 									"You could make a religion out of this");
 						}
 					}
-					updatePlayerList();
+					new ChromaBot(this).updatePlayerList();
 				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
@@ -218,6 +214,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
 				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
 		try {
+			ChromaBot.delete();
 			dc.online("on TBMC");
 			dc.logout();
 		} catch (Exception e) {
@@ -326,9 +323,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 			RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
 					: channel.sendMessage(content, embed, false);
 			if (wait)
-				return perform(r);
+				return DPUtils.perform(r);
 			else {
-				performNoWait(r);
+				DPUtils.performNoWait(r);
 				return null;
 			}
 		} catch (Exception e) {
@@ -336,10 +333,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					"Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
 			throw new RuntimeException(e);
 		}
-	}
-
-	public static EmbedBuilder embedWithHead(EmbedBuilder builder, String playername) {
-		return builder.withAuthorIcon("https://minotar.net/avatar/" + playername + "/32.png");
 	}
 
 	public static Permission perms;
@@ -356,71 +349,5 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				.getRegistration(Permission.class);
 		perms = permsProvider.getProvider();
 		return perms != null;
-	}
-
-	/** Removes §[char] colour codes from strings */
-	public static String sanitizeString(String string) {
-		String sanitizedString = "";
-		boolean random = false;
-		for (int i = 0; i < string.length(); i++) {
-			if (string.charAt(i) == '§') {
-				i++;// Skips the data value, the 4 in "§4Alisolarflare"
-				if (string.charAt(i) == 'k')
-					random = true;
-				else
-					random = false;
-			} else {
-				if (!random) // Skip random/obfuscated characters
-					sanitizedString += string.charAt(i);
-			}
-		}
-		return sanitizedString;
-	}
-
-	/**
-	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
-	 */
-	public static <T> T perform(IRequest<T> action) {
-		if (SafeMode)
-			return null;
-		if (Thread.currentThread() == mainThread)
-			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
-		return RequestBuffer.request(action).get(); // Let the pros handle this
-	}
-
-	/**
-	 * Performs Discord actions, retrying when ratelimited.
-	 */
-	public static Void perform(IVoidRequest action) {
-		if (SafeMode)
-			return null;
-		if (Thread.currentThread() == mainThread)
-			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
-		return RequestBuffer.request(action).get(); // Let the pros handle this
-	}
-
-	public static void performNoWait(IVoidRequest action) {
-		if (SafeMode)
-			return;
-		RequestBuffer.request(action);
-	}
-
-	public static <T> void performNoWait(IRequest<T> action) {
-		if (SafeMode)
-			return;
-		RequestBuffer.request(action);
-	}
-
-	public static void updatePlayerList() {
-		performNoWait(() -> {
-			String[] s = chatchannel.getTopic().split("\\n----\\n");
-			if (s.length < 3)
-				return;
-			s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
-					+ " online";
-			s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
-					.map(p -> DiscordPlugin.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-			chatchannel.changeTopic(Arrays.stream(s).collect(Collectors.joining("\n----\n")));
-		});
 	}
 }

@@ -35,7 +35,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
 			synchronized (this) {
-				final String authorPlayer = DiscordPlugin.sanitizeString(e.getSender() instanceof Player //
+				final String authorPlayer = DPUtils.sanitizeString(e.getSender() instanceof Player //
 						? ((Player) e.getSender()).getDisplayName() //
 						: e.getSender().getName());
 				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
@@ -44,11 +44,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
 				// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
 				if (e.getSender() instanceof Player)
-					DiscordPlugin
-							.embedWithHead(
-									embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-											+ ((Player) e.getSender()).getUniqueId()),
-									((Player) e.getSender()).getName());
+					DPUtils.embedWithHead(
+							embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+									+ ((Player) e.getSender()).getUniqueId()),
+							((Player) e.getSender()).getName());
 				else if (e.getSender() instanceof DiscordSenderBase)
 					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
@@ -59,13 +58,14 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
 					final String dmsg = lastmsgdata.channel.isPrivate()
-							? DiscordPlugin.sanitizeString(e.getChannel().DisplayName) : "";
+							? DPUtils.sanitizeString(e.getChannel().DisplayName)
+							: "";
 					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
 						lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, dmsg,
-								embedObject);
+								embedObject); // TODO Use ChromaBot API
 						lastmsgdata.time = nanoTime;
 						lastmsgdata.mcchannel = e.getChannel();
 						lastmsgdata.content = embedObject.description;
@@ -74,7 +74,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
 									+ embedObject.description;// The message object doesn't get updated
 							final LastMsgData _lastmsgdata = lastmsgdata;
-							DiscordPlugin.perform(() -> _lastmsgdata.message.edit(dmsg, embedObject));
+							DPUtils.perform(() -> _lastmsgdata.message.edit(dmsg, embedObject));
 						} catch (MissingPermissionsException | DiscordException e1) {
 							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 						}
@@ -85,8 +85,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 				if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
 						&& isdifferentchannel.test(DiscordPlugin.chatchannel))
-					doit.accept(lastmsgdata == null
-							? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null) : lastmsgdata);
+					doit.accept(
+							lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
+									: lastmsgdata);
 
 				for (LastMsgData data : lastmsgPerUser) {
 					if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
@@ -123,8 +124,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			DiscordPlugin.dc.getUsersByName(event.getMessage().substring(start + 1, mid)).stream()
 					.filter(u -> u.getDiscriminator().equals(event.getMessage().substring(mid + 1, end))).findAny()
 					.ifPresent(user -> event.setMessage(event.getMessage().substring(0, startF) + "@" + user.getName()
-							+ (event.getMessage().length() > end ? event.getMessage().substring(end)
-									: ""))); // TODO: Add formatting
+							+ (event.getMessage().length() > end ? event.getMessage().substring(end) : ""))); // TODO: Add formatting
 			start = end; // Skip any @s inside the mention
 		}
 	}
@@ -203,18 +203,26 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 	 * This overload sends it to the global chat.
 	 */
 	public static void sendSystemMessageToChat(String msg) {
-		DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel, DiscordPlugin.sanitizeString(msg));
-		for (LastMsgData data : lastmsgPerUser)
-			DiscordPlugin.sendMessageToChannel(data.channel, DiscordPlugin.sanitizeString(msg));
+		forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(msg)));
 	}
 
 	public static void sendSystemMessageToChat(TBMCSystemChatEvent event) {
+		forAllowedMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(event.getMessage())),
+				event);
+	}
+
+	public static void forAllMCChat(Consumer<IChannel> action) {
+		action.accept(DiscordPlugin.chatchannel);
+		for (LastMsgData data : lastmsgPerUser)
+			action.accept(data.channel);
+	}
+
+	private static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
 		if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.chatchannel,
-					DiscordPlugin.sanitizeString(event.getMessage()));
+			action.accept(DiscordPlugin.chatchannel);
 		for (LastMsgData data : lastmsgPerUser)
 			if (event.shouldSendTo(getSender(data.channel, data.user, data.dp)))
-				DiscordPlugin.sendMessageToChannel(data.channel, DiscordPlugin.sanitizeString(event.getMessage()));
+				action.accept(data.channel);
 	}
 
 	@Override // Discord
@@ -257,7 +265,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				boolean react = false;
 
 				if (dmessage.startsWith("/")) { // Ingame command
-					DiscordPlugin.perform(() -> {
+					DPUtils.perform(() -> {
 						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
 							event.getMessage().delete();
 					});
@@ -308,7 +316,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 									} else
 										dsender.setMcchannel(Channel.GlobalChat);
 									dsender.sendMessage("You're now talking in: "
-											+ DiscordPlugin.sanitizeString(dsender.getMcchannel().DisplayName));
+											+ DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
 								} else { // Send single message
 									sendChatMessage.accept(chc, cmd.substring(spi + 1));
 									react = true;
@@ -333,12 +341,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						try {
 							final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
 							if (reaction != null)
-								DiscordPlugin.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
+								DPUtils.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
 						} catch (Exception e) {
 							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 						}
 					});
-					DiscordPlugin.performNoWait(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+					DPUtils.performNoWait(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
 				}
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);

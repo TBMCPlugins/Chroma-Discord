@@ -23,6 +23,8 @@ import org.bukkit.plugin.RegisteredListener;
 
 import com.earth2me.essentials.CommandSource;
 
+import buttondevteam.discordplugin.ChromaBot;
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlayerSender;
@@ -71,7 +73,7 @@ public class MCListener implements Listener {
 		if (!DiscordPlugin.hooked)
 			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
 		MCChatListener.ListC = 0;
-		DiscordPlugin.updatePlayerList();
+		ChromaBot.getInstance().updatePlayerList();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -86,7 +88,8 @@ public class MCListener implements Listener {
 						.ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
 		if (!DiscordPlugin.hooked)
 			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
-		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, DiscordPlugin::updatePlayerList, 5);
+		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
+				ChromaBot.getInstance()::updatePlayerList, 5);
 	}
 
 	@EventHandler
@@ -115,7 +118,7 @@ public class MCListener implements Listener {
 	public void onPlayerAFK(AfkStatusChangeEvent e) {
 		if (e.isCancelled() || !e.getAffected().getBase().isOnline())
 			return;
-		MCChatListener.sendSystemMessageToChat(DiscordPlugin.sanitizeString(e.getAffected().getBase().getDisplayName())
+		MCChatListener.sendSystemMessageToChat(DPUtils.sanitizeString(e.getAffected().getBase().getDisplayName())
 				+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
 	}
 
@@ -127,7 +130,7 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
-			DiscordPlugin.performNoWait(() -> {
+			DPUtils.performNoWait(() -> {
 				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())
