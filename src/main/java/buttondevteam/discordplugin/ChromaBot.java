@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import buttondevteam.discordplugin.listeners.MCChatListener;
@@ -79,7 +80,7 @@ public class ChromaBot {
 	 * @param color
 	 *            The color of the line before the text
 	 */
-	public void sendFancyMessage(String message, Color color) {
+	public void sendMessage(String message, Color color) {
 		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
 				new EmbedBuilder().withTitle(message).withColor(color).build()));
 	}
@@ -94,7 +95,7 @@ public class ChromaBot {
 	 * @param mcauthor
 	 *            The name of the Minecraft player who is the author of this message
 	 */
-	public void sendFancyMessage(String message, Color color, String mcauthor) {
+	public void sendMessage(String message, Color color, String mcauthor) {
 		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
 				DPUtils.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), mcauthor).build()));
 	}
@@ -111,9 +112,24 @@ public class ChromaBot {
 	 * @param authorimg
 	 *            The URL of the avatar image for this message's author
 	 */
-	public void sendFancyMessage(String message, Color color, String authorname, String authorimg) {
+	public void sendMessage(String message, Color color, String authorname, String authorimg) {
 		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, new EmbedBuilder()
 				.withTitle(message).withColor(color).withAuthorName(authorname).withAuthorIcon(authorimg).build()));
+	}
+
+	/**
+	 * Send a message to the chat channel. This will show a bold text with a colored line.
+	 * 
+	 * @param message
+	 *            The message to send, duh
+	 * @param color
+	 *            The color of the line before the text
+	 * @param sender
+	 *            The player who sends this message
+	 */
+	public void sendMessage(String message, Color color, Player sender) {
+		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, DPUtils
+				.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), sender.getName()).build()));
 	}
 
 	public void updatePlayerList() {
