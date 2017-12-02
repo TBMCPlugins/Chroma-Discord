@@ -23,6 +23,8 @@ import org.bukkit.plugin.RegisteredListener;
 
 import com.earth2me.essentials.CommandSource;
 
+import buttondevteam.discordplugin.ChromaBot;
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlayerSender;
@@ -68,9 +70,10 @@ public class MCListener implements Listener {
 					+ " do /discord accept");
 			p.sendMessage("§bIf it wasn't you, do /discord decline");
 		}
-		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
 		MCChatListener.ListC = 0;
-		DiscordPlugin.updatePlayerList();
+		ChromaBot.getInstance().updatePlayerList();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -83,8 +86,10 @@ public class MCListener implements Listener {
 				() -> MCChatListener.ConnectedSenders.values().stream()
 						.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
 						.ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
-		MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
-		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, DiscordPlugin::updatePlayerList, 5);
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
+		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
+				ChromaBot.getInstance()::updatePlayerList, 5);
 	}
 
 	@EventHandler
@@ -105,14 +110,15 @@ public class MCListener implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerDeath(PlayerDeathEvent e) {
-		MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
+		if (!DiscordPlugin.hooked)
+			MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
 	}
 
 	@EventHandler
 	public void onPlayerAFK(AfkStatusChangeEvent e) {
 		if (e.isCancelled() || !e.getAffected().getBase().isOnline())
 			return;
-		MCChatListener.sendSystemMessageToChat(DiscordPlugin.sanitizeString(e.getAffected().getBase().getDisplayName())
+		MCChatListener.sendSystemMessageToChat(DPUtils.sanitizeString(e.getAffected().getBase().getDisplayName())
 				+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
 	}
 
@@ -124,7 +130,7 @@ public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
-			DiscordPlugin.performNoWait(() -> {
+			DPUtils.performNoWait(() -> {
 				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())

@@ -50,7 +50,7 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
 			if (broadcast)
 				return;
-			final String sendmsg = DiscordPlugin.sanitizeString(message);
+			final String sendmsg = DPUtils.sanitizeString(message);
 			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {

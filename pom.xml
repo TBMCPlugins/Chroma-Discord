@@ -153,7 +153,7 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot</artifactId>
-			<version>1.12-R0.1-SNAPSHOT</version>
+			<version>1.12.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -210,5 +210,13 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.objenesis/objenesis -->
+		<dependency>
+			<groupId>org.objenesis</groupId>
+			<artifactId>objenesis</artifactId>
+			<version>2.6</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 </project>
