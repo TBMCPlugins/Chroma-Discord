@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -86,10 +87,15 @@ public class MCListener implements Listener {
 				() -> MCChatListener.ConnectedSenders.values().stream()
 						.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
 						.ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
-		if (!DiscordPlugin.hooked)
-			MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " left the game");
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
 				ChromaBot.getInstance()::updatePlayerList, 5);
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onPlayerKick(PlayerKickEvent e) {
+		if (!DiscordPlugin.hooked && !e.getReason().equals("The server is restarting")
+				&& !e.getReason().equals("Server closed")) // The leave messages errored with the previous setup, I could make it wait since I moved it here, but instead I have a special
+			MCChatListener.sendSystemMessageToChat(e.getPlayer().getName() + " left the game"); // message for this - Oh wait this doesn't even send normally because of the hook
 	}
 
 	@EventHandler

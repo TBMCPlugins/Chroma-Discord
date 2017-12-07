@@ -54,17 +54,17 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 									+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
 				if (e.getSender() instanceof DiscordSenderBase)
 					embed.withAuthorName("[D]" + authorPlayer);
+				// embed.withFooterText(e.getChannel().DisplayName);
 				final long nanoTime = System.nanoTime();
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
-					final String dmsg = lastmsgdata.channel.isPrivate()
-							? DPUtils.sanitizeString(e.getChannel().DisplayName)
-							: "";
+					embedObject.author.name = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] "
+							+ embedObject.author.name;
 					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-						lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, dmsg,
+						lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
 								embedObject); // TODO Use ChromaBot API
 						lastmsgdata.time = nanoTime;
 						lastmsgdata.mcchannel = e.getChannel();
@@ -74,7 +74,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
 									+ embedObject.description;// The message object doesn't get updated
 							final LastMsgData _lastmsgdata = lastmsgdata;
-							DPUtils.perform(() -> _lastmsgdata.message.edit(dmsg, embedObject));
+							DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
 						} catch (MissingPermissionsException | DiscordException e1) {
 							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
 						}

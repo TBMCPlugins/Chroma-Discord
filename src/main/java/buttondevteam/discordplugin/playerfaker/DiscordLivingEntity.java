@@ -67,7 +67,7 @@ public abstract class DiscordLivingEntity extends DiscordEntity implements Livin
 	}
 
 	@Override
-	public AttributeInstance getAttribute(Attribute attribute) { // We don't support any attribute
+	public AttributeInstance getAttribute(Attribute attribute) { // We don't support any attributes
 		return null;
 	}
 

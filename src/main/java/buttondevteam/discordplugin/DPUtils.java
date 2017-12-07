@@ -36,8 +36,8 @@ public final class DPUtils {
 	public static <T> T perform(IRequest<T> action) {
 		if (DiscordPlugin.SafeMode)
 			return null;
-		if (Thread.currentThread() == DiscordPlugin.mainThread)
-			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
+		// if (Thread.currentThread() == DiscordPlugin.mainThread) - TODO: Ignore shutdown message <--
+		// throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 

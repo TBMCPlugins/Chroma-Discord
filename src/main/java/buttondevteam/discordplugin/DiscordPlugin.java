@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -125,15 +126,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 				if (task != null)
 					task.cancel();
 				if (!sent) {
+					new ChromaBot(this).updatePlayerList();
 					if (getConfig().getBoolean("serverup", false)) {
-						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.YELLOW)
+						ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
 								.withTitle("Server recovered from a crash - chat connected.").build());
 						val thr = new Throwable(
 								"The server shut down unexpectedly. See the log of the previous run for more details.");
 						thr.setStackTrace(new StackTraceElement[0]);
 						TBMCCoreAPI.SendException("The server crashed!", thr);
 					} else
-						sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Color.GREEN)
+						ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.GREEN)
 								.withTitle("Server started - chat connected.").build());
 					getConfig().set("serverup", true);
 					saveConfig();
@@ -168,7 +170,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 									"You could make a religion out of this");
 						}
 					}
-					new ChromaBot(this).updatePlayerList();
 				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
@@ -211,9 +212,20 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 		getConfig().set("gameroles", GameRoles);
 		getConfig().set("serverup", false);
 		saveConfig();
-		sendMessageToChannel(chatchannel, "", new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-				.withTitle(Restart ? "Server restarting" : "Server stopping").build());
+		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannelWait(ch, "",
+				new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+						.withTitle(Restart ? "Server restarting" : "Server stopping")
+						.withDescription(
+								Bukkit.getOnlinePlayers().size() > 0
+										? (DPUtils
+												.sanitizeString(Bukkit.getOnlinePlayers().stream()
+														.map(p -> p.getDisplayName()).collect(Collectors.joining(", ")))
+												+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+												+ "asked *politely* to leave the server for a bit.")
+										: "")
+						.build()));
 		try {
+			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
 			dc.online("on TBMC");
 			dc.logout();
