@@ -49,7 +49,7 @@ public class RoleCommand extends DiscordCommandBase {
 		} else if (argsa[0].equalsIgnoreCase("list")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
-		} else if (argsa[0].equalsIgnoreCase("addrole")) {
+		} else if (argsa[0].equalsIgnoreCase("admin") && argsa.length > 1 && argsa[1].equalsIgnoreCase("addrole")) {
 			if (!message.getAuthor().getRolesForGuild(DiscordPlugin.mainServer).stream()
 					.anyMatch(r -> r.getLongID() == 126030201472811008L)) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),

@@ -35,9 +35,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 			return;
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
 			synchronized (this) {
-				final String authorPlayer = DPUtils.sanitizeString(e.getSender() instanceof Player //
-						? ((Player) e.getSender()).getDisplayName() //
-						: e.getSender().getName());
+				final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
+						+ (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
+						+ (DPUtils.sanitizeString(e.getSender() instanceof Player //
+								? ((Player) e.getSender()).getDisplayName() //
+								: e.getSender().getName()));
 				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
 						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
 								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
@@ -52,14 +54,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
 							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
 									+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
-				if (e.getSender() instanceof DiscordSenderBase)
-					embed.withAuthorName("[D]" + authorPlayer);
 				// embed.withFooterText(e.getChannel().DisplayName);
 				final long nanoTime = System.nanoTime();
 				Consumer<LastMsgData> doit = lastmsgdata -> {
 					final EmbedObject embedObject = embed.build();
-					embedObject.author.name = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] "
-							+ embedObject.author.name;
 					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
 							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
 							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
