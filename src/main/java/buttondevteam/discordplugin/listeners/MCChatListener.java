@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.listeners;
 
 import java.awt.Color;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitTask;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
@@ -29,69 +31,80 @@ import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.*;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
+	private BukkitTask sendtask;
+	private LinkedBlockingQueue<TBMCChatEvent> sendevents = new LinkedBlockingQueue<>();
+
 	@EventHandler // Minecraft
-	public void onMCChat(TBMCChatEvent e) {
-		if (e.isCancelled())
+	public void onMCChat(TBMCChatEvent ev) {
+		if (ev.isCancelled())
 			return;
-		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
-			synchronized (this) {
-				final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
-						+ (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
-						+ (DPUtils.sanitizeString(e.getSender() instanceof Player //
-								? ((Player) e.getSender()).getDisplayName() //
-								: e.getSender().getName()));
-				final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
-						.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
-								e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
-				// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
-				// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
-				if (e.getSender() instanceof Player)
-					DPUtils.embedWithHead(
-							embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-									+ ((Player) e.getSender()).getUniqueId()),
-							((Player) e.getSender()).getName());
-				else if (e.getSender() instanceof DiscordSenderBase)
-					embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
-							.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
-									+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
-				// embed.withFooterText(e.getChannel().DisplayName);
-				final long nanoTime = System.nanoTime();
-				Consumer<LastMsgData> doit = lastmsgdata -> {
-					final EmbedObject embedObject = embed.build();
-					if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
-							|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
-							|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-							|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-						lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
-								embedObject); // TODO Use ChromaBot API
-						lastmsgdata.time = nanoTime;
-						lastmsgdata.mcchannel = e.getChannel();
-						lastmsgdata.content = embedObject.description;
-					} else
-						try {
-							lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
-									+ embedObject.description;// The message object doesn't get updated
-							final LastMsgData _lastmsgdata = lastmsgdata;
-							DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
-						} catch (MissingPermissionsException | DiscordException e1) {
-							TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-						}
-				};
-				// Checks if the given channel is different than where the message was sent from
-				Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
-						|| ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
+		sendevents.add(ev);
+		if (sendtask != null)
+			return;
+		sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+			try { // Runs forever - Not good, but most plugins don't support reloading the server anyways
+				while (true) {
+					val e = sendevents.take(); // Wait until an element is available
+					final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
+							+ (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
+							+ (DPUtils.sanitizeString(e.getSender() instanceof Player //
+									? ((Player) e.getSender()).getDisplayName() //
+									: e.getSender().getName()));
+					final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
+							.withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
+									e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+					// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
+					// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
+					if (e.getSender() instanceof Player)
+						DPUtils.embedWithHead(
+								embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+										+ ((Player) e.getSender()).getUniqueId()),
+								((Player) e.getSender()).getName());
+					else if (e.getSender() instanceof DiscordSenderBase)
+						embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
+								.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
+										+ ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
+					// embed.withFooterText(e.getChannel().DisplayName);
+					final long nanoTime = System.nanoTime();
+					Consumer<LastMsgData> doit = lastmsgdata -> {
+						final EmbedObject embedObject = embed.build();
+						if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+								|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+								|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+								|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+							lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
+									embedObject); // TODO Use ChromaBot API
+							lastmsgdata.time = nanoTime;
+							lastmsgdata.mcchannel = e.getChannel();
+							lastmsgdata.content = embedObject.description;
+						} else
+							try {
+								lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+										+ embedObject.description;// The message object doesn't get updated
+								final LastMsgData _lastmsgdata = lastmsgdata;
+								DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
+							} catch (MissingPermissionsException | DiscordException e1) {
+								TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
+							}
+					};
+					// Checks if the given channel is different than where the message was sent from
+					Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
+							|| ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
-				if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
-						&& isdifferentchannel.test(DiscordPlugin.chatchannel))
-					doit.accept(
-							lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
-									: lastmsgdata);
+					if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
+							&& isdifferentchannel.test(DiscordPlugin.chatchannel))
+						doit.accept(lastmsgdata == null
+								? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
+								: lastmsgdata);
 
-				for (LastMsgData data : lastmsgPerUser) {
-					if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
-							&& e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
-						doit.accept(data);
+					for (LastMsgData data : lastmsgPerUser) {
+						if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
+								&& e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+							doit.accept(data);
+					}
 				}
+			} catch (Exception ex) {
+				TBMCCoreAPI.SendException("Error while sending mesasge to Discord!", ex);
 			}
 		});
 	}
