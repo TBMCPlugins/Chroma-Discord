@@ -44,7 +44,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
 			try { // Runs forever - Not good, but most plugins don't support reloading the server anyways
 				while (true) {
-					val e = sendevents.take(); // Wait until an element is available
+					TBMCChatEvent e;
+					try {
+						e = sendevents.take(); // Wait until an element is available
+					} catch (InterruptedException ex) {
+						sendtask.cancel();
+						return;
+					}
 					final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
 							+ (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
 							+ (DPUtils.sanitizeString(e.getSender() instanceof Player //
@@ -188,6 +194,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(dp.getDiscordID()));
 	}
 
+	public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
+		return lastmsgPerUser.stream()
+				.anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
+	}
+
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
@@ -236,134 +247,154 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				action.accept(data.channel);
 	}
 
+	private BukkitTask rectask;
+	private LinkedBlockingQueue<MessageReceivedEvent> recevents = new LinkedBlockingQueue<>();
+
 	@Override // Discord
-	public void handle(MessageReceivedEvent event) {
+	public void handle(MessageReceivedEvent ev) {
 		if (DiscordPlugin.SafeMode)
 			return;
-		val author = event.getMessage().getAuthor();
-		val user = DiscordPlayer.getUser(author.getStringID(), DiscordPlayer.class);
-		if (!event.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-				&& !(event.getMessage().getChannel().isPrivate() && user.isMinecraftChatEnabled()))
+		val author = ev.getMessage().getAuthor();
+		if (!ev.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
+				&& !(ev.getMessage().getChannel().isPrivate() && isMinecraftChatEnabled(author.getStringID())))
 			return;
 		if (author.isBot())
 			return;
-		if (event.getMessage().getContent().equalsIgnoreCase("mcchat"))
+		if (ev.getMessage().getContent().equalsIgnoreCase("mcchat"))
 			return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommandListener)
-		if (CommandListener.runCommand(event.getMessage(), true))
+		if (CommandListener.runCommand(ev.getMessage(), true))
 			return;
-		if (!event.getMessage().getChannel().isPrivate())
+		if (!ev.getMessage().getChannel().isPrivate())
 			resetLastMessage();
 		else
-			resetLastMessage(event.getMessage().getChannel());
+			resetLastMessage(ev.getMessage().getChannel());
 		lastlist++;
-		String dmessage = event.getMessage().getContent();
-		synchronized (this) {
-			try {
-				final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), author, user);
-
-				for (IUser u : event.getMessage().getMentions()) {
-					dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
-					final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
-					dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
+		recevents.add(ev);
+		if (rectask != null)
+			return;
+		rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+			while (true) {
+				@val
+				sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event;
+				try {
+					event = recevents.take();
+				} catch (InterruptedException e1) {
+					rectask.cancel();
+					return;
 				}
+				val sender = event.getMessage().getAuthor();
+				val user = DiscordPlayer.getUser(sender.getStringID(), DiscordPlayer.class);
+				String dmessage = event.getMessage().getContent();
+				try {
+					final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender, user);
 
-				BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> TBMCChatAPI.SendChatMessage(channel,
-						dsender,
-						msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-								.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
-								: ""));
-
-				boolean react = false;
-
-				if (dmessage.startsWith("/")) { // Ingame command
-					DPUtils.perform(() -> {
-						if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
-							event.getMessage().delete();
-					});
-					final String cmd = dmessage.substring(1).toLowerCase();
-					if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
-							.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
-						// Command not whitelisted
-						dsender.sendMessage("Sorry, you can only access these commands:\n"
-								+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc).collect(Collectors.joining(", "))
-								+ (user.getConnectedID(TBMCPlayer.class) == null
-										? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
-												+ DiscordPlugin.botchannel.mention()
-												+ "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
-										: "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
-						return;
+					for (IUser u : event.getMessage().getMentions()) {
+						dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
+						final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
+						dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
 					}
-					if (lastlist > 5) {
-						ListC = 0;
-						lastlist = 0;
-					}
-					if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
-					{
-						dsender.sendMessage("Stop it. You know the answer.");
-						lastlist = 0;
-					} else {
-						int spi = cmd.indexOf(' ');
-						final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
-						Optional<Channel> ch = Channel.getChannels().stream().filter(c -> c.ID.equalsIgnoreCase(topcmd))
-								.findAny();
-						if (!ch.isPresent())
-							Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-									() -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
-						else {
-							Channel chc = ch.get();
-							if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
-								dsender.sendMessage(
-										"You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
+
+					BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> //
+					TBMCChatAPI.SendChatMessage(channel, dsender,
+							msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
+									.getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+									: ""));
+
+					boolean react = false;
+
+					if (dmessage.startsWith("/")) { // Ingame command
+						DPUtils.perform(() -> {
+							if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
+								event.getMessage().delete();
+						});
+						final String cmd = dmessage.substring(1).toLowerCase();
+						if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
+								.anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
+							// Command not whitelisted
+							dsender.sendMessage("Sorry, you can only access these commands:\n"
+									+ Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
+											.collect(Collectors.joining(", "))
+									+ (user.getConnectedID(TBMCPlayer.class) == null
+											? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
+													+ DiscordPlugin.botchannel.mention()
+													+ "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
+											: "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
+							return;
+						}
+						if (lastlist > 5) {
+							ListC = 0;
+							lastlist = 0;
+						}
+						if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
+						{
+							dsender.sendMessage("Stop it. You know the answer.");
+							lastlist = 0;
+						} else {
+							int spi = cmd.indexOf(' ');
+							final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
+							Optional<Channel> ch = Channel.getChannels().stream()
+									.filter(c -> c.ID.equalsIgnoreCase(topcmd)).findAny();
+							if (!ch.isPresent())
+								Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
+										() -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
 							else {
-								if (spi == -1) // Switch channels
-								{
-									val oldch = dsender.getMcchannel();
-									if (oldch instanceof ChatRoom)
-										((ChatRoom) oldch).leaveRoom(dsender);
-									if (!oldch.ID.equals(chc.ID)) {
-										dsender.setMcchannel(chc);
-										if (chc instanceof ChatRoom)
-											((ChatRoom) chc).joinRoom(dsender);
-									} else
-										dsender.setMcchannel(Channel.GlobalChat);
-									dsender.sendMessage("You're now talking in: "
-											+ DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
-								} else { // Send single message
-									sendChatMessage.accept(chc, cmd.substring(spi + 1));
-									react = true;
+								Channel chc = ch.get();
+								if (!chc.ID.equals(Channel.GlobalChat.ID)
+										&& !event.getMessage().getChannel().isPrivate())
+									dsender.sendMessage(
+											"You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
+								else {
+									if (spi == -1) // Switch channels
+									{
+										val oldch = dsender.getMcchannel();
+										if (oldch instanceof ChatRoom)
+											((ChatRoom) oldch).leaveRoom(dsender);
+										if (!oldch.ID.equals(chc.ID)) {
+											dsender.setMcchannel(chc);
+											if (chc instanceof ChatRoom)
+												((ChatRoom) chc).joinRoom(dsender);
+										} else
+											dsender.setMcchannel(Channel.GlobalChat);
+										dsender.sendMessage("You're now talking in: "
+												+ DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
+									} else { // Send single message
+										sendChatMessage.accept(chc, cmd.substring(spi + 1));
+										react = true;
+									}
 								}
 							}
 						}
-					}
-					lastlistp = (short) Bukkit.getOnlinePlayers().size();
-				} else {// Not a command
-					if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-							&& !event.getChannel().isPrivate())
-						TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
-								(dsender instanceof Player ? ((Player) dsender).getDisplayName() : dsender.getName())
-										+ " pinned a message on Discord.");
-					else {
-						sendChatMessage.accept(dsender.getMcchannel(), dmessage);
-						react = true;
-					}
-				}
-				if (react) {
-					event.getMessage().getChannel().getMessageHistory().stream().forEach(m -> {
-						try {
-							final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
-							if (reaction != null)
-								DPUtils.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
-						} catch (Exception e) {
-							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+						lastlistp = (short) Bukkit.getOnlinePlayers().size();
+					} else {// Not a command
+						if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
+								&& !event.getChannel().isPrivate())
+							TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
+									(dsender instanceof Player ? ((Player) dsender).getDisplayName()
+											: dsender.getName()) + " pinned a message on Discord.");
+						else {
+							sendChatMessage.accept(dsender.getMcchannel(), dmessage);
+							react = true;
 						}
-					});
-					DPUtils.performNoWait(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+					}
+					if (react) {
+						event.getMessage().getChannel().getMessageHistory(2).stream().forEach(m -> {
+							try {
+								final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
+								if (reaction != null)
+									DPUtils.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
+							} catch (Exception e) {
+								TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+							}
+						});
+						DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+					}
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
+					return;
 				}
-			} catch (Exception e) {
-				TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
-				return;
 			}
-		}
+		});
+
 	}
 
 	/**
