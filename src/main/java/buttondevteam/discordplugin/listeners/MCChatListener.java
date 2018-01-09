@@ -249,6 +249,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
 	private BukkitTask rectask;
 	private LinkedBlockingQueue<MessageReceivedEvent> recevents = new LinkedBlockingQueue<>();
+	private IMessage lastmsgfromd; // Last message sent by a Discord user, used for clearing checkmarks
 
 	@Override // Discord
 	public void handle(MessageReceivedEvent ev) {
@@ -377,15 +378,19 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						}
 					}
 					if (react) {
-						event.getMessage().getChannel().getMessageHistory(2).stream().forEach(m -> {
-							try {
-								final IReaction reaction = m.getReactionByEmoji(DiscordPlugin.DELIVERED_REACTION);
-								if (reaction != null)
-									DPUtils.perform(() -> m.removeReaction(DiscordPlugin.dc.getOurUser(), reaction));
-							} catch (Exception e) {
-								TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+						try {
+							/*
+							 * System.out.println("Got message: " + m.getContent() + " with embeds: " + m.getEmbeds().stream().map(e -> e.getTitle() + " " + e.getDescription())
+							 * .collect(Collectors.joining("\n")));
+							 */
+							if (lastmsgfromd != null) {
+								DPUtils.perform(() -> lastmsgfromd.removeReaction(DiscordPlugin.dc.getOurUser(),
+										DiscordPlugin.DELIVERED_REACTION)); // Remove it no matter what, we know it's there 99.99% of the time
 							}
-						});
+						} catch (Exception e) {
+							TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+						}
+						lastmsgfromd = event.getMessage();
 						DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
 					}
 				} catch (Exception e) {
