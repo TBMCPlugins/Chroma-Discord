@@ -19,6 +19,7 @@ import sx.blah.discord.handle.obj.IUser;
 
 @Getter
 @Setter
+@SuppressWarnings("deprecated")
 public abstract class DiscordEntity extends DiscordSenderBase implements Entity {
 	protected DiscordEntity(IUser user, IChannel channel, int entityId, UUID uuid) {
 		super(user, channel);

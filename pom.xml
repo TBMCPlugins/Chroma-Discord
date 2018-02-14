@@ -60,11 +60,6 @@
 									<exclude>net.ess3:Essentials</exclude>
 								</excludes> <!-- TODO: http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
 							</artifactSet>
-							<pluginExecution>
-								<action>
-									<execute />
-								</action>
-							</pluginExecution>
 						</configuration>
 					</execution>
 				</executions>

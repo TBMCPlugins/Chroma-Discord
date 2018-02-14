@@ -159,7 +159,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					}
 					TBMCCoreAPI.SendUnsentExceptions();
 					TBMCCoreAPI.SendUnsentDebugMessages();
-					if (!TBMCCoreAPI.IsTestServer()) {
+					/*if (!TBMCCoreAPI.IsTestServer()) {
 						final Calendar currentCal = Calendar.getInstance();
 						final Calendar newCal = Calendar.getInstance();
 						currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
@@ -169,7 +169,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 							sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
 									"You could make a religion out of this");
 						}
-					}
+					}*/
 				}
 			}, 0, 10);
 			for (IListener<?> listener : CommandListener.getListeners())
