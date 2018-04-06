@@ -1,13 +1,14 @@
 package buttondevteam.discordplugin.commands;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class RoleCommand extends DiscordCommandBase {
 
@@ -50,20 +51,18 @@ public class RoleCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
 		} else if (argsa[0].equalsIgnoreCase("admin") && argsa.length > 1 && argsa[1].equalsIgnoreCase("addrole")) {
-			if (!message.getAuthor().getRolesForGuild(DiscordPlugin.mainServer).stream()
-					.anyMatch(r -> r.getLongID() == 126030201472811008L)) {
+			if (message.getAuthor().getRolesForGuild(DiscordPlugin.mainServer).stream()
+					.noneMatch(r -> r.getLongID() == 126030201472811008L)) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"You need to be a moderator to use this command.");
 				return;
 			}
-			if (argsa.length < 2) {
+			if (argsa.length < 3) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"Add a role to the game role list.\nUsage: " + argsa[0] + " <rolename>");
 				return;
 			}
-			String rolename = argsa[1];
-			for (int i = 2; i < argsa.length; i++)
-				rolename += " " + argsa[i];
+			String rolename = Arrays.stream(argsa).skip(2).collect(Collectors.joining(" "));
 			final List<IRole> roles = (TBMCCoreAPI.IsTestServer() ? DiscordPlugin.devServer : DiscordPlugin.mainServer)
 					.getRolesByName(rolename);
 			if (roles.size() == 0) {

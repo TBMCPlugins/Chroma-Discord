@@ -1,12 +1,17 @@
 package buttondevteam.discordplugin.listeners;
 
-import java.awt.Color;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import buttondevteam.discordplugin.*;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import buttondevteam.lib.TBMCChatEvent;
+import buttondevteam.lib.TBMCChatPreprocessEvent;
+import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCSystemChatEvent;
+import buttondevteam.lib.chat.Channel;
+import buttondevteam.lib.chat.ChatRoom;
+import buttondevteam.lib.chat.TBMCChatAPI;
+import buttondevteam.lib.player.TBMCPlayer;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,21 +19,29 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
-
-import buttondevteam.discordplugin.*;
-import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
-import buttondevteam.lib.*;
-import buttondevteam.lib.chat.Channel;
-import buttondevteam.lib.chat.ChatRoom;
-import buttondevteam.lib.chat.TBMCChatAPI;
-import buttondevteam.lib.player.TBMCPlayer;
-import lombok.RequiredArgsConstructor;
-import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.*;
-import sx.blah.discord.util.*;
+import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IPrivateChannel;
+import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.EmbedBuilder;
+import sx.blah.discord.util.MissingPermissionsException;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
 	private BukkitTask sendtask;
@@ -65,7 +78,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 						DPUtils.embedWithHead(
 								embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
 										+ ((Player) e.getSender()).getUniqueId()),
-								((Player) e.getSender()).getName());
+                                e.getSender().getName());
 					else if (e.getSender() instanceof DiscordSenderBase)
 						embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
 								.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
