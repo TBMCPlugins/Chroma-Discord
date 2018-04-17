@@ -1,11 +1,5 @@
 package buttondevteam.discordplugin.listeners;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
@@ -19,6 +13,12 @@ import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.EmbedBuilder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class CommandListener {
 
@@ -126,7 +126,7 @@ public class CommandListener {
 
 	/**
 	 * Runs a ChromaBot command.
-	 * 
+     *
 	 * @param message
 	 *            The Discord message
 	 * @param mentionedonly
@@ -141,7 +141,7 @@ public class CommandListener {
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
 		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
-		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().map(r -> r.mention())::iterator)
+        for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(r -> r.mention())::iterator)
 			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
 		if (mentionedonly && !gotmention) {
 			message.getChannel().setTypingStatus(false);

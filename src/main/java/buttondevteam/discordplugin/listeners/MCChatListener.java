@@ -31,10 +31,8 @@ import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -45,89 +43,97 @@ import java.util.stream.Stream;
 
 public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
     private BukkitTask sendtask;
-    private LinkedBlockingQueue<TBMCChatEvent> sendevents = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
 
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
         if (ev.isCancelled())
             return;
-        sendevents.add(ev);
+        sendevents.add(new AbstractMap.SimpleEntry<>(ev, Instant.now()));
         if (sendtask != null)
             return;
         sendrunnable = () -> {
-            try {
-                TBMCChatEvent e;
-                try {
-                    e = sendevents.take(); // Wait until an element is available
-                } catch (InterruptedException ex) {
-                    sendtask.cancel();
-                    sendtask = null;
-                    return;
-                }
-                final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
-                        + (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
-                        + (DPUtils.sanitizeString(e.getSender() instanceof Player //
-                        ? ((Player) e.getSender()).getDisplayName() //
-                        : e.getSender().getName()));
-                final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
-                        .withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
-                                e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
-                // embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
-                // + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
-                if (e.getSender() instanceof Player)
-                    DPUtils.embedWithHead(
-                            embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-                                    + ((Player) e.getSender()).getUniqueId()),
-                            e.getSender().getName());
-                else if (e.getSender() instanceof DiscordSenderBase)
-                    embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
-                            .withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
-                                    + ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
-                // embed.withFooterText(e.getChannel().DisplayName);
-                final long nanoTime = System.nanoTime();
-                Consumer<LastMsgData> doit = lastmsgdata -> {
-                    final EmbedObject embedObject = embed.build();
-                    if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
-                            || !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
-                            || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-                            || !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-                        lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
-                                embedObject); // TODO Use ChromaBot API
-                        lastmsgdata.time = nanoTime;
-                        lastmsgdata.mcchannel = e.getChannel();
-                        lastmsgdata.content = embedObject.description;
-                    } else
-                        try {
-                            lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
-                                    + embedObject.description;// The message object doesn't get updated
-                            final LastMsgData _lastmsgdata = lastmsgdata;
-                            DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
-                        } catch (MissingPermissionsException | DiscordException e1) {
-                            TBMCCoreAPI.SendException("An error occured while editing chat message!", e1);
-                        }
-                };
-                // Checks if the given channel is different than where the message was sent from
-                Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
-                        || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
-
-                if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
-                        && isdifferentchannel.test(DiscordPlugin.chatchannel))
-                    doit.accept(lastmsgdata == null
-                            ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
-                            : lastmsgdata);
-
-                for (LastMsgData data : lastmsgPerUser) {
-                    if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
-                            && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
-                        doit.accept(data);
-                }
-                sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
-            } catch (Exception ex) {
-                TBMCCoreAPI.SendException("Error while sending mesasge to Discord!", ex);
-            }
+            processMCToDiscord();
+            sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
         };
         sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
+    }
+
+    private void processMCToDiscord() {
+        try {
+            TBMCChatEvent e;
+            Instant time;
+            try {
+                val se = sendevents.take(); // Wait until an element is available
+                e = se.getKey();
+                time = se.getValue();
+            } catch (InterruptedException ex) {
+                sendtask.cancel();
+                sendtask = null;
+                return;
+            }
+            final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
+                    + (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
+                    + (DPUtils.sanitizeString(e.getSender() instanceof Player //
+                    ? ((Player) e.getSender()).getDisplayName() //
+                    : e.getSender().getName()));
+            final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
+                    .withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
+                            e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+            // embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
+            // + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
+            if (e.getSender() instanceof Player)
+                DPUtils.embedWithHead(
+                        embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+                                + ((Player) e.getSender()).getUniqueId()),
+                        e.getSender().getName());
+            else if (e.getSender() instanceof DiscordSenderBase)
+                embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
+                        .withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
+                                + ((DiscordSenderBase) e.getSender()).getUser().getStringID()); // TODO: Constant/method to get URLs like this
+            // embed.withFooterText(e.getChannel().DisplayName);
+            embed.withTimestamp(time);
+            final long nanoTime = System.nanoTime();
+            Consumer<LastMsgData> doit = lastmsgdata -> {
+                final EmbedObject embedObject = embed.build();
+                if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
+                        || !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+                        || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+                        || !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+                    lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
+                            embedObject); // TODO Use ChromaBot API
+                    lastmsgdata.time = nanoTime;
+                    lastmsgdata.mcchannel = e.getChannel();
+                    lastmsgdata.content = embedObject.description;
+                } else
+                    try {
+                        lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
+                                + embedObject.description;// The message object doesn't get updated
+                        final LastMsgData _lastmsgdata = lastmsgdata;
+                        DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
+                    } catch (MissingPermissionsException | DiscordException e1) {
+                        TBMCCoreAPI.SendException("An error occurred while editing chat message!", e1);
+                    }
+            };
+            // Checks if the given channel is different than where the message was sent from
+            Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
+                    || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
+
+            if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
+                    && isdifferentchannel.test(DiscordPlugin.chatchannel))
+                doit.accept(lastmsgdata == null
+                        ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
+                        : lastmsgdata);
+
+            for (LastMsgData data : lastmsgPerUser) {
+                if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
+                        && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+                    doit.accept(data);
+            }
+        } catch (Exception ex) {
+            TBMCCoreAPI.SendException("Error while sending message to Discord!", ex);
+        }
     }
 
     @RequiredArgsConstructor
@@ -265,6 +271,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private BukkitTask rectask;
     private LinkedBlockingQueue<MessageReceivedEvent> recevents = new LinkedBlockingQueue<>();
     private IMessage lastmsgfromd; // Last message sent by a Discord user, used for clearing checkmarks
+    private Runnable recrun;
 
     @Override // Discord
     public void handle(MessageReceivedEvent ev) {
@@ -288,133 +295,135 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         recevents.add(ev);
         if (rectask != null)
             return;
-        rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
-            while (true) {
-                @val
-                sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event;
-                try {
-                    event = recevents.take();
-                } catch (InterruptedException e1) {
-                    rectask.cancel();
+        recrun = () -> { //Don't return in a while loop next time
+            processDiscordToMC();
+            rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
+        };
+        rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
+    }
+
+    private void processDiscordToMC() {
+        @val
+        sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event;
+        try {
+            event = recevents.take();
+        } catch (InterruptedException e1) {
+            rectask.cancel();
+            return;
+        }
+        val sender = event.getMessage().getAuthor();
+        val user = DiscordPlayer.getUser(sender.getStringID(), DiscordPlayer.class);
+        String dmessage = event.getMessage().getContent();
+        try {
+            final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender, user);
+
+            for (IUser u : event.getMessage().getMentions()) {
+                dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
+                final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
+                dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
+            }
+
+            BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> //
+                    TBMCChatAPI.SendChatMessage(channel, dsender,
+                            msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
+                                    .getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
+                                    : ""));
+
+            boolean react = false;
+
+            if (dmessage.startsWith("/")) { // Ingame command
+                DPUtils.perform(() -> {
+                    if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
+                        event.getMessage().delete();
+                });
+                final String cmd = dmessage.substring(1).toLowerCase();
+                if (dsender instanceof DiscordSender && Arrays.stream(UnconnectedCmds)
+                        .noneMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
+                    // Command not whitelisted
+                    dsender.sendMessage("Sorry, you can only access these commands:\n"
+                            + Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
+                            .collect(Collectors.joining(", "))
+                            + (user.getConnectedID(TBMCPlayer.class) == null
+                            ? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
+                            + DiscordPlugin.botchannel.mention()
+                            + "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
+                            : "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
                     return;
                 }
-                val sender = event.getMessage().getAuthor();
-                val user = DiscordPlayer.getUser(sender.getStringID(), DiscordPlayer.class);
-                String dmessage = event.getMessage().getContent();
-                try {
-                    final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender, user);
-
-                    for (IUser u : event.getMessage().getMentions()) {
-                        dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
-                        final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
-                        dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
-                    }
-
-                    BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> //
-                            TBMCChatAPI.SendChatMessage(channel, dsender,
-                                    msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-                                            .getAttachments().stream().map(a -> a.getUrl()).collect(Collectors.joining("\n"))
-                                            : ""));
-
-                    boolean react = false;
-
-                    if (dmessage.startsWith("/")) { // Ingame command
-                        DPUtils.perform(() -> {
-                            if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
-                                event.getMessage().delete();
-                        });
-                        final String cmd = dmessage.substring(1).toLowerCase();
-                        if (dsender instanceof DiscordSender && !Arrays.stream(UnconnectedCmds)
-                                .anyMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
-                            // Command not whitelisted
-                            dsender.sendMessage("Sorry, you can only access these commands:\n"
-                                    + Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
-                                    .collect(Collectors.joining(", "))
-                                    + (user.getConnectedID(TBMCPlayer.class) == null
-                                    ? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
-                                    + DiscordPlugin.botchannel.mention()
-                                    + "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
-                                    : "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
-                            return;
-                        }
-                        if (lastlist > 5) {
-                            ListC = 0;
-                            lastlist = 0;
-                        }
-                        if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
-                        {
-                            dsender.sendMessage("Stop it. You know the answer.");
-                            lastlist = 0;
-                        } else {
-                            int spi = cmd.indexOf(' ');
-                            final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
-                            Optional<Channel> ch = Channel.getChannels().stream()
-                                    .filter(c -> c.ID.equalsIgnoreCase(topcmd)).findAny();
-                            if (!ch.isPresent())
-                                Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-                                        () -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
-                            else {
-                                Channel chc = ch.get();
-                                if (!chc.ID.equals(Channel.GlobalChat.ID)
-                                        && !event.getMessage().getChannel().isPrivate())
-                                    dsender.sendMessage(
-                                            "You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
-                                else {
-                                    if (spi == -1) // Switch channels
-                                    {
-                                        val oldch = dsender.getMcchannel();
-                                        if (oldch instanceof ChatRoom)
-                                            ((ChatRoom) oldch).leaveRoom(dsender);
-                                        if (!oldch.ID.equals(chc.ID)) {
-                                            dsender.setMcchannel(chc);
-                                            if (chc instanceof ChatRoom)
-                                                ((ChatRoom) chc).joinRoom(dsender);
-                                        } else
-                                            dsender.setMcchannel(Channel.GlobalChat);
-                                        dsender.sendMessage("You're now talking in: "
-                                                + DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
-                                    } else { // Send single message
-                                        sendChatMessage.accept(chc, cmd.substring(spi + 1));
-                                        react = true;
-                                    }
-                                }
-                            }
-                        }
-                        lastlistp = (short) Bukkit.getOnlinePlayers().size();
-                    } else {// Not a command
-                        if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-                                && !event.getChannel().isPrivate())
-                            TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
-                                    (dsender instanceof Player ? ((Player) dsender).getDisplayName()
-                                            : dsender.getName()) + " pinned a message on Discord.");
+                if (lastlist > 5) {
+                    ListC = 0;
+                    lastlist = 0;
+                }
+                if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
+                {
+                    dsender.sendMessage("Stop it. You know the answer.");
+                    lastlist = 0;
+                } else {
+                    int spi = cmd.indexOf(' ');
+                    final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
+                    Optional<Channel> ch = Channel.getChannels().stream()
+                            .filter(c -> c.ID.equalsIgnoreCase(topcmd)).findAny();
+                    if (!ch.isPresent())
+                        Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
+                                () -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
+                    else {
+                        Channel chc = ch.get();
+                        if (!chc.ID.equals(Channel.GlobalChat.ID)
+                                && !event.getMessage().getChannel().isPrivate())
+                            dsender.sendMessage(
+                                    "You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
                         else {
-                            sendChatMessage.accept(dsender.getMcchannel(), dmessage);
-                            react = true;
-                        }
-                    }
-                    if (react) {
-                        try {
-                            /*
-                             * System.out.println("Got message: " + m.getContent() + " with embeds: " + m.getEmbeds().stream().map(e -> e.getTitle() + " " + e.getDescription())
-                             * .collect(Collectors.joining("\n")));
-                             */
-                            if (lastmsgfromd != null) {
-                                DPUtils.perform(() -> lastmsgfromd.removeReaction(DiscordPlugin.dc.getOurUser(),
-                                        DiscordPlugin.DELIVERED_REACTION)); // Remove it no matter what, we know it's there 99.99% of the time
+                            if (spi == -1) // Switch channels
+                            {
+                                val oldch = dsender.getMcchannel();
+                                if (oldch instanceof ChatRoom)
+                                    ((ChatRoom) oldch).leaveRoom(dsender);
+                                if (!oldch.ID.equals(chc.ID)) {
+                                    dsender.setMcchannel(chc);
+                                    if (chc instanceof ChatRoom)
+                                        ((ChatRoom) chc).joinRoom(dsender);
+                                } else
+                                    dsender.setMcchannel(Channel.GlobalChat);
+                                dsender.sendMessage("You're now talking in: "
+                                        + DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
+                            } else { // Send single message
+                                sendChatMessage.accept(chc, cmd.substring(spi + 1));
+                                react = true;
                             }
-                        } catch (Exception e) {
-                            TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
                         }
-                        lastmsgfromd = event.getMessage();
-                        DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
                     }
-                } catch (Exception e) {
-                    TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
-                    return;
+                }
+                lastlistp = (short) Bukkit.getOnlinePlayers().size();
+            } else {// Not a command
+                if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
+                        && !event.getChannel().isPrivate())
+                    TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
+                            (dsender instanceof Player ? ((Player) dsender).getDisplayName()
+                                    : dsender.getName()) + " pinned a message on Discord.");
+                else {
+                    sendChatMessage.accept(dsender.getMcchannel(), dmessage);
+                    react = true;
                 }
             }
-        });
-
+            if (react) {
+                try {
+                    /*
+                     * System.out.println("Got message: " + m.getContent() + " with embeds: " + m.getEmbeds().stream().map(e -> e.getTitle() + " " + e.getDescription())
+                     * .collect(Collectors.joining("\n")));
+                     */
+                    if (lastmsgfromd != null) {
+                        DPUtils.perform(() -> lastmsgfromd.removeReaction(DiscordPlugin.dc.getOurUser(),
+                                DiscordPlugin.DELIVERED_REACTION)); // Remove it no matter what, we know it's there 99.99% of the time
+                    }
+                } catch (Exception e) {
+                    TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+                }
+                lastmsgfromd = event.getMessage();
+                DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+            }
+        } catch (Exception e) {
+            TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
+        }
     }
 
     /**

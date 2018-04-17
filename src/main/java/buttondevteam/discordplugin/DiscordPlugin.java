@@ -324,8 +324,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     }
 
     private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
-        if (message.length() > 1900) {
-            message = message.substring(0, 1900);
+        if (message.length() > 1980) {
+            message = message.substring(0, 1980);
             Bukkit.getLogger()
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
         }
