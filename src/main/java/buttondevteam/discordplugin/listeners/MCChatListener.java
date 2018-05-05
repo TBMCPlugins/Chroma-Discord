@@ -336,6 +336,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
                         event.getMessage().delete();
                 });
+                preprocessChat(dsender, dmessage);
                 final String cmd = dmessage.substring(1).toLowerCase();
                 if (dsender instanceof DiscordSender && Arrays.stream(UnconnectedCmds)
                         .noneMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
@@ -424,6 +425,42 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
         }
+    }
+
+    private boolean preprocessChat(DiscordSenderBase dsender, String dmessage) {
+        if (dmessage.length() < 2)
+            return false;
+        int index = dmessage.indexOf(" ");
+        String cmd;
+        if (index == -1) { // Only the command is run
+            cmd = dmessage;
+            for (Channel channel : Channel.getChannels()) {
+                if (cmd.equalsIgnoreCase(channel.ID) || (channel.IDs != null && Arrays.stream(channel.IDs).anyMatch(cmd::equalsIgnoreCase))) {
+                    Channel oldch = dsender.getMcchannel();
+                    if (oldch instanceof ChatRoom)
+                        ((ChatRoom) oldch).leaveRoom(dsender);
+                    if (oldch.equals(channel))
+                        dsender.setMcchannel(Channel.GlobalChat);
+                    else {
+                        dsender.setMcchannel(channel);
+                        if (channel instanceof ChatRoom)
+                            ((ChatRoom) channel).joinRoom(dsender);
+                    }
+                    dsender.sendMessage("You are now talking in: " + dsender.getMcchannel().DisplayName);
+                    return true;
+                }
+            }
+        } else { // We have arguments
+            cmd = dmessage.substring(0, index);
+            for (Channel channel : Channel.getChannels()) {
+                if (cmd.equalsIgnoreCase(channel.ID) || (channel.IDs != null && Arrays.stream(channel.IDs).anyMatch(cmd::equalsIgnoreCase))) {
+                    TBMCChatAPI.SendChatMessage(channel, dsender, dmessage.substring(index + 1));
+                    return true;
+                }
+            }
+            // TODO: Target selectors
+        }
+        return false;
     }
 
     /**

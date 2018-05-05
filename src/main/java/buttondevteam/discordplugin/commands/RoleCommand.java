@@ -6,7 +6,6 @@ import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,33 +49,7 @@ public class RoleCommand extends DiscordCommandBase {
 		} else if (argsa[0].equalsIgnoreCase("list")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
-		} else if (argsa[0].equalsIgnoreCase("admin") && argsa.length > 1 && argsa[1].equalsIgnoreCase("addrole")) {
-			if (message.getAuthor().getRolesForGuild(DiscordPlugin.mainServer).stream()
-					.noneMatch(r -> r.getLongID() == 126030201472811008L)) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"You need to be a moderator to use this command.");
-				return;
-			}
-			if (argsa.length < 3) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"Add a role to the game role list.\nUsage: " + argsa[0] + " <rolename>");
-				return;
-			}
-			String rolename = Arrays.stream(argsa).skip(2).collect(Collectors.joining(" "));
-			final List<IRole> roles = (TBMCCoreAPI.IsTestServer() ? DiscordPlugin.devServer : DiscordPlugin.mainServer)
-					.getRolesByName(rolename);
-			if (roles.size() == 0) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "That role cannot be found on Discord.");
-				return;
-			}
-			if (roles.size() > 1) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"There are more roles with this name. Why are there more roles with this name?");
-				return;
-			}
-			DiscordPlugin.GameRoles.add(roles.get(0).getName());
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Game role added.");
-		}
+		} else DiscordPlugin.sendMessageToChannel(message.getChannel(), usagemsg);
 	}
 
 	private IRole checkAndGetRole(IMessage message, String[] argsa, String usage) {

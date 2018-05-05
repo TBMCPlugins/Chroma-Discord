@@ -30,7 +30,6 @@ import sx.blah.discord.util.RequestBuffer;
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,7 +59,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             plugin = this;
             lastannouncementtime = getConfig().getLong("lastannouncementtime");
             lastseentime = getConfig().getLong("lastseentime");
-            GameRoles = (List<String>) getConfig().getList("gameroles", new ArrayList<String>());
             ClientBuilder cb = new ClientBuilder();
             cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
             dc = cb.login();
@@ -77,6 +75,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static IChannel genchannel;
     public static IChannel chatchannel;
     public static IChannel botroomchannel;
+    public static IChannel modlogchannel;
     /**
      * Don't send messages, just receive, the same channel is used when testing
      */
@@ -109,6 +108,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
                     updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
                     devofficechannel = officechannel; // developers-office
+                    modlogchannel = mainServer.getChannelByID(283840717275791360L); // modlog
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Chromacraft");
                 } else {
                     botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
@@ -119,6 +119,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
                     updatechannel = botchannel;
                     devofficechannel = botchannel;// bot-room
+                    modlogchannel = botchannel; // bot-room
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
                 }
                 if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
@@ -129,6 +130,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     task.cancel();
                 if (!sent) {
                     new ChromaBot(this).updatePlayerList();
+                    //Get all roles with the default color
+                    GameRoles = mainServer.getRoles().stream().filter(r -> r.getColor().getAlpha() == 0).map(IRole::getName).collect(Collectors.toList());
                     if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());
@@ -211,7 +214,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
-        getConfig().set("gameroles", GameRoles);
         getConfig().set("serverup", false);
         saveConfig();
         MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannelWait(ch, "",

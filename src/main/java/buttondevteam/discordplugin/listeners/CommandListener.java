@@ -5,9 +5,13 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
+import org.bukkit.Bukkit;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.role.RoleCreateEvent;
+import sx.blah.discord.handle.impl.events.guild.role.RoleDeleteEvent;
+import sx.blah.discord.handle.impl.events.guild.role.RoleUpdateEvent;
 import sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
@@ -108,9 +112,9 @@ public class CommandListener {
 				if (event.getOldPresence().getStatus().equals(StatusType.OFFLINE)
 						&& !event.getNewPresence().getStatus().equals(StatusType.OFFLINE)
 						&& event.getUser().getRolesForGuild(DiscordPlugin.devServer).stream()
-								.anyMatch(r -> r.getLongID() == devrole.getLongID())
+                        .anyMatch(r -> r.getLongID() == devrole.getLongID())
 						&& DiscordPlugin.devServer.getUsersByRole(devrole).stream()
-								.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
+                        .noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
 						&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
 						&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
 					DiscordPlugin.sendMessageToChannel(DiscordPlugin.devofficechannel, "Full house!",
@@ -121,7 +125,21 @@ public class CommandListener {
 					lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
 				}
 			}
-		} };
+        }, (IListener<RoleCreateEvent>) event -> {
+            Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
+                if (event.getRole().isDeleted() || event.getRole().getColor().getAlpha() != 0)
+                    return; //Deleted or not a game role
+                DiscordPlugin.GameRoles.add(event.getRole().getName());
+                DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getRole().getName() + " as game role. If you don't want this, change the role's color from the default.");
+            }, 100);
+        }, (IListener<RoleDeleteEvent>) event -> {
+            if (DiscordPlugin.GameRoles.remove(event.getRole().getName()))
+                DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getRole().getName() + " as a game role.");
+        }, (IListener<RoleUpdateEvent>) event -> {
+            if (event.getNewRole().getColor().getAlpha() != 0 && DiscordPlugin.GameRoles.remove(event.getOldRole().getName()))
+                DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getOldRole().getName() + " as a game role because it's color changed.");
+            //else if() - TODO
+        }};
 	}
 
 	/**
