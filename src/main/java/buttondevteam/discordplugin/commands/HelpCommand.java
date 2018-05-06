@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.commands;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
 import buttondevteam.discordplugin.DiscordPlugin;
 import sx.blah.discord.handle.obj.IMessage;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class HelpCommand extends DiscordCommandBase {
 

@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.UUID;
-
+import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.lib.TBMCCoreAPI;
+import com.mojang.authlib.GameProfile;
+import lombok.val;
+import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
@@ -12,33 +12,10 @@ import org.bukkit.craftbukkit.v1_12_R1.util.CraftChatMessage;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.objenesis.ObjenesisStd;
 
-import com.mojang.authlib.GameProfile;
-
-import buttondevteam.discordplugin.listeners.MCChatListener;
-import buttondevteam.lib.TBMCCoreAPI;
-import lombok.val;
-import net.minecraft.server.v1_12_R1.AdvancementDataPlayer;
-import net.minecraft.server.v1_12_R1.ChatMessageType;
-import net.minecraft.server.v1_12_R1.DedicatedPlayerList;
-import net.minecraft.server.v1_12_R1.DedicatedServer;
-import net.minecraft.server.v1_12_R1.Entity;
-import net.minecraft.server.v1_12_R1.EntityHuman;
-import net.minecraft.server.v1_12_R1.EntityPlayer;
-import net.minecraft.server.v1_12_R1.GameProfileBanList;
-import net.minecraft.server.v1_12_R1.IChatBaseComponent;
-import net.minecraft.server.v1_12_R1.IpBanList;
-import net.minecraft.server.v1_12_R1.LoginListener;
-import net.minecraft.server.v1_12_R1.MinecraftServer;
-import net.minecraft.server.v1_12_R1.NBTTagCompound;
-import net.minecraft.server.v1_12_R1.NetworkManager;
-import net.minecraft.server.v1_12_R1.OpList;
-import net.minecraft.server.v1_12_R1.Packet;
-import net.minecraft.server.v1_12_R1.PacketPlayOutChat;
-import net.minecraft.server.v1_12_R1.ScoreboardServer;
-import net.minecraft.server.v1_12_R1.ServerStatisticManager;
-import net.minecraft.server.v1_12_R1.WhiteList;
-import net.minecraft.server.v1_12_R1.World;
-import net.minecraft.server.v1_12_R1.WorldServer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.UUID;
 
 public class PlayerListWatcher extends DedicatedPlayerList {
 	private DedicatedPlayerList plist;

@@ -48,7 +48,7 @@ public class RoleCommand extends DiscordCommandBase {
 			}
 		} else if (argsa[0].equalsIgnoreCase("list")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().collect(Collectors.joining("\n")));
+					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
 		} else DiscordPlugin.sendMessageToChannel(message.getChannel(), usagemsg);
 	}
 

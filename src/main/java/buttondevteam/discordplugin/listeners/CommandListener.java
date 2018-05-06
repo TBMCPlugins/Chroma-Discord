@@ -135,10 +135,18 @@ public class CommandListener {
         }, (IListener<RoleDeleteEvent>) event -> {
             if (DiscordPlugin.GameRoles.remove(event.getRole().getName()))
                 DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getRole().getName() + " as a game role.");
-        }, (IListener<RoleUpdateEvent>) event -> {
-            if (event.getNewRole().getColor().getAlpha() != 0 && DiscordPlugin.GameRoles.remove(event.getOldRole().getName()))
+		}, (IListener<RoleUpdateEvent>) event -> { //Role update event
+			if (event.getNewRole().getColor().getAlpha() != 0)
+				if (DiscordPlugin.GameRoles.remove(event.getOldRole().getName()))
                 DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getOldRole().getName() + " as a game role because it's color changed.");
-            //else if() - TODO
+				else {
+					boolean removed = DiscordPlugin.GameRoles.remove(event.getOldRole().getName()); //Regardless of whether it was a game role
+					DiscordPlugin.GameRoles.add(event.getNewRole().getName()); //Add it because it has no color
+					if (removed)
+						DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Changed game role from " + event.getOldRole().getName() + " to " + event.getNewRole().getName() + ".");
+					else
+						DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getNewRole().getName() + " as game role because it has no color.");
+				}
         }};
 	}
 

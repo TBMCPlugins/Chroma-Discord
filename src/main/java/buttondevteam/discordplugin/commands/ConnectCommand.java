@@ -1,16 +1,14 @@
 package buttondevteam.discordplugin.commands;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-
-import com.google.common.collect.HashBiMap;
-
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
+import com.google.common.collect.HashBiMap;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class ConnectCommand extends DiscordCommandBase {

@@ -1,13 +1,7 @@
 package buttondevteam.discordplugin;
 
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
@@ -24,17 +18,19 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
-import org.bukkit.permissions.*;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
-
-import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
-import lombok.Getter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.net.InetSocketAddress;
+import java.util.*;
 
 @SuppressWarnings("deprecation")
 public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<DiscordPlayerSender> {

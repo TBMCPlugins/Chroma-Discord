@@ -1,14 +1,17 @@
 package buttondevteam.discordplugin;
 
-import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
-import org.bukkit.permissions.*;
+import org.bukkit.permissions.PermissibleBase;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
-
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.Set;
 
 public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	private PermissibleBase perm = new PermissibleBase(this);

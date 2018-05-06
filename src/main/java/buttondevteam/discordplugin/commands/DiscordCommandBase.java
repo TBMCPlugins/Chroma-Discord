@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.commands;
 
-import java.util.HashMap;
-
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
+
+import java.util.HashMap;
 
 public abstract class DiscordCommandBase {
 	public abstract String getCommandName();

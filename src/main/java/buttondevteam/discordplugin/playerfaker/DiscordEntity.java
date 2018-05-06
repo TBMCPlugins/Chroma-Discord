@@ -1,7 +1,8 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import java.util.*;
-
+import buttondevteam.discordplugin.DiscordSenderBase;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.*;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.entity.Entity;
@@ -10,12 +11,10 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
-
-import buttondevteam.discordplugin.DiscordSenderBase;
-import lombok.Getter;
-import lombok.Setter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.*;
 
 @Getter
 @Setter

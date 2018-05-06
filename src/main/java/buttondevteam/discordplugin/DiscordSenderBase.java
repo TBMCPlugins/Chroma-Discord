@@ -1,19 +1,18 @@
 package buttondevteam.discordplugin;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitTask;
-
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.IDiscordSender;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public abstract class DiscordSenderBase implements IDiscordSender {
 	/**

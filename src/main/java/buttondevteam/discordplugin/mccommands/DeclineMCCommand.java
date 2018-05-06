@@ -1,9 +1,8 @@
 package buttondevteam.discordplugin.mccommands;
 
-import org.bukkit.entity.Player;
-
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.chat.CommandClass;
+import org.bukkit.entity.Player;
 
 @CommandClass(modOnly = false, path = "decline")
 public class DeclineMCCommand extends DiscordMCCommandBase {

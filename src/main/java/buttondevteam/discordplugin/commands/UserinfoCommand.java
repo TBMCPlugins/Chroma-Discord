@@ -1,8 +1,5 @@
 package buttondevteam.discordplugin.commands;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -10,6 +7,10 @@ import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class UserinfoCommand extends DiscordCommandBase {
 
