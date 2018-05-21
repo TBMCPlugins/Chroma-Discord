@@ -46,6 +46,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
 
+    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel) {
+        val lmd = new LastMsgData(channel, null, null);
+        lmd.mcchannel = mcchannel;
+        lastmsgCustom.put(groupid, lmd);
+    }
+
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
         if (ev.isCancelled())
@@ -177,6 +183,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
      * Used for messages in PMs (mcchat).
      */
     private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
+    /**
+     * Used for town or nation chats or anything else
+     */
+    private static HashMap<String, LastMsgData> lastmsgCustom = new HashMap<>();
 
     public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
         TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);

@@ -93,7 +93,7 @@ public class MCListener implements Listener {
         if (DiscordPlugin.SafeMode)
             return;
         DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
-        if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
+        if (dp == null || dp.getDiscordID() == null || dp.getDiscordID().equals(""))
             return;
         IUser user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
         e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());

@@ -58,8 +58,8 @@ public class ConnectCommand extends DiscordCommandBase {
 		}
 		WaitingToConnect.put(p.getName(), message.getAuthor().getStringID());
 		DiscordPlugin.sendMessageToChannel(message.getChannel(),
-				"Pending connection - accept connection in Minecraft from the account " + args
-						+ " before the server gets restarted. You can also adjust the Minecraft name you want to connect to with the same command.");
+				"Alright! Now accept the connection in Minecraft from the account " + args
+						+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.");
 		if (p.isOnline())
 			((Player) p).sendMessage("§bTo connect with the Discord account " + message.getAuthor().getName() + "#"
 					+ message.getAuthor().getDiscriminator() + " do /discord accept");
