@@ -182,7 +182,7 @@ public class CommandListener {
 			args = "";
 		} else {
 			cmd = cmdwithargs.substring(0, index);
-			args = cmdwithargs.substring(index + 1);
+			args = cmdwithargs.substring(index + 1).trim(); //In case there are multiple spaces
 		}
 		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);
 		message.getChannel().setTypingStatus(false);

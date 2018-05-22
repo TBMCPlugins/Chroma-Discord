@@ -46,12 +46,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
 
-    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel) {
-        val lmd = new LastMsgData(channel, null, null);
-        lmd.mcchannel = mcchannel;
-        lastmsgCustom.put(groupid, lmd);
-    }
-
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
         if (ev.isCancelled())
@@ -186,7 +180,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     /**
      * Used for town or nation chats or anything else
      */
-    private static HashMap<String, LastMsgData> lastmsgCustom = new HashMap<>();
+    private static HashMap<LastMsgData, String> lastmsgCustom = new HashMap<>();
 
     public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
         TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
@@ -228,6 +222,20 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
         return lastmsgPerUser.stream()
                 .anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
+    }
+
+    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel) {
+        val lmd = new LastMsgData(channel, null, null);
+        lmd.mcchannel = mcchannel;
+        lastmsgCustom.put(lmd, groupid);
+    }
+
+    public static boolean hasCustomChat(IChannel channel) {
+        return lastmsgCustom.entrySet().stream().anyMatch(lmd -> lmd.getKey().channel.getLongID() == channel.getLongID());
+    }
+
+    public static boolean removeCustomChat(IChannel channel) {
+        return lastmsgCustom.entrySet().removeIf(lmd -> lmd.getKey().channel.getLongID() == channel.getLongID());
     }
 
     /**

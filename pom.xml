@@ -58,7 +58,7 @@
 									<exclude>org.spigotmc:spigot-api</exclude>
 									<exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
 									<exclude>net.ess3:Essentials</exclude>
-								</excludes> <!-- TODO: http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
+                                </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
 							</artifactSet>
 						</configuration>
 					</execution>
@@ -180,6 +180,7 @@
 			<groupId>net.ess3</groupId>
 			<artifactId>Essentials</artifactId>
 			<version>2.13.1</version>
+            <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.github.xaanit</groupId>

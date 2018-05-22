@@ -20,12 +20,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 	}
 
 	@Override
-	public void run(IMessage message, String args) {
-		if (args.contains(" ")) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Too many arguments.\nUsage: userinfo [username/nickname[#tag]/ping]\nExamples:\nuserinfo ChromaBot\nuserinfo ChromaBot#6338\nuserinfo @ChromaBot#6338");
-			return;
-		}
+    public boolean run(IMessage message, String args) {
 		IUser target = null;
 		if (args.length() == 0)
 			target = message.getAuthor();
@@ -40,7 +35,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 							"The user cannot be found (by name): " + args);
-					return;
+                    return true;
 				}
 				for (IUser ptarget : targets) {
 					if (ptarget.getDiscriminator().equalsIgnoreCase(targettag[1])) {
@@ -52,19 +47,19 @@ public class UserinfoCommand extends DiscordCommandBase {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 							"The user cannot be found (by discriminator): " + args + "(Found " + targets.size()
 									+ " users with the name.)");
-					return;
+                    return true;
 				}
 			} else {
 				final List<IUser> targets = getUsers(message, args);
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 							"The user cannot be found on Discord: " + args);
-					return;
+                    return true;
 				}
 				if (targets.size() > 1) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 							"Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.");
-					return;
+                    return true;
 				}
 				target = targets.get(0);
 			}
@@ -77,6 +72,7 @@ public class UserinfoCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while getting the user!");
 			TBMCCoreAPI.SendException("Error while getting info about " + target.getName() + "!", e);
 		}
+        return true;
 	}
 
 	private List<IUser> getUsers(IMessage message, String args) {
@@ -94,7 +90,8 @@ public class UserinfoCommand extends DiscordCommandBase {
 		return new String[] { //
 				"---- User information ----", //
 				"Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.", //
-				"Usage: userinfo <Discordname>" //
+                "If used without args, shows your info.", //
+                "Usage: userinfo [username/nickname[#tag]/ping]\nExamples:\nuserinfo ChromaBot\nuserinfo ChromaBot#6338\nuserinfo @ChromaBot#6338" //
 		};
 	}
 

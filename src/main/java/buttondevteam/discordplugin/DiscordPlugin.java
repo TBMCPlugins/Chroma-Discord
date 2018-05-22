@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -132,6 +133,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     new ChromaBot(this).updatePlayerList();
                     //Get all roles with the default color
                     GameRoles = mainServer.getRoles().stream().filter(r -> r.getColor().getAlpha() == 0).map(IRole::getName).collect(Collectors.toList());
+                    DiscordCommandBase.registerCommands();
                     if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());

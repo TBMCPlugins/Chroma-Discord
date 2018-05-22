@@ -14,7 +14,7 @@ public class HelpCommand extends DiscordCommandBase {
 	}
 
 	@Override
-	public void run(IMessage message, String args) {
+    public boolean run(IMessage message, String args) {
 		DiscordCommandBase argdc;
 		if (args.length() == 0)
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -24,6 +24,7 @@ public class HelpCommand extends DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					(argdc = DiscordCommandBase.commands.get(args)) == null ? "Command not found: " + args
 							: Arrays.stream(argdc.getHelpText()).collect(Collectors.joining("\n")));
+        return true;
 	}
 
 	@Override

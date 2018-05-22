@@ -17,17 +17,14 @@ public class RoleCommand extends DiscordCommandBase {
 	}
 
 	@Override
-	public void run(IMessage message, String args) {
-		final String usagemsg = "Subcommands: add, remove, list";
-		if (args.length() == 0) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), usagemsg);
-			return;
-		}
-		String[] argsa = args.split(" ");
+    public boolean run(IMessage message, String args) {
+        if (args.length() == 0)
+            return false;
+        String[] argsa = splitargs(args);
 		if (argsa[0].equalsIgnoreCase("add")) {
 			final IRole role = checkAndGetRole(message, argsa, "This command adds a game role to your account.");
 			if (role == null)
-				return;
+                return true;
 			try {
 				DPUtils.perform(() -> message.getAuthor().addRole(role));
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "Added game role.");
@@ -38,7 +35,7 @@ public class RoleCommand extends DiscordCommandBase {
 		} else if (argsa[0].equalsIgnoreCase("remove")) {
 			final IRole role = checkAndGetRole(message, argsa, "This command removes a game role from your account.");
 			if (role == null)
-				return;
+                return true;
 			try {
 				DPUtils.perform(() -> message.getAuthor().removeRole(role));
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "Removed game role.");
@@ -49,7 +46,8 @@ public class RoleCommand extends DiscordCommandBase {
 		} else if (argsa[0].equalsIgnoreCase("list")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"List of game roles:\n" + DiscordPlugin.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
-		} else DiscordPlugin.sendMessageToChannel(message.getChannel(), usagemsg);
+        } else return false;
+        return true;
 	}
 
 	private IRole checkAndGetRole(IMessage message, String[] argsa, String usage) {
@@ -87,7 +85,7 @@ public class RoleCommand extends DiscordCommandBase {
 		return new String[] { //
 				"Add or remove game roles from yourself.", //
 				"Usage: role add|remove <name> or role list", //
-				"Mods can use role addrole <name> to add a role as a game role" };
+        };
 	}
 
 }

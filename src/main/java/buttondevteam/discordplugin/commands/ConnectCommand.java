@@ -25,15 +25,13 @@ public class ConnectCommand extends DiscordCommandBase {
 	public static HashBiMap<String, String> WaitingToConnect = HashBiMap.create();
 
 	@Override
-	public void run(IMessage message, String args) {
-		if (args.length() == 0) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Usage: connect <Minecraftname>");
-			return;
-		}
+	public boolean run(IMessage message, String args) {
+		if (args.length() == 0)
+			return true;
 		if (args.contains(" ")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Too many arguments.\nUsage: connect <Minecraftname>");
-			return;
+			return true;
 		}
 		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -44,13 +42,13 @@ public class ConnectCommand extends DiscordCommandBase {
 		OfflinePlayer p = Bukkit.getOfflinePlayer(args);
 		if (p == null) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
-			return;
+			return true;
 		}
 		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
 			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
 			if (dp != null && message.getAuthor().getStringID().equals(dp.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
-				return;
+				return true;
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
@@ -63,6 +61,7 @@ public class ConnectCommand extends DiscordCommandBase {
 		if (p.isOnline())
 			((Player) p).sendMessage("§bTo connect with the Discord account " + message.getAuthor().getName() + "#"
 					+ message.getAuthor().getDiscriminator() + " do /discord accept");
+		return true;
 	}
 
 	@Override
