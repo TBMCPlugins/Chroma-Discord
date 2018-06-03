@@ -121,7 +121,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
             if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
-                    && isdifferentchannel.test(DiscordPlugin.chatchannel))
+                    && (!e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
                 doit.accept(lastmsgdata == null
                         ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
                         : lastmsgdata);
