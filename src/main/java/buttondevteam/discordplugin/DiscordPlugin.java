@@ -233,6 +233,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         ChromaBot.getInstance().updatePlayerList();
         try {
             SafeMode = true; // Stop interacting with Discord
+            MCChatListener.stop();
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();

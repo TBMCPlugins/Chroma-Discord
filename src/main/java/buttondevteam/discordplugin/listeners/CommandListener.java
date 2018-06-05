@@ -160,8 +160,10 @@ public class CommandListener {
 	 * @return Whether it ran the command (always true if mentionedonly is false)
 	 */
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
+        debug("A");
 		if (DiscordPlugin.SafeMode)
 			return true;
+        debug("B");
 		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
@@ -169,25 +171,40 @@ public class CommandListener {
 		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
         for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(r -> r.mention())::iterator)
 			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
+        debug("C");
 		if (mentionedonly && !gotmention) {
 			message.getChannel().setTypingStatus(false);
 			return false;
 		}
+        debug("D");
 		message.getChannel().setTypingStatus(true);
-		int index = cmdwithargs.indexOf(" ");
+        String cmdwithargsString = cmdwithargs.toString().trim(); //Remove spaces between mention and command
+        int index = cmdwithargsString.indexOf(" ");
 		String cmd;
 		String args;
 		if (index == -1) {
-			cmd = cmdwithargs.toString();
+            cmd = cmdwithargsString;
 			args = "";
 		} else {
-			cmd = cmdwithargs.substring(0, index);
-			args = cmdwithargs.substring(index + 1).trim(); //In case there are multiple spaces
-		}
+            cmd = cmdwithargsString.substring(0, index);
+            args = cmdwithargsString.substring(index + 1).trim(); //In case there are multiple spaces
+        }
+        debug("E");
 		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);
 		message.getChannel().setTypingStatus(false);
 		return true;
 	}
+
+    private static boolean debug = false;
+
+    public static void debug(String debug) {
+        if (CommandListener.debug) //Debug
+            System.out.println(debug);
+    }
+
+    public static boolean debug() {
+        return debug = !debug;
+    }
 
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text

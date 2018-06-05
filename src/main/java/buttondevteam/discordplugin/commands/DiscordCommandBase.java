@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+import static buttondevteam.discordplugin.listeners.CommandListener.debug;
+
 public abstract class DiscordCommandBase {
 	public abstract String getCommandName();
 
@@ -24,9 +26,11 @@ public abstract class DiscordCommandBase {
 		commands.put("role", new RoleCommand());
 		commands.put("mcchat", new MCChatCommand());
 		commands.put("channelcon", new ChannelconCommand());
+		commands.put("debug", new DebugCommand());
 	}
 
 	public static void runCommand(String cmd, String args, IMessage message) {
+		debug("F"); //Not sure if needed
 		DiscordCommandBase command = commands.get(cmd);
 		if (command == null) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -35,6 +39,7 @@ public abstract class DiscordCommandBase {
 							+ "help' for help");
 			return;
 		}
+		debug("G");
 		try {
 			if (!command.run(message, args))
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), Arrays.stream(command.getHelpText()).collect(Collectors.joining("\n")));
@@ -43,6 +48,7 @@ public abstract class DiscordCommandBase {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"An internal error occured while executing this command. For more technical details see the server-issues channel on the dev Discord.");
 		}
+		debug("H");
 	}
 
 	protected String[] splitargs(String args) {

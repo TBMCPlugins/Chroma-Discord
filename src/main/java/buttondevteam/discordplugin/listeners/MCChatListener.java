@@ -45,6 +45,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private BukkitTask sendtask;
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
+    private static Thread sendthread;
 
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
@@ -54,6 +55,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         if (sendtask != null)
             return;
         sendrunnable = () -> {
+            sendthread = Thread.currentThread();
             processMCToDiscord();
             sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
         };
@@ -121,13 +123,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
             if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
-                    && (!e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
+                    && (e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
                 doit.accept(lastmsgdata == null
                         ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null, null)
                         : lastmsgdata);
 
             for (LastMsgData data : lastmsgPerUser) {
-                if (data.dp.isMinecraftChatEnabled() && isdifferentchannel.test(data.channel)
+                if (data.dp.isMinecraftChatEnabled() && (e.isFromcmd() || isdifferentchannel.test(data.channel))
                         && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
                     doit.accept(data);
             }
@@ -168,7 +170,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     }
 
     private static final String[] UnconnectedCmds = new String[]{"list", "u", "shrug", "tableflip", "unflip", "mwiki",
-            "yeehaw"};
+            "yeehaw", "lenny"};
 
     private static LastMsgData lastmsgdata;
     private static short lastlist = 0;
@@ -286,10 +288,16 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 action.accept(data.channel);
     }
 
+    public static void stop() {
+        if (sendthread != null) sendthread.interrupt();
+        if (recthread != null) recthread.interrupt();
+    }
+
     private BukkitTask rectask;
     private LinkedBlockingQueue<MessageReceivedEvent> recevents = new LinkedBlockingQueue<>();
     private IMessage lastmsgfromd; // Last message sent by a Discord user, used for clearing checkmarks
     private Runnable recrun;
+    private static Thread recthread;
 
     @Override // Discord
     public void handle(MessageReceivedEvent ev) {
@@ -314,6 +322,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         if (rectask != null)
             return;
         recrun = () -> { //Don't return in a while loop next time
+            recthread = Thread.currentThread();
             processDiscordToMC();
             rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
         };
