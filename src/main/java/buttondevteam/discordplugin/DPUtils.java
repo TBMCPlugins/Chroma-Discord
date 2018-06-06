@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import org.bukkit.Bukkit;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
 import sx.blah.discord.util.RequestBuffer.IRequest;
@@ -34,10 +35,13 @@ public final class DPUtils {
 	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
 	 */
 	public static <T> T perform(IRequest<T> action) {
+        System.out.println("performA");
 		if (DiscordPlugin.SafeMode)
 			return null;
-		// if (Thread.currentThread() == DiscordPlugin.mainThread) - TODO: Ignore shutdown message <--
+        System.out.println("performB");
+        if (Thread.currentThread() == DiscordPlugin.mainThread) // TODO: Ignore shutdown message <--
 		// throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
+            Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}
 

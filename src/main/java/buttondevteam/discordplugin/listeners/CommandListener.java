@@ -127,7 +127,7 @@ public class CommandListener {
 			}
         }, (IListener<RoleCreateEvent>) event -> {
             Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-                if (event.getRole().isDeleted() || event.getRole().getColor().getAlpha() != 0)
+                if (event.getRole().isDeleted() || DiscordPlugin.plugin.isGameRole(event.getRole()))
                     return; //Deleted or not a game role
                 DiscordPlugin.GameRoles.add(event.getRole().getName());
                 DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getRole().getName() + " as game role. If you don't want this, change the role's color from the default.");
@@ -136,10 +136,10 @@ public class CommandListener {
             if (DiscordPlugin.GameRoles.remove(event.getRole().getName()))
                 DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getRole().getName() + " as a game role.");
 		}, (IListener<RoleUpdateEvent>) event -> { //Role update event
-			if (event.getNewRole().getColor().getAlpha() != 0)
+            if (!DiscordPlugin.plugin.isGameRole(event.getNewRole())) {
 				if (DiscordPlugin.GameRoles.remove(event.getOldRole().getName()))
-                DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getOldRole().getName() + " as a game role because it's color changed.");
-				else {
+                    DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getOldRole().getName() + " as a game role because it's color changed.");
+            } else {
 					boolean removed = DiscordPlugin.GameRoles.remove(event.getOldRole().getName()); //Regardless of whether it was a game role
 					DiscordPlugin.GameRoles.add(event.getNewRole().getName()); //Add it because it has no color
 					if (removed)

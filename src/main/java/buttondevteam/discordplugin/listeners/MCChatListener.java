@@ -275,9 +275,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     }
 
     public static void forAllMCChat(Consumer<IChannel> action) {
+        System.out.println("XA");
         action.accept(DiscordPlugin.chatchannel);
+        System.out.println("XB");
         for (LastMsgData data : lastmsgPerUser)
             action.accept(data.channel);
+        System.out.println("XC");
     }
 
     private static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
@@ -390,14 +393,15 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     int spi = cmd.indexOf(' ');
                     final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
                     Optional<Channel> ch = Channel.getChannels().stream()
-                            .filter(c -> c.ID.equalsIgnoreCase(topcmd)).findAny();
+                            .filter(c -> c.ID.equalsIgnoreCase(topcmd)
+                                    || (c.IDs != null && c.IDs.length > 0
+                                    && Arrays.stream(c.IDs).noneMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
                     if (!ch.isPresent())
                         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
                                 () -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
                     else {
                         Channel chc = ch.get();
-                        if (!chc.ID.equals(Channel.GlobalChat.ID)
-                                && !event.getMessage().getChannel().isPrivate())
+                        if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
                             dsender.sendMessage(
                                     "You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
                         else {
