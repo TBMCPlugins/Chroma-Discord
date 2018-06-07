@@ -151,12 +151,11 @@
 			<version>1.12.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
+        <!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
 		<dependency>
-			<groupId>com.github.austinv11</groupId>
-			<artifactId>Discord4j</artifactId>
-			<version>master-SNAPSHOT</version>
-			<!-- <classifier>shaded</classifier> --> <!-- Include this line if you want a shaded jar (all the Discord4J dependencies 
-				bundled into one jar) -->
+            <groupId>com.discord4j</groupId>
+            <artifactId>Discord4J</artifactId>
+            <version>2.10.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
