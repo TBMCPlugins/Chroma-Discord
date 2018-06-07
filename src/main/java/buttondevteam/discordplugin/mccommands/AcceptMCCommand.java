@@ -17,7 +17,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		return new String[] { //
 				"§6---- Accept Discord connection ----", //
 				"Accept a pending connection between your Discord and Minecraft account.", //
-				"To start the connection process, do §b@ChromaBot connect <MCname>§r in the #bot channel on Discord", //
+                "To start the connection process, do §b/connect <MCname>§r in the #bot channel on Discord", //
 				"Usage: /" + alias + " accept" //
 		};
 	}

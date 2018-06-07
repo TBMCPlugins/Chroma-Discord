@@ -10,6 +10,7 @@ import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
+import com.vdurmont.emoji.EmojiParser;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -57,7 +58,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         sendrunnable = () -> {
             sendthread = Thread.currentThread();
             processMCToDiscord();
-            sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
+            if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
+                sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
         };
         sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
     }
@@ -170,7 +172,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     }
 
     private static final String[] UnconnectedCmds = new String[]{"list", "u", "shrug", "tableflip", "unflip", "mwiki",
-            "yeehaw", "lenny"};
+            "yeehaw", "lenny", "rp", "plugins"};
 
     private static LastMsgData lastmsgdata;
     private static short lastlist = 0;
@@ -327,7 +329,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         recrun = () -> { //Don't return in a while loop next time
             recthread = Thread.currentThread();
             processDiscordToMC();
-            rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
+            if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
+                rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
         };
         rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
     }
@@ -353,6 +356,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
             }
 
+            dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
+            dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:"); //Convert to Discord's format so it still shows up
+
             BiConsumer<Channel, String> sendChatMessage = (channel, msg) -> //
                     TBMCChatAPI.SendChatMessage(channel, dsender,
                             msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
@@ -375,10 +381,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                             + Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
                             .collect(Collectors.joining(", "))
                             + (user.getConnectedID(TBMCPlayer.class) == null
-                            ? "\nTo access your commands, first please connect your accounts, using @ChromaBot connect in "
+                            ? "\nTo access your commands, first please connect your accounts, using /connect in "
                             + DiscordPlugin.botchannel.mention()
-                            + "\nThen you can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"
-                            : "\nYou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!"));
+                            + "\nThen y"
+                            : "\nY")
+                            + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
                     return;
                 }
                 if (lastlist > 5) {
@@ -395,13 +402,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     Optional<Channel> ch = Channel.getChannels().stream()
                             .filter(c -> c.ID.equalsIgnoreCase(topcmd)
                                     || (c.IDs != null && c.IDs.length > 0
-                                    && Arrays.stream(c.IDs).noneMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
+                                    && Arrays.stream(c.IDs).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
                     if (!ch.isPresent())
                         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
                                 () -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
                     else {
                         Channel chc = ch.get();
-                        if (!chc.ID.equals(Channel.GlobalChat.ID) && !event.getMessage().getChannel().isPrivate())
+                        if (!chc.ID.equals(Channel.GlobalChat.ID) && !chc.ID.equals("rp") && !event.getMessage().getChannel().isPrivate())
                             dsender.sendMessage(
                                     "You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
                         else {

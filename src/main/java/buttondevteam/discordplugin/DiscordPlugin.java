@@ -32,6 +32,7 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
@@ -243,7 +244,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                                         + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
                                         + "asked *politely* to leave the server for a bit.")
                                         : "")
-                        .build()));
+                        .build(), 5, TimeUnit.SECONDS));
         System.out.println("XY");
         ChromaBot.getInstance().updatePlayerList();
         try {
@@ -349,12 +350,25 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         return sendMessageToChannel(channel, message, embed, true);
     }
 
+    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed, long timeout, TimeUnit unit) {
+        System.out.println("lol!");
+        return sendMessageToChannel(channel, message, embed, true, timeout, unit);
+    }
+
     private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
+        return sendMessageToChannel(channel, message, embed, wait, -1, null);
+    }
+
+    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) {
+        System.out.println("lolwut");
         if (message.length() > 1980) {
+            System.out.println("wut");
             message = message.substring(0, 1980);
             Bukkit.getLogger()
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
+            System.out.println("wat");
         }
+        System.out.println("wot");
         try {
             System.out.println("sendA");
             if (channel == chatchannel)
@@ -366,10 +380,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
                     : channel.sendMessage(content, embed, false);
             System.out.println("sendC");
-            if (wait)
-                return DPUtils.perform(r);
-            else {
-                DPUtils.performNoWait(r);
+            if (wait) {
+                if (unit != null)
+                    return DPUtils.perform(r, timeout, unit);
+                else
+                    return DPUtils.perform(r);
+            } else {
+                if (unit != null)
+                    plugin.getLogger().warning("Tried to set timeout for non-waiting call.");
+                else
+                    DPUtils.performNoWait(r);
                 return null;
             }
         } catch (Exception e) {

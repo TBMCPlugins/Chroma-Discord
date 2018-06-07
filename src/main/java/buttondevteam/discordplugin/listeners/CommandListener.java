@@ -145,7 +145,7 @@ public class CommandListener {
 					if (removed)
 						DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Changed game role from " + event.getOldRole().getName() + " to " + event.getNewRole().getName() + ".");
 					else
-						DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getNewRole().getName() + " as game role because it has no color.");
+                        DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getNewRole().getName() + " as game role because it has the default color.");
 				}
         }};
 	}

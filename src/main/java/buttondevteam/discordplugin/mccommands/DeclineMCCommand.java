@@ -12,7 +12,7 @@ public class DeclineMCCommand extends DiscordMCCommandBase {
 		return new String[] { //
 				"§6---- Decline Discord connection ----", //
 				"Decline a pending connection between your Discord and Minecraft account.", //
-				"To start the connection process, do §b@ChromaBot connect <MCname>§r in the #bot channel on Discord", //
+				"To start the connection process, do §b/connect <MCname>§r in the #bot channel on Discord", //
 				"Usage: /" + alias + " decline" //
 		};
 	}

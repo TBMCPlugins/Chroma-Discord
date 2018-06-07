@@ -28,9 +28,14 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("you need to have manage permissions for this channel!");
             return true;
         }
-        //TODO: What if they no longer have permission to view the channel
-        if (MCChatListener.hasCustomChat(message.getChannel())) { //TODO: Remove command
-            message.reply("this channel is already connected to a Minecraft channel.");
+        //TODO: What if they no longer have permission to view the channel - check on some message events and startup - if somebody who can view the channel (on both platforms) has their accounts connected, keep it
+        if (MCChatListener.hasCustomChat(message.getChannel())) {
+            if (args.equalsIgnoreCase("remove")) {
+                MCChatListener.removeCustomChat(message.getChannel());
+                message.reply("channel connection removed.");
+                return true;
+            }
+            message.reply("this channel is already connected to a Minecraft channel. Use `/channelcon remove` to remove it.");
             return true;
         }
         val chan = Channel.getChannels().stream().filter(ch -> ch.ID.equalsIgnoreCase(args) || (ch.IDs != null && Arrays.stream(ch.IDs).anyMatch(cid -> cid.equalsIgnoreCase(args)))).findAny();
@@ -40,7 +45,7 @@ public class ChannelconCommand extends DiscordCommandBase {
         }
         val chp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class).getAs(TBMCPlayer.class);
         if (chp == null) {
-            message.reply("you need to connect your Minecraft account. In #bot do @ChromaBot connect <MCname>");
+            message.reply("you need to connect your Minecraft account. In this channel or on our server in #bot do /connect <MCname>");
             return true;
         }
         val ev = new TBMCChannelConnectEvent(new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName()), chan.get());
@@ -57,11 +62,12 @@ public class ChannelconCommand extends DiscordCommandBase {
     @Override
     public String[] getHelpText() {
         return new String[]{ //
-                "§6---- Channel connect ---", //
+                "---- Channel connect ---", //
                 "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
                 "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
-                "You also need to have your Minecraft account connected. In #bot use @ChromaBot connect <mcname>.", //
-                "Call this command from the channel you want to use. Usage: @ChromaBot channelcon <mcchannel>", //
+                "You also need to have your Minecraft account connected. In #bot use /connect <mcname>.", //
+                "Call this command from the channel you want to use. Usage: /channelcon <mcchannel>", //
+                "To remove a connection use /channelcon remove in the channel.", //
                 "Invite link: https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot" //
         };
     }
