@@ -373,9 +373,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                         event.getMessage().delete();
                 });
                 preprocessChat(dsender, dmessage);
-                final String cmd = dmessage.substring(1).toLowerCase();
+                final String cmdlowercased = dmessage.substring(1).toLowerCase();
                 if (dsender instanceof DiscordSender && Arrays.stream(UnconnectedCmds)
-                        .noneMatch(s -> cmd.equals(s) || cmd.startsWith(s + " "))) {
+                        .noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
                     // Command not whitelisted
                     dsender.sendMessage("Sorry, you can only access these commands:\n"
                             + Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
@@ -392,20 +392,23 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     ListC = 0;
                     lastlist = 0;
                 }
-                if (cmd.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
+                if (cmdlowercased.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
                 {
                     dsender.sendMessage("Stop it. You know the answer.");
                     lastlist = 0;
                 } else {
-                    int spi = cmd.indexOf(' ');
-                    final String topcmd = spi == -1 ? cmd : cmd.substring(0, spi);
+                    int spi = cmdlowercased.indexOf(' ');
+                    final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
                     Optional<Channel> ch = Channel.getChannels().stream()
                             .filter(c -> c.ID.equalsIgnoreCase(topcmd)
                                     || (c.IDs != null && c.IDs.length > 0
                                     && Arrays.stream(c.IDs).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
                     if (!ch.isPresent())
                         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-                                () -> VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd));
+                                () -> {
+                                    VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmdlowercased);
+                                    Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
+                                });
                     else {
                         Channel chc = ch.get();
                         if (!chc.ID.equals(Channel.GlobalChat.ID) && !chc.ID.equals("rp") && !event.getMessage().getChannel().isPrivate())
@@ -426,7 +429,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                                 dsender.sendMessage("You're now talking in: "
                                         + DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
                             } else { // Send single message
-                                sendChatMessage.accept(chc, cmd.substring(spi + 1));
+                                sendChatMessage.accept(chc, event.getMessage().getContent().substring(spi + 2));
                                 react = true;
                             }
                         }
@@ -436,7 +439,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
                         && !event.getChannel().isPrivate())
-                    TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0,
+                    TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0, "everyone",
                             (dsender instanceof Player ? ((Player) dsender).getDisplayName()
                                     : dsender.getName()) + " pinned a message on Discord.");
                 else {

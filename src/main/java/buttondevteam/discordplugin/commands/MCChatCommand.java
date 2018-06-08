@@ -25,7 +25,7 @@ public class MCChatCommand extends DiscordCommandBase {
 			MCChatListener.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Minecraft chat " + (mcchat //
-							? "enabled. Use '/mcchat' to disable." //
+                            ? "enabled. Use '/mcchat' again to turn it off." //
 							: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
