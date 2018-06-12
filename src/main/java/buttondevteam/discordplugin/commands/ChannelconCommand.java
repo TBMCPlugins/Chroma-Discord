@@ -37,7 +37,7 @@ public class ChannelconCommand extends DiscordCommandBase {
                     message.reply("wait what, couldn't remove channel connection.");
                 return true;
             }
-            message.reply("this channel is already connected to a Minecraft channel. Use `/channelcon remove` to remove it.");
+            message.reply("this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
             return true;
         }
         val chan = Channel.getChannels().stream().filter(ch -> ch.ID.equalsIgnoreCase(args) || (ch.IDs != null && Arrays.stream(ch.IDs).anyMatch(cid -> cid.equalsIgnoreCase(args)))).findAny();
@@ -45,9 +45,10 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("MC channel with ID '" + args + "' not found! The ID is the command for it without the /.");
             return true;
         }
-        val chp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class).getAs(TBMCPlayer.class);
+        val dp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class);
+        val chp = dp.getAs(TBMCPlayer.class);
         if (chp == null) {
-            message.reply("you need to connect your Minecraft account. In this channel or on our server in #bot do /connect <MCname>");
+            message.reply("you need to connect your Minecraft account. On our server in #bot do /connect <MCname>");
             return true;
         }
         val ev = new TBMCChannelConnectFakeEvent(new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName()), chan.get());
@@ -57,7 +58,7 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("sorry, that didn't work. You cannot use that Minecraft channel.");
             return true;
         }
-        MCChatListener.addCustomChat(message.getChannel(), args, ev.getChannel());
+        MCChatListener.addCustomChat(message.getChannel(), args, ev.getChannel(), dp, message.getAuthor()); //TODO: SAVE
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }
@@ -72,7 +73,7 @@ public class ChannelconCommand extends DiscordCommandBase {
                 "Call this command from the channel you want to use. Usage: @ChromaBot channelcon <mcchannel>", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
                 "Mentioning the bot is needed in this case because the / prefix only works in #bot.", //
-                "Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot>" //
+                "Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot&permissions=268509264>" //
         };
     }
 }

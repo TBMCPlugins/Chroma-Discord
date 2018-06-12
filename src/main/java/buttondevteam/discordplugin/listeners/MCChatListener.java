@@ -121,6 +121,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     }
             };
             // Checks if the given channel is different than where the message was sent from
+            // Or if it was from MC
             Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
@@ -132,8 +133,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
             for (LastMsgData data : lastmsgPerUser) {
                 if (data.dp.isMinecraftChatEnabled() && (e.isFromcmd() || isdifferentchannel.test(data.channel))
-                        && e.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+                        && e.shouldSendTo(getSender(data.channel, data.user)))
                     doit.accept(data);
+            }
+
+            val iterator = lastmsgCustom.iterator();
+            while (iterator.hasNext()) { //TODO: Add cmd to fix mcchat
+                val lmd = iterator.next();
+                if ((e.isFromcmd() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
+                        && e.getChannel().ID.equals(lmd.mcchannel.ID)) //If it's from a command, the command msg has been deleted, so we need to send it
+                    if (e.shouldSendTo(getSender(lmd.channel, lmd.user)) && e.getGroupID().equals(lmd.groupID))
+                        doit.accept(lmd); //TODO: Store dcp and check that both ways, add option to not check sender perms on msg
+                    else {
+                        iterator.remove(); //If the user no longer has permission, remove the connection
+                        DiscordPlugin.sendMessageToChannel(lmd.channel, "The user no longer has permission to view the channel, connection removed.");
+                    }
             }
         } catch (Exception ex) {
             TBMCCoreAPI.SendException("Error while sending message to Discord!", ex);
@@ -149,6 +163,18 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         public Channel mcchannel;
         public final IUser user;
         public final DiscordPlayer dp;
+    }
+
+    private static class CustomLMD extends LastMsgData {
+        public final String groupID;
+        public final Channel mcchannel;
+
+        public CustomLMD(IChannel channel, IUser user, DiscordPlayer dp, String groupid, Channel mcchannel) {
+            super(channel, user, dp);
+            groupID = groupid;
+            this.mcchannel = mcchannel;
+
+        }
     }
 
     @EventHandler
@@ -184,7 +210,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     /**
      * Used for town or nation chats or anything else
      */
-    private static HashMap<LastMsgData, String> lastmsgCustom = new HashMap<>();
+    private static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
 
     public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
         TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
@@ -228,18 +254,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 .anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
     }
 
-    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel) {
-        val lmd = new LastMsgData(channel, null, null);
-        lmd.mcchannel = mcchannel;
-        lastmsgCustom.put(lmd, groupid);
+    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel, DiscordPlayer dp, IUser user) {
+        val lmd = new CustomLMD(channel, user, dp, groupid, mcchannel);
+        lastmsgCustom.add(lmd);
     }
 
     public static boolean hasCustomChat(IChannel channel) {
-        return lastmsgCustom.entrySet().stream().anyMatch(lmd -> lmd.getKey().channel.getLongID() == channel.getLongID());
+        return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getLongID() == channel.getLongID());
+    }
+
+    public static CustomLMD getCustomChat(IChannel channel) {
+        return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
     }
 
     public static boolean removeCustomChat(IChannel channel) {
-        return lastmsgCustom.entrySet().removeIf(lmd -> lmd.getKey().channel.getLongID() == channel.getLongID());
+        return lastmsgCustom.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
     }
 
     /**
@@ -262,6 +291,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         for (LastMsgData data : lastmsgPerUser)
             if (data.channel.getLongID() == channel.getLongID())
                 data.message = null; // Since only private channels are stored, only those will work anyways
+    }
+
+    public static void resetLastMessageCustom(IChannel channel) {
+        for (LastMsgData data : lastmsgCustom)
+            if (data.channel.getLongID() == channel.getLongID())
+                data.message = null;
     }
 
     /**
@@ -289,7 +324,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
             action.accept(DiscordPlugin.chatchannel);
         for (LastMsgData data : lastmsgPerUser)
-            if (event.shouldSendTo(getSender(data.channel, data.user, data.dp)))
+            if (event.shouldSendTo(getSender(data.channel, data.user)))
                 action.accept(data.channel);
     }
 
@@ -309,10 +344,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         if (DiscordPlugin.SafeMode)
             return;
         val author = ev.getMessage().getAuthor();
-        if (!ev.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-                && !(ev.getMessage().getChannel().isPrivate() && isMinecraftChatEnabled(author.getStringID())))
-            return;
         if (author.isBot())
+            return;
+        final boolean hasCustomChat = hasCustomChat(ev.getChannel());
+        if (!ev.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
+                && !(ev.getMessage().getChannel().isPrivate() && isMinecraftChatEnabled(author.getStringID()))
+                && !hasCustomChat)
             return;
         if (ev.getMessage().getContent().equalsIgnoreCase("mcchat"))
             return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommandListener)
@@ -320,6 +357,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             return;
         if (!ev.getMessage().getChannel().isPrivate())
             resetLastMessage();
+        else if (hasCustomChat)
+            resetLastMessageCustom(ev.getChannel());
         else
             resetLastMessage(ev.getMessage().getChannel());
         lastlist++;
@@ -348,7 +387,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         val user = DiscordPlayer.getUser(sender.getStringID(), DiscordPlayer.class);
         String dmessage = event.getMessage().getContent();
         try {
-            final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender, user);
+            final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender);
 
             for (IUser u : event.getMessage().getMentions()) {
                 dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
@@ -438,11 +477,14 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 lastlistp = (short) Bukkit.getOnlinePlayers().size();
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-                        && !event.getChannel().isPrivate())
+                        && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage())
                     TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0, "everyone",
                             (dsender instanceof Player ? ((Player) dsender).getDisplayName()
                                     : dsender.getName()) + " pinned a message on Discord.");
-                else {
+                else if (hasCustomChat(event.getChannel())) {
+                    val cc = getCustomChat(event.getChannel());
+                    sendChatMessage.accept(cc.mcchannel, dmessage);
+                } else {
                     sendChatMessage.accept(dsender.getMcchannel(), dmessage);
                     react = true;
                 }
@@ -507,7 +549,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     /**
      * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
      */
-    private static DiscordSenderBase getSender(IChannel channel, final IUser author, DiscordPlayer dp) {
+    private static DiscordSenderBase getSender(IChannel channel, final IUser author) {
         val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
         return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
                 () -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null

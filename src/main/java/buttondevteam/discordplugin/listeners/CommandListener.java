@@ -73,7 +73,7 @@ public class CommandListener {
                     return;
                 final IChannel channel = event.getMessage().getChannel();
                 if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID())
-                        && !event.getMessage().getContent().contains("channelcon"))
+                        && (!event.getMessage().getContent().contains("channelcon") || MCChatListener.hasCustomChat(channel))) //Allow channelcon in other servers but avoid double handling when it's enabled
                     return;
                 if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
                     return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
