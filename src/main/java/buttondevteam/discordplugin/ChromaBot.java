@@ -46,7 +46,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a message to the chat channel and private chats.
+	 * Send a message to the chat channels and private chats.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -72,7 +72,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -85,7 +85,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -100,7 +100,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -117,7 +117,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a message to the chat channel. This will show a bold text with a colored line.
+	 * Send a message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh

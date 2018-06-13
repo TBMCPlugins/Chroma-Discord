@@ -28,7 +28,6 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("you need to have manage permissions for this channel!");
             return true;
         }
-        //TODO: What if they no longer have permission to view the channel - check on some message events and startup - if somebody who can view the channel (on both platforms) has their accounts connected, keep it
         if (MCChatListener.hasCustomChat(message.getChannel())) {
             if (args.equalsIgnoreCase("remove")) {
                 if (MCChatListener.removeCustomChat(message.getChannel()))
@@ -51,14 +50,19 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("you need to connect your Minecraft account. On our server in #bot do /connect <MCname>");
             return true;
         }
-        val ev = new TBMCChannelConnectFakeEvent(new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName()), chan.get());
+        DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
+        val ev = new TBMCChannelConnectFakeEvent(dcp, chan.get());
         //Using a fake player with no login/logout, should be fine for this event
         String groupid = ev.getGroupID(ev.getSender()); //We're not trying to send in a specific group, we want to know which group the user belongs to (so not getGroupID())
         if (groupid == null) {
             message.reply("sorry, that didn't work. You cannot use that Minecraft channel.");
             return true;
         }
-        MCChatListener.addCustomChat(message.getChannel(), args, ev.getChannel(), dp, message.getAuthor()); //TODO: SAVE
+        if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
+            message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
+            return true;
+        }
+        MCChatListener.addCustomChat(message.getChannel(), groupid, ev.getChannel(), dp, message.getAuthor(), dcp);
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }

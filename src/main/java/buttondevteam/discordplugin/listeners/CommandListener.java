@@ -131,7 +131,7 @@ public class CommandListener {
             }
         }, (IListener<RoleCreateEvent>) event -> {
             Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-                if (event.getRole().isDeleted() || DiscordPlugin.plugin.isGameRole(event.getRole()))
+                if (event.getRole().isDeleted() || !DiscordPlugin.plugin.isGameRole(event.getRole()))
                     return; //Deleted or not a game role
                 DiscordPlugin.GameRoles.add(event.getRole().getName());
                 DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Added " + event.getRole().getName() + " as game role. If you don't want this, change the role's color from the default.");
@@ -216,7 +216,7 @@ public class CommandListener {
             else
                 cmdwithargs.replace(0, cmdwithargs.length(), "help");
         else {
-            if (cmdwithargs.charAt(0) == '/')
+            if (cmdwithargs.length() > 0 && cmdwithargs.charAt(0) == '/')
                 cmdwithargs.deleteCharAt(0); //Don't treat / as mention, mentions can be used in public mcchat
             return false;
         }

@@ -58,10 +58,8 @@ public final class DPUtils {
      */
     @Nullable
     public static <T> T perform(IRequest<T> action) {
-        System.out.println("performA");
         if (DiscordPlugin.SafeMode)
             return null;
-        System.out.println("performB");
         if (Thread.currentThread() == DiscordPlugin.mainThread) // TODO: Ignore shutdown message <--
             // throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
             Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
