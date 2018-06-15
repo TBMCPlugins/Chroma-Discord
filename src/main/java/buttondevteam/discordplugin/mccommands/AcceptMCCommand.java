@@ -1,7 +1,5 @@
 package buttondevteam.discordplugin.mccommands;
 
-import org.bukkit.entity.Player;
-
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.listeners.MCChatListener;
@@ -9,6 +7,7 @@ import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
+import org.bukkit.entity.Player;
 
 @CommandClass(modOnly = false, path = "accept")
 public class AcceptMCCommand extends DiscordMCCommandBase {
@@ -18,7 +17,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		return new String[] { //
 				"§6---- Accept Discord connection ----", //
 				"Accept a pending connection between your Discord and Minecraft account.", //
-				"To start the connection process, do §b@ChromaBot connect <MCname>§r in the #bot channel on Discord", //
+                "To start the connection process, do §b/connect <MCname>§r in the #bot channel on Discord", //
 				"Usage: /" + alias + " accept" //
 		};
 	}

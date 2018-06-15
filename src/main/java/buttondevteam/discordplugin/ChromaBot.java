@@ -1,18 +1,17 @@
 package buttondevteam.discordplugin;
 
-import java.awt.Color;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
+import buttondevteam.discordplugin.listeners.MCChatListener;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
-
-import buttondevteam.discordplugin.listeners.MCChatListener;
-import lombok.Getter;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.EmbedBuilder;
+
+import java.awt.*;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class ChromaBot {
 	/**
@@ -47,7 +46,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a message to the chat channel and private chats.
+	 * Send a message to the chat channels and private chats.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -73,7 +72,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -86,7 +85,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -101,7 +100,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a fancy message to the chat channel. This will show a bold text with a colored line.
+	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh
@@ -118,7 +117,7 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a message to the chat channel. This will show a bold text with a colored line.
+	 * Send a message to the chat channels. This will show a bold text with a colored line.
 	 * 
 	 * @param message
 	 *            The message to send, duh

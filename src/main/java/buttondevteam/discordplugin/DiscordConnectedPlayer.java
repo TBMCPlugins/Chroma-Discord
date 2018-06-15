@@ -1,12 +1,12 @@
 package buttondevteam.discordplugin;
 
-import java.util.UUID;
-
 import buttondevteam.discordplugin.playerfaker.DiscordFakePlayer;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import lombok.Getter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.UUID;
 
 public class DiscordConnectedPlayer extends DiscordFakePlayer implements IMCPlayer<DiscordConnectedPlayer> {
 	private static int nextEntityId = 10000;

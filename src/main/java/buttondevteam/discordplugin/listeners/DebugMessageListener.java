@@ -1,9 +1,9 @@
 package buttondevteam.discordplugin.listeners;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCDebugMessageEvent;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 public class DebugMessageListener implements Listener{
 	@EventHandler

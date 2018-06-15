@@ -1,7 +1,5 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import java.util.UUID;
-
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,9 +8,10 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.InventoryView.Property;
-
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.util.UUID;
 
 public abstract class DiscordHumanEntity extends DiscordLivingEntity implements HumanEntity {
 	protected DiscordHumanEntity(IUser user, IChannel channel, int entityId, UUID uuid) {

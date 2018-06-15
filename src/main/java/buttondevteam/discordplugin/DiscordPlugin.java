@@ -1,8 +1,10 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
@@ -30,8 +32,9 @@ import sx.blah.discord.util.RequestBuffer;
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
@@ -60,7 +63,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             plugin = this;
             lastannouncementtime = getConfig().getLong("lastannouncementtime");
             lastseentime = getConfig().getLong("lastseentime");
-            GameRoles = (List<String>) getConfig().getList("gameroles", new ArrayList<String>());
             ClientBuilder cb = new ClientBuilder();
             cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
             dc = cb.login();
@@ -77,6 +79,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static IChannel genchannel;
     public static IChannel chatchannel;
     public static IChannel botroomchannel;
+    public static IChannel modlogchannel;
     /**
      * Don't send messages, just receive, the same channel is used when testing
      */
@@ -109,6 +112,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
                     updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
                     devofficechannel = officechannel; // developers-office
+                    modlogchannel = mainServer.getChannelByID(283840717275791360L); // modlog
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Chromacraft");
                 } else {
                     botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
@@ -119,6 +123,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
                     updatechannel = botchannel;
                     devofficechannel = botchannel;// bot-room
+                    modlogchannel = botchannel; // bot-room
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
                 }
                 if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
@@ -129,6 +134,27 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     task.cancel();
                 if (!sent) {
                     new ChromaBot(this).updatePlayerList();
+                    GameRoles = mainServer.getRoles().stream().filter(this::isGameRole).map(IRole::getName).collect(Collectors.toList());
+
+                    val chcons = getConfig().getConfigurationSection("chcons");
+                    if (chcons != null) {
+                        val chconkeys = chcons.getKeys(false);
+                        for (val chconkey : chconkeys) {
+                            val chcon = chcons.getConfigurationSection(chconkey);
+                            val mcch = Channel.getChannels().stream().filter(ch -> ch.ID.equals(chcon.getString("mcchid"))).findAny();
+                            val ch = dc.getChannelByID(chcon.getLong("chid"));
+                            val did = chcon.getLong("did");
+                            val dp = DiscordPlayer.getUser(Long.toString(did), DiscordPlayer.class);
+                            val user = dc.fetchUser(did);
+                            val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
+                            val groupid = chcon.getString("groupid");
+                            if (!mcch.isPresent() || ch == null || user == null || groupid == null)
+                                continue;
+                            MCChatListener.addCustomChat(ch, groupid, mcch.get(), dp, user, dcp);
+                        }
+                    }
+
+                    DiscordCommandBase.registerCommands();
                     if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());
@@ -199,6 +225,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         }
     }
 
+    public boolean isGameRole(IRole r) {
+        if (r.getGuild().getLongID() != mainServer.getLongID())
+            return false; //Only allow on the main server
+        val rc = new Color(149, 165, 166, 0);
+        return r.getColor().equals(rc)
+                && r.getPosition() < mainServer.getRoleByID(234343495735836672L).getPosition(); //Below the ChromaBot role
+    }
+
     /**
      * Always true, except when running "stop" from console
      */
@@ -211,8 +245,20 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
-        getConfig().set("gameroles", GameRoles);
         getConfig().set("serverup", false);
+
+        val chcons = MCChatListener.getCustomChats();
+        val chconsc = getConfig().createSection("chcons");
+        for (val chcon : chcons) {
+            val chconc = chconsc.createSection(chcon.channel.getStringID());
+            chconc.set("mcchid", chcon.mcchannel.ID);
+            chconc.set("chid", chcon.channel.getLongID());
+            chconc.set("did", chcon.user.getLongID());
+            chconc.set("mcuid", chcon.dcp.getUniqueId().toString());
+            chconc.set("mcname", chcon.dcp.getName());
+            chconc.set("groupid", chcon.groupID);
+        }
+
         saveConfig();
         MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannelWait(ch, "",
                 new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
@@ -225,10 +271,11 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                                         + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
                                         + "asked *politely* to leave the server for a bit.")
                                         : "")
-                        .build()));
+                        .build(), 5, TimeUnit.SECONDS));
         ChromaBot.getInstance().updatePlayerList();
         try {
             SafeMode = true; // Stop interacting with Discord
+            MCChatListener.stop();
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
@@ -323,7 +370,15 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         return sendMessageToChannel(channel, message, embed, true);
     }
 
+    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed, long timeout, TimeUnit unit) {
+        return sendMessageToChannel(channel, message, embed, true, timeout, unit);
+    }
+
     private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
+        return sendMessageToChannel(channel, message, embed, wait, -1, null);
+    }
+
+    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) {
         if (message.length() > 1980) {
             message = message.substring(0, 1980);
             Bukkit.getLogger()
@@ -337,10 +392,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             final String content = message;
             RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
                     : channel.sendMessage(content, embed, false);
-            if (wait)
-                return DPUtils.perform(r);
-            else {
-                DPUtils.performNoWait(r);
+            if (wait) {
+                if (unit != null)
+                    return DPUtils.perform(r, timeout, unit);
+                else
+                    return DPUtils.perform(r);
+            } else {
+                if (unit != null)
+                    plugin.getLogger().warning("Tried to set timeout for non-waiting call.");
+                else
+                    DPUtils.performNoWait(r);
                 return null;
             }
         } catch (Exception e) {

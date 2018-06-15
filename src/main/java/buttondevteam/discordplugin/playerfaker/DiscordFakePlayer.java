@@ -1,24 +1,26 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import java.net.InetSocketAddress;
-import java.util.*;
+import buttondevteam.discordplugin.DiscordPlugin;
+import lombok.Getter;
+import lombok.experimental.Delegate;
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
-
-import buttondevteam.discordplugin.DiscordPlugin;
-import lombok.experimental.Delegate;
-import lombok.Getter;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+
+import java.net.InetSocketAddress;
+import java.util.*;
 
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid, String mcname) {

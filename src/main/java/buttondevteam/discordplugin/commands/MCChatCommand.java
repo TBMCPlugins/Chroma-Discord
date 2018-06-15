@@ -14,23 +14,23 @@ public class MCChatCommand extends DiscordCommandBase {
 	}
 
 	@Override
-	public void run(IMessage message, String args) {
+	public boolean run(IMessage message, String args) {
 		if (!message.getChannel().isPrivate()) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"This command can only be issued in a direct message with the bot.");
-			return;
+			return true;
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
 			boolean mcchat = !user.isMinecraftChatEnabled();
 			MCChatListener.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Minecraft chat " + (mcchat //
-							? "enabled. Use '" + message.getClient().getOurUser().mention()
-									+ " mcchat' (with the mention) to disable." //
+                            ? "enabled. Use '/mcchat' again to turn it off." //
 							: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
 		}
+		return true;
 	}
 
 	@Override

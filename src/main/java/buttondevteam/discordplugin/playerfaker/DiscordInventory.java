@@ -1,18 +1,18 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class DiscordInventory implements Inventory {
 	public DiscordInventory(DiscordHumanEntity holder) {

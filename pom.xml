@@ -58,7 +58,7 @@
 									<exclude>org.spigotmc:spigot-api</exclude>
 									<exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
 									<exclude>net.ess3:Essentials</exclude>
-								</excludes> <!-- TODO: http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
+                                </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
 							</artifactSet>
 						</configuration>
 					</execution>
@@ -151,11 +151,11 @@
 			<version>1.12.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
-        <!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
+		<!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
 		<dependency>
-            <groupId>com.discord4j</groupId>
-            <artifactId>Discord4J</artifactId>
-            <version>2.10.1</version>
+			<groupId>com.discord4j</groupId>
+			<artifactId>Discord4J</artifactId>
+			<version>2.10.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
@@ -179,6 +179,7 @@
 			<groupId>net.ess3</groupId>
 			<artifactId>Essentials</artifactId>
 			<version>2.13.1</version>
+            <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.github.xaanit</groupId>
@@ -211,6 +212,10 @@
 			<version>2.6</version>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.vdurmont</groupId>
+			<artifactId>emoji-java</artifactId>
+			<version>4.0.0</version>
+		</dependency>
 	</dependencies>
 </project>

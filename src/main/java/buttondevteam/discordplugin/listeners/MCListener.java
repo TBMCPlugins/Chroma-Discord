@@ -45,26 +45,28 @@ public class MCListener implements Listener {
     public void onPlayerJoin(TBMCPlayerJoinEvent e) {
         if (e.getPlayer() instanceof DiscordConnectedPlayer)
             return; // Don't show the joined message for the fake player
-        final Player p = e.getPlayer();
-        DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
-        if (dp != null) {
-            val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
-            MCChatListener.OnlineSenders.put(dp.getDiscordID(),
-                    new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
-            MCChatListener.OnlineSenders.put("P" + dp.getDiscordID(),
-                    new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p));
-        }
-        if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
-            IUser user = DiscordPlugin.dc
-                    .getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
-            p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
-                    + " do /discord accept");
-            p.sendMessage("§bIf it wasn't you, do /discord decline");
-        }
-        if (!DiscordPlugin.hooked)
-            MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
-        MCChatListener.ListC = 0;
-        ChromaBot.getInstance().updatePlayerList();
+        Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+            final Player p = e.getPlayer();
+            DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
+            if (dp != null) {
+                val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
+                MCChatListener.OnlineSenders.put(dp.getDiscordID(),
+                        new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
+                MCChatListener.OnlineSenders.put("P" + dp.getDiscordID(),
+                        new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p));
+            }
+            if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
+                IUser user = DiscordPlugin.dc
+                        .getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
+                p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
+                        + " do /discord accept");
+                p.sendMessage("§bIf it wasn't you, do /discord decline");
+            }
+            if (!DiscordPlugin.hooked)
+                MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
+            MCChatListener.ListC = 0;
+            ChromaBot.getInstance().updatePlayerList();
+        });
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -93,7 +95,7 @@ public class MCListener implements Listener {
         if (DiscordPlugin.SafeMode)
             return;
         DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
-        if (dp == null || dp.getDiscordID() == null || dp.getDiscordID() == "")
+        if (dp == null || dp.getDiscordID() == null || dp.getDiscordID().equals(""))
             return;
         IUser user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
         e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());

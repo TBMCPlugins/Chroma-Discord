@@ -1,16 +1,14 @@
 package buttondevteam.discordplugin.commands;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-
-import com.google.common.collect.HashBiMap;
-
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
+import com.google.common.collect.HashBiMap;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import sx.blah.discord.handle.obj.IMessage;
 
 public class ConnectCommand extends DiscordCommandBase {
@@ -27,15 +25,13 @@ public class ConnectCommand extends DiscordCommandBase {
 	public static HashBiMap<String, String> WaitingToConnect = HashBiMap.create();
 
 	@Override
-	public void run(IMessage message, String args) {
-		if (args.length() == 0) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "Usage: connect <Minecraftname>");
-			return;
-		}
+	public boolean run(IMessage message, String args) {
+		if (args.length() == 0)
+			return true;
 		if (args.contains(" ")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Too many arguments.\nUsage: connect <Minecraftname>");
-			return;
+			return true;
 		}
 		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -46,13 +42,13 @@ public class ConnectCommand extends DiscordCommandBase {
 		OfflinePlayer p = Bukkit.getOfflinePlayer(args);
 		if (p == null) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
-			return;
+			return true;
 		}
 		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
 			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
 			if (dp != null && message.getAuthor().getStringID().equals(dp.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
-				return;
+				return true;
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
@@ -60,11 +56,12 @@ public class ConnectCommand extends DiscordCommandBase {
 		}
 		WaitingToConnect.put(p.getName(), message.getAuthor().getStringID());
 		DiscordPlugin.sendMessageToChannel(message.getChannel(),
-				"Pending connection - accept connection in Minecraft from the account " + args
-						+ " before the server gets restarted. You can also adjust the Minecraft name you want to connect to with the same command.");
+				"Alright! Now accept the connection in Minecraft from the account " + args
+						+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.");
 		if (p.isOnline())
 			((Player) p).sendMessage("§bTo connect with the Discord account " + message.getAuthor().getName() + "#"
 					+ message.getAuthor().getDiscriminator() + " do /discord accept");
+		return true;
 	}
 
 	@Override

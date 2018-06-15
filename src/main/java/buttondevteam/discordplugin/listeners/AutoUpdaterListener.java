@@ -1,12 +1,11 @@
 package buttondevteam.discordplugin.listeners;
 
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.PluginUpdater;
 import buttondevteam.lib.TBMCCoreAPI;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 public class AutoUpdaterListener implements Listener {
 	@EventHandler
