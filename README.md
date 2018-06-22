@@ -1,12 +1,11 @@
 # DiscordPlugin
-A plugin that controls the Chroma Bot Discord bot.
+A plugin that controls the ChromaBot Discord bot and provides Minecraft chat functionality and other features. 
 
 ## Features
 ### Announce new posts from /r/ChromaGamers
 If it's a (distinguished) moderator post, it'll be posted to the \#announcements channel, otherwise it'll be posted and pinned to \#general.
 
 ### Announce server restarts
-Currently it only says when the server starts up but that's about to change soon...
+It announces server starts/stops and restarts, as well as if the server shut down unexpectedly.
 
-## Planned and work-in-progress features
-See [here](https://github.com/TBMCPlugins/DiscordPlugin/projects/1).
+**For more, see:** http://chromapedia.wikia.com/wiki/ChromaBot
