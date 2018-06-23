@@ -144,6 +144,8 @@ public class CommandListener {
                 if (DiscordPlugin.GameRoles.remove(event.getOldRole().getName()))
                     DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, "Removed " + event.getOldRole().getName() + " as a game role because it's color changed.");
             } else {
+                if (DiscordPlugin.GameRoles.contains(event.getOldRole().getName()) && event.getOldRole().getName().equals(event.getNewRole().getName()))
+                    return;
                 boolean removed = DiscordPlugin.GameRoles.remove(event.getOldRole().getName()); //Regardless of whether it was a game role
                 DiscordPlugin.GameRoles.add(event.getNewRole().getName()); //Add it because it has no color
                 if (removed)
