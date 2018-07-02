@@ -126,10 +126,10 @@
 			<id>projectlombok.org</id>
 			<url>http://projectlombok.org/mavenrepo</url>
 		</repository>
-		<repository>
-			<id>pex-repo</id>
-			<url>http://pex-repo.aoeu.xyz</url>
-		</repository>
+        <!-- <repository>
+            <id>pex-repo</id>
+            <url>http://pex-repo.aoeu.xyz</url>
+        </repository> -->
 	</repositories>
 
 	<dependencies>
@@ -193,18 +193,18 @@
 			<version>1.16.16</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>ru.tehkode</groupId>
-			<artifactId>PermissionsEx</artifactId>
-			<version>1.23.1</version>
-			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.bukkit</groupId>
-					<artifactId>bukkit</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+        <!-- <dependency>
+            <groupId>ru.tehkode</groupId>
+            <artifactId>PermissionsEx</artifactId>
+            <version>1.23.1</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bukkit</groupId>
+                    <artifactId>bukkit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency> -->
 		<!-- https://mvnrepository.com/artifact/org.objenesis/objenesis -->
 		<dependency>
 			<groupId>org.objenesis</groupId>

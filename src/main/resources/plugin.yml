@@ -2,6 +2,6 @@ name: DiscordPlugin
 main: buttondevteam.discordplugin.DiscordPlugin
 version: 1.0
 author: TBMCPlugins
-depend: []
+depend: [ButtonCore]
 commands:
     discord:
