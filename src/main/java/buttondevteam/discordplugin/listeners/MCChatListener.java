@@ -7,6 +7,7 @@ import buttondevteam.lib.TBMCChatPreprocessEvent;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Channel;
+import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -478,10 +479,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                                         + DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
                             } else { // Send single message
                                 final String msg = event.getMessage().getContent().substring(spi + 2);
+                                val cmb = ChatMessage.builder(chc, dsender, user, getChatMessage.apply(msg)).fromCommand(true);
                                 if (clmd == null)
-                                    TBMCChatAPI.SendChatMessage(chc, dsender, getChatMessage.apply(msg), true);
+                                    TBMCChatAPI.SendChatMessage(cmb.build());
                                 else
-                                    TBMCChatAPI.SendChatMessageDontCheckSender(chc, dsender, getChatMessage.apply(msg), true, clmd.dcp);
+                                    TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build());
                                 react = true;
                             }
                         }
@@ -495,10 +497,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                             (dsender instanceof Player ? ((Player) dsender).getDisplayName()
                                     : dsender.getName()) + " pinned a message on Discord.");
                 else {
+                    val cmb = ChatMessage.builder(dsender.getMcchannel(), dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);
                     if (clmd != null)
-                        TBMCChatAPI.SendChatMessageDontCheckSender(clmd.mcchannel, dsender, getChatMessage.apply(dmessage), false, clmd.dcp);
+                        TBMCChatAPI.SendChatMessage(cmb.channel(clmd.mcchannel).permCheck(clmd.dcp).build());
                     else
-                        TBMCChatAPI.SendChatMessage(dsender.getMcchannel(), dsender, getChatMessage.apply(dmessage));
+                        TBMCChatAPI.SendChatMessage(cmb.build());
                     react = true;
                 }
             }
@@ -546,7 +549,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             cmd = dmessage.substring(0, index);
             for (Channel channel : Channel.getChannels()) {
                 if (cmd.equalsIgnoreCase(channel.ID) || (channel.IDs != null && Arrays.stream(channel.IDs).anyMatch(cmd::equalsIgnoreCase))) {
-                    TBMCChatAPI.SendChatMessage(channel, dsender, dmessage.substring(index + 1));
+                    val dp = DiscordPlayer.getUser(dsender.getUser().getStringID(), DiscordPlayer.class);
+                    TBMCChatAPI.SendChatMessage(ChatMessage.builder(channel, dsender, dp, dmessage.substring(index + 1)).build());
                     return true;
                 }
             }
