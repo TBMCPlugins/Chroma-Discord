@@ -27,7 +27,7 @@ public class ConnectCommand extends DiscordCommandBase {
 	@Override
 	public boolean run(IMessage message, String args) {
 		if (args.length() == 0)
-			return true;
+			return false;
 		if (args.contains(" ")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Too many arguments.\nUsage: connect <Minecraftname>");
