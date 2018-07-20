@@ -3,6 +3,7 @@ package buttondevteam.discordplugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
+import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -42,7 +43,6 @@ import java.util.stream.Collectors;
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
     private static boolean stop = false;
-    static Thread mainThread;
     public static IDiscordClient dc;
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
@@ -52,6 +52,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnable() {
+        stop = false; //If not the first time
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
             try {
@@ -69,7 +70,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
             dc = cb.login();
             dc.getDispatcher().registerListener(this);
-            mainThread = Thread.currentThread();
         } catch (Exception e) {
             e.printStackTrace();
             Bukkit.getPluginManager().disablePlugin(this);
@@ -105,7 +105,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                 }
                 if (mainServer == null || devServer == null)
                     return; // Retry
-                if (!TBMCCoreAPI.IsTestServer()) {
+                if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
                     botchannel = mainServer.getChannelByID(209720707188260864L); // bot
                     annchannel = mainServer.getChannelByID(126795071927353344L); // announcements
                     genchannel = mainServer.getChannelByID(125813020357165056L); // general
@@ -157,7 +157,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     }
 
                     DiscordCommandBase.registerCommands();
-                    if (getConfig().getBoolean("serverup", false)) {
+                    if (ResetMCCommand.resetting)
+                        ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.CYAN)
+                                .withTitle("Discord plugin restarted - chat connected.").build()); //Really important to note the chat, hmm
+                    else if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());
                         val thr = new Throwable(
@@ -167,6 +170,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     } else
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.GREEN)
                                 .withTitle("Server started - chat connected.").build());
+
+                    ResetMCCommand.resetting = false; //This is the last event handling this flag
+
                     getConfig().set("serverup", true);
                     saveConfig();
                     DPUtils.performNoWait(() -> {
@@ -237,6 +243,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         stop = true;
         for (val entry : MCChatListener.ConnectedSenders.entrySet())
             MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
+        MCChatListener.ConnectedSenders.clear();
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
         getConfig().set("serverup", false);
@@ -256,18 +263,22 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         saveConfig();
         MCChatListener.forAllMCChat(ch -> {
             try {
-                DiscordPlugin.sendMessageToChannelWait(ch, "",
-                        new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-                                .withTitle(Restart ? "Server restarting" : "Server stopping")
-                                .withDescription(
-                                        Bukkit.getOnlinePlayers().size() > 0
-                                                ? (DPUtils
-                                                .sanitizeString(Bukkit.getOnlinePlayers().stream()
-                                                        .map(Player::getDisplayName).collect(Collectors.joining(", ")))
-                                                + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-                                                + "asked *politely* to leave the server for a bit.")
-                                                : "")
-                                .build(), 5, TimeUnit.SECONDS);
+                if (ResetMCCommand.resetting)
+                    DiscordPlugin.sendMessageToChannelWait(ch, "",
+                            new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build());
+                else
+                    DiscordPlugin.sendMessageToChannelWait(ch, "",
+                            new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+                                    .withTitle(Restart ? "Server restarting" : "Server stopping")
+                                    .withDescription(
+                                            Bukkit.getOnlinePlayers().size() > 0
+                                                    ? (DPUtils
+                                                    .sanitizeString(Bukkit.getOnlinePlayers().stream()
+                                                            .map(Player::getDisplayName).collect(Collectors.joining(", ")))
+                                                    + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+                                                    + "asked *politely* to leave the server for a bit.")
+                                                    : "")
+                                    .build(), 5, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -279,6 +290,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
+            mainServer = devServer = null; //Fetch servers and channels again
+            sent = false;
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
         }

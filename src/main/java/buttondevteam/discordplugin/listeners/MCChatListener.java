@@ -138,7 +138,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             }
 
             val iterator = lastmsgCustom.iterator();
-            while (iterator.hasNext()) { //TODO: Add cmd to fix mcchat
+            while (iterator.hasNext()) {
                 val lmd = iterator.next();
                 if ((e.isFromcmd() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
                         && e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
@@ -362,6 +362,14 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 if (wait)
                     recthread.join(5000);
             }
+            lastmsgdata = null;
+            lastmsgPerUser.clear();
+            lastmsgCustom.clear();
+            lastmsgfromd.clear();
+            ConnectedSenders.clear();
+            lastlist = lastlistp = ListC = 0;
+            UnconnectedSenders.clear();
+            recthread = sendthread = null;
         } catch (InterruptedException e) {
             e.printStackTrace(); //This thread shouldn't be interrupted
         }
