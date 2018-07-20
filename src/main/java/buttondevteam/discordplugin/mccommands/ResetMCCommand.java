@@ -26,7 +26,7 @@ public class ResetMCCommand extends TBMCCommandBase { //Not player-only, so not 
     public String[] GetHelpText(String s) {
         return new String[]{ //
                 "§6---- Reset ChromaBot ----", //
-                "This command stops the Minecraft chat and relogs the bot." //
+                "This command disables and then enables the plugin." //
         };
     }
 }

@@ -218,7 +218,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-            new Thread(this::AnnouncementGetterThreadMethod).start(); //TODO: Handle relogging (test)
+            new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
