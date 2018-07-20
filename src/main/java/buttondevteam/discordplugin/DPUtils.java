@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.lib.TBMCCoreAPI;
 import org.bukkit.Bukkit;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
@@ -9,6 +8,7 @@ import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class DPUtils {
 
@@ -39,18 +39,13 @@ public final class DPUtils {
 	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
 	 */
     @Nullable
-    public static <T> T perform(IRequest<T> action, long timeout, TimeUnit unit) {
+    public static <T> T perform(IRequest<T> action, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         if (DiscordPlugin.SafeMode)
             return null;
-        if (Thread.currentThread() == DiscordPlugin.mainThread) // TODO: Ignore shutdown message <--
+		if (Bukkit.isPrimaryThread()) // TODO: Ignore shutdown message <--
             // throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
             Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
-        try {
-            return RequestBuffer.request(action).get(timeout, unit); // Let the pros handle this
-        } catch (Exception e) {
-            TBMCCoreAPI.SendException("Couldn't perform Discord action!", e);
-            return null;
-        }
+        return RequestBuffer.request(action).get(timeout, unit); // Let the pros handle this
     }
 
     /**
@@ -60,7 +55,7 @@ public final class DPUtils {
     public static <T> T perform(IRequest<T> action) {
         if (DiscordPlugin.SafeMode)
             return null;
-        if (Thread.currentThread() == DiscordPlugin.mainThread) // TODO: Ignore shutdown message <--
+		if (Bukkit.isPrimaryThread()) // TODO: Ignore shutdown message <--
             // throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
             Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
         return RequestBuffer.request(action).get(); // Let the pros handle this
@@ -72,7 +67,7 @@ public final class DPUtils {
 	public static Void perform(IVoidRequest action) {
 		if (DiscordPlugin.SafeMode)
 			return null;
-		if (Thread.currentThread() == DiscordPlugin.mainThread)
+		if (Bukkit.isPrimaryThread())
 			throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
 		return RequestBuffer.request(action).get(); // Let the pros handle this
 	}

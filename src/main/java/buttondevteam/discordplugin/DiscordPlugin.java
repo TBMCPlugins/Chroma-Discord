@@ -3,6 +3,7 @@ package buttondevteam.discordplugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.listeners.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
+import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -15,6 +16,7 @@ import com.google.gson.JsonParser;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -35,12 +37,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
     private static boolean stop = false;
-    static Thread mainThread;
     public static IDiscordClient dc;
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
@@ -50,6 +52,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnable() {
+        stop = false; //If not the first time
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
             try {
@@ -67,7 +70,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
             dc = cb.login();
             dc.getDispatcher().registerListener(this);
-            mainThread = Thread.currentThread();
         } catch (Exception e) {
             e.printStackTrace();
             Bukkit.getPluginManager().disablePlugin(this);
@@ -103,7 +105,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                 }
                 if (mainServer == null || devServer == null)
                     return; // Retry
-                if (!TBMCCoreAPI.IsTestServer()) {
+                if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
                     botchannel = mainServer.getChannelByID(209720707188260864L); // bot
                     annchannel = mainServer.getChannelByID(126795071927353344L); // announcements
                     genchannel = mainServer.getChannelByID(125813020357165056L); // general
@@ -155,7 +157,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     }
 
                     DiscordCommandBase.registerCommands();
-                    if (getConfig().getBoolean("serverup", false)) {
+                    if (ResetMCCommand.resetting)
+                        ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.CYAN)
+                                .withTitle("Discord plugin restarted - chat connected.").build()); //Really important to note the chat, hmm
+                    else if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());
                         val thr = new Throwable(
@@ -165,6 +170,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     } else
                         ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.GREEN)
                                 .withTitle("Server started - chat connected.").build());
+
+                    ResetMCCommand.resetting = false; //This is the last event handling this flag
+
                     getConfig().set("serverup", true);
                     saveConfig();
                     DPUtils.performNoWait(() -> {
@@ -212,14 +220,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
             new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
-            /*
-             * IDiscordOAuth doa = new DiscordOAuthBuilder(dc).withClientID("226443037893591041") .withClientSecret(getConfig().getString("appsecret")) .withRedirectUrl("https://" +
-             * (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8081/callback") .withScopes(Scope.IDENTIFY).withHttpServerOptions(new HttpServerOptions().setPort(8081))
-             * .withSuccessHandler((rc, user) -> { rc.response().headers().add("Location", "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&"
-             * + rc.request().query()); rc.response().setStatusCode(303); rc.response().end("Redirecting"); rc.response().close(); }).withFailureHandler(rc -> { rc.response().headers().add("Location",
-             * "https://" + (TBMCCoreAPI.IsTestServer() ? "localhost" : "server.figytuna.com") + ":8080/login?type=discord&" + rc.request().query()); rc.response().setStatusCode(303);
-             * rc.response().end("Redirecting"); rc.response().close(); }).build(); getLogger().info("Auth URL: " + doa.buildAuthUrl());
-             */
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
         }
@@ -243,6 +243,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         stop = true;
         for (val entry : MCChatListener.ConnectedSenders.entrySet())
             MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
+        MCChatListener.ConnectedSenders.clear();
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
         getConfig().set("serverup", false);
@@ -260,25 +261,37 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         }
 
         saveConfig();
-        MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannelWait(ch, "",
-                new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-                        .withTitle(Restart ? "Server restarting" : "Server stopping")
-                        .withDescription(
-                                Bukkit.getOnlinePlayers().size() > 0
-                                        ? (DPUtils
-                                        .sanitizeString(Bukkit.getOnlinePlayers().stream()
-                                                .map(p -> p.getDisplayName()).collect(Collectors.joining(", ")))
-                                        + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-                                        + "asked *politely* to leave the server for a bit.")
-                                        : "")
-                        .build(), 5, TimeUnit.SECONDS));
+        MCChatListener.forAllMCChat(ch -> {
+            try {
+                if (ResetMCCommand.resetting)
+                    DiscordPlugin.sendMessageToChannelWait(ch, "",
+                            new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build());
+                else
+                    DiscordPlugin.sendMessageToChannelWait(ch, "",
+                            new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+                                    .withTitle(Restart ? "Server restarting" : "Server stopping")
+                                    .withDescription(
+                                            Bukkit.getOnlinePlayers().size() > 0
+                                                    ? (DPUtils
+                                                    .sanitizeString(Bukkit.getOnlinePlayers().stream()
+                                                            .map(Player::getDisplayName).collect(Collectors.joining(", ")))
+                                                    + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+                                                    + "asked *politely* to leave the server for a bit.")
+                                                    : "")
+                                    .build(), 5, TimeUnit.SECONDS);
+            } catch (TimeoutException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
         ChromaBot.getInstance().updatePlayerList();
         try {
             SafeMode = true; // Stop interacting with Discord
-            MCChatListener.stop();
+            MCChatListener.stop(true);
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
+            mainServer = devServer = null; //Fetch servers and channels again
+            sent = false;
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
         }
@@ -359,26 +372,30 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     }
 
     public static void sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
-        sendMessageToChannel(channel, message, embed, false);
+        try {
+            sendMessageToChannel(channel, message, embed, false);
+        } catch (TimeoutException | InterruptedException e) {
+            e.printStackTrace(); //Shouldn't happen, as we're not waiting on the result
+        }
     }
 
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message) {
+    public static IMessage sendMessageToChannelWait(IChannel channel, String message) throws TimeoutException, InterruptedException {
         return sendMessageToChannelWait(channel, message, null);
     }
 
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed) {
+    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed) throws TimeoutException, InterruptedException {
         return sendMessageToChannel(channel, message, embed, true);
     }
 
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed, long timeout, TimeUnit unit) {
+    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         return sendMessageToChannel(channel, message, embed, true, timeout, unit);
     }
 
-    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) {
+    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) throws TimeoutException, InterruptedException {
         return sendMessageToChannel(channel, message, embed, wait, -1, null);
     }
 
-    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) {
+    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         if (message.length() > 1980) {
             message = message.substring(0, 1980);
             Bukkit.getLogger()
@@ -404,6 +421,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     DPUtils.performNoWait(r);
                 return null;
             }
+        } catch (TimeoutException | InterruptedException e) {
+            throw e;
         } catch (Exception e) {
             Bukkit.getLogger().warning(
                     "Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
