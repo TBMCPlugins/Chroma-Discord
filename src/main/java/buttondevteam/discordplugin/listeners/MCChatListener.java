@@ -2,10 +2,7 @@ package buttondevteam.discordplugin.listeners;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
-import buttondevteam.lib.TBMCChatEvent;
-import buttondevteam.lib.TBMCChatPreprocessEvent;
-import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.TBMCSystemChatEvent;
+import buttondevteam.lib.*;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.ChatRoom;
@@ -17,6 +14,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -255,8 +253,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     // The maps may not contain the senders for UnconnectedSenders
 
     public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
-        return lastmsgPerUser.stream().anyMatch(
-                lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(dp.getDiscordID()));
+        return isMinecraftChatEnabled(dp.getDiscordID());
     }
 
     public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
@@ -330,7 +327,20 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         action.accept(DiscordPlugin.chatchannel);
         for (LastMsgData data : lastmsgPerUser)
             action.accept(data.channel);
+        // lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
+    }
+
+    public static void forCustomAndAllMCChat(Consumer<IChannel> action) {
+        forAllMCChat(action);
         lastmsgCustom.forEach(cc -> action.accept(cc.channel));
+    }
+
+    public static void forAllowedCustomMCChat(Consumer<IChannel> action, CommandSender sender) {
+        lastmsgCustom.stream().filter(clmd -> {
+            //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
+            val e = new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel);
+            return clmd.groupID.equals(e.getGroupID(sender));
+        }).forEach(cc -> action.accept(cc.channel)); //TODO: Use getScore and getGroupID in fake event constructor - This should also send error messages on channel connect
     }
 
     private static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {

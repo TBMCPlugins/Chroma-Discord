@@ -47,7 +47,7 @@ public class ChromaBot {
 
 	/**
 	 * Send a message to the chat channels and private chats.
-	 * 
+     *
 	 * @param message
 	 *            The message to send, duh
 	 * @param embed
@@ -56,6 +56,16 @@ public class ChromaBot {
 	public void sendMessage(String message, EmbedObject embed) {
 		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
 	}
+
+    /**
+     * Send a message to the chat channels, private chats and custom chats.
+     *
+     * @param message The message to send, duh
+     * @param embed   Custom fancy stuff, use {@link EmbedBuilder} to create one
+     */
+    public void sendMessageCustomAsWell(String message, EmbedObject embed) {
+        MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
+    }
 
 	/**
 	 * Send a message to an arbitrary channel. This will not send it to the private chats.

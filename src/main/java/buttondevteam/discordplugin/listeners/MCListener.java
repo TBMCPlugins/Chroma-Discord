@@ -62,8 +62,10 @@ public class MCListener implements Listener {
                         + " do /discord accept");
                 p.sendMessage("§bIf it wasn't you, do /discord decline");
             }
+            final String message = e.GetPlayer().PlayerName().get() + " joined the game";
             if (!DiscordPlugin.hooked)
-                MCChatListener.sendSystemMessageToChat(e.GetPlayer().PlayerName().get() + " joined the game");
+                MCChatListener.sendSystemMessageToChat(message);
+            MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer());
             MCChatListener.ListC = 0;
             ChromaBot.getInstance().updatePlayerList();
         });
@@ -81,6 +83,10 @@ public class MCListener implements Listener {
                         .ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
         Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
                 ChromaBot.getInstance()::updatePlayerList, 5);
+        final String message = e.GetPlayer().PlayerName().get() + " left the game";
+        if (!DiscordPlugin.hooked)
+            MCChatListener.sendSystemMessageToChat(message); //TODO: Probably double sends if kicked and unhooked
+        MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -111,7 +117,7 @@ public class MCListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerAFK(AfkStatusChangeEvent e) {
+    public void onPlayerAFK(AfkStatusChangeEvent e) { //TODO: Add AFK to custom chats?
         if (e.isCancelled() || !e.getAffected().getBase().isOnline())
             return;
         MCChatListener.sendSystemMessageToChat(DPUtils.sanitizeString(e.getAffected().getBase().getDisplayName())

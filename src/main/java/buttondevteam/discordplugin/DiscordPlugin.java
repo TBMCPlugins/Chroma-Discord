@@ -158,17 +158,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 
                     DiscordCommandBase.registerCommands();
                     if (ResetMCCommand.resetting)
-                        ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.CYAN)
+                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build()); //Really important to note the chat, hmm
                     else if (getConfig().getBoolean("serverup", false)) {
-                        ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.YELLOW)
+                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.YELLOW)
                                 .withTitle("Server recovered from a crash - chat connected.").build());
                         val thr = new Throwable(
                                 "The server shut down unexpectedly. See the log of the previous run for more details.");
                         thr.setStackTrace(new StackTraceElement[0]);
                         TBMCCoreAPI.SendException("The server crashed!", thr);
                     } else
-                        ChromaBot.getInstance().sendMessage("", new EmbedBuilder().withColor(Color.GREEN)
+                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
                                 .withTitle("Server started - chat connected.").build());
 
                     ResetMCCommand.resetting = false; //This is the last event handling this flag
@@ -261,7 +261,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         }
 
         saveConfig();
-        MCChatListener.forAllMCChat(ch -> {
+        MCChatListener.forCustomAndAllMCChat(ch -> {
             try {
                 if (ResetMCCommand.resetting)
                     DiscordPlugin.sendMessageToChannelWait(ch, "",
