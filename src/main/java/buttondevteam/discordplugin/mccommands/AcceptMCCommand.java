@@ -35,7 +35,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		dp.save();
 		mcp.save();
 		ConnectCommand.WaitingToConnect.remove(player.getName());
-		MCChatListener.UnconnectedSenders.remove(did);
+        MCChatListener.UnconnectedSenders.remove(did); //Remove all unconnected, will be recreated where needed
 		player.sendMessage("§bAccounts connected.");
 		return true;
 	}

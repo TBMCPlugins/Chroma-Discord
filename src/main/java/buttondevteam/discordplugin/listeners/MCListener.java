@@ -36,7 +36,7 @@ public class MCListener implements Listener {
     public void onPlayerLogin(PlayerLoginEvent e) {
         if (e.getResult() != Result.ALLOWED)
             return;
-        MCChatListener.ConnectedSenders.values().stream()
+        MCChatListener.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
                 .filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
                 .ifPresent(dcp -> callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
     }
@@ -50,10 +50,10 @@ public class MCListener implements Listener {
             DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
             if (dp != null) {
                 val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
-                MCChatListener.OnlineSenders.put(dp.getDiscordID(),
+                MCChatListener.addSender(MCChatListener.OnlineSenders, dp.getDiscordID(),
                         new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
-                MCChatListener.OnlineSenders.put("P" + dp.getDiscordID(),
-                        new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p));
+                MCChatListener.addSender(MCChatListener.OnlineSenders, dp.getDiscordID(),
+                        new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p)); //Stored per-channel
             }
             if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
                 IUser user = DiscordPlugin.dc
@@ -76,9 +76,9 @@ public class MCListener implements Listener {
         if (e.getPlayer() instanceof DiscordConnectedPlayer)
             return; // Only care about real users
         MCChatListener.OnlineSenders.entrySet()
-                .removeIf(entry -> entry.getValue().getUniqueId().equals(e.getPlayer().getUniqueId()));
+                .removeIf(entry -> entry.getValue().entrySet().stream().anyMatch(p -> p.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())));
         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-                () -> MCChatListener.ConnectedSenders.values().stream()
+                () -> MCChatListener.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
                         .filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
                         .ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
         Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,

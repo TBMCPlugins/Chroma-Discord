@@ -242,7 +242,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public void onDisable() {
         stop = true;
         for (val entry : MCChatListener.ConnectedSenders.entrySet())
-            MCListener.callEventExcludingSome(new PlayerQuitEvent(entry.getValue(), ""));
+            for (val valueEntry : entry.getValue().entrySet())
+                MCListener.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
         MCChatListener.ConnectedSenders.clear();
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);

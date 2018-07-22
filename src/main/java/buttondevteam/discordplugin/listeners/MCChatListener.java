@@ -12,6 +12,7 @@ import com.vdurmont.emoji.EmojiParser;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.var;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -225,11 +226,11 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             val op = Bukkit.getOfflinePlayer(mcp.getUUID());
             if (start) {
                 val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
-                ConnectedSenders.put(user.getStringID(), sender);
+                addSender(ConnectedSenders, user, sender);
                 if (p == null)// Player is offline - If the player is online, that takes precedence
                     MCListener.callEventExcludingSome(new PlayerJoinEvent(sender, ""));
             } else {
-                val sender = ConnectedSenders.remove(user.getStringID());
+                val sender = removeSender(ConnectedSenders, channel, user);
                 if (p == null)// Player is offline - If the player is online, that takes precedence
                     MCListener.callEventExcludingSome(new PlayerQuitEvent(sender, ""));
             }
@@ -239,6 +240,37 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         return start //
                 ? lastmsgPerUser.add(new LastMsgData(channel, user, dp)) // Doesn't support group DMs
                 : lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
+    }
+
+    public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
+                                                            IUser user, T sender) {
+        return addSender(senders, user.getStringID(), sender);
+    }
+
+    public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
+                                                            String did, T sender) {
+        var map = senders.get(did);
+        if (map == null)
+            map = new HashMap<>();
+        map.put(sender.getChannel(), sender);
+        senders.put(did, map);
+        return sender;
+    }
+
+    public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<IChannel, T>> senders,
+                                                            IChannel channel, IUser user) {
+        var map = senders.get(user.getStringID());
+        if (map != null)
+            return map.get(channel);
+        return null;
+    }
+
+    public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<IChannel, T>> senders,
+                                                               IChannel channel, IUser user) {
+        var map = senders.get(user.getStringID());
+        if (map != null)
+            return map.remove(channel);
+        return null;
     }
 
     // ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
@@ -286,12 +318,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     /**
      * May contain P&lt;DiscordID&gt; as key for public chat
      */
-    public static final HashMap<String, DiscordSender> UnconnectedSenders = new HashMap<>();
-    public static final HashMap<String, DiscordConnectedPlayer> ConnectedSenders = new HashMap<>();
+    public static final HashMap<String, HashMap<IChannel, DiscordSender>> UnconnectedSenders = new HashMap<>();
+    public static final HashMap<String, HashMap<IChannel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
     /**
      * May contain P&lt;DiscordID&gt; as key for public chat
      */
-    public static final HashMap<String, DiscordPlayerSender> OnlineSenders = new HashMap<>();
+    public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
     public static short ListC = 0;
 
     public static void resetLastMessage() {
@@ -606,14 +638,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
      * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
      */
     private static DiscordSenderBase getSender(IChannel channel, final IUser author) {
-        val key = (channel.isPrivate() ? "" : "P") + author.getStringID();
+        val key = author.getStringID();
         return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
-                () -> Optional.ofNullable(OnlineSenders.get(key)), // Find first non-null
-                () -> Optional.ofNullable(ConnectedSenders.get(key)), // This doesn't support the public chat, but it'll always return null for it
-                () -> Optional.ofNullable(UnconnectedSenders.get(key)), () -> {
-                    val dsender = new DiscordSender(author, channel);
-                    UnconnectedSenders.put(key, dsender);
-                    return Optional.of(dsender);
+                () -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
+                () -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
+                () -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), () -> {
+                    return Optional.of(addSender(UnconnectedSenders, author,
+                            new DiscordSender(author, channel)));
                 }).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
     }
 
