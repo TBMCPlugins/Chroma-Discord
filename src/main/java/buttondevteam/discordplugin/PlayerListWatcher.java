@@ -82,6 +82,25 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 		}
 	}
 
+	public static boolean hookDown() {
+		try {
+			Field conf = CraftServer.class.getDeclaredField("console");
+			conf.setAccessible(true);
+			val server = (MinecraftServer) conf.get(Bukkit.getServer());
+			val plist = (DedicatedPlayerList) server.getPlayerList();
+			if (!(plist instanceof PlayerListWatcher))
+				return false;
+			server.a(((PlayerListWatcher) plist).plist);
+			Field pllf = CraftServer.class.getDeclaredField("playerList");
+			pllf.setAccessible(true);
+			pllf.set(Bukkit.getServer(), ((PlayerListWatcher) plist).plist);
+			return true;
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
+			return true;
+		}
+	}
+
 	public void a(EntityHuman entityhuman, IChatBaseComponent ichatbasecomponent) {
 		plist.a(entityhuman, ichatbasecomponent);
 	}

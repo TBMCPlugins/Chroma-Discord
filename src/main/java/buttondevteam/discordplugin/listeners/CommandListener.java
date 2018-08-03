@@ -213,7 +213,7 @@ public class CommandListener {
     private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
         if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
             if (cmdwithargs.length() > mention.length() + 1)
-                cmdwithargs = cmdwithargs.delete(0,
+                cmdwithargs.delete(0,
                         cmdwithargs.charAt(mention.length()) == ' ' ? mention.length() + 1 : mention.length());
             else
                 cmdwithargs.replace(0, cmdwithargs.length(), "help");

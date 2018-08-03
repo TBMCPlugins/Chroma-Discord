@@ -66,6 +66,7 @@ public class MCListener implements Listener {
             if (!DiscordPlugin.hooked)
                 MCChatListener.sendSystemMessageToChat(message);
             MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer());
+            //System.out.println("Does this appear more than once?"); //No
             MCChatListener.ListC = 0;
             ChromaBot.getInstance().updatePlayerList();
         });
@@ -120,7 +121,7 @@ public class MCListener implements Listener {
     public void onPlayerAFK(AfkStatusChangeEvent e) { //TODO: Add AFK to custom chats?
         if (e.isCancelled() || !e.getAffected().getBase().isOnline())
             return;
-        MCChatListener.sendSystemMessageToChat(DPUtils.sanitizeString(e.getAffected().getBase().getDisplayName())
+        MCChatListener.sendSystemMessageToChat(e.getAffected().getBase().getDisplayName()
                 + " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
     }
 
