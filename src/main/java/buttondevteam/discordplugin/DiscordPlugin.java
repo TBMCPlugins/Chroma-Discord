@@ -1,7 +1,10 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
-import buttondevteam.discordplugin.listeners.*;
+import buttondevteam.discordplugin.listeners.CommandListener;
+import buttondevteam.discordplugin.listeners.ExceptionListener;
+import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -188,9 +191,9 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     sent = true;
                     if (TBMCCoreAPI.IsTestServer() && !dc.getOurUser().getName().toLowerCase().contains("test")) {
                         TBMCCoreAPI.SendException(
-                                "Won't load because we're in testing mode and not using the separate account.",
+                                "Won't load because we're in testing mode and not using a separate account.",
                                 new Exception(
-                                        "The plugin refuses to load until you change the token to the testing account."));
+                                        "The plugin refuses to load until you change the token to a testing account."));
                         Bukkit.getPluginManager().disablePlugin(this);
                     }
                     TBMCCoreAPI.SendUnsentExceptions();
@@ -213,7 +216,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             MCChatListener mcchat = new MCChatListener();
             dc.getDispatcher().registerListener(mcchat);
             TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-            TBMCCoreAPI.RegisterEventsForExceptions(new AutoUpdaterListener(), this);
             Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
@@ -288,6 +290,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         try {
             SafeMode = true; // Stop interacting with Discord
             MCChatListener.stop(true);
+            try {
+                if (PlayerListWatcher.hookDown())
+                    System.out.println("Finished unhooking the player list!");
+                else
+                    System.out.println("Didn't have the player list hooked.");
+                hooked = false;
+            } catch (Throwable e) {
+                e.printStackTrace();
+                Bukkit.getLogger().warning("Couldn't unhook the player list!");
+            }
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();

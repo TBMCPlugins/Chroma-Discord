@@ -9,6 +9,7 @@ import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
 
 public final class DPUtils {
 
@@ -16,24 +17,31 @@ public final class DPUtils {
 		return builder.withAuthorIcon("https://minotar.net/avatar/" + playername + "/32.png");
 	}
 
-	/** Removes §[char] colour codes from strings */
-	public static String sanitizeString(String string) {
-		String sanitizedString = "";
-		boolean random = false;
-		for (int i = 0; i < string.length(); i++) {
-			if (string.charAt(i) == '§') {
-				i++;// Skips the data value, the 4 in "§4Alisolarflare"
-				if (string.charAt(i) == 'k')
-					random = true;
-				else
-					random = false;
-			} else {
-				if (!random) // Skip random/obfuscated characters
-					sanitizedString += string.charAt(i);
-			}
-		}
-		return sanitizedString;
-	}
+    /**
+     * Removes §[char] colour codes from strings & escapes them for Discord <br>
+     * Ensure that this method only gets called once (escaping)
+     */
+    public static String sanitizeString(String string) {
+        return escape(sanitizeStringNoEscape(string));
+    }
+
+    /**
+     * Removes §[char] colour codes from strings
+     */
+    public static String sanitizeStringNoEscape(String string) {
+        String sanitizedString = "";
+        boolean random = false;
+        for (int i = 0; i < string.length(); i++) {
+            if (string.charAt(i) == '§') {
+                i++;// Skips the data value, the 4 in "§4Alisolarflare"
+                random = string.charAt(i) == 'k';
+            } else {
+                if (!random) // Skip random/obfuscated characters
+                    sanitizedString += string.charAt(i);
+            }
+        }
+        return sanitizedString;
+    }
 
 	/**
 	 * Performs Discord actions, retrying when ratelimited. May return null if action fails too many times or in safe mode.
@@ -78,10 +86,14 @@ public final class DPUtils {
 		RequestBuffer.request(action);
 	}
 
-	public static <T> void performNoWait(IRequest<T> action) {
-		if (DiscordPlugin.SafeMode)
-			return;
-		RequestBuffer.request(action);
-	}
+    public static <T> void performNoWait(IRequest<T> action) {
+        if (DiscordPlugin.SafeMode)
+            return;
+        RequestBuffer.request(action);
+    }
+
+    public static String escape(String message) {
+        return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\")+"$1");
+    }
 
 }

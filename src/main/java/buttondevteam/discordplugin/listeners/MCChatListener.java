@@ -76,9 +76,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             e = se.getKey();
             time = se.getValue();
 
-            final String authorPlayer = "[" + DPUtils.sanitizeString(e.getChannel().DisplayName) + "] " //
+            final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName) + "] " //
                     + (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
-                    + (DPUtils.sanitizeString(e.getSender() instanceof Player //
+                    + (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
                     ? ((Player) e.getSender()).getDisplayName() //
                     : e.getSender().getName()));
             final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
