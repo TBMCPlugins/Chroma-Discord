@@ -27,6 +27,7 @@ public abstract class DiscordCommandBase {
 		commands.put("mcchat", new MCChatCommand());
 		commands.put("channelcon", new ChannelconCommand());
 		commands.put("debug", new DebugCommand());
+		commands.put("version", new VersionCommand());
 	}
 
 	public static void runCommand(String cmd, String args, IMessage message) {

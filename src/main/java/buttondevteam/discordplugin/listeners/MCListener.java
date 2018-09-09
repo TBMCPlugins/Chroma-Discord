@@ -162,6 +162,11 @@ public class MCListener implements Listener {
         MCChatListener.sendSystemMessageToChat(event.getMessage());
     }
 
+    /*@EventHandler
+    public void onYEEHAW(TBMCYEEHAWEvent event) {
+        MCChatListener.forAllowedCustomMCChat();event.getSender().getName()+" <:YEEHAW:"+DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID()+">s"//TODO: :YEEHAW:s - Change from broadcastMessage() in ButtonChat
+    }*/
+
     private static final String[] EXCLUDED_PLUGINS = {"ProtocolLib", "LibsDisguises"};
 
     public static void callEventExcludingSome(Event event) {

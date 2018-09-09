@@ -477,6 +477,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
                 dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
             }
+	        for (IChannel ch : event.getMessage().getChannelMentions()) {
+		        dmessage = dmessage.replace(ch.mention(), "#" + ch.getName()); // TODO: IG Formatting
+	        }
 
             dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
             dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:"); //Convert to Discord's format so it still shows up
@@ -496,7 +499,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                         event.getMessage().delete();
                 });
                 //preprocessChat(dsender, dmessage); - Same is done below
-                final String cmdlowercased = dmessage.substring(1).toLowerCase();
+	            final String cmd = dmessage.substring(1);
+	            final String cmdlowercased = cmd.toLowerCase();
                 if (dsender instanceof DiscordSender && Arrays.stream(UnconnectedCmds)
                         .noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
                     // Command not whitelisted
@@ -529,7 +533,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     if (!ch.isPresent())
                         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
                                 () -> {
-                                    VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmdlowercased);
+	                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
                                     Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
                                 });
                     else {
@@ -552,7 +556,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                                 dsender.sendMessage("You're now talking in: "
                                         + DPUtils.sanitizeString(dsender.getMcchannel().DisplayName));
                             } else { // Send single message
-                                final String msg = event.getMessage().getContent().substring(spi + 2);
+	                            final String msg = cmd.substring(spi + 1);
                                 val cmb = ChatMessage.builder(chc, dsender, user, getChatMessage.apply(msg)).fromCommand(true);
                                 if (clmd == null)
                                     TBMCChatAPI.SendChatMessage(cmb.build());
