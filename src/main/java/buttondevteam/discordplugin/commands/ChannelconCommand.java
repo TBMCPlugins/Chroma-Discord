@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.commands;
 
+import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.listeners.MCChatListener;
@@ -13,6 +14,8 @@ import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.PermissionUtils;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ChannelconCommand extends DiscordCommandBase {
     @Override
@@ -29,13 +32,28 @@ public class ChannelconCommand extends DiscordCommandBase {
             return true;
         }
         if (MCChatListener.hasCustomChat(message.getChannel())) {
-            if (args.equalsIgnoreCase("remove")) {
+	        if (args.toLowerCase().startsWith("remove")) {
                 if (MCChatListener.removeCustomChat(message.getChannel()))
                     message.reply("channel connection removed.");
                 else
                     message.reply("wait what, couldn't remove channel connection.");
                 return true;
             }
+	        if (args.toLowerCase().startsWith("toggle")) {
+		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase()).collect(Collectors.joining(", "));
+		        String[] argsa = args.split(" ");
+		        if (argsa.length < 2) {
+			        message.reply("Toggles: " + togglesString.get());
+			        return true;
+		        }
+		        String arg = argsa[1].toUpperCase();
+		        val b = Arrays.stream(ChannelconBroadcast.values()).filter(t -> t.toString().equals(arg)).findAny();
+		        if (!b.isPresent()) {
+			        message.reply("Cannot find toggle. Toggles: " + togglesString.get());
+			        return true;
+		        }
+		        //TODO: Toggle that toggle
+	        }
             message.reply("this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
             return true;
         }
