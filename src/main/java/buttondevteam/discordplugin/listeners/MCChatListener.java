@@ -33,6 +33,7 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.time.Instant;
 import java.util.*;
@@ -173,6 +174,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         public final String groupID;
         public final Channel mcchannel;
         public final DiscordConnectedPlayer dcp;
+	    public int toggles;
 
         public CustomLMD(@NonNull IChannel channel, @NonNull IUser user, @NonNull DiscordPlayer dp,
                          @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp) {
@@ -367,9 +369,20 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         lastmsgCustom.forEach(cc -> action.accept(cc.channel));
     }
 
-    public static void forAllowedCustomMCChat(Consumer<IChannel> action, CommandSender sender) {
+	/**
+	 * Do the {@code action} for each custom chat the {@code sender} have access to and has that broadcast type enabled.
+	 *
+	 * @param action The action to do
+	 * @param sender The sender to check perms of or null to send to all that has it toggled
+	 * @param toggle The toggle to check or null to send to all allowed
+	 */
+	public static void forAllowedCustomMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
         lastmsgCustom.stream().filter(clmd -> {
             //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
+	        if (toggle != null && (clmd.toggles & toggle.flag) == 0)
+		        return false; //If null then allow
+	        if (sender == null)
+		        return true;
             val e = new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel);
             return clmd.groupID.equals(e.getGroupID(sender));
         }).forEach(cc -> action.accept(cc.channel)); //TODO: Use getScore and getGroupID in fake event constructor - This should also send error messages on channel connect

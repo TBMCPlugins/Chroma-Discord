@@ -65,7 +65,7 @@ public class MCListener implements Listener {
             final String message = e.GetPlayer().PlayerName().get() + " joined the game";
             if (!DiscordPlugin.hooked)
                 MCChatListener.sendSystemMessageToChat(message);
-            MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer());
+	        MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE);
             //System.out.println("Does this appear more than once?"); //No
             MCChatListener.ListC = 0;
             ChromaBot.getInstance().updatePlayerList();
@@ -87,7 +87,7 @@ public class MCListener implements Listener {
         final String message = e.GetPlayer().PlayerName().get() + " left the game";
         if (!DiscordPlugin.hooked)
             MCChatListener.sendSystemMessageToChat(message); //TODO: Probably double sends if kicked and unhooked
-        MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer());
+	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -115,14 +115,18 @@ public class MCListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent e) {
         if (!DiscordPlugin.hooked)
             MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
+	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH);
     }
 
     @EventHandler
     public void onPlayerAFK(AfkStatusChangeEvent e) { //TODO: Add AFK to custom chats?
-        if (e.isCancelled() || !e.getAffected().getBase().isOnline())
+	    final Player base = e.getAffected().getBase();
+	    if (e.isCancelled() || !base.isOnline())
             return;
-        MCChatListener.sendSystemMessageToChat(e.getAffected().getBase().getDisplayName()
-                + " is " + (e.getValue() ? "now" : "no longer") + " AFK.");
+	    final String msg = base.getDisplayName()
+			    + " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
+	    MCChatListener.sendSystemMessageToChat(msg);
+	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, msg), base, ChannelconBroadcast.AFK);
     }
 
     @EventHandler
@@ -155,11 +159,13 @@ public class MCListener implements Listener {
     @EventHandler
     public void onChatSystemMessage(TBMCSystemChatEvent event) {
         MCChatListener.sendSystemMessageToChat(event);
+	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), null, ChannelconBroadcast.BROADCAST); //TODO: Method to send message
     }
 
     @EventHandler
     public void onBroadcastMessage(BroadcastMessageEvent event) {
         MCChatListener.sendSystemMessageToChat(event.getMessage());
+	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), null, ChannelconBroadcast.BROADCAST);
     }
 
     /*@EventHandler

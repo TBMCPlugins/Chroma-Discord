@@ -53,6 +53,17 @@ public class ChannelconCommand extends DiscordCommandBase {
 			        return true;
 		        }
 		        //TODO: Toggle that toggle
+		        val cc = MCChatListener.getCustomChat(message.getChannel());
+		        //A B | F
+		        //------- A: original - B: mask - F: new
+		        //0 0 | 0
+		        //0 1 | 1
+		        //1 0 | 1
+		        //1 1 | 0
+		        // XOR
+		        cc.toggles ^= b.get().flag;
+		        message.reply("'" + b.get().toString().toLowerCase() + "' " + ((cc.toggles & b.get().flag) == 0 ? "disabled" : "enabled"));
+		        return true;
 	        }
             message.reply("this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
             return true;
