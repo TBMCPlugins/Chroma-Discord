@@ -46,13 +46,13 @@ public class DiscordInventory implements Inventory {
 	@Override
 	public HashMap<Integer, ItemStack> addItem(ItemStack... items) throws IllegalArgumentException { // Can't add anything
 		return new HashMap<>(
-				IntStream.range(0, items.length).mapToObj(i -> i).collect(Collectors.toMap(i -> i, i -> items[i])));
+				IntStream.range(0, items.length).boxed().collect(Collectors.toMap(i -> i, i -> items[i])));
 	}
 
 	@Override
 	public HashMap<Integer, ItemStack> removeItem(ItemStack... items) throws IllegalArgumentException {
 		return new HashMap<>(
-				IntStream.range(0, items.length).mapToObj(i -> i).collect(Collectors.toMap(i -> i, i -> items[i])));
+				IntStream.range(0, items.length).boxed().collect(Collectors.toMap(i -> i, i -> items[i])));
 	}
 
 	@Override

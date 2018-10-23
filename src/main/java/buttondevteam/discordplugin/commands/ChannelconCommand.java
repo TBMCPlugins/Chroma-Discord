@@ -40,20 +40,19 @@ public class ChannelconCommand extends DiscordCommandBase {
                 return true;
             }
 	        if (args.toLowerCase().startsWith("toggle")) {
-		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase()).collect(Collectors.joining(", "));
+		        val cc = MCChatListener.getCustomChat(message.getChannel());
+		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"));
 		        String[] argsa = args.split(" ");
 		        if (argsa.length < 2) {
-			        message.reply("Toggles: " + togglesString.get());
+			        message.reply("toggles:\n" + togglesString.get());
 			        return true;
 		        }
 		        String arg = argsa[1].toUpperCase();
 		        val b = Arrays.stream(ChannelconBroadcast.values()).filter(t -> t.toString().equals(arg)).findAny();
 		        if (!b.isPresent()) {
-			        message.reply("Cannot find toggle. Toggles: " + togglesString.get());
+			        message.reply("cannot find toggle. Toggles:\n" + togglesString.get());
 			        return true;
 		        }
-		        //TODO: Toggle that toggle
-		        val cc = MCChatListener.getCustomChat(message.getChannel());
 		        //A B | F
 		        //------- A: original - B: mask - F: new
 		        //0 0 | 0
@@ -91,7 +90,7 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
             return true;
         }
-        MCChatListener.addCustomChat(message.getChannel(), groupid, ev.getChannel(), dp, message.getAuthor(), dcp);
+	    MCChatListener.addCustomChat(message.getChannel(), groupid, ev.getChannel(), message.getAuthor(), dcp, 0);
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }

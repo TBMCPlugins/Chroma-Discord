@@ -30,7 +30,7 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 			if (packet instanceof PacketPlayOutChat) {
 				Field msgf = PacketPlayOutChat.class.getDeclaredField("a");
 				msgf.setAccessible(true);
-				MCChatListener.sendSystemMessageToChat(((IChatBaseComponent) msgf.get(packet)).toPlainText());
+				MCChatListener.forAllMCChat(MCChatListener.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);

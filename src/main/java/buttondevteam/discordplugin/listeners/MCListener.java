@@ -63,9 +63,7 @@ public class MCListener implements Listener {
                 p.sendMessage("§bIf it wasn't you, do /discord decline");
             }
             final String message = e.GetPlayer().PlayerName().get() + " joined the game";
-            if (!DiscordPlugin.hooked)
-                MCChatListener.sendSystemMessageToChat(message);
-	        MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE);
+            MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
             //System.out.println("Does this appear more than once?"); //No
             MCChatListener.ListC = 0;
             ChromaBot.getInstance().updatePlayerList();
@@ -85,16 +83,14 @@ public class MCListener implements Listener {
         Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
                 ChromaBot.getInstance()::updatePlayerList, 5);
         final String message = e.GetPlayer().PlayerName().get() + " left the game";
-        if (!DiscordPlugin.hooked)
-            MCChatListener.sendSystemMessageToChat(message); //TODO: Probably double sends if kicked and unhooked
-	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE);
+        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerKick(PlayerKickEvent e) {
-        if (!DiscordPlugin.hooked && !e.getReason().equals("The server is restarting")
+        /*if (!DiscordPlugin.hooked && !e.getReason().equals("The server is restarting")
                 && !e.getReason().equals("Server closed")) // The leave messages errored with the previous setup, I could make it wait since I moved it here, but instead I have a special
-            MCChatListener.sendSystemMessageToChat(e.getPlayer().getName() + " left the game"); // message for this - Oh wait this doesn't even send normally because of the hook
+            MCChatListener.forAllowedCustomAndAllMCChat(e.getPlayer().getName() + " left the game"); // message for this - Oh wait this doesn't even send normally because of the hook*/
     }
 
     @EventHandler
@@ -113,20 +109,17 @@ public class MCListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if (!DiscordPlugin.hooked)
-            MCChatListener.sendSystemMessageToChat(e.getDeathMessage());
-	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH);
+        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH, true);
     }
 
     @EventHandler
-    public void onPlayerAFK(AfkStatusChangeEvent e) { //TODO: Add AFK to custom chats?
+    public void onPlayerAFK(AfkStatusChangeEvent e) {
 	    final Player base = e.getAffected().getBase();
 	    if (e.isCancelled() || !base.isOnline())
             return;
 	    final String msg = base.getDisplayName()
 			    + " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
-	    MCChatListener.sendSystemMessageToChat(msg);
-	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, msg), base, ChannelconBroadcast.AFK);
+        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(msg), base, ChannelconBroadcast.AFK, false);
     }
 
     @EventHandler
@@ -158,14 +151,12 @@ public class MCListener implements Listener {
 
     @EventHandler
     public void onChatSystemMessage(TBMCSystemChatEvent event) {
-        MCChatListener.sendSystemMessageToChat(event);
-	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), null, ChannelconBroadcast.BROADCAST); //TODO: Method to send message
+        MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), ChannelconBroadcast.BROADCAST, false);
     }
 
     @EventHandler
     public void onBroadcastMessage(BroadcastMessageEvent event) {
-        MCChatListener.sendSystemMessageToChat(event.getMessage());
-	    MCChatListener.forAllowedCustomMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), null, ChannelconBroadcast.BROADCAST);
+        MCChatListener.forCustomAndAllMCChat(MCChatListener.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false);
     }
 
     /*@EventHandler
