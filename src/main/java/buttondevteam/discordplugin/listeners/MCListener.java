@@ -159,10 +159,12 @@ public class MCListener implements Listener {
         MCChatListener.forCustomAndAllMCChat(MCChatListener.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false);
     }
 
-    /*@EventHandler
-    public void onYEEHAW(TBMCYEEHAWEvent event) {
-        MCChatListener.forAllowedCustomMCChat();event.getSender().getName()+" <:YEEHAW:"+DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID()+">s"//TODO: :YEEHAW:s - Change from broadcastMessage() in ButtonChat
-    }*/
+    @EventHandler
+    public void onYEEHAW(TBMCYEEHAWEvent event) { //TODO: Inherit from the chat event base to have channel support
+        String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
+                : event.getSender().getName();
+        MCChatListener.forAllMCChat(MCChatListener.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
+    }
 
     private static final String[] EXCLUDED_PLUGINS = {"ProtocolLib", "LibsDisguises"};
 

@@ -7,7 +7,6 @@ import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
-import buttondevteam.lib.player.PlayerData;
 import buttondevteam.lib.player.TBMCPlayer;
 import com.vdurmont.emoji.EmojiParser;
 import io.netty.util.collection.LongObjectHashMap;
@@ -411,7 +410,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         return ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(message));
     }
 
-	public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) { //TODO
+    public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
         if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
             action.accept(DiscordPlugin.chatchannel);
         for (LastMsgData data : lastmsgPerUser)
@@ -566,8 +565,14 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     if (!ch.isPresent())
                         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
                                 () -> {
+                                    val channel = dsender.getChromaUser().channel(); //TODO: Save?
+                                    val chtmp = channel.get();
+                                    if (clmd != null)
+                                        channel.set(clmd.mcchannel); //Hack to send command in the channel
 	                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
                                     Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
+                                    if (clmd != null)
+                                        channel.set(chtmp);
                                 });
                     else {
                         Channel chc = ch.get();
@@ -577,7 +582,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                         else {
                             if (spi == -1) // Switch channels
                             {
-	                            final PlayerData<Channel> channel = dsender.getChromaUser().channel();
+                                val channel = dsender.getChromaUser().channel();
 	                            val oldch = channel.get();
                                 if (oldch instanceof ChatRoom)
                                     ((ChatRoom) oldch).leaveRoom(dsender);
