@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.listeners;
 
-import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -99,8 +98,7 @@ public class CommandListener {
                         && !(event.getMessage().getContent().startsWith("/")
                         && event.getChannel().getStringID().equals(DiscordPlugin.botchannel.getStringID()))) //
                     return;
-                if (DiscordPlayer.getUser(event.getAuthor().getStringID(), DiscordPlayer.class)
-                        .isMinecraftChatEnabled())
+                if (MCChatListener.isMinecraftChatEnabled(event.getAuthor().toString()))
                     if (!event.getMessage().getContent().equalsIgnoreCase("mcchat"))
                         return;
                 if (event.getMessage().getAuthor().isBot())

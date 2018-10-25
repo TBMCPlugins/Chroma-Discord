@@ -151,7 +151,7 @@ public class MCListener implements Listener {
 
     @EventHandler
     public void onChatSystemMessage(TBMCSystemChatEvent event) {
-        MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, event.getMessage()), ChannelconBroadcast.BROADCAST, false);
+	    MCChatListener.forAllowedMCChat(MCChatListener.send(event.getMessage()), event);
     }
 
     @EventHandler

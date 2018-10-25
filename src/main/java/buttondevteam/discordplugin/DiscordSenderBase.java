@@ -1,18 +1,11 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.IDiscordSender;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public abstract class DiscordSenderBase implements IDiscordSender {
 	/**
@@ -20,7 +13,6 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	 */
 	protected IUser user;
 	protected IChannel channel;
-	private @Getter @Setter @NonNull Channel mcchannel = Channel.GlobalChat;
 
 	protected DiscordSenderBase(IUser user, IChannel channel) {
 		this.user = user;
@@ -41,6 +33,18 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 
 	public IChannel getChannel() {
 		return channel;
+	}
+
+	private DiscordPlayer chromaUser;
+
+	/**
+	 * Loads the user data on first query.
+	 *
+	 * @return A Chroma user of Discord or a Discord user of Chroma
+	 */
+	public DiscordPlayer getChromaUser() {
+		if (chromaUser == null) chromaUser = DiscordPlayer.getUser(user.getStringID(), DiscordPlayer.class);
+		return chromaUser;
 	}
 
 	@Override
@@ -65,6 +69,6 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 
 	@Override
 	public void sendMessage(String[] messages) {
-		sendMessage(Arrays.stream(messages).collect(Collectors.joining("\n")));
+		sendMessage(String.join("\n", messages));
 	}
 }

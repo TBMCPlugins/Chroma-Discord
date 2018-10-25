@@ -38,6 +38,7 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -149,7 +150,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                             val mcch = Channel.getChannels().stream().filter(ch -> ch.ID.equals(chcon.getString("mcchid"))).findAny();
                             val ch = dc.getChannelByID(chcon.getLong("chid"));
                             val did = chcon.getLong("did");
-                            val dp = DiscordPlayer.getUser(Long.toString(did), DiscordPlayer.class);
                             val user = dc.fetchUser(did);
                             val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
                             val groupid = chcon.getString("groupid");
@@ -221,6 +221,8 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
+	        ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
+			        ? ((DiscordSenderBase) sender).getChromaUser() : null));
             new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
         } catch (Exception e) {
