@@ -221,8 +221,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-	        ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
-			        ? ((DiscordSenderBase) sender).getChromaUser() : null));
+	        ChromaGamerBase.addConverter(sender -> {
+		        //System.out.println("Discord converter queried: "+sender+" "+sender.getName()); - TODO: Remove
+		        //System.out.println(((DiscordSenderBase) sender).getChromaUser().channel().get().ID); //TODO: TMP
+		        return Optional.ofNullable(sender instanceof DiscordSenderBase
+				        ? ((DiscordSenderBase) sender).getChromaUser() : null);
+	        });
             new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
         } catch (Exception e) {

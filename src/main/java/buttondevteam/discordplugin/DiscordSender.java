@@ -86,12 +86,12 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	}
 
 	@Override
-	public boolean isOp() { // TODO: Connect with TBMC acc
+	public boolean isOp() {
 		return false;
 	}
 
 	@Override
-	public void setOp(boolean value) { // TODO: Connect with TBMC acc
+	public void setOp(boolean value) {
 	}
 
 	@Override

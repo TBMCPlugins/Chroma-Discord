@@ -3,7 +3,7 @@ package buttondevteam.discordplugin;
 public enum ChannelconBroadcast {
 	JOINLEAVE,
 	AFK,
-	RESTART, //TODO
+	RESTART,
 	DEATH,
 	BROADCAST;
 

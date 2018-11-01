@@ -4,7 +4,6 @@ import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.listeners.MCChatListener;
-import buttondevteam.lib.TBMCChannelConnectFakeEvent;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
@@ -79,18 +78,17 @@ public class ChannelconCommand extends DiscordCommandBase {
             return true;
         }
         DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
-        val ev = new TBMCChannelConnectFakeEvent(dcp, chan.get());
         //Using a fake player with no login/logout, should be fine for this event
-        String groupid = ev.getGroupID(ev.getSender()); //We're not trying to send in a specific group, we want to know which group the user belongs to (so not getGroupID())
+	    String groupid = chan.get().getGroupID(dcp);
         if (groupid == null) {
             message.reply("sorry, that didn't work. You cannot use that Minecraft channel.");
             return true;
         }
-        if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
+        /*if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
             message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
             return true;
-        }
-	    MCChatListener.addCustomChat(message.getChannel(), groupid, ev.getChannel(), message.getAuthor(), dcp, 0);
+        }*/ //TODO: "Channel admins" that can connect channels?
+	    MCChatListener.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0);
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }

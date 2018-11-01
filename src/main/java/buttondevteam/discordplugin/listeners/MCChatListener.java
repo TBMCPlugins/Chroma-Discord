@@ -2,7 +2,10 @@ package buttondevteam.discordplugin.listeners;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
-import buttondevteam.lib.*;
+import buttondevteam.lib.TBMCChatEvent;
+import buttondevteam.lib.TBMCChatPreprocessEvent;
+import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.ChatRoom;
@@ -125,7 +128,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
-            if ((e.getChannel() == Channel.GlobalChat || e.getChannel().ID.equals("rp"))
+	        if (e.getChannel().isGlobal()
                     && (e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
                 doit.accept(lastmsgdata == null
                         ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null)
@@ -304,9 +307,10 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getLongID() == channel.getLongID());
     }
 
-    public static CustomLMD getCustomChat(IChannel channel) {
-        return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
-    }
+	@Nullable
+	public static CustomLMD getCustomChat(IChannel channel) {
+		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
+	}
 
     public static boolean removeCustomChat(IChannel channel) {
         lastmsgfromd.remove(channel.getLongID());
@@ -387,9 +391,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 return false; //If null then allow
             if (sender == null)
                 return true;
-            val e = new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel);
-            return clmd.groupID.equals(e.getGroupID(sender));
-        }).forEach(cc -> action.accept(cc.channel)); //TODO: Use getScore and getGroupID in fake event constructor - This should also send error messages on channel connect
+	        return clmd.groupID.equals(clmd.mcchannel.getGroupID(sender));
+        }).forEach(cc -> action.accept(cc.channel)); //TODO: Send error messages on channel connect
     }
 
     /**
@@ -403,7 +406,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
         if (!DiscordPlugin.hooked || !hookmsg)
             forAllMCChat(action);
-	    forAllowedCustomMCChat(action, sender, toggle); //TODO: Use getScore and getGroupID in fake event constructor - This should also send error messages on channel connect
+	    forAllowedCustomMCChat(action, sender, toggle);
     }
 
     public static Consumer<IChannel> send(String message) {
@@ -411,7 +414,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     }
 
     public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
-        if (Channel.GlobalChat.ID.equals(event.getChannel().ID))
+	    if (event.getChannel().isGlobal())
             action.accept(DiscordPlugin.chatchannel);
         for (LastMsgData data : lastmsgPerUser)
             if (event.shouldSendTo(getSender(data.channel, data.user)))
@@ -562,23 +565,29 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                             .filter(c -> c.ID.equalsIgnoreCase(topcmd)
                                     || (c.IDs != null && c.IDs.length > 0
                                     && Arrays.stream(c.IDs).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
-                    if (!ch.isPresent())
-                        Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-                                () -> {
-                                    val channel = dsender.getChromaUser().channel(); //TODO: Save?
+	                if (!ch.isPresent()) //TODO: What if talking in the public chat while we have it on a different one
+		                Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
+				                () -> { //TODO: Better handling...
+					                val channel = user.channel();
                                     val chtmp = channel.get();
-                                    if (clmd != null)
-                                        channel.set(clmd.mcchannel); //Hack to send command in the channel
+					                //System.out.println("1: "+chtmp.ID);
+					                //System.out.println("clmd: "+clmd);
+					                if (clmd != null) {
+						                channel.set(clmd.mcchannel); //Hack to send command in the channel
+						                //System.out.println("clmd chan: "+clmd.mcchannel.ID);
+					                } //TODO: Permcheck isn't implemented for commands
+					                //System.out.println("2: "+channel.get().ID);
 	                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
                                     Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
                                     if (clmd != null)
                                         channel.set(chtmp);
+					                //System.out.println("3: "+channel.get().ID); - TODO: Remove
                                 });
                     else {
                         Channel chc = ch.get();
-                        if (!chc.ID.equals(Channel.GlobalChat.ID) && !chc.ID.equals("rp") && !event.getMessage().getChannel().isPrivate())
+		                if (!chc.isGlobal() && !event.getMessage().getChannel().isPrivate())
                             dsender.sendMessage(
-                                    "You can only talk in global in the public chat. DM `mcchat` to enable private chat to talk in the other channels.");
+		                            "You can only talk in a public chat here. DM `mcchat` to enable private chat to talk in the other channels.");
                         else {
                             if (spi == -1) // Switch channels
                             {
@@ -609,10 +618,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 lastlistp = (short) Bukkit.getOnlinePlayers().size();
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-                        && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage())
-                    TBMCChatAPI.SendSystemMessage(Channel.GlobalChat, 0, "everyone",
-                            (dsender instanceof Player ? ((Player) dsender).getDisplayName()
-                                    : dsender.getName()) + " pinned a message on Discord.");
+		                && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage()) {
+	                val rtr = clmd != null ? clmd.mcchannel.filteranderrormsg.apply(clmd.dcp) : dsender.getChromaUser().channel().get().filteranderrormsg.apply(dsender);
+	                TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr.score, rtr.groupID,
+			                (dsender instanceof Player ? ((Player) dsender).getDisplayName()
+					                : dsender.getName()) + " pinned a message on Discord.");
+                }
                 else {
 	                val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);
                     if (clmd != null)

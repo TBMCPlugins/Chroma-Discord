@@ -137,7 +137,7 @@ public class MCListener implements Listener {
                     return;
                 final IUser user = DiscordPlugin.dc.getUserByID(
                         Long.parseLong(TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
-                                .getAs(DiscordPlayer.class).getDiscordID())); // TODO: Use long
+		                        .getAs(DiscordPlayer.class).getDiscordID()));
                 if (e.getValue())
                     user.addRole(role);
                 else
@@ -163,6 +163,7 @@ public class MCListener implements Listener {
     public void onYEEHAW(TBMCYEEHAWEvent event) { //TODO: Inherit from the chat event base to have channel support
         String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
                 : event.getSender().getName();
+	    //Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
         MCChatListener.forAllMCChat(MCChatListener.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
     }
 
