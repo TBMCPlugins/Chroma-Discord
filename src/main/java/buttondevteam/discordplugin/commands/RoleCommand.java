@@ -59,19 +59,19 @@ public class RoleCommand extends DiscordCommandBase {
             DiscordPlugin.sendMessageToChannel(message.getChannel(), usage + "\nUsage: " + argsa[0] + " <rolename>");
             return null;
         }
-        String rolename = argsa[1];
+        StringBuilder rolename = new StringBuilder(argsa[1]);
         for (int i = 2; i < argsa.length; i++)
-            rolename += " " + argsa[i];
-        if (!DiscordPlugin.GameRoles.contains(rolename)) {
+            rolename.append(" ").append(argsa[i]);
+        if (!DiscordPlugin.GameRoles.contains(rolename.toString())) {
             DiscordPlugin.sendMessageToChannel(message.getChannel(), "That game role cannot be found.");
             listRoles(message);
             return null;
         }
-        final List<IRole> roles = DiscordPlugin.mainServer.getRolesByName(rolename);
+        final List<IRole> roles = DiscordPlugin.mainServer.getRolesByName(rolename.toString());
         if (roles.size() == 0) {
             DiscordPlugin.sendMessageToChannel(message.getChannel(),
                     "The specified role cannot be found on Discord! Removing from the list.");
-            DiscordPlugin.GameRoles.remove(rolename);
+            DiscordPlugin.GameRoles.remove(rolename.toString());
             return null;
         }
         if (roles.size() > 1) {
