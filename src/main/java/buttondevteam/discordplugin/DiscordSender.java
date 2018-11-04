@@ -16,10 +16,11 @@ import java.util.Set;
 public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	private PermissibleBase perm = new PermissibleBase(this);
 
-	private String name = null;
+	private String name;
 
 	public DiscordSender(IUser user, IChannel channel) {
 		super(user, channel);
+		name = user == null ? "Discord user" : user.getDisplayName(DiscordPlugin.mainServer);
 	}
 
 	public DiscordSender(IUser user, IChannel channel, String name) {
@@ -85,12 +86,12 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	}
 
 	@Override
-	public boolean isOp() { // TODO: Connect with TBMC acc
+	public boolean isOp() {
 		return false;
 	}
 
 	@Override
-	public void setOp(boolean value) { // TODO: Connect with TBMC acc
+	public void setOp(boolean value) {
 	}
 
 	@Override
@@ -100,7 +101,7 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 
 	@Override
 	public String getName() {
-		return name == null ? user == null ? "Discord user" : user.getDisplayName(DiscordPlugin.mainServer) : name;
+		return name;
 	}
 
 	@Override

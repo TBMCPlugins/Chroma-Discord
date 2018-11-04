@@ -1,9 +1,9 @@
 package buttondevteam.discordplugin.commands;
 
+import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.listeners.MCChatListener;
-import buttondevteam.lib.TBMCChannelConnectFakeEvent;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
@@ -13,6 +13,8 @@ import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.PermissionUtils;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ChannelconCommand extends DiscordCommandBase {
     @Override
@@ -29,13 +31,38 @@ public class ChannelconCommand extends DiscordCommandBase {
             return true;
         }
         if (MCChatListener.hasCustomChat(message.getChannel())) {
-            if (args.equalsIgnoreCase("remove")) {
+	        if (args.toLowerCase().startsWith("remove")) {
                 if (MCChatListener.removeCustomChat(message.getChannel()))
                     message.reply("channel connection removed.");
                 else
                     message.reply("wait what, couldn't remove channel connection.");
                 return true;
             }
+	        if (args.toLowerCase().startsWith("toggle")) {
+		        val cc = MCChatListener.getCustomChat(message.getChannel());
+		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"));
+		        String[] argsa = args.split(" ");
+		        if (argsa.length < 2) {
+			        message.reply("toggles:\n" + togglesString.get());
+			        return true;
+		        }
+		        String arg = argsa[1].toUpperCase();
+		        val b = Arrays.stream(ChannelconBroadcast.values()).filter(t -> t.toString().equals(arg)).findAny();
+		        if (!b.isPresent()) {
+			        message.reply("cannot find toggle. Toggles:\n" + togglesString.get());
+			        return true;
+		        }
+		        //A B | F
+		        //------- A: original - B: mask - F: new
+		        //0 0 | 0
+		        //0 1 | 1
+		        //1 0 | 1
+		        //1 1 | 0
+		        // XOR
+		        cc.toggles ^= b.get().flag;
+		        message.reply("'" + b.get().toString().toLowerCase() + "' " + ((cc.toggles & b.get().flag) == 0 ? "disabled" : "enabled"));
+		        return true;
+	        }
             message.reply("this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
             return true;
         }
@@ -51,18 +78,17 @@ public class ChannelconCommand extends DiscordCommandBase {
             return true;
         }
         DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
-        val ev = new TBMCChannelConnectFakeEvent(dcp, chan.get());
         //Using a fake player with no login/logout, should be fine for this event
-        String groupid = ev.getGroupID(ev.getSender()); //We're not trying to send in a specific group, we want to know which group the user belongs to (so not getGroupID())
+	    String groupid = chan.get().getGroupID(dcp);
         if (groupid == null) {
             message.reply("sorry, that didn't work. You cannot use that Minecraft channel.");
             return true;
         }
-        if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
+        /*if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
             message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
             return true;
-        }
-        MCChatListener.addCustomChat(message.getChannel(), groupid, ev.getChannel(), dp, message.getAuthor(), dcp);
+        }*/ //TODO: "Channel admins" that can connect channels?
+	    MCChatListener.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0);
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }

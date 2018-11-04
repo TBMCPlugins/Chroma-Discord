@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.mccommands;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.chat.TBMCCommandBase;
 import org.bukkit.Bukkit;
@@ -15,9 +16,11 @@ public class ResetMCCommand extends TBMCCommandBase { //Not player-only, so not 
             resetting = true; //Turned off after sending enable message (ReadyEvent)
             sender.sendMessage("§bDisabling DiscordPlugin...");
             Bukkit.getPluginManager().disablePlugin(DiscordPlugin.plugin);
-            sender.sendMessage("§bEnabling DiscordPlugin...");
+	        if (!(sender instanceof DiscordSenderBase)) //Sending to Discord errors
+		        sender.sendMessage("§bEnabling DiscordPlugin...");
             Bukkit.getPluginManager().enablePlugin(DiscordPlugin.plugin);
-            sender.sendMessage("§bReset finished!");
+	        if (!(sender instanceof DiscordSenderBase)) //Sending to Discord errors
+		        sender.sendMessage("§bReset finished!");
         });
         return true;
     }

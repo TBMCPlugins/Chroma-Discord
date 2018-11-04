@@ -38,6 +38,7 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -149,30 +150,30 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                             val mcch = Channel.getChannels().stream().filter(ch -> ch.ID.equals(chcon.getString("mcchid"))).findAny();
                             val ch = dc.getChannelByID(chcon.getLong("chid"));
                             val did = chcon.getLong("did");
-                            val dp = DiscordPlayer.getUser(Long.toString(did), DiscordPlayer.class);
                             val user = dc.fetchUser(did);
                             val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
                             val groupid = chcon.getString("groupid");
+                            val toggles = chcon.getInt("toggles");
                             if (!mcch.isPresent() || ch == null || user == null || groupid == null)
                                 continue;
-                            MCChatListener.addCustomChat(ch, groupid, mcch.get(), dp, user, dcp);
+                            MCChatListener.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
                         }
                     }
 
                     DiscordCommandBase.registerCommands();
                     if (ResetMCCommand.resetting)
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
-                                .withTitle("Discord plugin restarted - chat connected.").build()); //Really important to note the chat, hmm
+                                .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
                     else if (getConfig().getBoolean("serverup", false)) {
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.YELLOW)
-                                .withTitle("Server recovered from a crash - chat connected.").build());
+                                .withTitle("Server recovered from a crash - chat connected.").build(), ChannelconBroadcast.RESTART);
                         val thr = new Throwable(
                                 "The server shut down unexpectedly. See the log of the previous run for more details.");
                         thr.setStackTrace(new StackTraceElement[0]);
                         TBMCCoreAPI.SendException("The server crashed!", thr);
                     } else
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
-                                .withTitle("Server started - chat connected.").build());
+                                .withTitle("Server started - chat connected.").build(), ChannelconBroadcast.RESTART);
 
                     ResetMCCommand.resetting = false; //This is the last event handling this flag
 
@@ -220,6 +221,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
+	        ChromaGamerBase.addConverter(sender -> {
+		        //System.out.println("Discord converter queried: "+sender+" "+sender.getName()); - TODO: Remove
+		        //System.out.println(((DiscordSenderBase) sender).getChromaUser().channel().get().ID); //TODO: TMP
+		        return Optional.ofNullable(sender instanceof DiscordSenderBase
+				        ? ((DiscordSenderBase) sender).getChromaUser() : null);
+	        });
             new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
         } catch (Exception e) {
@@ -261,31 +268,33 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
             chconc.set("mcuid", chcon.dcp.getUniqueId().toString());
             chconc.set("mcname", chcon.dcp.getName());
             chconc.set("groupid", chcon.groupID);
+            chconc.set("toggles", chcon.toggles);
         }
 
         saveConfig();
+        EmbedObject embed;
+        if (ResetMCCommand.resetting)
+            embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
+        else
+            embed = new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+                    .withTitle(Restart ? "Server restarting" : "Server stopping")
+                    .withDescription(
+                            Bukkit.getOnlinePlayers().size() > 0
+                                    ? (DPUtils
+                                    .sanitizeString(Bukkit.getOnlinePlayers().stream()
+                                            .map(Player::getDisplayName).collect(Collectors.joining(", ")))
+                                    + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+                                    + "kicked the hell out.") //TODO: Make configurable
+                                    : "") //If 'restart' is disabled then this isn't shown even if joinleave is enabled
+                    .build();
         MCChatListener.forCustomAndAllMCChat(ch -> {
             try {
-                if (ResetMCCommand.resetting)
                     DiscordPlugin.sendMessageToChannelWait(ch, "",
-                            new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build());
-                else
-                    DiscordPlugin.sendMessageToChannelWait(ch, "",
-                            new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-                                    .withTitle(Restart ? "Server restarting" : "Server stopping")
-                                    .withDescription(
-                                            Bukkit.getOnlinePlayers().size() > 0
-                                                    ? (DPUtils
-                                                    .sanitizeString(Bukkit.getOnlinePlayers().stream()
-                                                            .map(Player::getDisplayName).collect(Collectors.joining(", ")))
-                                                    + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-                                                    + "asked *politely* to leave the server for a bit.")
-                                                    : "")
-                                    .build(), 5, TimeUnit.SECONDS);
+                            embed, 5, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException e) {
                 e.printStackTrace();
             }
-        });
+        }, ChannelconBroadcast.RESTART, false);
         ChromaBot.getInstance().updatePlayerList();
         try {
             SafeMode = true; // Stop interacting with Discord
@@ -415,10 +424,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
         }
         try {
-            if (channel == chatchannel)
-                MCChatListener.resetLastMessage(); // If this is a chat message, it'll be set again
-            else if (channel.isPrivate())
-                MCChatListener.resetLastMessage(channel);
+            MCChatListener.resetLastMessage(channel); // If this is a chat message, it'll be set again
             final String content = message;
             RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
                     : channel.sendMessage(content, embed, false);

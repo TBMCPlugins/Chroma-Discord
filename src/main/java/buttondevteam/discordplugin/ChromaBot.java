@@ -9,6 +9,7 @@ import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.EmbedBuilder;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -62,9 +63,10 @@ public class ChromaBot {
      *
      * @param message The message to send, duh
      * @param embed   Custom fancy stuff, use {@link EmbedBuilder} to create one
+     * @param toggle The toggle type for channelcon
      */
-    public void sendMessageCustomAsWell(String message, EmbedObject embed) {
-        MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
+    public void sendMessageCustomAsWell(String message, EmbedObject embed, @Nullable ChannelconBroadcast toggle) {
+	    MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed), toggle, false);
     }
 
 	/**

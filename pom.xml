@@ -94,6 +94,13 @@
 				<goals> <goal>testDelombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory> 
 				<sourceDirectory>src/test/java</sourceDirectory> </configuration> </execution> 
 				</executions> </plugin> -->
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<useSystemClassLoader>false
+					</useSystemClassLoader> <!-- https://stackoverflow.com/a/53012553/2703239 -->
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
