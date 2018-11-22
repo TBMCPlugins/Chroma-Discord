@@ -81,7 +81,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             time = se.getValue();
 
             final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName) + "] " //
-                    + (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
+                    + ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin() + "]") //
                     + (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
                     ? ((Player) e.getSender()).getDisplayName() //
                     : e.getSender().getName()));

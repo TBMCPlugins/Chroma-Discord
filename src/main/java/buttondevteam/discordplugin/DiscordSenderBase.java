@@ -1,13 +1,13 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.chat.IDiscordSender;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
-public abstract class DiscordSenderBase implements IDiscordSender {
+public abstract class DiscordSenderBase implements CommandSender {
 	/**
 	 * May be null.
 	 */
