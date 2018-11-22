@@ -51,6 +51,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 	public void sendMessage(String message) {
 		try {
 			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
+			//if (broadcast && DiscordPlugin.hooked) - TODO: What should happen if unhooked
 			if (broadcast)
 				return;
 			final String sendmsg = DPUtils.sanitizeString(message);

@@ -106,6 +106,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<branch>master</branch> <!-- Should be master if building ButtonCore locally -->
 	</properties>
 
 	<repositories>
@@ -173,7 +174,7 @@
 		<dependency>
 			<groupId>com.github.TBMCPlugins.ButtonCore</groupId>
 			<artifactId>ButtonCore</artifactId>
-			<version>${env.TRAVIS_BRANCH}-SNAPSHOT</version>
+			<version>${branch}-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -225,4 +226,19 @@
 			<version>4.0.0</version>
 		</dependency>
 	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>ci</id>
+			<activation>
+				<property>
+					<name>env.TRAVIS_BRANCH</name>
+				</property>
+			</activation>
+			<properties>
+				<!-- Override only if necessary -->
+				<branch>${env.TRAVIS_BRANCH}</branch>
+			</properties>
+		</profile>
+	</profiles>
 </project>

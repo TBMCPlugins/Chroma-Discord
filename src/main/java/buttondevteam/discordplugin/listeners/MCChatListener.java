@@ -39,8 +39,8 @@ import sx.blah.discord.util.MissingPermissionsException;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.time.Instant;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -81,7 +81,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             time = se.getValue();
 
             final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName) + "] " //
-                    + ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin() + "]") //
+		            + ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
                     + (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
                     ? ((Player) e.getSender()).getDisplayName() //
                     : e.getSender().getName()));
