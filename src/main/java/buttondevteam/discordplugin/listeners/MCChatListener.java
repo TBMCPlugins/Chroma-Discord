@@ -1,6 +1,9 @@
 package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.*;
+import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
@@ -58,7 +61,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
-        if (DiscordPlugin.SafeMode || ev.isCancelled()) //SafeMode: Needed so it doesn't restart after server shutdown
+        if (!ComponentManager.isEnabled(MinecraftChatModule.class) || ev.isCancelled()) //SafeMode: Needed so it doesn't restart after server shutdown
             return;
         sendevents.add(new AbstractMap.SimpleEntry<>(ev, Instant.now()));
         if (sendtask != null)
@@ -368,7 +371,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
      * @param hookmsg Whether the message is also sent from the hook
      */
     public static void forCustomAndAllMCChat(Consumer<IChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-        if (!DiscordPlugin.hooked || !hookmsg)
+        if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
             forAllMCChat(action);
         final Consumer<CustomLMD> customLMDConsumer = cc -> action.accept(cc.channel);
         if (toggle == null)
@@ -404,7 +407,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
      * @param hookmsg Whether the message is also sent from the hook
      */
     public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-        if (!DiscordPlugin.hooked || !hookmsg)
+        if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
             forAllMCChat(action);
 	    forAllowedCustomMCChat(action, sender, toggle);
     }
@@ -463,9 +466,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private Runnable recrun;
     private static Thread recthread;
 
-    @Override // Discord
+    @Override // Discord - TODO: Call from the common listener
     public void handle(MessageReceivedEvent ev) {
-        if (DiscordPlugin.SafeMode)
+        if (!ComponentManager.isEnabled(MinecraftChatModule.class))
             return;
         val author = ev.getMessage().getAuthor();
         if (author.isBot())
@@ -476,8 +479,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 && !hasCustomChat)
             return;
         if (ev.getMessage().getContent().equalsIgnoreCase("mcchat"))
-            return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommandListener)
-        if (CommandListener.runCommand(ev.getMessage(), true))
+            return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommonListeners)
+        if (CommonListeners.runCommand(ev.getMessage(), true))
             return;
         resetLastMessage(ev.getChannel());
         lastlist++;

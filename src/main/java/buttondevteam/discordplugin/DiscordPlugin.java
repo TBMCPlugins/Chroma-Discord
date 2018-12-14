@@ -1,13 +1,16 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
-import buttondevteam.discordplugin.listeners.CommandListener;
+import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.ExceptionListener;
 import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.discordplugin.listeners.MCListener;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
@@ -51,22 +54,12 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
     public static List<String> GameRoles;
-    public static boolean hooked = false;
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnable() {
         stop = false; //If not the first time
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
-            try {
-                PlayerListWatcher.hookUp();
-                hooked = true;
-                Bukkit.getLogger().info("Finished hooking into the player list");
-            } catch (Throwable e) {
-                e.printStackTrace();
-                Bukkit.getLogger().warning("Couldn't hook into the player list!");
-            }
             plugin = this;
             lastannouncementtime = getConfig().getLong("lastannouncementtime");
             lastseentime = getConfig().getLong("lastseentime");
@@ -212,11 +205,10 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					}*/
                 }
             }, 0, 10);
-            for (IListener<?> listener : CommandListener.getListeners())
+            for (IListener<?> listener : CommonListeners.getListeners())
                 dc.getDispatcher().registerListener(listener);
-            MCChatListener mcchat = new MCChatListener();
-            dc.getDispatcher().registerListener(mcchat);
-            TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
+            Component.registerComponent(this, new GeneralEventBroadcasterModule());
+            Component.registerComponent(this, new MinecraftChatModule());
             Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
@@ -299,16 +291,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         try {
             SafeMode = true; // Stop interacting with Discord
             MCChatListener.stop(true);
-            try {
-                if (PlayerListWatcher.hookDown())
-                    System.out.println("Finished unhooking the player list!");
-                else
-                    System.out.println("Didn't have the player list hooked.");
-                hooked = false;
-            } catch (Throwable e) {
-                e.printStackTrace();
-                Bukkit.getLogger().warning("Couldn't unhook the player list!");
-            }
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();

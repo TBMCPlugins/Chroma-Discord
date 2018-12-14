@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
-import static buttondevteam.discordplugin.listeners.CommandListener.debug;
+import static buttondevteam.discordplugin.listeners.CommonListeners.debug;
 
 public abstract class DiscordCommandBase {
 	public abstract String getCommandName();

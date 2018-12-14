@@ -23,7 +23,7 @@ import java.util.Calendar;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class CommandListener {
+public class CommonListeners {
 
     private static final String[] serverReadyStrings = new String[]{"In one week from now", // Ali
             "Between now and the heat-death of the universe.", // Ghostise
@@ -200,7 +200,7 @@ public class CommandListener {
     private static boolean debug = false;
 
     public static void debug(String debug) {
-        if (CommandListener.debug) //Debug
+        if (CommonListeners.debug) //Debug
             System.out.println(debug);
     }
 
