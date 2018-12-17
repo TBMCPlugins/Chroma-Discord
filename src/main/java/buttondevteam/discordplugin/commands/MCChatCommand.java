@@ -25,7 +25,7 @@ public class MCChatCommand extends DiscordCommandBase {
 			MCChatPrivate.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Minecraft chat " + (mcchat //
-                            ? "enabled. Use '/mcchat' again to turn it off." //
+							? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
 							: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
@@ -36,8 +36,9 @@ public class MCChatCommand extends DiscordCommandBase {
 	@Override
 	public String[] getHelpText() {
 		return new String[] { //
-				"mcchat enables or disables the Minecraft chat in private messages.", //
-				"It can be useful if you don't want your messages to be visible, for example when talking a private channel." //
+				DiscordPlugin.getPrefix() + "mcchat enables or disables the Minecraft chat in private messages.", //
+				"It can be useful if you don't want your messages to be visible, for example when talking in a private channel.", //
+				"You can also run all of the ingame commands you have access to using this command, if you have your accounts connected." //
 		}; // TODO: Pin channel switching to indicate the current channel
 	}
 

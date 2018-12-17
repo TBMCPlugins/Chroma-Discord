@@ -382,8 +382,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 		                && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage()) {
-	                val rtr = clmd != null ? clmd.mcchannel.filteranderrormsg.apply(clmd.dcp) : dsender.getChromaUser().channel().get().filteranderrormsg.apply(dsender);
-	                TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr.score, rtr.groupID,
+                    val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
+                            : dsender.getChromaUser().channel().get().getRTR(dsender);
+                    TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
 			                (dsender instanceof Player ? ((Player) dsender).getDisplayName()
 					                : dsender.getName()) + " pinned a message on Discord.");
                 }

@@ -30,7 +30,7 @@ public class ConnectCommand extends DiscordCommandBase {
 			return false;
 		if (args.contains(" ")) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Too many arguments.\nUsage: connect <Minecraftname>");
+					"Too many arguments.\nUsage: " + DiscordPlugin.getPrefix() + "connect <Minecraftname>");
 			return true;
 		}
 		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
@@ -68,8 +68,8 @@ public class ConnectCommand extends DiscordCommandBase {
 	public String[] getHelpText() {
 		return new String[] { //
 				"---- Connect command ----", //
-				"This commands let's you connect your acoount with a Minecraft account. This'd allow using the Minecraft chat and other things.", //
-				"Usage: connect <Minecraftname>" //
+				"This command lets you connect your account with a Minecraft account. This allows using the Minecraft chat and other things.", //
+				"Usage: /connect <Minecraftname>" //
 		};
 	}
 

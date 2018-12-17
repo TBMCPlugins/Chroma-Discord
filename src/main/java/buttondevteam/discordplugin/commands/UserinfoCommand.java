@@ -91,7 +91,8 @@ public class UserinfoCommand extends DiscordCommandBase {
 				"---- User information ----", //
 				"Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.", //
                 "If used without args, shows your info.", //
-                "Usage: userinfo [username/nickname[#tag]/ping]\nExamples:\nuserinfo ChromaBot\nuserinfo ChromaBot#6338\nuserinfo @ChromaBot#6338" //
+				"Usage: " + DiscordPlugin.getPrefix() + "userinfo [username/nickname[#tag]/ping]", //
+				"Examples:\n" + DiscordPlugin.getPrefix() + "userinfo ChromaBot\n" + DiscordPlugin.getPrefix() + "userinfo ChromaBot#6338\n" + DiscordPlugin.getPrefix() + "userinfo @ChromaBot#6338" //
 		};
 	}
 

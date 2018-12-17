@@ -86,7 +86,7 @@ public class RoleCommand extends DiscordCommandBase {
     public String[] getHelpText() {
         return new String[]{ //
                 "Add or remove game roles from yourself.", //
-                "Usage: role add|remove <name> or role list", //
+                "Usage: " + DiscordPlugin.getPrefix() + "role add|remove <name> or role list", //
         };
     }
 

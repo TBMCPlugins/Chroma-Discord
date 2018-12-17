@@ -12,7 +12,9 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.architecture.ButtonPlugin;
 import buttondevteam.lib.architecture.Component;
+import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
@@ -27,7 +29,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
+public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent> {
     private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
     private static boolean stop = false;
     public static IDiscordClient dc;
@@ -57,8 +58,17 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static boolean SafeMode = true;
     public static List<String> GameRoles;
 
+    public ConfigData<Character> Prefix() {
+        return getData("prefix", '/');
+    }
+
+    public static char getPrefix() {
+        if (plugin == null) return '/';
+        return plugin.Prefix().get();
+    }
+
     @Override
-    public void onEnable() {
+    public void pluginEnable() {
         stop = false; //If not the first time
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
@@ -238,7 +248,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static boolean Restart;
 
     @Override
-    public void onDisable() {
+    public void pluginDisable() {
         stop = true;
         for (val entry : MCChatUtils.ConnectedSenders.entrySet())
             for (val valueEntry : entry.getValue().entrySet())
