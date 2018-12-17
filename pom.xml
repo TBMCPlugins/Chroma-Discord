@@ -106,7 +106,9 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<branch>master</branch> <!-- Should be master if building ButtonCore locally -->
+        <branch>
+            master
+        </branch> <!-- Should be master if building ButtonCore locally - the CI will overwrite it (see below) -->
 	</properties>
 
 	<repositories>
@@ -160,11 +162,16 @@
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
-		<dependency>
-			<groupId>com.discord4j</groupId>
-			<artifactId>Discord4J</artifactId>
-			<version>2.10.1</version>
-		</dependency>
+        <!-- <dependency>
+            <groupId>com.discord4j</groupId>
+            <artifactId>Discord4J</artifactId>
+            <version>2.10.1</version>
+        </dependency> -->
+        <dependency>
+            <groupId>com.github.SizableShrimp</groupId>
+            <artifactId>Discord4J</artifactId>
+            <version>httprequestchange-SNAPSHOT</version>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
 			<groupId>org.slf4j</groupId>

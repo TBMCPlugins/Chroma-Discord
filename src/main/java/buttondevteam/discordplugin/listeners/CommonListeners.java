@@ -1,7 +1,10 @@
 package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.mcchat.MCChatCustom;
+import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -72,7 +75,7 @@ public class CommonListeners {
                     return;
                 final IChannel channel = event.getMessage().getChannel();
                 if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID())
-                        && (!event.getMessage().getContent().contains("channelcon") || MCChatListener.hasCustomChat(channel))) //Allow channelcon in other servers but avoid double handling when it's enabled
+                        && (!event.getMessage().getContent().contains("channelcon") || MCChatCustom.hasCustomChat(channel))) //Allow channelcon in other servers but avoid double handling when it's enabled
                     return;
                 if (channel.getStringID().equals(DiscordPlugin.chatchannel.getStringID()))
                     return; // The chat code already handles this - Right now while testing botchannel is the same as chatchannel
@@ -98,7 +101,7 @@ public class CommonListeners {
                         && !(event.getMessage().getContent().startsWith("/")
                         && event.getChannel().getStringID().equals(DiscordPlugin.botchannel.getStringID()))) //
                     return;
-                if (MCChatListener.isMinecraftChatEnabled(event.getAuthor().toString()))
+                if (MCChatPrivate.isMinecraftChatEnabled(event.getAuthor().toString()))
                     if (!event.getMessage().getContent().equalsIgnoreCase("mcchat"))
                         return;
                 if (event.getMessage().getAuthor().isBot())
@@ -201,7 +204,7 @@ public class CommonListeners {
 
     public static void debug(String debug) {
         if (CommonListeners.debug) //Debug
-            System.out.println(debug);
+            DPUtils.getLogger().info(debug);
     }
 
     public static boolean debug() {

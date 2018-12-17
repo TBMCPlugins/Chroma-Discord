@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.listeners.MCChatListener;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 

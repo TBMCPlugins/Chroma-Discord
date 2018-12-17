@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.broadcaster;
 
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import com.mojang.authlib.GameProfile;
 import lombok.val;
@@ -30,7 +30,7 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 			if (packet instanceof PacketPlayOutChat) {
 				Field msgf = PacketPlayOutChat.class.getDeclaredField("a");
 				msgf.setAccessible(true);
-				MCChatListener.forAllMCChat(MCChatListener.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
+				MCChatUtils.forAllMCChat(MCChatUtils.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);

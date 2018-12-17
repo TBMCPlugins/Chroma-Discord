@@ -3,7 +3,7 @@ package buttondevteam.discordplugin.commands;
 import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatCustom;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
@@ -30,16 +30,16 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("you need to have manage permissions for this channel!");
             return true;
         }
-        if (MCChatListener.hasCustomChat(message.getChannel())) {
+	    if (MCChatCustom.hasCustomChat(message.getChannel())) {
 	        if (args.toLowerCase().startsWith("remove")) {
-                if (MCChatListener.removeCustomChat(message.getChannel()))
+		        if (MCChatCustom.removeCustomChat(message.getChannel()))
                     message.reply("channel connection removed.");
                 else
                     message.reply("wait what, couldn't remove channel connection.");
                 return true;
             }
 	        if (args.toLowerCase().startsWith("toggle")) {
-		        val cc = MCChatListener.getCustomChat(message.getChannel());
+		        val cc = MCChatCustom.getCustomChat(message.getChannel());
 		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"));
 		        String[] argsa = args.split(" ");
 		        if (argsa.length < 2) {
@@ -88,7 +88,7 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
             return true;
         }*/ //TODO: "Channel admins" that can connect channels?
-	    MCChatListener.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0);
+	    MCChatCustom.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0);
         message.reply("alright, connection made to group `" + groupid + "`!");
         return true;
     }

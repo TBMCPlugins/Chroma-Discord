@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.broadcaster;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import lombok.Getter;
@@ -23,9 +24,9 @@ public class GeneralEventBroadcasterModule extends Component {
 	protected void disable() {
 		try {
 			if (PlayerListWatcher.hookDown())
-				System.out.println("Finished unhooking the player list!");
+				DPUtils.getLogger().info("Finished unhooking the player list!");
 			else
-				System.out.println("Didn't have the player list hooked.");
+				DPUtils.getLogger().info("Didn't have the player list hooked.");
 			hooked = false;
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list!", e);

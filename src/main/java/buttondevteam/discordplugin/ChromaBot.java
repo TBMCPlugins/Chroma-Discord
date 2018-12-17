@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -43,7 +43,7 @@ public class ChromaBot {
 	 *            The message to send, duh
 	 */
 	public void sendMessage(String message) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message));
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message));
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class ChromaBot {
 	 *            Custom fancy stuff, use {@link EmbedBuilder} to create one
 	 */
 	public void sendMessage(String message, EmbedObject embed) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
 	}
 
     /**
@@ -66,7 +66,7 @@ public class ChromaBot {
      * @param toggle The toggle type for channelcon
      */
     public void sendMessageCustomAsWell(String message, EmbedObject embed, @Nullable ChannelconBroadcast toggle) {
-	    MCChatListener.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed), toggle, false);
+	    MCChatUtils.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed), toggle, false);
     }
 
 	/**
@@ -92,7 +92,7 @@ public class ChromaBot {
 	 *            The color of the line before the text
 	 */
 	public void sendMessage(String message, Color color) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
 				new EmbedBuilder().withTitle(message).withColor(color).build()));
 	}
 
@@ -107,7 +107,7 @@ public class ChromaBot {
 	 *            The name of the Minecraft player who is the author of this message
 	 */
 	public void sendMessage(String message, Color color, String mcauthor) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
 				DPUtils.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), mcauthor).build()));
 	}
 
@@ -124,7 +124,7 @@ public class ChromaBot {
 	 *            The URL of the avatar image for this message's author
 	 */
 	public void sendMessage(String message, Color color, String authorname, String authorimg) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, new EmbedBuilder()
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, new EmbedBuilder()
 				.withTitle(message).withColor(color).withAuthorName(authorname).withAuthorIcon(authorimg).build()));
 	}
 
@@ -139,7 +139,7 @@ public class ChromaBot {
 	 *            The player who sends this message
 	 */
 	public void sendMessage(String message, Color color, Player sender) {
-		MCChatListener.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, DPUtils
+		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, DPUtils
 				.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), sender.getName()).build()));
 	}
 

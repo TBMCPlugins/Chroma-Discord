@@ -2,6 +2,8 @@ package buttondevteam.discordplugin.listeners;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.discordplugin.mcchat.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.player.*;
@@ -36,7 +38,7 @@ public class MCListener implements Listener {
     public void onPlayerLogin(PlayerLoginEvent e) {
         if (e.getResult() != Result.ALLOWED)
             return;
-        MCChatListener.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
+	    MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
                 .filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
                 .ifPresent(dcp -> callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
     }
@@ -50,9 +52,9 @@ public class MCListener implements Listener {
             DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
             if (dp != null) {
                 val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
-                MCChatListener.addSender(MCChatListener.OnlineSenders, dp.getDiscordID(),
+	            MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
                         new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
-                MCChatListener.addSender(MCChatListener.OnlineSenders, dp.getDiscordID(),
+	            MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
                         new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p)); //Stored per-channel
             }
             if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
@@ -63,8 +65,7 @@ public class MCListener implements Listener {
                 p.sendMessage("§bIf it wasn't you, do /discord decline");
             }
             final String message = e.GetPlayer().PlayerName().get() + " joined the game";
-            MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
-            //System.out.println("Does this appear more than once?"); //No
+	        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
             MCChatListener.ListC = 0;
             ChromaBot.getInstance().updatePlayerList();
         });
@@ -74,16 +75,16 @@ public class MCListener implements Listener {
     public void onPlayerLeave(TBMCPlayerQuitEvent e) {
         if (e.getPlayer() instanceof DiscordConnectedPlayer)
             return; // Only care about real users
-        MCChatListener.OnlineSenders.entrySet()
+	    MCChatUtils.OnlineSenders.entrySet()
                 .removeIf(entry -> entry.getValue().entrySet().stream().anyMatch(p -> p.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())));
         Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-                () -> MCChatListener.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
+		        () -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
                         .filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
                         .ifPresent(dcp -> callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
         Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
                 ChromaBot.getInstance()::updatePlayerList, 5);
         final String message = e.GetPlayer().PlayerName().get() + " left the game";
-        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
+	    MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -109,7 +110,7 @@ public class MCListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerDeath(PlayerDeathEvent e) {
-        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH, true);
+	    MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH, true);
     }
 
     @EventHandler
@@ -119,7 +120,7 @@ public class MCListener implements Listener {
             return;
 	    final String msg = base.getDisplayName()
 			    + " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
-        MCChatListener.forAllowedCustomAndAllMCChat(MCChatListener.send(msg), base, ChannelconBroadcast.AFK, false);
+	    MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
     }
 
     @EventHandler
@@ -151,12 +152,12 @@ public class MCListener implements Listener {
 
     @EventHandler
     public void onChatSystemMessage(TBMCSystemChatEvent event) {
-	    MCChatListener.forAllowedMCChat(MCChatListener.send(event.getMessage()), event);
+	    MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage()), event);
     }
 
     @EventHandler
     public void onBroadcastMessage(BroadcastMessageEvent event) {
-        MCChatListener.forCustomAndAllMCChat(MCChatListener.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false);
+	    MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false);
     }
 
     @EventHandler
@@ -164,7 +165,7 @@ public class MCListener implements Listener {
         String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
                 : event.getSender().getName();
 	    //Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-        MCChatListener.forAllMCChat(MCChatListener.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
+	    MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
     }
 
     private static final String[] EXCLUDED_PLUGINS = {"ProtocolLib", "LibsDisguises"};
