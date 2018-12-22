@@ -2,7 +2,6 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
@@ -11,8 +10,6 @@ import sx.blah.discord.util.EmbedBuilder;
 
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class ChromaBot {
 	/**
@@ -144,15 +141,6 @@ public class ChromaBot {
 	}
 
 	public void updatePlayerList() {
-		DPUtils.performNoWait(() -> {
-			String[] s = DiscordPlugin.chatchannel.getTopic().split("\\n----\\n");
-			if (s.length < 3)
-				return;
-			s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
-					+ " online";
-			s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
-					.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-			DiscordPlugin.chatchannel.changeTopic(Arrays.stream(s).collect(Collectors.joining("\n----\n")));
-		});
+		MCChatUtils.updatePlayerList();
 	}
 }

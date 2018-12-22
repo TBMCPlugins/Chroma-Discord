@@ -10,6 +10,7 @@ public class MinecraftChatModule extends Component {
 		MCChatListener mcchat = new MCChatListener();
 		DiscordPlugin.dc.getDispatcher().registerListener(mcchat);
 		TBMCCoreAPI.RegisterEventsForExceptions(mcchat, getPlugin());
+		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), getPlugin());
 	}
 
 	@Override

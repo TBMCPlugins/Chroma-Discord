@@ -5,10 +5,7 @@ import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.ExceptionListener;
 import buttondevteam.discordplugin.listeners.MCListener;
-import buttondevteam.discordplugin.mcchat.MCChatCustom;
-import buttondevteam.discordplugin.mcchat.MCChatListener;
-import buttondevteam.discordplugin.mcchat.MCChatUtils;
-import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import buttondevteam.discordplugin.mcchat.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -27,7 +24,6 @@ import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.api.ClientBuilder;
@@ -250,10 +246,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     @Override
     public void pluginDisable() {
         stop = true;
-        for (val entry : MCChatUtils.ConnectedSenders.entrySet())
-            for (val valueEntry : entry.getValue().entrySet())
-                MCListener.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
-        MCChatUtils.ConnectedSenders.clear();
+	    MCChatPrivate.logoutAll();
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
         getConfig().set("serverup", false);

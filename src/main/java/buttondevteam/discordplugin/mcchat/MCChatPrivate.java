@@ -2,7 +2,6 @@ package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -51,5 +50,12 @@ public class MCChatPrivate {
 	public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
 		return lastmsgPerUser.stream()
 				.anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
+	}
+
+	public static void logoutAll() {
+		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
+			for (val valueEntry : entry.getValue().entrySet())
+				MCListener.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
+		MCChatUtils.ConnectedSenders.clear();
 	}
 }

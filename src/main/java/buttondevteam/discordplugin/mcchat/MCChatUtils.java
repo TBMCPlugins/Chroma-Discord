@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCSystemChatEvent;
@@ -7,6 +8,7 @@ import buttondevteam.lib.chat.Channel;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.var;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MCChatUtils {
@@ -29,8 +32,35 @@ public class MCChatUtils {
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
 	public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
-	static LastMsgData lastmsgdata;
+	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<IMessage> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
+
+	public static void updatePlayerList() {
+		if (notEnabled()) return;
+		DPUtils.performNoWait(() -> {
+			if (lastmsgdata != null)
+				updatePL(lastmsgdata);
+			MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
+		});
+	}
+
+	private static boolean notEnabled() {
+		return !ComponentManager.isEnabled(MinecraftChatModule.class);
+	}
+
+	private static void updatePL(LastMsgData lmd) {
+		String topic = lmd.channel.getTopic();
+		if (topic.length() == 0)
+			topic = ".\n----\nMinecraft chat\n----\n.";
+		String[] s = topic.split("\\n----\\n");
+		if (s.length < 3)
+			return;
+		s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
+				+ " online";
+		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
+				.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
+		lmd.channel.changeTopic(String.join("\n----\n", s));
+	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
 	                                                        IUser user, T sender) {
@@ -64,6 +94,7 @@ public class MCChatUtils {
 	}
 
 	public static void forAllMCChat(Consumer<IChannel> action) {
+		if (notEnabled()) return;
 		action.accept(DiscordPlugin.chatchannel);
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
 			action.accept(data.channel);
@@ -78,6 +109,7 @@ public class MCChatUtils {
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
 	public static void forCustomAndAllMCChat(Consumer<IChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
 		final Consumer<MCChatCustom.CustomLMD> customLMDConsumer = cc -> action.accept(cc.channel);
@@ -95,6 +127,7 @@ public class MCChatUtils {
 	 * @param toggle The toggle to check or null to send to all allowed
 	 */
 	public static void forAllowedCustomMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
+		if (notEnabled()) return;
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			//new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
 			if (toggle != null && (clmd.toggles & toggle.flag) == 0)
@@ -114,6 +147,7 @@ public class MCChatUtils {
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
 	public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
 		forAllowedCustomMCChat(action, sender, toggle);
@@ -124,6 +158,7 @@ public class MCChatUtils {
 	}
 
 	public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
+		if (notEnabled()) return;
 		if (event.getChannel().isGlobal())
 			action.accept(DiscordPlugin.chatchannel);
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
@@ -156,6 +191,7 @@ public class MCChatUtils {
 	 * @param channel The channel to reset in - the process is slightly different for the public, private and custom chats
 	 */
 	public static void resetLastMessage(IChannel channel) {
+		if (notEnabled()) return;
 		if (channel.getLongID() == DiscordPlugin.chatchannel.getLongID()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null)
 					: lastmsgdata).message = null;
