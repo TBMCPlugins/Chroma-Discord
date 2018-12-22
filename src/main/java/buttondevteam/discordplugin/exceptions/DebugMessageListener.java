@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin.listeners;
+package buttondevteam.discordplugin.exceptions;
 
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCDebugMessageEvent;

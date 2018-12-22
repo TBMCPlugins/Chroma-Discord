@@ -2,8 +2,8 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
-import buttondevteam.discordplugin.listeners.ExceptionListener;
 import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mcchat.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
@@ -217,7 +217,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                 dc.getDispatcher().registerListener(listener);
             Component.registerComponent(this, new GeneralEventBroadcasterModule());
             Component.registerComponent(this, new MinecraftChatModule());
-            Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
+	        Component.registerComponent(this, new ExceptionListenerModule());
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);

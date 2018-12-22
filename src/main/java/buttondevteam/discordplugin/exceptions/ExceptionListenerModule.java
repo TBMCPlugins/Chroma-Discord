@@ -1,9 +1,12 @@
-package buttondevteam.discordplugin.listeners;
+package buttondevteam.discordplugin.exceptions;
 
+import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCExceptionEvent;
+import buttondevteam.lib.architecture.Component;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import sx.blah.discord.handle.obj.IRole;
@@ -13,13 +16,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExceptionListener implements Listener {
+public class ExceptionListenerModule extends Component implements Listener {
     private List<Throwable> lastthrown = new ArrayList<>();
     private List<String> lastsourcemsg = new ArrayList<>();
 
     @EventHandler
     public void onException(TBMCExceptionEvent e) {
-        if (DiscordPlugin.SafeMode)
+	    if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(getClass()))
             return;
         if (lastthrown.stream()
                 .anyMatch(ex -> Arrays.equals(e.getException().getStackTrace(), ex.getStackTrace())
@@ -59,4 +62,15 @@ public class ExceptionListener implements Listener {
             ex.printStackTrace();
         }
     }
+
+	@Override
+	protected void enable() {
+		Bukkit.getPluginManager().registerEvents(new ExceptionListenerModule(), getPlugin());
+		TBMCCoreAPI.RegisterEventsForExceptions(new DebugMessageListener(), getPlugin());
+	}
+
+	@Override
+	protected void disable() {
+
+	}
 }

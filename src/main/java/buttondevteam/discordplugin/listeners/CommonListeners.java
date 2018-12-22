@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.discordplugin.AsyncDiscordEvent;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
@@ -8,6 +9,7 @@ import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import org.bukkit.Bukkit;
+import sx.blah.discord.api.events.Event;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -63,6 +65,10 @@ public class CommonListeners {
             list.add(i);
     }
 
+	private static void callDiscordEvent(Event event) {
+		MCListener.callEventExcluding(new AsyncDiscordEvent(event), true, "DiscordPlugin");
+	}
+
     private static long lasttime = 0;
 
     public static IListener<?>[] getListeners() {
@@ -71,6 +77,7 @@ public class CommonListeners {
             public void handle(MentionEvent event) {
                 if (DiscordPlugin.SafeMode)
                     return;
+	            callDiscordEvent(event);
                 if (event.getMessage().getAuthor().isBot())
                     return;
                 final IChannel channel = event.getMessage().getChannel();
