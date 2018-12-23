@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.mcchat.MCChatCommand;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 

@@ -1,8 +1,8 @@
-package buttondevteam.discordplugin.commands;
+package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.mcchat.MCChatPrivate;
+import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -13,7 +13,7 @@ public class MCChatCommand extends DiscordCommandBase {
 		return "mcchat";
 	}
 
-	@Override
+	@Override //TODO: Only register if module is enabled
 	public boolean run(IMessage message, String args) {
 		if (!message.getChannel().isPrivate()) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),

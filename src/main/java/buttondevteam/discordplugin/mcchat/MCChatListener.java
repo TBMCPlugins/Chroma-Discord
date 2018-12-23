@@ -5,7 +5,6 @@ import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.discordplugin.DiscordSenderBase;
-import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
@@ -22,7 +21,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
@@ -43,7 +41,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
+public class MCChatListener implements Listener {
     private BukkitTask sendtask;
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
@@ -231,27 +229,25 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private Runnable recrun;
     private static Thread recthread;
 
-    @Override // Discord - TODO: Call from the common listener
-    public void handle(MessageReceivedEvent ev) {
+	// Discord
+	public boolean handleDiscord(MessageReceivedEvent ev) {
         if (!ComponentManager.isEnabled(MinecraftChatModule.class))
-            return;
+	        return false;
         val author = ev.getMessage().getAuthor();
-        if (author.isBot())
-            return;
         final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getChannel());
-        if (!ev.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
+		if (ev.getMessage().getChannel().getLongID() != DiscordPlugin.chatchannel.getLongID()
                 && !(ev.getMessage().getChannel().isPrivate() && MCChatPrivate.isMinecraftChatEnabled(author.getStringID()))
                 && !hasCustomChat)
-            return;
-        if (ev.getMessage().getContent().equalsIgnoreCase("mcchat"))
-            return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommonListeners)
-        if (CommonListeners.runCommand(ev.getMessage(), true))
-            return;
+			return false; //Chat isn't enabled on this channel
+		if (hasCustomChat && ev.getMessage().getContent().length() < "/mcchat<>".length()
+				&& ev.getMessage().getContent().replace("/", "")
+				.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
+			return false; //Allow disabling the chat if needed
         MCChatUtils.resetLastMessage(ev.getChannel());
         lastlist++;
         recevents.add(ev);
         if (rectask != null)
-            return;
+	        return true;
         recrun = () -> { //Don't return in a while loop next time
             recthread = Thread.currentThread();
             processDiscordToMC();
@@ -259,6 +255,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
         };
         rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
+		return true;
     }
 
     private void processDiscordToMC() {
