@@ -9,6 +9,7 @@ import com.earth2me.essentials.CommandSource;
 import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import net.ess3.api.events.MuteStatusChangeEvent;
+import net.ess3.api.events.NickChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -143,5 +144,10 @@ class MCListener implements Listener {
 				: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
 		MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
+	}
+
+	@EventHandler
+	public void onNickChange(NickChangeEvent event) {
+		MCChatUtils.updatePlayerList();
 	}
 }

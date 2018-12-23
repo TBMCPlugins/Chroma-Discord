@@ -2,9 +2,11 @@ package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
 import org.bukkit.Bukkit;
+import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import sx.blah.discord.handle.obj.IChannel;
@@ -31,13 +33,13 @@ public class MCChatPrivate {
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					callEventExcludingSome(new PlayerJoinEvent(sender, ""));
+					callEventSync(new PlayerJoinEvent(sender, ""));
 			} else {
 				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel, user);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					callEventExcludingSome(new PlayerQuitEvent(sender, ""));
+					callEventSync(new PlayerQuitEvent(sender, ""));
 			}
-		}
+		} // ---- PermissionsEx warning is normal on logout ----
 		if (!start)
 			MCChatUtils.lastmsgfromd.remove(channel.getLongID());
 		return start //
@@ -57,7 +59,11 @@ public class MCChatPrivate {
 	public static void logoutAll() {
 		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
 			for (val valueEntry : entry.getValue().entrySet())
-				callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
+				callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
 		MCChatUtils.ConnectedSenders.clear();
+	}
+
+	private static void callEventSync(Event event) {
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> callEventExcludingSome(event));
 	}
 }

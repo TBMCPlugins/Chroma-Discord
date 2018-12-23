@@ -240,7 +240,8 @@ public class MCChatListener implements Listener {
                 && !(ev.getMessage().getChannel().isPrivate() && MCChatPrivate.isMinecraftChatEnabled(author.getStringID()))
                 && !hasCustomChat)
 			return false; //Chat isn't enabled on this channel
-		if (hasCustomChat && ev.getMessage().getContent().length() < "/mcchat<>".length()
+		if (ev.getMessage().getChannel().isPrivate() //Only in private chat
+				&& ev.getMessage().getContent().length() < "/mcchat<>".length()
 				&& ev.getMessage().getContent().replace("/", "")
 				.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
 			return false; //Allow disabling the chat if needed

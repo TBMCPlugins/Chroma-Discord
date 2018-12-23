@@ -38,7 +38,7 @@ public class MCListener implements Listener {
         DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
     }
 
-	private static final String[] EXCLUDED_PLUGINS = {"ProtocolLib", "LibsDisguises"};
+	private static final String[] EXCLUDED_PLUGINS = {"ProtocolLib", "LibsDisguises", "JourneyMapServer"}; //TODO: Make configurable
 
 	public static void callEventExcludingSome(Event event) {
 		callEventExcluding(event, false, EXCLUDED_PLUGINS);
