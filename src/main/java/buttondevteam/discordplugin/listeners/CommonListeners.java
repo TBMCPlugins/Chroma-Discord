@@ -7,7 +7,6 @@ import buttondevteam.lib.architecture.Component;
 import lombok.val;
 import org.bukkit.Bukkit;
 import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MentionEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.impl.events.guild.role.RoleCreateEvent;
 import sx.blah.discord.handle.impl.events.guild.role.RoleDeleteEvent;
@@ -41,23 +40,15 @@ public class CommonListeners {
 
 	/*
 	MentionEvent:
-	- CommandListener (starts with mention, in #bot unless 'channelcon')
+	- CommandListener (starts with mention, only 'channelcon' and not in #bot)
 
 	MessageReceivedEvent:
+	- v CommandListener (starts with mention, in #bot or a connected chat)
 	- Minecraft chat (is enabled in the channel and message isn't [/]mcchat)
 	- CommandListener (with the correct prefix in #bot, or in private)
 	*/
 	public static IListener<?>[] getListeners() {
-		return new IListener[]{new IListener<MentionEvent>() {
-			@Override
-			public void handle(MentionEvent event) {
-				if (DiscordPlugin.SafeMode)
-					return;
-				if (event.getMessage().getAuthor().isBot())
-					return;
-				CommandListener.runCommand(event.getMessage(), true);
-			}
-		}, new IListener<MessageReceivedEvent>() {
+		return new IListener[]{new IListener<MessageReceivedEvent>() {
 			@Override
 			public void handle(MessageReceivedEvent event) {
 				if (DiscordPlugin.SafeMode)
@@ -65,9 +56,13 @@ public class CommonListeners {
 				if (event.getMessage().getAuthor().isBot())
 					return;
 				boolean handled = false;
+				if (event.getChannel().getLongID() == DiscordPlugin.botchannel.getLongID() //If mentioned, that's higher than chat
+						|| event.getMessage().getContent().contains("channelcon")) //Only 'channelcon' is allowed in other channels
+					handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
+				if (handled) return;
 				val mcchat = Component.getComponents().get(MinecraftChatModule.class);
-				if (mcchat != null && mcchat.isEnabled())
-					handled = ((MinecraftChatModule) mcchat).getListener().handleDiscord(event);
+				if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
+					handled = ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
 				if (!handled)
 					handled = CommandListener.runCommand(event.getMessage(), false);
 			}

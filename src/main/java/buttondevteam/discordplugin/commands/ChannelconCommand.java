@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.commands;
 import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.mcchat.MCChatCustom;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -99,10 +100,12 @@ public class ChannelconCommand extends DiscordCommandBase {
                 "---- Channel connect ---", //
                 "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
                 "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
-                "You also need to have your Minecraft account connected. In #bot use /connect <mcname>.", //
-                "Call this command from the channel you want to use. Usage: @ChromaBot channelcon <mcchannel>", //
+		        "You also need to have your Minecraft account connected. In #bot use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
+		        "Call this command from the channel you want to use.", //
+		        "Usage: @" + DiscordPlugin.dc.getOurUser().getName() + " channelcon <mcchannel>", //
+		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
-                "Mentioning the bot is needed in this case because the / prefix only works in #bot.", //
+		        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in #bot.", //
                 "Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot&permissions=268509264>" //
         };
     }

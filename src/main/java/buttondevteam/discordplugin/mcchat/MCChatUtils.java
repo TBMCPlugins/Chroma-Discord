@@ -50,7 +50,7 @@ public class MCChatUtils {
 
 	private static void updatePL(LastMsgData lmd) {
 		String topic = lmd.channel.getTopic();
-		if (topic.length() == 0)
+		if (topic == null || topic.length() == 0)
 			topic = ".\n----\nMinecraft chat\n----\n.";
 		String[] s = topic.split("\\n----\\n");
 		if (s.length < 3)

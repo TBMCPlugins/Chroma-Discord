@@ -2,12 +2,13 @@ package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
-import buttondevteam.lib.player.TBMCPlayerJoinEvent;
-import buttondevteam.lib.player.TBMCPlayerQuitEvent;
-import buttondevteam.lib.player.TBMCYEEHAWEvent;
+import buttondevteam.lib.player.*;
+import com.earth2me.essentials.CommandSource;
 import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
+import net.ess3.api.events.MuteStatusChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,7 +21,10 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
+import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.MissingPermissionsException;
 
 class MCListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -96,6 +100,31 @@ class MCListener implements Listener {
 		final String msg = base.getDisplayName()
 				+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
+	}
+
+	@EventHandler
+	public void onPlayerMute(MuteStatusChangeEvent e) {
+		try {
+			DPUtils.performNoWait(() -> {
+				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
+				final CommandSource source = e.getAffected().getSource();
+				if (!source.isPlayer())
+					return;
+				final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
+						.getAs(DiscordPlayer.class);
+				if (p == null) return;
+				final IUser user = DiscordPlugin.dc.getUserByID(
+						Long.parseLong(p.getDiscordID()));
+				if (e.getValue())
+					user.addRole(role);
+				else
+					user.removeRole(role);
+				DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName());
+			});
+		} catch (DiscordException | MissingPermissionsException ex) {
+			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
+					ex);
+		}
 	}
 
 	@EventHandler

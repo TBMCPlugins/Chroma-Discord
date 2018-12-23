@@ -13,6 +13,8 @@ import sx.blah.discord.handle.obj.IUser;
 
 import java.util.ArrayList;
 
+import static buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome;
+
 public class MCChatPrivate {
 
 	/**
@@ -29,11 +31,11 @@ public class MCChatPrivate {
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					MCListener.callEventExcludingSome(new PlayerJoinEvent(sender, ""));
+					callEventExcludingSome(new PlayerJoinEvent(sender, ""));
 			} else {
 				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel, user);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					MCListener.callEventExcludingSome(new PlayerQuitEvent(sender, ""));
+					callEventExcludingSome(new PlayerQuitEvent(sender, ""));
 			}
 		}
 		if (!start)
@@ -55,7 +57,7 @@ public class MCChatPrivate {
 	public static void logoutAll() {
 		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
 			for (val valueEntry : entry.getValue().entrySet())
-				MCListener.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
+				callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
 		MCChatUtils.ConnectedSenders.clear();
 	}
 }

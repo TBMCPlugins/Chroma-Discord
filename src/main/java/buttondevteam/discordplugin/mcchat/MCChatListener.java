@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.discordplugin.DiscordSenderBase;
+import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
@@ -243,6 +244,8 @@ public class MCChatListener implements Listener {
 				&& ev.getMessage().getContent().replace("/", "")
 				.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
 			return false; //Allow disabling the chat if needed
+        if (CommandListener.runCommand(ev.getMessage(), true))
+            return true; //Allow running commands in chat channels
         MCChatUtils.resetLastMessage(ev.getChannel());
         lastlist++;
         recevents.add(ev);

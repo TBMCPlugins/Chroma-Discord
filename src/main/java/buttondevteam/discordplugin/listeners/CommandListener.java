@@ -15,17 +15,13 @@ public class CommandListener {
 	 */
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
 		final IChannel channel = message.getChannel();
-		if (mentionedonly) {
-			if (!channel.getStringID().equals(DiscordPlugin.botchannel.getStringID())
-					&& !message.getContent().contains("channelcon")) //Allow channelcon in other servers
-				return false; //Private chat is handled without mentions
-		} else {
+		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!message.getChannel().isPrivate()
-					&& !(message.getContent().startsWith("/")
+					&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
 					&& channel.getStringID().equals(DiscordPlugin.botchannel.getStringID()))) //
 				return false;
+			message.getChannel().setTypingStatus(true); // Fun
 		}
-		message.getChannel().setTypingStatus(true); // Fun
 		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
 		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
