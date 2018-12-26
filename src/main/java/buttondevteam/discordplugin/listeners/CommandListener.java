@@ -4,6 +4,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IRole;
 
 public class CommandListener {
 	/**
@@ -14,6 +15,8 @@ public class CommandListener {
 	 * @return Whether it ran the command
 	 */
 	public static boolean runCommand(IMessage message, boolean mentionedonly) {
+		if (message.getContent().length() == 0)
+			return false; //Pin messages and such, let the mcchat listener deal with it
 		final IChannel channel = message.getChannel();
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!message.getChannel().isPrivate()
@@ -27,7 +30,7 @@ public class CommandListener {
 		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
 		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
-		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(r -> r.mention())::iterator)
+		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(IRole::mention)::iterator)
 			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
 		if (mentionedonly && !gotmention) {
 			message.getChannel().setTypingStatus(false);
