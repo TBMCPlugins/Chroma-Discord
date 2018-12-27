@@ -121,13 +121,13 @@ public class MCChatListener implements Listener {
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
 	        if (e.getChannel().isGlobal()
-                    && (e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
+                    && (e.isFromCommand() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
                 doit.accept(MCChatUtils.lastmsgdata == null
                         ? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(DiscordPlugin.chatchannel, null)
                         : MCChatUtils.lastmsgdata);
 
             for (MCChatUtils.LastMsgData data : MCChatPrivate.lastmsgPerUser) {
-                if ((e.isFromcmd() || isdifferentchannel.test(data.channel))
+                if ((e.isFromCommand() || isdifferentchannel.test(data.channel))
                         && e.shouldSendTo(MCChatUtils.getSender(data.channel, data.user)))
                     doit.accept(data);
             }
@@ -135,7 +135,7 @@ public class MCChatListener implements Listener {
             val iterator = MCChatCustom.lastmsgCustom.iterator();
             while (iterator.hasNext()) {
                 val lmd = iterator.next();
-                if ((e.isFromcmd() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
+                if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
                         && e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
                         && e.getGroupID().equals(lmd.groupID)) { //Check if this is the group we want to test - #58
                     if (e.shouldSendTo(lmd.dcp)) //Check original user's permissions
