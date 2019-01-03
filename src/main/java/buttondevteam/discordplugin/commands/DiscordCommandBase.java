@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.mcchat.MCChatCommand;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -8,7 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
-import static buttondevteam.discordplugin.listeners.CommandListener.debug;
+import static buttondevteam.discordplugin.listeners.CommonListeners.debug;
 
 public abstract class DiscordCommandBase {
 	public abstract String getCommandName();

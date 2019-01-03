@@ -1,56 +1,48 @@
-package buttondevteam.discordplugin.listeners;
+package buttondevteam.discordplugin.mcchat;
 
-import buttondevteam.discordplugin.*;
+import buttondevteam.core.ComponentManager;
+import buttondevteam.discordplugin.DPUtils;
+import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.DiscordSender;
+import buttondevteam.discordplugin.DiscordSenderBase;
+import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import com.vdurmont.emoji.EmojiParser;
-import io.netty.util.collection.LongObjectHashMap;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.var;
 import lombok.val;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IPrivateChannel;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.time.Instant;
-import java.util.*;
-import java.util.List;
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class MCChatListener implements Listener, IListener<MessageReceivedEvent> {
+public class MCChatListener implements Listener {
     private BukkitTask sendtask;
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
@@ -58,7 +50,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 
     @EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
-        if (DiscordPlugin.SafeMode || ev.isCancelled()) //SafeMode: Needed so it doesn't restart after server shutdown
+        if (!ComponentManager.isEnabled(MinecraftChatModule.class) || ev.isCancelled()) //SafeMode: Needed so it doesn't restart after server shutdown
             return;
         sendevents.add(new AbstractMap.SimpleEntry<>(ev, Instant.now()));
         if (sendtask != null)
@@ -81,7 +73,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             time = se.getValue();
 
             final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName) + "] " //
-                    + (e.getSender() instanceof DiscordSenderBase ? "[D]" : "") //
+		            + ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
                     + (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
                     ? ((Player) e.getSender()).getDisplayName() //
                     : e.getSender().getName()));
@@ -102,7 +94,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             // embed.withFooterText(e.getChannel().DisplayName);
             embed.withTimestamp(time);
             final long nanoTime = System.nanoTime();
-            InterruptibleConsumer<LastMsgData> doit = lastmsgdata -> {
+            InterruptibleConsumer<MCChatUtils.LastMsgData> doit = lastmsgdata -> {
                 final EmbedObject embedObject = embed.build();
                 if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
                         || !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
@@ -117,7 +109,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     try {
                         lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
                                 + embedObject.description;// The message object doesn't get updated
-                        final LastMsgData _lastmsgdata = lastmsgdata;
+                        final MCChatUtils.LastMsgData _lastmsgdata = lastmsgdata;
                         DPUtils.perform(() -> _lastmsgdata.message.edit("", embedObject));
                     } catch (MissingPermissionsException | DiscordException e1) {
                         TBMCCoreAPI.SendException("An error occurred while editing chat message!", e1);
@@ -129,21 +121,21 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
 	        if (e.getChannel().isGlobal()
-                    && (e.isFromcmd() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
-                doit.accept(lastmsgdata == null
-                        ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null)
-                        : lastmsgdata);
+                    && (e.isFromCommand() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
+                doit.accept(MCChatUtils.lastmsgdata == null
+                        ? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(DiscordPlugin.chatchannel, null)
+                        : MCChatUtils.lastmsgdata);
 
-            for (LastMsgData data : lastmsgPerUser) {
-                if ((e.isFromcmd() || isdifferentchannel.test(data.channel))
-                        && e.shouldSendTo(getSender(data.channel, data.user)))
+            for (MCChatUtils.LastMsgData data : MCChatPrivate.lastmsgPerUser) {
+                if ((e.isFromCommand() || isdifferentchannel.test(data.channel))
+                        && e.shouldSendTo(MCChatUtils.getSender(data.channel, data.user)))
                     doit.accept(data);
             }
 
-            val iterator = lastmsgCustom.iterator();
+            val iterator = MCChatCustom.lastmsgCustom.iterator();
             while (iterator.hasNext()) {
                 val lmd = iterator.next();
-                if ((e.isFromcmd() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
+                if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
                         && e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
                         && e.getGroupID().equals(lmd.groupID)) { //Check if this is the group we want to test - #58
                     if (e.shouldSendTo(lmd.dcp)) //Check original user's permissions
@@ -159,32 +151,6 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             sendtask = null;
         } catch (Exception ex) {
             TBMCCoreAPI.SendException("Error while sending message to Discord!", ex);
-        }
-    }
-
-    @RequiredArgsConstructor
-    public static class LastMsgData {
-        public IMessage message;
-        public long time;
-        public String content;
-        public final IChannel channel;
-        public Channel mcchannel;
-        public final IUser user;
-    }
-
-    public static class CustomLMD extends LastMsgData {
-        public final String groupID;
-        public final Channel mcchannel;
-        public final DiscordConnectedPlayer dcp;
-	    public int toggles;
-
-        private CustomLMD(@NonNull IChannel channel, @NonNull IUser user,
-                          @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles) {
-            super(channel, user);
-            groupID = groupid;
-            this.mcchannel = mcchannel;
-            this.dcp = dcp;
-            this.toggles = toggles;
         }
     }
 
@@ -211,72 +177,8 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private static final String[] UnconnectedCmds = new String[]{"list", "u", "shrug", "tableflip", "unflip", "mwiki",
             "yeehaw", "lenny", "rp", "plugins"};
 
-    private static LastMsgData lastmsgdata;
     private static short lastlist = 0;
     private static short lastlistp = 0;
-    /**
-     * Used for messages in PMs (mcchat).
-     */
-    private static ArrayList<LastMsgData> lastmsgPerUser = new ArrayList<LastMsgData>();
-    /**
-     * Used for town or nation chats or anything else
-     */
-    private static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
-    private static LongObjectHashMap<IMessage> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
-
-    public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
-        TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
-        if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
-            val p = Bukkit.getPlayer(mcp.getUUID());
-            val op = Bukkit.getOfflinePlayer(mcp.getUUID());
-            if (start) {
-                val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
-                addSender(ConnectedSenders, user, sender);
-                if (p == null)// Player is offline - If the player is online, that takes precedence
-                    MCListener.callEventExcludingSome(new PlayerJoinEvent(sender, ""));
-            } else {
-                val sender = removeSender(ConnectedSenders, channel, user);
-                if (p == null)// Player is offline - If the player is online, that takes precedence
-                    MCListener.callEventExcludingSome(new PlayerQuitEvent(sender, ""));
-            }
-        }
-        if (!start)
-            lastmsgfromd.remove(channel.getLongID());
-        return start //
-                ? lastmsgPerUser.add(new LastMsgData(channel, user)) // Doesn't support group DMs
-                : lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
-    }
-
-    public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
-                                                            IUser user, T sender) {
-        return addSender(senders, user.getStringID(), sender);
-    }
-
-    public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
-                                                            String did, T sender) {
-        var map = senders.get(did);
-        if (map == null)
-            map = new HashMap<>();
-        map.put(sender.getChannel(), sender);
-        senders.put(did, map);
-        return sender;
-    }
-
-    public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<IChannel, T>> senders,
-                                                            IChannel channel, IUser user) {
-        var map = senders.get(user.getStringID());
-        if (map != null)
-            return map.get(channel);
-        return null;
-    }
-
-    public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<IChannel, T>> senders,
-                                                               IChannel channel, IUser user) {
-        var map = senders.get(user.getStringID());
-        if (map != null)
-            return map.remove(channel);
-        return null;
-    }
 
     // ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
     // Offline public chat......x............................................
@@ -289,142 +191,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     // If online and disabling private chat, don't logout
     // The maps may not contain the senders for UnconnectedSenders
 
-    public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
-        return isMinecraftChatEnabled(dp.getDiscordID());
-    }
-
-    public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
-        return lastmsgPerUser.stream()
-                .anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
-    }
-
-    public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles) {
-        val lmd = new CustomLMD(channel, user, groupid, mcchannel, dcp, toggles);
-        lastmsgCustom.add(lmd);
-    }
-
-    public static boolean hasCustomChat(IChannel channel) {
-        return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getLongID() == channel.getLongID());
-    }
-
-	@Nullable
-	public static CustomLMD getCustomChat(IChannel channel) {
-		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
-	}
-
-    public static boolean removeCustomChat(IChannel channel) {
-        lastmsgfromd.remove(channel.getLongID());
-        return lastmsgCustom.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
-    }
-
-    public static List<CustomLMD> getCustomChats() {
-        return Collections.unmodifiableList(lastmsgCustom);
-    }
-
-    /**
-     * May contain P&lt;DiscordID&gt; as key for public chat
-     */
-    public static final HashMap<String, HashMap<IChannel, DiscordSender>> UnconnectedSenders = new HashMap<>();
-    public static final HashMap<String, HashMap<IChannel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
-    /**
-     * May contain P&lt;DiscordID&gt; as key for public chat
-     */
-    public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
     public static short ListC = 0;
-
-    /**
-     * Resets the last message, so it will start a new one instead of appending to it.
-     * This is used when someone (even the bot) sends a message to the channel.
-     *
-     * @param channel The channel to reset in - the process is slightly different for the public, private and custom chats
-     */
-    public static void resetLastMessage(IChannel channel) {
-        if (channel.getLongID() == DiscordPlugin.chatchannel.getLongID()) {
-            (lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null)
-                    : lastmsgdata).message = null;
-            return;
-        } // Don't set the whole object to null, the player and channel information should be preserved
-        for (LastMsgData data : channel.isPrivate() ? lastmsgPerUser : lastmsgCustom) {
-            if (data.channel.getLongID() == channel.getLongID()) {
-                data.message = null;
-                return;
-            }
-        }
-        //If it gets here, it's sending a message to a non-chat channel
-    }
-
-    public static void forAllMCChat(Consumer<IChannel> action) {
-        action.accept(DiscordPlugin.chatchannel);
-        for (LastMsgData data : lastmsgPerUser)
-            action.accept(data.channel);
-        // lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
-    }
-
-    /**
-     * For custom and all MC chat
-     *
-     * @param action  The action to act
-     * @param toggle  The toggle to check
-     * @param hookmsg Whether the message is also sent from the hook
-     */
-    public static void forCustomAndAllMCChat(Consumer<IChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-        if (!DiscordPlugin.hooked || !hookmsg)
-            forAllMCChat(action);
-        final Consumer<CustomLMD> customLMDConsumer = cc -> action.accept(cc.channel);
-        if (toggle == null)
-            lastmsgCustom.forEach(customLMDConsumer);
-        else
-            lastmsgCustom.stream().filter(cc -> (cc.toggles & toggle.flag) != 0).forEach(customLMDConsumer);
-    }
-
-    /**
-     * Do the {@code action} for each custom chat the {@code sender} have access to and has that broadcast type enabled.
-     *
-     * @param action The action to do
-     * @param sender The sender to check perms of or null to send to all that has it toggled
-     * @param toggle The toggle to check or null to send to all allowed
-     */
-    public static void forAllowedCustomMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
-        lastmsgCustom.stream().filter(clmd -> {
-            //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
-            if (toggle != null && (clmd.toggles & toggle.flag) == 0)
-                return false; //If null then allow
-            if (sender == null)
-                return true;
-	        return clmd.groupID.equals(clmd.mcchannel.getGroupID(sender));
-        }).forEach(cc -> action.accept(cc.channel)); //TODO: Send error messages on channel connect
-    }
-
-    /**
-     * Do the {@code action} for each custom chat the {@code sender} have access to and has that broadcast type enabled.
-     *
-     * @param action  The action to do
-     * @param sender  The sender to check perms of or null to send to all that has it toggled
-     * @param toggle  The toggle to check or null to send to all allowed
-     * @param hookmsg Whether the message is also sent from the hook
-     */
-    public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-        if (!DiscordPlugin.hooked || !hookmsg)
-            forAllMCChat(action);
-	    forAllowedCustomMCChat(action, sender, toggle);
-    }
-
-    public static Consumer<IChannel> send(String message) {
-        return ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(message));
-    }
-
-    public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
-	    if (event.getChannel().isGlobal())
-            action.accept(DiscordPlugin.chatchannel);
-        for (LastMsgData data : lastmsgPerUser)
-            if (event.shouldSendTo(getSender(data.channel, data.user)))
-                action.accept(data.channel);
-		lastmsgCustom.stream().filter(clmd -> {
-			if ((clmd.toggles & ChannelconBroadcast.BROADCAST.flag) == 0)
-				return false;
-			return event.shouldSendTo(clmd.dcp);
-		}).map(clmd -> clmd.channel).forEach(action);
-    }
 
     /**
      * Stop the listener. Any calls to onMCChat will restart it as long as we're not in safe mode.
@@ -445,13 +212,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 if (wait)
                     recthread.join(5000);
             }
-            lastmsgdata = null;
-            lastmsgPerUser.clear();
-            lastmsgCustom.clear();
-            lastmsgfromd.clear();
-            ConnectedSenders.clear();
+            MCChatUtils.lastmsgdata = null;
+            MCChatPrivate.lastmsgPerUser.clear();
+            MCChatCustom.lastmsgCustom.clear();
+            MCChatUtils.lastmsgfromd.clear();
+            MCChatUtils.ConnectedSenders.clear();
             lastlist = lastlistp = ListC = 0;
-            UnconnectedSenders.clear();
+            MCChatUtils.UnconnectedSenders.clear();
             recthread = sendthread = null;
         } catch (InterruptedException e) {
             e.printStackTrace(); //This thread shouldn't be interrupted
@@ -463,27 +230,28 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
     private Runnable recrun;
     private static Thread recthread;
 
-    @Override // Discord
-    public void handle(MessageReceivedEvent ev) {
-        if (DiscordPlugin.SafeMode)
-            return;
+	// Discord
+	public boolean handleDiscord(MessageReceivedEvent ev) {
+        if (!ComponentManager.isEnabled(MinecraftChatModule.class))
+	        return false;
         val author = ev.getMessage().getAuthor();
-        if (author.isBot())
-            return;
-        final boolean hasCustomChat = hasCustomChat(ev.getChannel());
-        if (!ev.getMessage().getChannel().getStringID().equals(DiscordPlugin.chatchannel.getStringID())
-                && !(ev.getMessage().getChannel().isPrivate() && isMinecraftChatEnabled(author.getStringID()))
+        final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getChannel());
+		if (ev.getMessage().getChannel().getLongID() != DiscordPlugin.chatchannel.getLongID()
+                && !(ev.getMessage().getChannel().isPrivate() && MCChatPrivate.isMinecraftChatEnabled(author.getStringID()))
                 && !hasCustomChat)
-            return;
-        if (ev.getMessage().getContent().equalsIgnoreCase("mcchat"))
-            return; // Race condition: If it gets here after it enabled mcchat it says it - I might as well allow disabling with this (CommandListener)
+			return false; //Chat isn't enabled on this channel
+		if (ev.getMessage().getChannel().isPrivate() //Only in private chat
+				&& ev.getMessage().getContent().length() < "/mcchat<>".length()
+				&& ev.getMessage().getContent().replace("/", "")
+				.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
+			return false; //Allow disabling the chat if needed
         if (CommandListener.runCommand(ev.getMessage(), true))
-            return;
-        resetLastMessage(ev.getChannel());
+            return true; //Allow running commands in chat channels
+        MCChatUtils.resetLastMessage(ev.getChannel());
         lastlist++;
         recevents.add(ev);
         if (rectask != null)
-            return;
+	        return true;
         recrun = () -> { //Don't return in a while loop next time
             recthread = Thread.currentThread();
             processDiscordToMC();
@@ -491,6 +259,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
         };
         rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
+		return true;
     }
 
     private void processDiscordToMC() {
@@ -505,7 +274,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
         val sender = event.getMessage().getAuthor();
         String dmessage = event.getMessage().getContent();
         try {
-            final DiscordSenderBase dsender = getSender(event.getMessage().getChannel(), sender);
+            final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannel(), sender);
 	        val user = dsender.getChromaUser();
 
             for (IUser u : event.getMessage().getMentions()) {
@@ -525,7 +294,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 		                    .getAttachments().stream().map(IMessage.Attachment::getUrl).collect(Collectors.joining("\n"))
                             : "");
 
-            CustomLMD clmd = getCustomChat(event.getChannel());
+            MCChatCustom.CustomLMD clmd = MCChatCustom.getCustomChat(event.getChannel());
 
             boolean react = false;
 
@@ -570,18 +339,13 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
 				                () -> { //TODO: Better handling...
 					                val channel = user.channel();
                                     val chtmp = channel.get();
-					                //System.out.println("1: "+chtmp.ID);
-					                //System.out.println("clmd: "+clmd);
 					                if (clmd != null) {
 						                channel.set(clmd.mcchannel); //Hack to send command in the channel
-						                //System.out.println("clmd chan: "+clmd.mcchannel.ID);
 					                } //TODO: Permcheck isn't implemented for commands
-					                //System.out.println("2: "+channel.get().ID);
 	                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
                                     Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
                                     if (clmd != null)
                                         channel.set(chtmp);
-					                //System.out.println("3: "+channel.get().ID); - TODO: Remove
                                 });
                     else {
                         Channel chc = ch.get();
@@ -619,8 +383,9 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 		                && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage()) {
-	                val rtr = clmd != null ? clmd.mcchannel.filteranderrormsg.apply(clmd.dcp) : dsender.getChromaUser().channel().get().filteranderrormsg.apply(dsender);
-	                TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr.score, rtr.groupID,
+                    val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
+                            : dsender.getChromaUser().channel().get().getRTR(dsender);
+                    TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
 			                (dsender instanceof Player ? ((Player) dsender).getDisplayName()
 					                : dsender.getName()) + " pinned a message on Discord.");
                 }
@@ -635,7 +400,7 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
             }
             if (react) {
                 try {
-                    val lmfd = lastmsgfromd.get(event.getChannel().getLongID());
+                    val lmfd = MCChatUtils.lastmsgfromd.get(event.getChannel().getLongID());
                     if (lmfd != null) {
                         DPUtils.perform(() -> lmfd.removeReaction(DiscordPlugin.dc.getOurUser(),
                                 DiscordPlugin.DELIVERED_REACTION)); // Remove it no matter what, we know it's there 99.99% of the time
@@ -643,25 +408,12 @@ public class MCChatListener implements Listener, IListener<MessageReceivedEvent>
                 } catch (Exception e) {
                     TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
                 }
-                lastmsgfromd.put(event.getChannel().getLongID(), event.getMessage());
+                MCChatUtils.lastmsgfromd.put(event.getChannel().getLongID(), event.getMessage());
                 DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
             }
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
         }
-    }
-
-    /**
-     * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
-     */
-    private static DiscordSenderBase getSender(IChannel channel, final IUser author) {
-	    //noinspection OptionalGetWithoutIsPresent
-        return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
-                () -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
-                () -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
-		        () -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), //
-		        () -> Optional.of(addSender(UnconnectedSenders, author,
-				        new DiscordSender(author, channel)))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
     }
 
     @FunctionalInterface

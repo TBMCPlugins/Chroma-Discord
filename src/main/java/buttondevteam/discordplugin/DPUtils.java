@@ -9,6 +9,7 @@ import sx.blah.discord.util.RequestBuffer.IVoidRequest;
 import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 public final class DPUtils {
@@ -95,5 +96,11 @@ public final class DPUtils {
     public static String escape(String message) {
         return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\")+"$1");
     }
+
+	public static Logger getLogger() {
+		if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger() == null)
+			return Logger.getLogger("DiscordPlugin");
+		return DiscordPlugin.plugin.getLogger();
+	}
 
 }

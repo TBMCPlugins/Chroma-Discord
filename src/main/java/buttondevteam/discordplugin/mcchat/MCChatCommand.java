@@ -1,8 +1,8 @@
-package buttondevteam.discordplugin.commands;
+package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 
@@ -13,7 +13,7 @@ public class MCChatCommand extends DiscordCommandBase {
 		return "mcchat";
 	}
 
-	@Override
+	@Override //TODO: Only register if module is enabled
 	public boolean run(IMessage message, String args) {
 		if (!message.getChannel().isPrivate()) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
@@ -22,10 +22,10 @@ public class MCChatCommand extends DiscordCommandBase {
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
 			boolean mcchat = !user.isMinecraftChatEnabled();
-			MCChatListener.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
+			MCChatPrivate.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 					"Minecraft chat " + (mcchat //
-                            ? "enabled. Use '/mcchat' again to turn it off." //
+							? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
 							: "disabled."));
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
@@ -36,8 +36,9 @@ public class MCChatCommand extends DiscordCommandBase {
 	@Override
 	public String[] getHelpText() {
 		return new String[] { //
-				"mcchat enables or disables the Minecraft chat in private messages.", //
-				"It can be useful if you don't want your messages to be visible, for example when talking a private channel." //
+				DiscordPlugin.getPrefix() + "mcchat enables or disables the Minecraft chat in private messages.", //
+				"It can be useful if you don't want your messages to be visible, for example when talking in a private channel.", //
+				"You can also run all of the ingame commands you have access to using this command, if you have your accounts connected." //
 		}; // TODO: Pin channel switching to indicate the current channel
 	}
 

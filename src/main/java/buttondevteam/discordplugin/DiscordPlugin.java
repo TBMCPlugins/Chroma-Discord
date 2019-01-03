@@ -1,13 +1,17 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
-import buttondevteam.discordplugin.listeners.CommandListener;
-import buttondevteam.discordplugin.listeners.ExceptionListener;
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
+import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
+import buttondevteam.discordplugin.mcchat.*;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.architecture.ButtonPlugin;
+import buttondevteam.lib.architecture.Component;
+import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
@@ -20,9 +24,7 @@ import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -44,29 +46,28 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
+public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent> {
     private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
     private static boolean stop = false;
     public static IDiscordClient dc;
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
     public static List<String> GameRoles;
-    public static boolean hooked = false;
 
-    @SuppressWarnings("unchecked")
+    public ConfigData<Character> Prefix() {
+        return getData("prefix", '/');
+    }
+
+    public static char getPrefix() {
+        if (plugin == null) return '/';
+        return plugin.Prefix().get();
+    }
+
     @Override
-    public void onEnable() {
+    public void pluginEnable() {
         stop = false; //If not the first time
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
-            try {
-                PlayerListWatcher.hookUp();
-                hooked = true;
-                Bukkit.getLogger().info("Finished hooking into the player list");
-            } catch (Throwable e) {
-                e.printStackTrace();
-                Bukkit.getLogger().warning("Couldn't hook into the player list!");
-            }
             plugin = this;
             lastannouncementtime = getConfig().getLong("lastannouncementtime");
             lastseentime = getConfig().getLong("lastseentime");
@@ -156,7 +157,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                             val toggles = chcon.getInt("toggles");
                             if (!mcch.isPresent() || ch == null || user == null || groupid == null)
                                 continue;
-                            MCChatListener.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
+                            MCChatCustom.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
                         }
                     }
 
@@ -212,21 +213,16 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
 					}*/
                 }
             }, 0, 10);
-            for (IListener<?> listener : CommandListener.getListeners())
+            for (IListener<?> listener : CommonListeners.getListeners())
                 dc.getDispatcher().registerListener(listener);
-            MCChatListener mcchat = new MCChatListener();
-            dc.getDispatcher().registerListener(mcchat);
-            TBMCCoreAPI.RegisterEventsForExceptions(mcchat, this);
-            Bukkit.getPluginManager().registerEvents(new ExceptionListener(), this);
+            Component.registerComponent(this, new GeneralEventBroadcasterModule());
+            Component.registerComponent(this, new MinecraftChatModule());
+	        Component.registerComponent(this, new ExceptionListenerModule());
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-	        ChromaGamerBase.addConverter(sender -> {
-		        //System.out.println("Discord converter queried: "+sender+" "+sender.getName()); - TODO: Remove
-		        //System.out.println(((DiscordSenderBase) sender).getChromaUser().channel().get().ID); //TODO: TMP
-		        return Optional.ofNullable(sender instanceof DiscordSenderBase
-				        ? ((DiscordSenderBase) sender).getChromaUser() : null);
-	        });
+            ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
+                    ? ((DiscordSenderBase) sender).getChromaUser() : null));
             new Thread(this::AnnouncementGetterThreadMethod).start();
             setupProviders();
         } catch (Exception e) {
@@ -248,17 +244,14 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
     public static boolean Restart;
 
     @Override
-    public void onDisable() {
+    public void pluginDisable() {
         stop = true;
-        for (val entry : MCChatListener.ConnectedSenders.entrySet())
-            for (val valueEntry : entry.getValue().entrySet())
-                MCListener.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), ""));
-        MCChatListener.ConnectedSenders.clear();
+	    MCChatPrivate.logoutAll();
         getConfig().set("lastannouncementtime", lastannouncementtime);
         getConfig().set("lastseentime", lastseentime);
         getConfig().set("serverup", false);
 
-        val chcons = MCChatListener.getCustomChats();
+        val chcons = MCChatCustom.getCustomChats();
         val chconsc = getConfig().createSection("chcons");
         for (val chcon : chcons) {
             val chconc = chconsc.createSection(chcon.channel.getStringID());
@@ -287,7 +280,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                                     + "kicked the hell out.") //TODO: Make configurable
                                     : "") //If 'restart' is disabled then this isn't shown even if joinleave is enabled
                     .build();
-        MCChatListener.forCustomAndAllMCChat(ch -> {
+        MCChatUtils.forCustomAndAllMCChat(ch -> {
             try {
                     DiscordPlugin.sendMessageToChannelWait(ch, "",
                             embed, 5, TimeUnit.SECONDS);
@@ -299,16 +292,6 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
         try {
             SafeMode = true; // Stop interacting with Discord
             MCChatListener.stop(true);
-            try {
-                if (PlayerListWatcher.hookDown())
-                    System.out.println("Finished unhooking the player list!");
-                else
-                    System.out.println("Didn't have the player list hooked.");
-                hooked = false;
-            } catch (Throwable e) {
-                e.printStackTrace();
-                Bukkit.getLogger().warning("Couldn't unhook the player list!");
-            }
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
@@ -424,7 +407,7 @@ public class DiscordPlugin extends JavaPlugin implements IListener<ReadyEvent> {
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
         }
         try {
-            MCChatListener.resetLastMessage(channel); // If this is a chat message, it'll be set again
+            MCChatUtils.resetLastMessage(channel); // If this is a chat message, it'll be set again
             final String content = message;
             RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
                     : channel.sendMessage(content, embed, false);

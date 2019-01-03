@@ -2,7 +2,7 @@ package buttondevteam.discordplugin.mccommands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -35,7 +35,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		dp.save();
 		mcp.save();
 		ConnectCommand.WaitingToConnect.remove(player.getName());
-        MCChatListener.UnconnectedSenders.remove(did); //Remove all unconnected, will be recreated where needed
+		MCChatUtils.UnconnectedSenders.remove(did); //Remove all unconnected, will be recreated where needed
 		player.sendMessage("§bAccounts connected.");
 		return true;
 	}

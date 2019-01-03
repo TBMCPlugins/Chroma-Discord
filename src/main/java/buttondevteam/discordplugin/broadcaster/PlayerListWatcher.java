@@ -1,6 +1,6 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.broadcaster;
 
-import buttondevteam.discordplugin.listeners.MCChatListener;
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import com.mojang.authlib.GameProfile;
 import lombok.val;
@@ -30,7 +30,7 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 			if (packet instanceof PacketPlayOutChat) {
 				Field msgf = PacketPlayOutChat.class.getDeclaredField("a");
 				msgf.setAccessible(true);
-				MCChatListener.forAllMCChat(MCChatListener.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
+				MCChatUtils.forAllMCChat(MCChatUtils.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
@@ -53,52 +53,43 @@ public class PlayerListWatcher extends DedicatedPlayerList {
 	}
 
 	@Override
-	public void sendMessage(IChatBaseComponent[] iChatBaseComponents) { // Needed so it calls the overriden method
+	public void sendMessage(IChatBaseComponent[] iChatBaseComponents) { // Needed so it calls the overridden method
 		for (IChatBaseComponent component : iChatBaseComponents) {
 			sendMessage(component, true);
 		}
 	}
 
-	public static void hookUp() {
-		try {
-			Field conf = CraftServer.class.getDeclaredField("console");
-			conf.setAccessible(true);
-			val server = (MinecraftServer) conf.get(Bukkit.getServer());
-			val plw = new ObjenesisStd().newInstance(PlayerListWatcher.class); // Cannot call super constructor
-			plw.plist = (DedicatedPlayerList) server.getPlayerList();
-			plw.maxPlayers = plw.plist.getMaxPlayers();
-			Field plf = plw.getClass().getField("players");
-			plf.setAccessible(true);
-			Field modf = plf.getClass().getDeclaredField("modifiers");
-			modf.setAccessible(true);
-			modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
-			plf.set(plw, plw.plist.players);
-			server.a(plw);
-			Field pllf = CraftServer.class.getDeclaredField("playerList");
-			pllf.setAccessible(true);
-			pllf.set(Bukkit.getServer(), plw);
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
-		}
+	static void hookUp() throws Exception {
+		Field conf = CraftServer.class.getDeclaredField("console");
+		conf.setAccessible(true);
+		val server = (MinecraftServer) conf.get(Bukkit.getServer());
+		val plw = new ObjenesisStd().newInstance(PlayerListWatcher.class); // Cannot call super constructor
+		plw.plist = (DedicatedPlayerList) server.getPlayerList();
+		plw.maxPlayers = plw.plist.getMaxPlayers();
+		Field plf = plw.getClass().getField("players");
+		plf.setAccessible(true);
+		Field modf = plf.getClass().getDeclaredField("modifiers");
+		modf.setAccessible(true);
+		modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
+		plf.set(plw, plw.plist.players);
+		server.a(plw);
+		Field pllf = CraftServer.class.getDeclaredField("playerList");
+		pllf.setAccessible(true);
+		pllf.set(Bukkit.getServer(), plw);
 	}
 
-	public static boolean hookDown() {
-		try {
-			Field conf = CraftServer.class.getDeclaredField("console");
-			conf.setAccessible(true);
-			val server = (MinecraftServer) conf.get(Bukkit.getServer());
-			val plist = (DedicatedPlayerList) server.getPlayerList();
-			if (!(plist instanceof PlayerListWatcher))
-				return false;
-			server.a(((PlayerListWatcher) plist).plist);
-			Field pllf = CraftServer.class.getDeclaredField("playerList");
-			pllf.setAccessible(true);
-			pllf.set(Bukkit.getServer(), ((PlayerListWatcher) plist).plist);
-			return true;
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
-			return true;
-		}
+	static boolean hookDown() throws Exception {
+		Field conf = CraftServer.class.getDeclaredField("console");
+		conf.setAccessible(true);
+		val server = (MinecraftServer) conf.get(Bukkit.getServer());
+		val plist = (DedicatedPlayerList) server.getPlayerList();
+		if (!(plist instanceof PlayerListWatcher))
+			return false;
+		server.a(((PlayerListWatcher) plist).plist);
+		Field pllf = CraftServer.class.getDeclaredField("playerList");
+		pllf.setAccessible(true);
+		pllf.set(Bukkit.getServer(), ((PlayerListWatcher) plist).plist);
+		return true;
 	}
 
 	public void a(EntityHuman entityhuman, IChatBaseComponent ichatbasecomponent) {

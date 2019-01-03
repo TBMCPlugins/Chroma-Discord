@@ -1,13 +1,13 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.chat.IDiscordSender;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
 
-public abstract class DiscordSenderBase implements IDiscordSender {
+public abstract class DiscordSenderBase implements CommandSender {
 	/**
 	 * May be null.
 	 */
@@ -51,6 +51,7 @@ public abstract class DiscordSenderBase implements IDiscordSender {
 	public void sendMessage(String message) {
 		try {
 			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
+			//if (broadcast && DiscordPlugin.hooked) - TODO: What should happen if unhooked
 			if (broadcast)
 				return;
 			final String sendmsg = DPUtils.sanitizeString(message);
