@@ -1,6 +1,10 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.IHaveConfig;
 import org.bukkit.Bukkit;
+import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IIDLinkedObject;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RequestBuffer;
 import sx.blah.discord.util.RequestBuffer.IRequest;
@@ -101,6 +105,20 @@ public final class DPUtils {
 		if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger() == null)
 			return Logger.getLogger("DiscordPlugin");
 		return DiscordPlugin.plugin.getLogger();
+	}
+
+	public static ConfigData<IChannel> channelData(IHaveConfig config, String key, long defID) {
+		return config.getDataPrimDef(key, defID, id -> DiscordPlugin.dc.getChannelByID((long) id), IIDLinkedObject::getLongID); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	}
+
+	/**
+	 * Mentions the <b>bot channel</b>. Useful for help texts.
+	 *
+	 * @return The string for mentioning the channel
+	 */
+	public static String botmention() {
+		if (DiscordPlugin.plugin == null) return "#bot";
+		return DiscordPlugin.plugin.CommandChannel().get().mention();
 	}
 
 }

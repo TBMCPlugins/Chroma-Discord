@@ -1,9 +1,6 @@
 package buttondevteam.discordplugin.commands;
 
-import buttondevteam.discordplugin.ChannelconBroadcast;
-import buttondevteam.discordplugin.DiscordConnectedPlayer;
-import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.mcchat.MCChatCustom;
 import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -75,7 +72,7 @@ public class ChannelconCommand extends DiscordCommandBase {
         val dp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class);
         val chp = dp.getAs(TBMCPlayer.class);
         if (chp == null) {
-            message.reply("you need to connect your Minecraft account. On our server in #bot do /connect <MCname>");
+	        message.reply("you need to connect your Minecraft account. On our server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>");
             return true;
         }
         DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
@@ -100,12 +97,12 @@ public class ChannelconCommand extends DiscordCommandBase {
                 "---- Channel connect ---", //
                 "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
                 "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
-		        "You also need to have your Minecraft account connected. In #bot use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
+	        "You also need to have your Minecraft account connected. In " + DPUtils.botmention() + " use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
 		        "Call this command from the channel you want to use.", //
 		        "Usage: @" + DiscordPlugin.dc.getOurUser().getName() + " channelcon <mcchannel>", //
 		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
-		        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in #bot.", //
+	        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //
                 "Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot&permissions=268509264>" //
         };
     }

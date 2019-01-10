@@ -313,7 +313,7 @@ public class MCChatListener implements Listener {
                             .collect(Collectors.joining(", "))
                             + (user.getConnectedID(TBMCPlayer.class) == null
                             ? "\nTo access your commands, first please connect your accounts, using /connect in "
-                            + DiscordPlugin.botchannel.mention()
+	                    + DPUtils.botmention()
                             + "\nThen y"
                             : "\nY")
                             + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");

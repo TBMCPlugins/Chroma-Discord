@@ -55,13 +55,21 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     public static List<String> GameRoles;
 
     public ConfigData<Character> Prefix() {
-        return getData("prefix", '/');
+	    return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
     }
 
     public static char getPrefix() {
         if (plugin == null) return '/';
         return plugin.Prefix().get();
     }
+
+	public ConfigData<IGuild> MainServer() {
+		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildByID((long) id), IIDLinkedObject::getLongID);
+	}
+
+	public ConfigData<IChannel> CommandChannel() {
+		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
+	}
 
     @Override
     public void pluginEnable() {
@@ -81,7 +89,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
         }
     }
 
-    public static IChannel botchannel;
+	public static IChannel botchannel; //Can be removed
     public static IChannel annchannel;
     public static IChannel genchannel;
     public static IChannel chatchannel;
@@ -152,12 +160,14 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                             val ch = dc.getChannelByID(chcon.getLong("chid"));
                             val did = chcon.getLong("did");
                             val user = dc.fetchUser(did);
-                            val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
                             val groupid = chcon.getString("groupid");
                             val toggles = chcon.getInt("toggles");
                             if (!mcch.isPresent() || ch == null || user == null || groupid == null)
                                 continue;
-                            MCChatCustom.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
+	                        Bukkit.getScheduler().runTask(this, () -> { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
+		                        val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
+		                        MCChatCustom.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
+	                        });
                         }
                     }
 
@@ -195,7 +205,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                         TBMCCoreAPI.SendException(
                                 "Won't load because we're in testing mode and not using a separate account.",
                                 new Exception(
-                                        "The plugin refuses to load until you change the token to a testing account."));
+	                                "The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
                         Bukkit.getPluginManager().disablePlugin(this);
                     }
                     TBMCCoreAPI.SendUnsentExceptions();

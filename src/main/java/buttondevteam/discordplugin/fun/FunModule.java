@@ -32,11 +32,11 @@ public class FunModule extends Component {
 	};
 
 	private ConfigData<Boolean> serverReady() {
-		return getData("serverReady", true);
+		return getConfig().getData("serverReady", true);
 	}
 
 	private ConfigData<List<String>> serverReadyAnswers() {
-		return getData("serverReadyAnswers", Arrays.asList(serverReadyStrings),
+		return getConfig().getData("serverReadyAnswers", Arrays.asList(serverReadyStrings),
 				data -> (List<String>) data, data -> data); //TODO: Test
 	}
 
