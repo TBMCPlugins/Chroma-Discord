@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.component.channel.Channel;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
@@ -12,7 +13,6 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
-import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;

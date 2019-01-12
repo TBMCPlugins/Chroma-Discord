@@ -1,5 +1,7 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.component.channel.Channel;
+import buttondevteam.component.channel.ChatRoom;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
@@ -10,9 +12,7 @@ import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
 import buttondevteam.lib.TBMCCoreAPI;
-import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.chat.ChatMessage;
-import buttondevteam.lib.chat.ChatRoom;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import com.vdurmont.emoji.EmojiParser;
@@ -72,14 +72,15 @@ public class MCChatListener implements Listener {
             e = se.getKey();
             time = se.getValue();
 
-            final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName) + "] " //
+	        final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
 		            + ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
                     + (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
                     ? ((Player) e.getSender()).getDisplayName() //
                     : e.getSender().getName()));
+	        val color = e.getChannel().Color().get();
             final EmbedBuilder embed = new EmbedBuilder().withAuthorName(authorPlayer)
-                    .withDescription(e.getMessage()).withColor(new Color(e.getChannel().color.getRed(),
-                            e.getChannel().color.getGreen(), e.getChannel().color.getBlue()));
+	            .withDescription(e.getMessage()).withColor(new Color(color.getRed(),
+		            color.getGreen(), color.getBlue()));
             // embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
             // + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
             if (e.getSender() instanceof Player)
@@ -332,8 +333,8 @@ public class MCChatListener implements Listener {
                     final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
                     Optional<Channel> ch = Channel.getChannels().stream()
                             .filter(c -> c.ID.equalsIgnoreCase(topcmd)
-                                    || (c.IDs != null && c.IDs.length > 0
-                                    && Arrays.stream(c.IDs).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
+	                            || (c.IDs().get().length > 0
+	                            && Arrays.stream(c.IDs().get()).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
 	                if (!ch.isPresent()) //TODO: What if talking in the public chat while we have it on a different one
 		                Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
 				                () -> { //TODO: Better handling...
@@ -366,7 +367,7 @@ public class MCChatListener implements Listener {
                                 } else
 	                                channel.set(Channel.GlobalChat);
                                 dsender.sendMessage("You're now talking in: "
-		                                + DPUtils.sanitizeString(channel.get().DisplayName));
+	                                + DPUtils.sanitizeString(channel.get().DisplayName().get()));
                             } else { // Send single message
 	                            final String msg = cmd.substring(spi + 1);
 	                            val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(msg)).fromCommand(true);

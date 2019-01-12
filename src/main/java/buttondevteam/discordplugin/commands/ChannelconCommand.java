@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.commands;
 
+import buttondevteam.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.mcchat.MCChatCustom;
-import buttondevteam.lib.chat.Channel;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -64,7 +64,7 @@ public class ChannelconCommand extends DiscordCommandBase {
             message.reply("this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
             return true;
         }
-        val chan = Channel.getChannels().stream().filter(ch -> ch.ID.equalsIgnoreCase(args) || (ch.IDs != null && Arrays.stream(ch.IDs).anyMatch(cid -> cid.equalsIgnoreCase(args)))).findAny();
+	    val chan = Channel.getChannels().stream().filter(ch -> ch.ID.equalsIgnoreCase(args) || (Arrays.stream(ch.IDs().get()).anyMatch(cid -> cid.equalsIgnoreCase(args)))).findAny();
         if (!chan.isPresent()) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
             message.reply("MC channel with ID '" + args + "' not found! The ID is the command for it without the /.");
             return true;
