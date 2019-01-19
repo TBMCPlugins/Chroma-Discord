@@ -331,7 +331,7 @@ public class MCChatListener implements Listener {
                 } else {
                     int spi = cmdlowercased.indexOf(' ');
                     final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
-                    Optional<Channel> ch = Channel.getChannels().stream()
+	                Optional<Channel> ch = Channel.getChannels()
                             .filter(c -> c.ID.equalsIgnoreCase(topcmd)
 	                            || (c.IDs().get().length > 0
 	                            && Arrays.stream(c.IDs().get()).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();

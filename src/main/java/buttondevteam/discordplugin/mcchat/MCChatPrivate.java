@@ -59,7 +59,8 @@ public class MCChatPrivate {
 	public static void logoutAll() {
 		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
 			for (val valueEntry : entry.getValue().entrySet())
-				callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
+				if (MCChatUtils.getSender(MCChatUtils.OnlineSenders, valueEntry.getKey(), valueEntry.getValue().getUser()) == null) //If the player is online then the fake player was already logged out
+					callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
 		MCChatUtils.ConnectedSenders.clear();
 	}
 

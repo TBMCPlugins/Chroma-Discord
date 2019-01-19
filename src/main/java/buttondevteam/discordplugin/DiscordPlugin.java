@@ -156,7 +156,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                         val chconkeys = chcons.getKeys(false);
                         for (val chconkey : chconkeys) {
                             val chcon = chcons.getConfigurationSection(chconkey);
-                            val mcch = Channel.getChannels().stream().filter(ch -> ch.ID.equals(chcon.getString("mcchid"))).findAny();
+	                        val mcch = Channel.getChannels().filter(ch -> ch.ID.equals(chcon.getString("mcchid"))).findAny();
                             val ch = dc.getChannelByID(chcon.getLong("chid"));
                             val did = chcon.getLong("did");
                             val user = dc.fetchUser(did);
