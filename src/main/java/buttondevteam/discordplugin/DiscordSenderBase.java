@@ -62,7 +62,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 							(!broadcast && user != null ? user.mention() + "\n" : "") + msgtosend.trim());
 					sendtask = null;
 					msgtosend = "";
-				}, 10); // Waits a half second to gather all/most of the different messages
+				}, 4); // Waits a 0.2 second to gather all/most of the different messages
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}

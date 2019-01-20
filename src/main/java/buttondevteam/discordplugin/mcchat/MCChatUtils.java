@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.component.channel.Channel;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCSystemChatEvent;
-import buttondevteam.lib.chat.Channel;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.var;

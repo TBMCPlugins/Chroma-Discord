@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.component.channel.Channel;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
-import buttondevteam.lib.chat.Channel;
 import lombok.NonNull;
 import lombok.val;
 import sx.blah.discord.handle.obj.IChannel;

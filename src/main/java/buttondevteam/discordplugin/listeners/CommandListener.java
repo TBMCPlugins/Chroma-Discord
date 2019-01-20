@@ -21,7 +21,7 @@ public class CommandListener {
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!message.getChannel().isPrivate()
 					&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
-					&& channel.getStringID().equals(DiscordPlugin.botchannel.getStringID()))) //
+				&& channel.getStringID().equals(DiscordPlugin.plugin.CommandChannel().get().getStringID()))) //
 				return false;
 			message.getChannel().setTypingStatus(true); // Fun
 		}

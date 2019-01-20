@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mccommands;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
@@ -17,7 +18,7 @@ public class AcceptMCCommand extends DiscordMCCommandBase {
 		return new String[] { //
 				"§6---- Accept Discord connection ----", //
 				"Accept a pending connection between your Discord and Minecraft account.", //
-                "To start the connection process, do §b/connect <MCname>§r in the #bot channel on Discord", //
+			"To start the connection process, do §b/connect <MCname>§r in the " + DPUtils.botmention() + " channel on Discord", //
 				"Usage: /" + alias + " accept" //
 		};
 	}
