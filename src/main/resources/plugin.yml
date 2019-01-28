@@ -1,8 +1,8 @@
-name: DiscordPlugin
+name: Thorpe-Discord
 main: buttondevteam.discordplugin.DiscordPlugin
 version: 1.0
 author: NorbiPeti
-depend: [ButtonCore]
+depend: [ThorpeCore]
 commands:
   discord:
 website: 'https://github.com/TBMCPlugins/DiscordPlugin'

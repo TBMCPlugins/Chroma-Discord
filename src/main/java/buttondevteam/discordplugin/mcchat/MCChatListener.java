@@ -11,6 +11,7 @@ import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.lib.TBMCChatEvent;
 import buttondevteam.lib.TBMCChatPreprocessEvent;
+import buttondevteam.lib.TBMCCommandPreprocessEvent;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -47,8 +48,13 @@ public class MCChatListener implements Listener {
     private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
     private Runnable sendrunnable;
     private static Thread sendthread;
+	private final MinecraftChatModule module;
 
-    @EventHandler // Minecraft
+	public MCChatListener(MinecraftChatModule minecraftChatModule) {
+		module = minecraftChatModule;
+	}
+
+	@EventHandler // Minecraft
     public void onMCChat(TBMCChatEvent ev) {
         if (!ComponentManager.isEnabled(MinecraftChatModule.class) || ev.isCancelled()) //SafeMode: Needed so it doesn't restart after server shutdown
             return;
@@ -175,12 +181,6 @@ public class MCChatListener implements Listener {
         }
     }
 
-    private static final String[] UnconnectedCmds = new String[]{"list", "u", "shrug", "tableflip", "unflip", "mwiki",
-            "yeehaw", "lenny", "rp", "plugins"};
-
-    private static short lastlist = 0;
-    private static short lastlistp = 0;
-
     // ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
     // Offline public chat......x............................................
     // Online public chat.......x...........................................x
@@ -191,8 +191,6 @@ public class MCChatListener implements Listener {
     // If private chat is enabled and joining the server, logout the fake player on highest priority
     // If online and disabling private chat, don't logout
     // The maps may not contain the senders for UnconnectedSenders
-
-    public static short ListC = 0;
 
     /**
      * Stop the listener. Any calls to onMCChat will restart it as long as we're not in safe mode.
@@ -218,7 +216,6 @@ public class MCChatListener implements Listener {
             MCChatCustom.lastmsgCustom.clear();
             MCChatUtils.lastmsgfromd.clear();
             MCChatUtils.ConnectedSenders.clear();
-            lastlist = lastlistp = ListC = 0;
             MCChatUtils.UnconnectedSenders.clear();
             recthread = sendthread = null;
         } catch (InterruptedException e) {
@@ -249,7 +246,6 @@ public class MCChatListener implements Listener {
         if (CommandListener.runCommand(ev.getMessage(), true))
             return true; //Allow running commands in chat channels
         MCChatUtils.resetLastMessage(ev.getChannel());
-        lastlist++;
         recevents.add(ev);
         if (rectask != null)
 	        return true;
@@ -300,87 +296,80 @@ public class MCChatListener implements Listener {
             boolean react = false;
 
             if (dmessage.startsWith("/")) { // Ingame command
-                DPUtils.perform(() -> {
-                    if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
-                        event.getMessage().delete();
-                });
+	            DPUtils.perform(() -> {
+		            if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
+			            event.getMessage().delete();
+	            });
 	            final String cmd = dmessage.substring(1);
 	            final String cmdlowercased = cmd.toLowerCase();
-                if (dsender instanceof DiscordSender && Arrays.stream(UnconnectedCmds)
-                        .noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
-                    // Command not whitelisted
-                    dsender.sendMessage("Sorry, you can only access these commands:\n"
-                            + Arrays.stream(UnconnectedCmds).map(uc -> "/" + uc)
-                            .collect(Collectors.joining(", "))
-                            + (user.getConnectedID(TBMCPlayer.class) == null
-                            ? "\nTo access your commands, first please connect your accounts, using /connect in "
-	                    + DPUtils.botmention()
-                            + "\nThen y"
-                            : "\nY")
-                            + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
-                    return;
-                }
-                if (lastlist > 5) {
-                    ListC = 0;
-                    lastlist = 0;
-                }
-                if (cmdlowercased.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
-                {
-                    dsender.sendMessage("Stop it. You know the answer.");
-                    lastlist = 0;
-                } else {
-                    int spi = cmdlowercased.indexOf(' ');
-                    final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
-	                Optional<Channel> ch = Channel.getChannels()
-                            .filter(c -> c.ID.equalsIgnoreCase(topcmd)
-	                            || (c.IDs().get().length > 0
-	                            && Arrays.stream(c.IDs().get()).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
-	                if (!ch.isPresent()) //TODO: What if talking in the public chat while we have it on a different one
-		                Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
-				                () -> { //TODO: Better handling...
-					                val channel = user.channel();
-                                    val chtmp = channel.get();
-					                if (clmd != null) {
-						                channel.set(clmd.mcchannel); //Hack to send command in the channel
-					                } //TODO: Permcheck isn't implemented for commands
-	                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-                                    Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
-                                    if (clmd != null)
-                                        channel.set(chtmp);
-                                });
-                    else {
-                        Channel chc = ch.get();
-		                if (!chc.isGlobal() && !event.getMessage().getChannel().isPrivate())
-                            dsender.sendMessage(
-		                            "You can only talk in a public chat here. DM `mcchat` to enable private chat to talk in the other channels.");
-                        else {
-                            if (spi == -1) // Switch channels
-                            {
-                                val channel = dsender.getChromaUser().channel();
-	                            val oldch = channel.get();
-                                if (oldch instanceof ChatRoom)
-                                    ((ChatRoom) oldch).leaveRoom(dsender);
-                                if (!oldch.ID.equals(chc.ID)) {
-	                                channel.set(chc);
-                                    if (chc instanceof ChatRoom)
-                                        ((ChatRoom) chc).joinRoom(dsender);
-                                } else
-	                                channel.set(Channel.GlobalChat);
-                                dsender.sendMessage("You're now talking in: "
-	                                + DPUtils.sanitizeString(channel.get().DisplayName().get()));
-                            } else { // Send single message
-	                            final String msg = cmd.substring(spi + 1);
-	                            val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(msg)).fromCommand(true);
-                                if (clmd == null)
-	                                TBMCChatAPI.SendChatMessage(cmb.build(), chc);
-                                else
-	                                TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), chc);
-                                react = true;
-                            }
-                        }
-                    }
-                }
-                lastlistp = (short) Bukkit.getOnlinePlayers().size();
+	            if (dsender instanceof DiscordSender && module.whitelistedCommands().get().stream()
+		            .noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
+		            // Command not whitelisted
+		            dsender.sendMessage("Sorry, you can only access these commands:\n"
+			            + module.whitelistedCommands().get().stream().map(uc -> "/" + uc)
+			            .collect(Collectors.joining(", "))
+			            + (user.getConnectedID(TBMCPlayer.class) == null
+			            ? "\nTo access your commands, first please connect your accounts, using /connect in "
+			            + DPUtils.botmention()
+			            + "\nThen y"
+			            : "\nY")
+			            + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
+		            return;
+	            }
+	            val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
+	            Bukkit.getPluginManager().callEvent(ev);
+	            if (ev.isCancelled())
+		            return;
+	            int spi = cmdlowercased.indexOf(' ');
+	            final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
+	            Optional<Channel> ch = Channel.getChannels()
+		            .filter(c -> c.ID.equalsIgnoreCase(topcmd)
+			            || (c.IDs().get().length > 0
+			            && Arrays.stream(c.IDs().get()).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
+	            if (!ch.isPresent()) //TODO: What if talking in the public chat while we have it on a different one
+		            Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
+			            () -> { //TODO: Better handling...
+				            val channel = user.channel();
+				            val chtmp = channel.get();
+				            if (clmd != null) {
+					            channel.set(clmd.mcchannel); //Hack to send command in the channel
+				            } //TODO: Permcheck isn't implemented for commands
+				            VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+				            Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
+				            if (clmd != null)
+					            channel.set(chtmp);
+			            });
+	            else {
+		            Channel chc = ch.get();
+		            if (!chc.isGlobal() && !event.getMessage().getChannel().isPrivate())
+			            dsender.sendMessage(
+				            "You can only talk in a public chat here. DM `mcchat` to enable private chat to talk in the other channels.");
+		            else {
+			            if (spi == -1) // Switch channels
+			            {
+				            val channel = dsender.getChromaUser().channel();
+				            val oldch = channel.get();
+				            if (oldch instanceof ChatRoom)
+					            ((ChatRoom) oldch).leaveRoom(dsender);
+				            if (!oldch.ID.equals(chc.ID)) {
+					            channel.set(chc);
+					            if (chc instanceof ChatRoom)
+						            ((ChatRoom) chc).joinRoom(dsender);
+				            } else
+					            channel.set(Channel.GlobalChat);
+				            dsender.sendMessage("You're now talking in: "
+					            + DPUtils.sanitizeString(channel.get().DisplayName().get()));
+			            } else { // Send single message
+				            final String msg = cmd.substring(spi + 1);
+				            val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(msg)).fromCommand(true);
+				            if (clmd == null)
+					            TBMCChatAPI.SendChatMessage(cmb.build(), chc);
+				            else
+					            TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), chc);
+				            react = true;
+			            }
+		            }
+	            }
             } else {// Not a command
                 if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 		                && !event.getChannel().isPrivate() && event.getMessage().isSystemMessage()) {

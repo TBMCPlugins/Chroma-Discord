@@ -60,7 +60,6 @@ class MCListener implements Listener {
 			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
-			MCChatListener.ListC = 0;
 			ChromaBot.getInstance().updatePlayerList();
 		});
 	}
