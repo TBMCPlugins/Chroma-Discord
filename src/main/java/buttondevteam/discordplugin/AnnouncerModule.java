@@ -9,9 +9,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.val;
+import org.bukkit.configuration.file.YamlConfiguration;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 
+import java.io.File;
 import java.util.List;
 
 public class AnnouncerModule extends Component {
@@ -27,7 +29,7 @@ public class AnnouncerModule extends Component {
 	 * Set to 0 or >50 to disable
 	 */
 	public ConfigData<Short> keepPinned() {
-		return getConfig().getData("keepPinned", (short) 40, i -> ((Integer) i).shortValue(), Short::intValue);
+		return getConfig().getData("keepPinned", (short) 40);
 	}
 
 	private ConfigData<Long> lastannouncementtime() {
@@ -57,10 +59,11 @@ public class AnnouncerModule extends Component {
 			} catch (InterruptedException ignore) {
 			}
 		});
+		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
 		if (lastannouncementtime().get() == 0) //Load old data
-			lastannouncementtime().set(getConfig().getConfig().getRoot().getLong("lastannouncementtime"));
+			lastannouncementtime().set(yc.getLong("lastannouncementtime"));
 		if (lastseentime().get() == 0)
-			lastseentime().set(getConfig().getConfig().getLong("lastseentime"));
+			lastseentime().set(yc.getLong("lastseentime"));
 		new Thread(this::AnnouncementGetterThreadMethod).start();
 	}
 

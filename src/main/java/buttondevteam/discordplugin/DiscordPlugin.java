@@ -138,6 +138,11 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                 if (task != null)
                     task.cancel();
                 if (!sent) {
+	                Component.registerComponent(this, new GeneralEventBroadcasterModule());
+	                Component.registerComponent(this, new MinecraftChatModule());
+	                Component.registerComponent(this, new ExceptionListenerModule());
+	                Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
+	                Component.registerComponent(this, new AnnouncerModule());
 	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
                     DiscordCommandBase.registerCommands();
@@ -169,26 +174,10 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                     }
                     TBMCCoreAPI.SendUnsentExceptions();
                     TBMCCoreAPI.SendUnsentDebugMessages();
-					/*if (!TBMCCoreAPI.IsTestServer()) {
-						final Calendar currentCal = Calendar.getInstance();
-						final Calendar newCal = Calendar.getInstance();
-						currentCal.set(currentCal.get(Calendar.YEAR), currentCal.get(Calendar.MONTH),
-								currentCal.get(Calendar.DAY_OF_MONTH), 4, 10);
-						if (currentCal.get(Calendar.DAY_OF_MONTH) % 9 == 0 && currentCal.before(newCal)) {
-							Random rand = new Random();
-							sendMessageToChannel(dc.getChannels().get(rand.nextInt(dc.getChannels().size())),
-									"You could make a religion out of this");
-						}
-					}*/
                 }
             }, 0, 10);
             for (IListener<?> listener : CommonListeners.getListeners())
                 dc.getDispatcher().registerListener(listener);
-            Component.registerComponent(this, new GeneralEventBroadcasterModule());
-            Component.registerComponent(this, new MinecraftChatModule());
-	        Component.registerComponent(this, new ExceptionListenerModule());
-	        Component.registerComponent(this, new GameRoleModule());
-	        Component.registerComponent(this, new AnnouncerModule());
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
             TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
@@ -205,36 +194,40 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
      */
     public static boolean Restart;
 
-    @Override
-    public void pluginDisable() {
-	    MCChatPrivate.logoutAll();
-        getConfig().set("serverup", false);
+	@Override
+	public void pluginPreDisable() {
+		EmbedObject embed;
+		if (ResetMCCommand.resetting)
+			embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
+		else
+			embed = new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
+				.withTitle(Restart ? "Server restarting" : "Server stopping")
+				.withDescription(
+					Bukkit.getOnlinePlayers().size() > 0
+						? (DPUtils
+						.sanitizeString(Bukkit.getOnlinePlayers().stream()
+							.map(Player::getDisplayName).collect(Collectors.joining(", ")))
+						+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+						+ "kicked the hell out.") //TODO: Make configurable
+						: "") //If 'restart' is disabled then this isn't shown even if joinleave is enabled
+				.build();
+		MCChatUtils.forCustomAndAllMCChat(ch -> {
+			try {
+				DiscordPlugin.sendMessageToChannelWait(ch, "",
+					embed, 5, TimeUnit.SECONDS);
+			} catch (TimeoutException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		}, ChannelconBroadcast.RESTART, false);
+		ChromaBot.getInstance().updatePlayerList();
+	}
 
-        saveConfig();
-        EmbedObject embed;
-        if (ResetMCCommand.resetting)
-            embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
-        else
-            embed = new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-                    .withTitle(Restart ? "Server restarting" : "Server stopping")
-                    .withDescription(
-                            Bukkit.getOnlinePlayers().size() > 0
-                                    ? (DPUtils
-                                    .sanitizeString(Bukkit.getOnlinePlayers().stream()
-                                            .map(Player::getDisplayName).collect(Collectors.joining(", ")))
-                                    + (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-                                    + "kicked the hell out.") //TODO: Make configurable
-                                    : "") //If 'restart' is disabled then this isn't shown even if joinleave is enabled
-                    .build();
-        MCChatUtils.forCustomAndAllMCChat(ch -> {
-            try {
-                    DiscordPlugin.sendMessageToChannelWait(ch, "",
-                            embed, 5, TimeUnit.SECONDS);
-            } catch (TimeoutException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, ChannelconBroadcast.RESTART, false);
-        ChromaBot.getInstance().updatePlayerList();
+	@Override
+	public void pluginDisable() {
+		MCChatPrivate.logoutAll();
+		getConfig().set("serverup", false);
+
+		saveConfig();
         try {
             SafeMode = true; // Stop interacting with Discord
             ChromaBot.delete();
