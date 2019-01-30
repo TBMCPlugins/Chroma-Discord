@@ -12,6 +12,12 @@ import java.util.stream.Collectors;
 
 public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's parser
 
+	private GameRoleModule grm;
+
+	RoleCommand(GameRoleModule grm) {
+		this.grm = grm;
+	}
+
     @Override
     public String getCommandName() {
         return "role";
@@ -52,7 +58,7 @@ public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's par
 
     private void listRoles(IMessage message) {
         DiscordPlugin.sendMessageToChannel(message.getChannel(),
-	        "List of roles:\n" + DiscordPlugin.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
+	        "List of roles:\n" + grm.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
     }
 
     private IRole checkAndGetRole(IMessage message, String[] argsa, String usage) {
@@ -63,7 +69,7 @@ public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's par
         StringBuilder rolename = new StringBuilder(argsa[1]);
         for (int i = 2; i < argsa.length; i++)
             rolename.append(" ").append(argsa[i]);
-        if (!DiscordPlugin.GameRoles.contains(rolename.toString())) {
+	    if (!grm.GameRoles.contains(rolename.toString())) {
 	        DiscordPlugin.sendMessageToChannel(message.getChannel(), "That role cannot be found.");
             listRoles(message);
             return null;
@@ -72,7 +78,7 @@ public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's par
         if (roles.size() == 0) {
             DiscordPlugin.sendMessageToChannel(message.getChannel(),
                     "The specified role cannot be found on Discord! Removing from the list.");
-            DiscordPlugin.GameRoles.remove(rolename.toString());
+	        grm.GameRoles.remove(rolename.toString());
             return null;
         }
         if (roles.size() > 1) {

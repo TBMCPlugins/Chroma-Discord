@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat;
 
-import buttondevteam.component.channel.Channel;
 import buttondevteam.core.ComponentManager;
+import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCSystemChatEvent;
@@ -34,6 +34,7 @@ public class MCChatUtils {
 	public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
 	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<IMessage> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
+	private static MinecraftChatModule module;
 
 	public static void updatePlayerList() {
 		if (notEnabled()) return;
@@ -45,7 +46,13 @@ public class MCChatUtils {
 	}
 
 	private static boolean notEnabled() {
-		return !ComponentManager.isEnabled(MinecraftChatModule.class);
+		return getModule() == null;
+	}
+
+	private static MinecraftChatModule getModule() {
+		if (module == null) module = ComponentManager.getIfEnabled(MinecraftChatModule.class);
+		else if (!module.isEnabled()) module = null; //Reset if disabled
+		return module;
 	}
 
 	private static void updatePL(LastMsgData lmd) {
@@ -95,7 +102,7 @@ public class MCChatUtils {
 
 	public static void forAllMCChat(Consumer<IChannel> action) {
 		if (notEnabled()) return;
-		action.accept(DiscordPlugin.chatchannel);
+		action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
 			action.accept(data.channel);
 		// lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
@@ -160,7 +167,7 @@ public class MCChatUtils {
 	public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
 		if (notEnabled()) return;
 		if (event.getChannel().isGlobal())
-			action.accept(DiscordPlugin.chatchannel);
+			action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
 			if (event.shouldSendTo(getSender(data.channel, data.user)))
 				action.accept(data.channel);
@@ -192,8 +199,8 @@ public class MCChatUtils {
 	 */
 	public static void resetLastMessage(IChannel channel) {
 		if (notEnabled()) return;
-		if (channel.getLongID() == DiscordPlugin.chatchannel.getLongID()) {
-			(lastmsgdata == null ? lastmsgdata = new LastMsgData(DiscordPlugin.chatchannel, null)
+		if (channel.getLongID() == module.chatChannel().get().getLongID()) {
+			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
 					: lastmsgdata).message = null;
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved

@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.mcchat;
 
-import buttondevteam.component.channel.Channel;
-import buttondevteam.component.channel.ChatRoom;
 import buttondevteam.core.ComponentManager;
+import buttondevteam.core.component.channel.Channel;
+import buttondevteam.core.component.channel.ChatRoom;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
@@ -128,9 +128,9 @@ public class MCChatListener implements Listener {
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
 	        if (e.getChannel().isGlobal()
-                    && (e.isFromCommand() || isdifferentchannel.test(DiscordPlugin.chatchannel)))
+		        && (e.isFromCommand() || isdifferentchannel.test(module.chatChannel().get())))
                 doit.accept(MCChatUtils.lastmsgdata == null
-                        ? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(DiscordPlugin.chatchannel, null)
+	                ? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannel().get(), null)
                         : MCChatUtils.lastmsgdata);
 
             for (MCChatUtils.LastMsgData data : MCChatPrivate.lastmsgPerUser) {
@@ -234,7 +234,7 @@ public class MCChatListener implements Listener {
 	        return false;
         val author = ev.getMessage().getAuthor();
         final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getChannel());
-		if (ev.getMessage().getChannel().getLongID() != DiscordPlugin.chatchannel.getLongID()
+		if (ev.getMessage().getChannel().getLongID() != module.chatChannel().get().getLongID()
                 && !(ev.getMessage().getChannel().isPrivate() && MCChatPrivate.isMinecraftChatEnabled(author.getStringID()))
                 && !hasCustomChat)
 			return false; //Chat isn't enabled on this channel
