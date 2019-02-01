@@ -2,7 +2,9 @@ package buttondevteam.discordplugin.listeners;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
+import buttondevteam.lib.player.TBMCPlayerJoinEvent;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
@@ -19,6 +21,17 @@ import java.util.Arrays;
 import java.util.logging.Level;
 
 public class MCListener implements Listener {
+	@EventHandler
+	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
+		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
+			@SuppressWarnings("ConstantConditions") IUser user = DiscordPlugin.dc
+				.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
+			e.getPlayer().sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
+				+ " do /discord accept");
+			e.getPlayer().sendMessage("§bIf it wasn't you, do /discord decline");
+		}
+	}
+
     @EventHandler
     public void onGetInfo(TBMCPlayerGetInfoEvent e) {
         if (DiscordPlugin.SafeMode)

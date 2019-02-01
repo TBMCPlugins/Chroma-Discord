@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.*;
-import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.player.*;
@@ -51,16 +50,8 @@ class MCListener implements Listener {
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
 						new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p)); //Stored per-channel
 			}
-			if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
-				IUser user = DiscordPlugin.dc
-						.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
-				p.sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
-						+ " do /discord accept");
-				p.sendMessage("§bIf it wasn't you, do /discord decline");
-			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
-			MCChatListener.ListC = 0;
 			ChromaBot.getInstance().updatePlayerList();
 		});
 	}
@@ -107,7 +98,7 @@ class MCListener implements Listener {
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
 			DPUtils.performNoWait(() -> {
-				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L);
+				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L); //TODO: Config
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())
 					return;

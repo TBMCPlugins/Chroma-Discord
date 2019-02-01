@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.commands;
 
-import buttondevteam.component.channel.Channel;
+import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.mcchat.MCChatCustom;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -38,6 +38,7 @@ public class ChannelconCommand extends DiscordCommandBase {
             }
 	        if (args.toLowerCase().startsWith("toggle")) {
 		        val cc = MCChatCustom.getCustomChat(message.getChannel());
+		        assert cc != null; //It's not null
 		        Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"));
 		        String[] argsa = args.split(" ");
 		        if (argsa.length < 2) {

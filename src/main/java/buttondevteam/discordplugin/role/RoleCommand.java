@@ -1,7 +1,8 @@
-package buttondevteam.discordplugin.commands;
+package buttondevteam.discordplugin.role;
 
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
@@ -9,7 +10,13 @@ import sx.blah.discord.handle.obj.IRole;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RoleCommand extends DiscordCommandBase {
+public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's parser
+
+	private GameRoleModule grm;
+
+	RoleCommand(GameRoleModule grm) {
+		this.grm = grm;
+	}
 
     @Override
     public String getCommandName() {
@@ -22,23 +29,23 @@ public class RoleCommand extends DiscordCommandBase {
             return false;
         String[] argsa = splitargs(args);
         if (argsa[0].equalsIgnoreCase("add")) {
-            final IRole role = checkAndGetRole(message, argsa, "This command adds a game role to your account.");
+	        final IRole role = checkAndGetRole(message, argsa, "This command adds a role to your account.");
             if (role == null)
                 return true;
             try {
                 DPUtils.perform(() -> message.getAuthor().addRole(role));
-                DiscordPlugin.sendMessageToChannel(message.getChannel(), "Added game role.");
+	            DiscordPlugin.sendMessageToChannel(message.getChannel(), "Added role.");
             } catch (Exception e) {
                 TBMCCoreAPI.SendException("Error while adding role!", e);
                 DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while adding the role.");
             }
         } else if (argsa[0].equalsIgnoreCase("remove")) {
-            final IRole role = checkAndGetRole(message, argsa, "This command removes a game role from your account.");
+	        final IRole role = checkAndGetRole(message, argsa, "This command removes a role from your account.");
             if (role == null)
                 return true;
             try {
                 DPUtils.perform(() -> message.getAuthor().removeRole(role));
-                DiscordPlugin.sendMessageToChannel(message.getChannel(), "Removed game role.");
+	            DiscordPlugin.sendMessageToChannel(message.getChannel(), "Removed role.");
             } catch (Exception e) {
                 TBMCCoreAPI.SendException("Error while removing role!", e);
                 DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while removing the role.");
@@ -51,7 +58,7 @@ public class RoleCommand extends DiscordCommandBase {
 
     private void listRoles(IMessage message) {
         DiscordPlugin.sendMessageToChannel(message.getChannel(),
-                "List of game roles:\n" + DiscordPlugin.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
+	        "List of roles:\n" + grm.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
     }
 
     private IRole checkAndGetRole(IMessage message, String[] argsa, String usage) {
@@ -62,8 +69,8 @@ public class RoleCommand extends DiscordCommandBase {
         StringBuilder rolename = new StringBuilder(argsa[1]);
         for (int i = 2; i < argsa.length; i++)
             rolename.append(" ").append(argsa[i]);
-        if (!DiscordPlugin.GameRoles.contains(rolename.toString())) {
-            DiscordPlugin.sendMessageToChannel(message.getChannel(), "That game role cannot be found.");
+	    if (!grm.GameRoles.contains(rolename.toString())) {
+	        DiscordPlugin.sendMessageToChannel(message.getChannel(), "That role cannot be found.");
             listRoles(message);
             return null;
         }
@@ -71,7 +78,7 @@ public class RoleCommand extends DiscordCommandBase {
         if (roles.size() == 0) {
             DiscordPlugin.sendMessageToChannel(message.getChannel(),
                     "The specified role cannot be found on Discord! Removing from the list.");
-            DiscordPlugin.GameRoles.remove(rolename.toString());
+	        grm.GameRoles.remove(rolename.toString());
             return null;
         }
         if (roles.size() > 1) {
@@ -85,7 +92,7 @@ public class RoleCommand extends DiscordCommandBase {
     @Override
     public String[] getHelpText() {
         return new String[]{ //
-                "Add or remove game roles from yourself.", //
+	        "Add or remove roles from yourself.", //
                 "Usage: " + DiscordPlugin.getPrefix() + "role add|remove <name> or role list", //
         };
     }
