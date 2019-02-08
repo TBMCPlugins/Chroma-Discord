@@ -1,7 +1,9 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
+import buttondevteam.discordplugin.commands.Command2DC;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
@@ -18,6 +20,7 @@ import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
+import lombok.Getter;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
@@ -46,6 +49,8 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     public static IDiscordClient dc;
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
+	@Getter
+	private Command2DC manager;
 
 	public ConfigData<Character> Prefix() {
 	    return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
@@ -64,11 +69,16 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
+	public ConfigData<IRole> ModRole() {
+		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
+	}
+
     @Override
     public void pluginEnable() {
         try {
             Bukkit.getLogger().info("Initializing DiscordPlugin...");
             plugin = this;
+	        manager = new Command2DC();
             ClientBuilder cb = new ClientBuilder();
             cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
             dc = cb.login();
@@ -146,6 +156,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
                     DiscordCommandBase.registerCommands();
+	                getManager().registerCommand(new VersionCommand());
 	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm

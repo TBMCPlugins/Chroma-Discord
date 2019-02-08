@@ -2,6 +2,7 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
+import lombok.val;
 import org.bukkit.Bukkit;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -112,8 +113,11 @@ public final class DPUtils {
 		return config.getDataPrimDef(key, defID, id -> DiscordPlugin.dc.getChannelByID((long) id), IIDLinkedObject::getLongID); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
-	public static ConfigData<IRole> roleData(IHaveConfig config, String key, long defID) {
-		return config.getDataPrimDef(key, defID, id -> DiscordPlugin.dc.getRoleByID((long) id), IIDLinkedObject::getLongID); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	public static ConfigData<IRole> roleData(IHaveConfig config, String key, String defName) {
+		return config.getDataPrimDef(key, defName, name -> {
+			val roles = DiscordPlugin.mainServer.getRolesByName((String) name);
+			return roles.size() > 0 ? roles.get(0) : null; //TODO: May not handle null properly
+		}, IIDLinkedObject::getLongID); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
 	/**
