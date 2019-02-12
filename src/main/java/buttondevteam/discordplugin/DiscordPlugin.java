@@ -76,7 +76,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     @Override
     public void pluginEnable() {
         try {
-            Bukkit.getLogger().info("Initializing DiscordPlugin...");
+	        getLogger().info("Initializing...");
             plugin = this;
 	        manager = new Command2DC();
             ClientBuilder cb = new ClientBuilder();
@@ -284,7 +284,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         if (message.length() > 1980) {
             message = message.substring(0, 1980);
-            Bukkit.getLogger()
+	        DPUtils.getLogger()
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
         }
         try {
@@ -307,7 +307,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
         } catch (TimeoutException | InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            Bukkit.getLogger().warning(
+	        DPUtils.getLogger().warning(
                     "Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
             throw new RuntimeException(e);
         }

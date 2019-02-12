@@ -59,7 +59,7 @@ public final class DPUtils {
             return null;
 		if (Bukkit.isPrimaryThread()) // TODO: Ignore shutdown message <--
             // throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
-            Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
+			getLogger().warning("Waiting for a Discord request on the main thread!");
         return RequestBuffer.request(action).get(timeout, unit); // Let the pros handle this
     }
 
@@ -72,7 +72,7 @@ public final class DPUtils {
             return null;
 		if (Bukkit.isPrimaryThread()) // TODO: Ignore shutdown message <--
             // throw new RuntimeException("Tried to wait for a Discord request on the main thread. This could cause lag.");
-            Bukkit.getLogger().warning("Waiting for a Discord request on the main thread!");
+			getLogger().warning("Waiting for a Discord request on the main thread!");
         return RequestBuffer.request(action).get(); // Let the pros handle this
     }
 

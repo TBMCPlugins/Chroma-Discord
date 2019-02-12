@@ -1,7 +1,8 @@
 package buttondevteam.discordplugin.listeners;
 
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.commands.Command2DCSender;
+import buttondevteam.lib.TBMCCoreAPI;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
@@ -38,7 +39,12 @@ public class CommandListener {
 		}
 		message.getChannel().setTypingStatus(true);
 		String cmdwithargsString = cmdwithargs.toString().trim(); //Remove spaces between mention and command
-		int index = cmdwithargsString.indexOf(" ");
+		try {
+			DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString);
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
+		}
+		/*int index = cmdwithargsString.indexOf(" ");
 		String cmd;
 		String args;
 		if (index == -1) {
@@ -48,7 +54,7 @@ public class CommandListener {
 			cmd = cmdwithargsString.substring(0, index);
 			args = cmdwithargsString.substring(index + 1).trim(); //In case there are multiple spaces
 		}
-		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);
+		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);*/
 		message.getChannel().setTypingStatus(false);
 		return true;
 	}
