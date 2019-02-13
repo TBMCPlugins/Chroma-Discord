@@ -32,12 +32,16 @@ public class MinecraftChatModule extends Component {
 		return DPUtils.channelData(getConfig(), "chatChannel", 239519012529111040L);
 	}
 
+	public ConfigData<IChannel> modlogChannel() {
+		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
+	}
+
 	@Override
 	protected void enable() {
 		listener = new MCChatListener(this);
 		DiscordPlugin.dc.getDispatcher().registerListener(listener);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
-		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
+		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
 
 		val chcons = getConfig().getConfig().getConfigurationSection("chcons");
 		if (chcons == null) //Fallback to old place

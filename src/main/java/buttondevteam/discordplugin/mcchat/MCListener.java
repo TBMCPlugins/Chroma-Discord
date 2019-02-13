@@ -3,8 +3,10 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.discordplugin.*;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
+import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.player.*;
 import com.earth2me.essentials.CommandSource;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import net.ess3.api.events.MuteStatusChangeEvent;
@@ -26,14 +28,17 @@ import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 
+@RequiredArgsConstructor
 class MCListener implements Listener {
+	private final MinecraftChatModule module;
+
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerLogin(PlayerLoginEvent e) {
 		if (e.getResult() != Result.ALLOWED)
 			return;
 		MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
-				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
+			.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
+			.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -46,9 +51,9 @@ class MCListener implements Listener {
 			if (dp != null) {
 				val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
+					new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						new DiscordPlayerSender(user, DiscordPlugin.chatchannel, p)); //Stored per-channel
+					new DiscordPlayerSender(user, module.chatChannel().get(), p)); //Stored per-channel
 			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
@@ -61,13 +66,13 @@ class MCListener implements Listener {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return; // Only care about real users
 		MCChatUtils.OnlineSenders.entrySet()
-				.removeIf(entry -> entry.getValue().entrySet().stream().anyMatch(p -> p.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())));
+			.removeIf(entry -> entry.getValue().entrySet().stream().anyMatch(p -> p.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())));
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
-				() -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
-						.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-						.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
+			() -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
+				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
+				.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
-				ChromaBot.getInstance()::updatePlayerList, 5);
+			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.GetPlayer().PlayerName().get() + " left the game";
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
 	}
@@ -90,32 +95,36 @@ class MCListener implements Listener {
 		if (e.isCancelled() || !base.isOnline())
 			return;
 		final String msg = base.getDisplayName()
-				+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
+			+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
+	}
+
+	private ConfigData<IRole> muteRole() {
+		return DPUtils.roleData(module.getConfig(), "muteRole", "Muted");
 	}
 
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
 		try {
 			DPUtils.performNoWait(() -> {
-				final IRole role = DiscordPlugin.dc.getRoleByID(164090010461667328L); //TODO: Config
+				final IRole role = muteRole().get();
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())
 					return;
 				final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
-						.getAs(DiscordPlayer.class);
+					.getAs(DiscordPlayer.class);
 				if (p == null) return;
 				final IUser user = DiscordPlugin.dc.getUserByID(
-						Long.parseLong(p.getDiscordID()));
+					Long.parseLong(p.getDiscordID()));
 				if (e.getValue())
 					user.addRole(role);
 				else
 					user.removeRole(role);
-				DiscordPlugin.sendMessageToChannel(DiscordPlugin.modlogchannel, (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName());
+				DiscordPlugin.sendMessageToChannel(module.modlogChannel().get(), (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName());
 			});
 		} catch (DiscordException | MissingPermissionsException ex) {
 			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
-					ex);
+				ex);
 		}
 	}
 
@@ -132,7 +141,7 @@ class MCListener implements Listener {
 	@EventHandler
 	public void onYEEHAW(TBMCYEEHAWEvent event) { //TODO: Inherit from the chat event base to have channel support
 		String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
-				: event.getSender().getName();
+			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
 		MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
 	}

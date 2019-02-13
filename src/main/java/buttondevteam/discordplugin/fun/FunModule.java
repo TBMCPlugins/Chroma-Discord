@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.fun;
 
 import buttondevteam.core.ComponentManager;
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
@@ -12,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.StatusType;
@@ -123,6 +125,11 @@ public class FunModule extends Component implements Listener {
 		}, IRole::getName);
 	}
 
+
+	private ConfigData<IChannel> fullHouseChannel() {
+		return DPUtils.channelData(getConfig(), "fullHouseChannel", 219626707458457603L);
+	}
+
 	private static long lasttime = 0;
 
 	public static void handleFullHouse(PresenceUpdateEvent event) {
@@ -138,7 +145,7 @@ public class FunModule extends Component implements Listener {
 			.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
 			&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
 			&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.devofficechannel, "Full house!",
+			DiscordPlugin.sendMessageToChannel(mod.fullHouseChannel().get(), "Full house!",
 				new EmbedBuilder()
 					.withImage(
 						"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")

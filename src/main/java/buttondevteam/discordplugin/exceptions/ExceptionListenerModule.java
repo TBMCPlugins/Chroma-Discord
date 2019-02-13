@@ -1,14 +1,17 @@
 package buttondevteam.discordplugin.exceptions;
 
 import buttondevteam.core.ComponentManager;
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCExceptionEvent;
 import buttondevteam.lib.architecture.Component;
+import buttondevteam.lib.architecture.ConfigData;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IRole;
 
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ public class ExceptionListenerModule extends Component implements Listener {
     private static IRole coderRole;
 
     private static void SendException(Throwable e, String sourcemessage) {
+		if (instance == null) return;
         try {
             if (coderRole == null)
                 coderRole = DiscordPlugin.devServer.getRolesByName("Coder").get(0);
@@ -57,20 +61,32 @@ public class ExceptionListenerModule extends Component implements Listener {
                 stackTrace = stackTrace.substring(0, 1800);
             sb.append(stackTrace).append("\n");
             sb.append("```");
-            DiscordPlugin.sendMessageToChannel(DiscordPlugin.botroomchannel, sb.toString());
+			DiscordPlugin.sendMessageToChannel(getChannel(), sb.toString()); //Instance isn't null here
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
+	private static ExceptionListenerModule instance;
+
+	public static IChannel getChannel() {
+		if (instance != null) return instance.channel().get();
+		return null;
+	}
+
+	private ConfigData<IChannel> channel() {
+		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
+	}
+
 	@Override
 	protected void enable() {
+		instance = this;
 		Bukkit.getPluginManager().registerEvents(new ExceptionListenerModule(), getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new DebugMessageListener(), getPlugin());
 	}
 
 	@Override
 	protected void disable() {
-
+		instance = null;
 	}
 }

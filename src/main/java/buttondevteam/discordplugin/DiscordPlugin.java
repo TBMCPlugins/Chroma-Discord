@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.commands.Command2DC;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
+import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
@@ -89,18 +90,6 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
         }
     }
 
-	public static IChannel botchannel; //Can be removed
-    public static IChannel annchannel;
-    public static IChannel genchannel;
-    public static IChannel chatchannel;
-    public static IChannel botroomchannel;
-    public static IChannel modlogchannel;
-    /**
-     * Don't send messages, just receive, the same channel is used when testing
-     */
-    public static IChannel officechannel;
-    public static IChannel updatechannel;
-    public static IChannel devofficechannel;
     public static IGuild mainServer;
     public static IGuild devServer;
 
@@ -119,31 +108,10 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                 if (mainServer == null || devServer == null)
                     return; // Retry
                 if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-                    botchannel = mainServer.getChannelByID(209720707188260864L); // bot
-                    annchannel = mainServer.getChannelByID(126795071927353344L); // announcements
-                    genchannel = mainServer.getChannelByID(125813020357165056L); // general
-                    chatchannel = mainServer.getChannelByID(249663564057411596L); // minecraft_chat
-                    botroomchannel = devServer.getChannelByID(239519012529111040L); // bot-room
-                    officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
-                    updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
-                    devofficechannel = officechannel; // developers-office
-                    modlogchannel = mainServer.getChannelByID(283840717275791360L); // modlog
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Chromacraft");
                 } else {
-                    botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
-                    annchannel = botchannel; // bot-room
-                    genchannel = botchannel; // bot-room
-                    botroomchannel = botchannel;// bot-room
-                    chatchannel = botchannel;// bot-room
-                    officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
-                    updatechannel = botchannel;
-                    devofficechannel = botchannel;// bot-room
-                    modlogchannel = botchannel; // bot-room
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
                 }
-                if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
-                        || chatchannel == null || officechannel == null || updatechannel == null)
-                    return; // Retry
                 SafeMode = false;
                 if (task != null)
                     task.cancel();
@@ -153,6 +121,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	                Component.registerComponent(this, new ExceptionListenerModule());
 	                Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
 	                Component.registerComponent(this, new AnnouncerModule());
+					Component.registerComponent(this, new FunModule());
 	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
                     DiscordCommandBase.registerCommands();

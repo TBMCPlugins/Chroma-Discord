@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.exceptions;
 
+import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCDebugMessageEvent;
 import org.bukkit.event.EventHandler;
@@ -13,7 +14,7 @@ public class DebugMessageListener implements Listener{
 	}
 
 	private static void SendMessage(String message) {
-		if (DiscordPlugin.SafeMode)
+		if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(ExceptionListenerModule.class))
 			return;
 		try {
 			StringBuilder sb = new StringBuilder();
@@ -22,7 +23,7 @@ public class DebugMessageListener implements Listener{
 				message = message.substring(0, 2000);
 			sb.append(message).append("\n");
 			sb.append("```");
-			DiscordPlugin.sendMessageToChannel(DiscordPlugin.botroomchannel, sb.toString());
+			DiscordPlugin.sendMessageToChannel(ExceptionListenerModule.getChannel(), sb.toString());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
