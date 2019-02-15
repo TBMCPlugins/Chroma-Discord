@@ -3,6 +3,7 @@ package buttondevteam.discordplugin;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.Command2DC;
 import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.commands.UserinfoCommand;
 import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.fun.FunModule;
@@ -126,6 +127,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 
                     DiscordCommandBase.registerCommands();
 	                getManager().registerCommand(new VersionCommand());
+	                getManager().registerCommand(new UserinfoCommand());
 	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm

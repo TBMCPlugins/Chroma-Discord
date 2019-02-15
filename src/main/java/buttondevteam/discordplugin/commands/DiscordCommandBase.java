@@ -22,7 +22,6 @@ public abstract class DiscordCommandBase {
 
 	public static void registerCommands() {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
-		commands.put("userinfo", new UserinfoCommand());
 		commands.put("help", new HelpCommand());
 		commands.put("mcchat", new MCChatCommand());
 		commands.put("channelcon", new ChannelconCommand());

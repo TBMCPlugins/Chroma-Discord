@@ -21,7 +21,7 @@ public class CommandListener {
 		final IChannel channel = message.getChannel();
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!message.getChannel().isPrivate()
-					&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
+				&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
 				&& channel.getStringID().equals(DiscordPlugin.plugin.CommandChannel().get().getStringID()))) //
 				return false;
 			message.getChannel().setTypingStatus(true); // Fun
@@ -38,9 +38,10 @@ public class CommandListener {
 			return false;
 		}
 		message.getChannel().setTypingStatus(true);
-		String cmdwithargsString = cmdwithargs.toString().trim(); //Remove spaces between mention and command
+		String cmdwithargsString = cmdwithargs.toString();
 		try {
-			DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString);
+			if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
+				message.reply("Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
 		}
@@ -61,18 +62,19 @@ public class CommandListener {
 
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
-			if (cmdwithargs.length() > mention.length() + 1)
-				cmdwithargs.delete(0,
-						cmdwithargs.charAt(mention.length()) == ' ' ? mention.length() + 1 : mention.length());
-			else
-				cmdwithargs.replace(0, cmdwithargs.length(), "help");
+			if (cmdwithargs.length() > mention.length() + 1) {
+				int x = mention.length(), px = x;
+				while ((x = cmdwithargs.indexOf(" ", px + 1)) != -1) //Removes any space before the command
+					px = x;
+				cmdwithargs.delete(0, px + 1);
+				cmdwithargs.insert(0, DiscordPlugin.getPrefix()); //Always use the prefix for processing
+			} else
+				cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
 		else {
-			if (cmdwithargs.length() > 0 && cmdwithargs.charAt(0) == '/')
-				cmdwithargs.deleteCharAt(0); //Don't treat / as mention, mentions can be used in public mcchat
-			return false;
+			return false; //Don't treat / as mention, mentions can be used in public mcchat
 		}
 		if (cmdwithargs.length() == 0)
-			cmdwithargs.replace(0, cmdwithargs.length(), "help");
+			cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
 		return true;
 	}
 }

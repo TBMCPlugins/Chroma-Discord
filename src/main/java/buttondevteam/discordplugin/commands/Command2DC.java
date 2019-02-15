@@ -22,7 +22,7 @@ public class Command2DC extends Command2<ICommand2DC, Command2DCSender> {
 
 	@Override
 	public void registerCommand(ICommand2DC command) {
-		registerCommand(command, subcommands, DiscordPlugin.getPrefix());
+		registerCommand(command, subcommands, DiscordPlugin.getPrefix()); //Needs to be configurable for the helps
 	}
 
 	@Override

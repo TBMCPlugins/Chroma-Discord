@@ -6,7 +6,7 @@ import buttondevteam.lib.chat.ICommand2;
 import lombok.Getter;
 import lombok.val;
 
-public abstract class ICommand2DC extends ICommand2 {
+public abstract class ICommand2DC extends ICommand2<Command2DCSender> {
 	public <T extends ICommand2> ICommand2DC() {
 		super(DiscordPlugin.plugin.getManager());
 		val ann = getClass().getAnnotation(CommandClass.class);

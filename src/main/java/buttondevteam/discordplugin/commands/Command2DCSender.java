@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.commands;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.lib.chat.Command2Sender;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,11 +12,11 @@ public class Command2DCSender implements Command2Sender {
 
 	@Override
 	public void sendMessage(String message) {
-		this.message.reply(message);
+		this.message.reply(DPUtils.sanitizeString(message));
 	}
 
 	@Override
 	public void sendMessage(String[] message) {
-		this.message.reply(String.join("\n", message));
+		this.message.reply(DPUtils.sanitizeString(String.join("\n", message)));
 	}
 }

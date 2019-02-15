@@ -3,8 +3,11 @@ package buttondevteam.discordplugin.commands;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.Command2;
+import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
+import lombok.val;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 
@@ -12,17 +15,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class UserinfoCommand extends DiscordCommandBase {
-
-	@Override
-	public String getCommandName() {
-		return "userinfo";
-	}
-
-	@Override
-    public boolean run(IMessage message, String args) {
+@CommandClass(helpText = {
+	"User information", //
+	"Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.", //
+	"If used without args, shows your info.", //
+})
+public class UserinfoCommand extends ICommand2DC {
+	@Command2.Subcommand
+	public boolean def(Command2DCSender sender, @Command2.OptionalArg String args) {
+		val message = sender.getMessage();
 		IUser target = null;
-		if (args.length() == 0)
+		if (args == null || args.length() == 0)
 			target = message.getAuthor();
 		else {
 			final Optional<IUser> firstmention = message.getMentions().stream()
@@ -83,17 +86,6 @@ public class UserinfoCommand extends DiscordCommandBase {
 		else
 			targets = message.getGuild().getUsersByName(args, true);
 		return targets;
-	}
-
-	@Override
-	public String[] getHelpText() {
-		return new String[] { //
-				"---- User information ----", //
-				"Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.", //
-                "If used without args, shows your info.", //
-				"Usage: " + DiscordPlugin.getPrefix() + "userinfo [username/nickname[#tag]/ping]", //
-				"Examples:\n" + DiscordPlugin.getPrefix() + "userinfo ChromaBot\n" + DiscordPlugin.getPrefix() + "userinfo ChromaBot#6338\n" + DiscordPlugin.getPrefix() + "userinfo @ChromaBot#6338" //
-		};
 	}
 
 }
