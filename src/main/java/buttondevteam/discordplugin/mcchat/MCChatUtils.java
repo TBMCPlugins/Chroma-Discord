@@ -172,7 +172,7 @@ public class MCChatUtils {
 			if (event.shouldSendTo(getSender(data.channel, data.user)))
 				action.accept(data.channel);
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
-			if ((clmd.toggles & ChannelconBroadcast.BROADCAST.flag) == 0)
+			if (!clmd.brtoggles.contains(event.getTarget()))
 				return false;
 			return event.shouldSendTo(clmd.dcp);
 		}).map(clmd -> clmd.channel).forEach(action);

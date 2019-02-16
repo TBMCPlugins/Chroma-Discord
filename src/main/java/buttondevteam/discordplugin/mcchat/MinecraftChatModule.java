@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import com.google.common.collect.Lists;
@@ -14,7 +15,9 @@ import org.bukkit.Bukkit;
 import sx.blah.discord.handle.obj.IChannel;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class MinecraftChatModule extends Component {
 	private @Getter MCChatListener listener;
@@ -56,11 +59,12 @@ public class MinecraftChatModule extends Component {
 				val user = DiscordPlugin.dc.fetchUser(did);
 				val groupid = chcon.getString("groupid");
 				val toggles = chcon.getInt("toggles");
+				val brtoggles = chcon.getStringList("brtoggles");
 				if (!mcch.isPresent() || ch == null || user == null || groupid == null)
 					continue;
 				Bukkit.getScheduler().runTask(getPlugin(), () -> { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
 					val dcp = new DiscordConnectedPlayer(user, ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"));
-					MCChatCustom.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles);
+					MCChatCustom.addCustomChat(ch, groupid, mcch.get(), user, dcp, toggles, brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::get).filter(Objects::nonNull).collect(Collectors.toList()));
 				});
 			}
 		}
@@ -79,7 +83,8 @@ public class MinecraftChatModule extends Component {
 			chconc.set("mcname", chcon.dcp.getName());
 			chconc.set("groupid", chcon.groupID);
 			chconc.set("toggles", chcon.toggles);
+			chconc.set("brtoggles", chcon.brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.toList()));
 		}
 		MCChatListener.stop(true);
-	} //TODO: Use ComponentManager.isEnabled() at other places too, instead of SafeMode
+	}
 }

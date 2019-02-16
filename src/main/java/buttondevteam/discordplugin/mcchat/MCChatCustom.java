@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
+import buttondevteam.lib.TBMCSystemChatEvent;
 import lombok.NonNull;
 import lombok.val;
 import sx.blah.discord.handle.obj.IChannel;
@@ -18,8 +19,8 @@ public class MCChatCustom {
 	 */
 	static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
 
-	public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles) {
-		val lmd = new CustomLMD(channel, user, groupid, mcchannel, dcp, toggles);
+	public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles, List<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
+		val lmd = new CustomLMD(channel, user, groupid, mcchannel, dcp, toggles, brtoggles);
 		lastmsgCustom.add(lmd);
 	}
 
@@ -46,14 +47,16 @@ public class MCChatCustom {
 		public final Channel mcchannel;
 		public final DiscordConnectedPlayer dcp;
 		public int toggles;
+		public List<TBMCSystemChatEvent.BroadcastTarget> brtoggles;
 
 		private CustomLMD(@NonNull IChannel channel, @NonNull IUser user,
-		                  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles) {
+		                  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, List<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
 			super(channel, user);
 			groupID = groupid;
 			this.mcchannel = mcchannel;
 			this.dcp = dcp;
 			this.toggles = toggles;
+			this.brtoggles = brtoggles;
 		}
 	}
 }
