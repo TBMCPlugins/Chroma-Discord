@@ -1,8 +1,10 @@
-package buttondevteam.discordplugin.commands;
+package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.component.channel.Channel;
+import buttondevteam.core.component.channel.ChatRoom;
 import buttondevteam.discordplugin.*;
-import buttondevteam.discordplugin.mcchat.MCChatCustom;
+import buttondevteam.discordplugin.commands.Command2DCSender;
+import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
@@ -14,12 +16,12 @@ import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.PermissionUtils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-@CommandClass(helpText = {"---- Channel connect ---", //
+@CommandClass(helpText = {"Channel connect", //
 	"This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
 	"You need to have access to the MC channel and have manage permissions on the Discord channel.", //
 	"You also need to have your Minecraft account connected. In #bot use /connect <mcname>.", //
@@ -47,9 +49,10 @@ public class ChannelconCommand extends ICommand2DC {
 		val message = sender.getMessage();
 		if (checkPerms(message)) return true;
 		val cc = MCChatCustom.getCustomChat(message.getChannel());
-		assert cc != null; //It's not null
+		if (cc == null)
+			return respond(sender, "this channel isn't connected.");
 		Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"))
-			+ "\n\n" + TBMCSystemChatEvent.BroadcastTarget.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.joining("\n"));
+			+ "\n\n" + TBMCSystemChatEvent.BroadcastTarget.stream().map(target -> target.getName() + ": " + (cc.brtoggles.contains(target) ? "enabled" : "disabled")).collect(Collectors.joining("\n"));
 		if (toggle == null) {
 			message.reply("toggles:\n" + togglesString.get());
 			return true;
@@ -82,37 +85,44 @@ public class ChannelconCommand extends ICommand2DC {
 	}
 
 	@Command2.Subcommand
-	public boolean def(Command2DCSender sender, String args) {
+	public boolean def(Command2DCSender sender, String channelID) {
 		val message = sender.getMessage();
 		if (checkPerms(message)) return true;
 		if (MCChatCustom.hasCustomChat(message.getChannel()))
 			return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
-	    val chan = Channel.getChannels().filter(ch -> ch.ID.equalsIgnoreCase(args) || (Arrays.stream(ch.IDs().get()).anyMatch(cid -> cid.equalsIgnoreCase(args)))).findAny();
-        if (!chan.isPresent()) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
-            message.reply("MC channel with ID '" + args + "' not found! The ID is the command for it without the /.");
-            return true;
-        }
-        val dp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class);
-        val chp = dp.getAs(TBMCPlayer.class);
-        if (chp == null) {
-	        message.reply("you need to connect your Minecraft account. On our server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>");
-            return true;
-        }
-        DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
-        //Using a fake player with no login/logout, should be fine for this event
-	    String groupid = chan.get().getGroupID(dcp);
-        if (groupid == null) {
-            message.reply("sorry, that didn't work. You cannot use that Minecraft channel.");
-            return true;
-        }
+		val chan = Channel.getChannels().filter(ch -> ch.ID.equalsIgnoreCase(channelID) || (Arrays.stream(ch.IDs().get()).anyMatch(cid -> cid.equalsIgnoreCase(channelID)))).findAny();
+		if (!chan.isPresent()) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
+			message.reply("MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.");
+			return true;
+		}
+		val dp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class);
+		val chp = dp.getAs(TBMCPlayer.class);
+		if (chp == null) {
+			message.reply("you need to connect your Minecraft account. On our server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>");
+			return true;
+		}
+		DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor(), message.getChannel(), chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName());
+		//Using a fake player with no login/logout, should be fine for this event
+		String groupid = chan.get().getGroupID(dcp);
+		if (groupid == null && !(chan.get() instanceof ChatRoom)) { //ChatRooms don't allow it unless the user joins, which happens later
+			message.reply("sorry, you cannot use that Minecraft channel.");
+			return true;
+		}
+		if (chan.get() instanceof ChatRoom) { //ChatRooms don't work well
+			message.reply("chat rooms are not supported yet.");
+			return true;
+		}
         /*if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
             message.reply("sorry, this MC chat is already connected to a different channel, multiple channels are not supported atm.");
             return true;
         }*/ //TODO: "Channel admins" that can connect channels?
-		MCChatCustom.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0, new ArrayList<>());
-        message.reply("alright, connection made to group `" + groupid + "`!");
-        return true;
-    }
+		MCChatCustom.addCustomChat(message.getChannel(), groupid, chan.get(), message.getAuthor(), dcp, 0, new HashSet<>());
+		if (chan.get() instanceof ChatRoom)
+			message.reply("alright, connection made to the room!");
+		else
+			message.reply("alright, connection made to group `" + groupid + "`!");
+		return true;
+	}
 
 	private boolean checkPerms(IMessage message) {
 		if (!PermissionUtils.hasPermissions(message.getChannel(), message.getAuthor(), Permissions.MANAGE_CHANNEL)) {
@@ -123,9 +133,9 @@ public class ChannelconCommand extends ICommand2DC {
 	}
 
 	@Override
-	public String[] getHelpText(Method method) {
+	public String[] getHelpText(Method method, Command2.Subcommand ann) {
         return new String[]{ //
-                "---- Channel connect ---", //
+	        "Channel connect", //
                 "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
                 "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
 	        "You also need to have your Minecraft account connected. In " + DPUtils.botmention() + " use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //

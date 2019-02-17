@@ -9,6 +9,7 @@ import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
+import buttondevteam.discordplugin.mcchat.ChannelconCommand;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
@@ -128,6 +129,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                     DiscordCommandBase.registerCommands();
 	                getManager().registerCommand(new VersionCommand());
 	                getManager().registerCommand(new UserinfoCommand());
+	                getManager().registerCommand(new ChannelconCommand());
 	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm

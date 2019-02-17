@@ -63,10 +63,11 @@ public class CommandListener {
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
-				int x = mention.length(), px = x;
-				while ((x = cmdwithargs.indexOf(" ", px + 1)) != -1) //Removes any space before the command
-					px = x;
-				cmdwithargs.delete(0, px + 1);
+				int i = cmdwithargs.indexOf(" ", mention.length());
+				//noinspection StatementWithEmptyBody
+				for (; i < cmdwithargs.length() && cmdwithargs.charAt(i) == ' '; i++)
+					; //Removes any space before the command
+				cmdwithargs.delete(0, i);
 				cmdwithargs.insert(0, DiscordPlugin.getPrefix()); //Always use the prefix for processing
 			} else
 				cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");

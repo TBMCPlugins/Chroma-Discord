@@ -24,7 +24,6 @@ public abstract class DiscordCommandBase {
 		commands.put("connect", new ConnectCommand()); // TODO: API for adding commands?
 		commands.put("help", new HelpCommand());
 		commands.put("mcchat", new MCChatCommand());
-		commands.put("channelcon", new ChannelconCommand());
 		commands.put("debug", new DebugCommand());
 	}
 
