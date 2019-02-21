@@ -3,7 +3,6 @@ package buttondevteam.discordplugin.role;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.commands.DiscordCommandBase;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import lombok.val;
@@ -19,12 +18,12 @@ import java.awt.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GameRoleModule extends Component {
+public class GameRoleModule extends Component<DiscordPlugin> {
 	public List<String> GameRoles;
 
 	@Override
 	protected void enable() {
-		DiscordCommandBase.registerCommand("role", new RoleCommand(this));
+		getPlugin().getManager().registerCommand(new RoleCommand(this));
 		GameRoles = DiscordPlugin.mainServer.getRoles().stream().filter(this::isGameRole).map(IRole::getName).collect(Collectors.toList());
 	}
 

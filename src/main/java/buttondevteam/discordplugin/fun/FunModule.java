@@ -26,7 +26,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-public class FunModule extends Component implements Listener {
+public class FunModule extends Component<DiscordPlugin> implements Listener {
 	private static FunModule mod;
 
 	private static final String[] serverReadyStrings = new String[]{"In one week from now", // Ali

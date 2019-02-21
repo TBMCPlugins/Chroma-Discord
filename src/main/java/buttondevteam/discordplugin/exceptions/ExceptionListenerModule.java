@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExceptionListenerModule extends Component implements Listener {
+public class ExceptionListenerModule extends Component<DiscordPlugin> implements Listener {
     private List<Throwable> lastthrown = new ArrayList<>();
     private List<String> lastsourcemsg = new ArrayList<>();
 

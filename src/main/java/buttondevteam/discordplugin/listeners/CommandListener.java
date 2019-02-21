@@ -45,17 +45,6 @@ public class CommandListener {
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
 		}
-		/*int index = cmdwithargsString.indexOf(" ");
-		String cmd;
-		String args;
-		if (index == -1) {
-			cmd = cmdwithargsString;
-			args = "";
-		} else {
-			cmd = cmdwithargsString.substring(0, index);
-			args = cmdwithargsString.substring(index + 1).trim(); //In case there are multiple spaces
-		}
-		DiscordCommandBase.runCommand(cmd.toLowerCase(), args, message);*/
 		message.getChannel().setTypingStatus(false);
 		return true;
 	}

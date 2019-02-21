@@ -1,15 +1,11 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
-import buttondevteam.discordplugin.commands.Command2DC;
-import buttondevteam.discordplugin.commands.DiscordCommandBase;
-import buttondevteam.discordplugin.commands.UserinfoCommand;
-import buttondevteam.discordplugin.commands.VersionCommand;
+import buttondevteam.discordplugin.commands.*;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
-import buttondevteam.discordplugin.mcchat.ChannelconCommand;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
@@ -126,10 +122,11 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 					Component.registerComponent(this, new FunModule());
 	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
-                    DiscordCommandBase.registerCommands();
 	                getManager().registerCommand(new VersionCommand());
 	                getManager().registerCommand(new UserinfoCommand());
-	                getManager().registerCommand(new ChannelconCommand());
+	                getManager().registerCommand(new HelpCommand());
+	                getManager().registerCommand(new DebugCommand());
+	                getManager().registerCommand(new ConnectCommand());
 	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm

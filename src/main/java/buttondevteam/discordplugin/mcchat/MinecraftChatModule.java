@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class MinecraftChatModule extends Component {
+public class MinecraftChatModule extends Component<DiscordPlugin> {
 	private @Getter MCChatListener listener;
 
 	public MCChatListener getListener() { //It doesn't want to generate
@@ -45,6 +45,8 @@ public class MinecraftChatModule extends Component {
 		DiscordPlugin.dc.getDispatcher().registerListener(listener);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
+		getPlugin().getManager().registerCommand(new MCChatCommand());
+		getPlugin().getManager().registerCommand(new ChannelconCommand());
 
 		val chcons = getConfig().getConfig().getConfigurationSection("chcons");
 		if (chcons == null) //Fallback to old place

@@ -2,15 +2,18 @@ package buttondevteam.discordplugin.role;
 
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.Command2;
+import buttondevteam.lib.chat.CommandClass;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's parser
+@CommandClass
+public class RoleCommand extends ICommand2DC { //TODO
 
 	private GameRoleModule grm;
 
@@ -18,13 +21,8 @@ public class RoleCommand extends DiscordCommandBase { //TODO: Use Command2's par
 		this.grm = grm;
 	}
 
-    @Override
-    public String getCommandName() {
-        return "role";
-    }
-
-    @Override
-    public boolean run(IMessage message, String args) {
+	@Command2.Subcommand
+	public boolean def(IMessage message, String args) {
         if (args.length() == 0)
             return false;
         String[] argsa = splitargs(args);

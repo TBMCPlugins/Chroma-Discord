@@ -16,7 +16,7 @@ import sx.blah.discord.handle.obj.IMessage;
 import java.io.File;
 import java.util.List;
 
-public class AnnouncerModule extends Component {
+public class AnnouncerModule extends Component<DiscordPlugin> {
 	public ConfigData<IChannel> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}

@@ -1,11 +1,12 @@
 package buttondevteam.discordplugin.broadcaster;
 
 import buttondevteam.discordplugin.DPUtils;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import lombok.Getter;
 
-public class GeneralEventBroadcasterModule extends Component {
+public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	private static @Getter boolean hooked = false;
 
 	@Override
