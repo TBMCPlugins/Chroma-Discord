@@ -8,10 +8,10 @@ import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
 import com.google.common.collect.HashBiMap;
+import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import sx.blah.discord.handle.obj.IMessage;
 
 @CommandClass(helpText = {
 	"Connect command", //
@@ -26,7 +26,8 @@ public class ConnectCommand extends ICommand2DC {
 	public static HashBiMap<String, String> WaitingToConnect = HashBiMap.create();
 
 	@Command2.Subcommand
-	public boolean def(IMessage message, String Minecraftname) {
+	public boolean def(Command2DCSender sender, String Minecraftname) {
+		val message = sender.getMessage();
 		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
 				"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getStringID()) + " with " + Minecraftname);

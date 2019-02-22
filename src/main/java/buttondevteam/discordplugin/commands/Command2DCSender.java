@@ -12,11 +12,14 @@ public class Command2DCSender implements Command2Sender {
 
 	@Override
 	public void sendMessage(String message) {
-		this.message.reply(DPUtils.sanitizeString(message));
+		if (message.length() == 0) return;
+		message = DPUtils.sanitizeString(message);
+		message = Character.toLowerCase(message.charAt(0)) + message.substring(1);
+		this.message.reply(message);
 	}
 
 	@Override
 	public void sendMessage(String[] message) {
-		this.message.reply(DPUtils.sanitizeString(String.join("\n", message)));
+		sendMessage(String.join("\n", message));
 	}
 }

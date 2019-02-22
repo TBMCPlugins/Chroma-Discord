@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.role.GameRoleModule;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import lombok.val;
 import sx.blah.discord.api.events.IListener;
@@ -35,16 +36,20 @@ public class CommonListeners {
 					return;
 				if (FunModule.executeMemes(event.getMessage()))
 					return;
-				boolean handled = false;
-				if (event.getChannel().getLongID() == DiscordPlugin.plugin.CommandChannel().get().getLongID() //If mentioned, that's higher than chat
+				try {
+					boolean handled = false;
+					if (event.getChannel().getLongID() == DiscordPlugin.plugin.CommandChannel().get().getLongID() //If mentioned, that's higher than chat
 						|| event.getMessage().getContent().contains("channelcon")) //Only 'channelcon' is allowed in other channels
-					handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
-				if (handled) return;
-				val mcchat = Component.getComponents().get(MinecraftChatModule.class);
-				if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
-					handled = ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
-				if (!handled)
-					handled = CommandListener.runCommand(event.getMessage(), false);
+						handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
+					if (handled) return;
+					val mcchat = Component.getComponents().get(MinecraftChatModule.class);
+					if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
+						handled = ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
+					if (!handled)
+						handled = CommandListener.runCommand(event.getMessage(), false);
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occured while handling a message!", e);
+				}
 			}
 		}, new IListener<sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent>() {
 			@Override

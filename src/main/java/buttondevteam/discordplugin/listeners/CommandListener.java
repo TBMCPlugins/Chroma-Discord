@@ -53,9 +53,12 @@ public class CommandListener {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
 				int i = cmdwithargs.indexOf(" ", mention.length());
-				//noinspection StatementWithEmptyBody
-				for (; i < cmdwithargs.length() && cmdwithargs.charAt(i) == ' '; i++)
-					; //Removes any space before the command
+				if (i == -1)
+					i = mention.length();
+				else
+					//noinspection StatementWithEmptyBody
+					for (; i < cmdwithargs.length() && cmdwithargs.charAt(i) == ' '; i++)
+						; //Removes any space before the command
 				cmdwithargs.delete(0, i);
 				cmdwithargs.insert(0, DiscordPlugin.getPrefix()); //Always use the prefix for processing
 			} else
