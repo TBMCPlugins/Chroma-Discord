@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
@@ -79,7 +80,24 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
             plugin = this;
 	        manager = new Command2DC();
             ClientBuilder cb = new ClientBuilder();
-            cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
+	        File tokenFile = new File("TBMC", "Token.txt");
+	        if (tokenFile.exists()) //Legacy support
+		        //noinspection UnstableApiUsage
+		        cb.withToken(Files.readFirstLine(tokenFile, StandardCharsets.UTF_8));
+	        else {
+		        File privateFile = new File(getDataFolder(), "private.yml");
+		        val conf = YamlConfiguration.loadConfiguration(privateFile);
+		        String token = conf.getString("token");
+		        if (token == null) {
+			        conf.set("token", "Token goes here");
+			        conf.save(privateFile);
+
+			        getLogger().severe("Token not found! Set it in private.yml");
+			        Bukkit.getPluginManager().disablePlugin(this);
+			        return;
+		        } else
+			        cb.withToken(token);
+	        }
             dc = cb.login();
             dc.getDispatcher().registerListener(this);
         } catch (Exception e) {
@@ -177,6 +195,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 
 	@Override
 	public void pluginPreDisable() {
+		if (ChromaBot.getInstance() == null) return; //Failed to load
 		EmbedObject embed;
 		if (ResetMCCommand.resetting)
 			embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
@@ -207,6 +226,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	public void pluginDisable() {
 		MCChatPrivate.logoutAll();
 		getConfig().set("serverup", false);
+		if (ChromaBot.getInstance() == null) return; //Failed to load
 
 		saveConfig();
         try {
