@@ -126,8 +126,10 @@ public final class DPUtils {
 	 * @return The string for mentioning the channel
 	 */
 	public static String botmention() {
-		if (DiscordPlugin.plugin == null) return "#bot";
-		return DiscordPlugin.plugin.CommandChannel().get().mention();
+		IChannel channel;
+		if (DiscordPlugin.plugin == null
+			|| (channel = DiscordPlugin.plugin.CommandChannel().get()) == null) return "#bot";
+		return channel.mention();
 	}
 
 }

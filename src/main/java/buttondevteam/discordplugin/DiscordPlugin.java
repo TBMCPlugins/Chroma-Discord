@@ -43,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent> {
@@ -116,7 +117,14 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     public void handle(ReadyEvent event) {
         try {
             dc.changePresence(StatusType.DND, ActivityType.PLAYING, "booting");
+	        val tries = new AtomicInteger();
             task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+	            tries.incrementAndGet();
+	            if (tries.get() > 10) { //5 seconds
+		            task.cancel();
+		            getLogger().severe("Main or dev server not found! Set ID and do /discord reset");
+		            return;
+	            }
                 if (mainServer == null || devServer == null) {
                     mainServer = event.getClient().getGuildByID(125813020357165056L);
                     devServer = event.getClient().getGuildByID(219529124321034241L);
