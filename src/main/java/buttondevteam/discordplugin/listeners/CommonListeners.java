@@ -38,7 +38,8 @@ public class CommonListeners {
 					return;
 				try {
 					boolean handled = false;
-					if (event.getChannel().getLongID() == DiscordPlugin.plugin.CommandChannel().get().getLongID() //If mentioned, that's higher than chat
+					val commandChannel = DiscordPlugin.plugin.CommandChannel().get();
+					if ((commandChannel != null && event.getChannel().getLongID() == commandChannel.getLongID()) //If mentioned, that's higher than chat
 						|| event.getMessage().getContent().contains("channelcon")) //Only 'channelcon' is allowed in other channels
 						handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
 					if (handled) return;

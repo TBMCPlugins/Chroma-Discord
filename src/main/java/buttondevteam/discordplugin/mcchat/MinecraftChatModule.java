@@ -41,6 +41,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 
 	@Override
 	protected void enable() {
+		if (DPUtils.disableIfConfigError(this, chatChannel())) return;
 		listener = new MCChatListener(this);
 		DiscordPlugin.dc.getDispatcher().registerListener(listener);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());

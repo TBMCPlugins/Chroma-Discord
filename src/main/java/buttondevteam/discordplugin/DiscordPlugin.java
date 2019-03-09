@@ -108,7 +108,6 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     }
 
     public static IGuild mainServer;
-    public static IGuild devServer;
 
     private static volatile BukkitTask task;
     private static volatile boolean sent = false;
@@ -122,17 +121,22 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	            tries.incrementAndGet();
 	            if (tries.get() > 10) { //5 seconds
 		            task.cancel();
-		            getLogger().severe("Main or dev server not found! Set ID and do /discord reset");
+		            getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+		            //getIConfig().getConfig().set("mainServer", 219529124321034241L); //Needed because it won't save as long as it's null - made it save
+		            saveConfig(); //Put default there
 		            return;
 	            }
-                if (mainServer == null || devServer == null) {
-                    mainServer = event.getClient().getGuildByID(125813020357165056L);
-                    devServer = event.getClient().getGuildByID(219529124321034241L);
-                }
-                if (mainServer == null || devServer == null)
-                    return; // Retry
+	            mainServer = MainServer().get(); //Shouldn't change afterwards
+	            if (mainServer == null) {
+		            val guilds = dc.getGuilds();
+		            if (guilds.size() == 0)
+			            return; //If there are no guilds in cache, retry
+		            mainServer = guilds.get(0);
+		            getLogger().warning("Main server set to first one: " + mainServer.getName());
+		            MainServer().set(mainServer); //Save in config
+	            }
                 if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-                    dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Chromacraft");
+	                dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Minecraft");
                 } else {
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
                 }
@@ -140,6 +144,8 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                 if (task != null)
                     task.cancel();
                 if (!sent) {
+	                DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
+
 	                Component.registerComponent(this, new GeneralEventBroadcasterModule());
 	                Component.registerComponent(this, new MinecraftChatModule());
 	                Component.registerComponent(this, new ExceptionListenerModule());
@@ -242,7 +248,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
-            mainServer = devServer = null; //Fetch servers and channels again
+	        //Configs are emptied so channels and servers are fetched again
             sent = false;
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);

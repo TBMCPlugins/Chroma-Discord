@@ -45,6 +45,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 
 	@Override
 	protected void enable() {
+		if (DPUtils.disableIfConfigError(this, channel(), modChannel())) return;
 		stop = false; //If not the first time
 		DPUtils.performNoWait(() -> {
 			try {

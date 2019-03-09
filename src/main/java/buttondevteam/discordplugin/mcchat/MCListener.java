@@ -108,6 +108,7 @@ class MCListener implements Listener {
 		try {
 			DPUtils.performNoWait(() -> {
 				final IRole role = muteRole().get();
+				if (role == null) return;
 				final CommandSource source = e.getAffected().getSource();
 				if (!source.isPlayer())
 					return;
@@ -120,7 +121,11 @@ class MCListener implements Listener {
 					user.addRole(role);
 				else
 					user.removeRole(role);
-				DiscordPlugin.sendMessageToChannel(module.modlogChannel().get(), (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName());
+				val modlog = module.modlogChannel().get();
+				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName();
+				if (modlog != null)
+					DiscordPlugin.sendMessageToChannel(modlog, msg);
+				DPUtils.getLogger().info(msg);
 			});
 		} catch (DiscordException | MissingPermissionsException ex) {
 			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
@@ -143,7 +148,7 @@ class MCListener implements Listener {
 		String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-		MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s"));
+		MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s")); //TODO: Don't require emoji
 	}
 
 	@EventHandler

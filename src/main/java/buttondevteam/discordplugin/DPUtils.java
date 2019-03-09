@@ -1,10 +1,13 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
 import lombok.val;
 import org.bukkit.Bukkit;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.util.EmbedBuilder;
@@ -114,10 +117,14 @@ public final class DPUtils {
 	}
 
 	public static ConfigData<IRole> roleData(IHaveConfig config, String key, String defName) {
+		return roleData(config, key, defName, DiscordPlugin.mainServer);
+	}
+
+	public static ConfigData<IRole> roleData(IHaveConfig config, String key, String defName, IGuild guild) {
 		return config.getDataPrimDef(key, defName, name -> {
-			val roles = DiscordPlugin.mainServer.getRolesByName((String) name);
-			return roles.size() > 0 ? roles.get(0) : null; //TODO: May not handle null properly
-		}, IIDLinkedObject::getLongID); //We can afford to search for the channel in the cache once (instead of using mainServer)
+			val roles = guild.getRolesByName((String) name);
+			return roles.size() > 0 ? roles.get(0) : null;
+		}, IIDLinkedObject::getLongID);
 	}
 
 	/**
@@ -130,6 +137,34 @@ public final class DPUtils {
 		if (DiscordPlugin.plugin == null
 			|| (channel = DiscordPlugin.plugin.CommandChannel().get()) == null) return "#bot";
 		return channel.mention();
+	}
+
+	/**
+	 * Disables the component if one of the given configs return null. Useful for channel/role configs.
+	 *
+	 * @param component The component to disable if needed
+	 * @param configs   The configs to check for null
+	 * @return Whether the component got disabled and a warning logged
+	 */
+	public static boolean disableIfConfigError(@Nullable Component<DiscordPlugin> component, ConfigData<?>... configs) {
+		for (val config : configs) {
+			if (config.get() == null) {
+				String path = null;
+				try {
+					if (component != null)
+						Component.setComponentEnabled(component, false);
+					val f = ConfigData.class.getDeclaredField("path");
+					f.setAccessible(true); //Hacking my own plugin
+					path = (String) f.get(config);
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("Failed to disable component after config error!", e);
+				}
+				getLogger().warning("The config value " + path + " isn't set correctly " + (component == null ? "in global settings!" : "for component " + component.getClass().getSimpleName() + "!"));
+				getLogger().warning("Set the correct ID in the config" + (component == null ? "" : " or disable this component") + " to remove this message.");
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
