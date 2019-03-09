@@ -11,7 +11,7 @@ import buttondevteam.lib.chat.CommandClass;
 public class DebugCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String args) {
-		if (sender.getMessage().getAuthor().hasRole(DiscordPlugin.mainServer.getRoleByID(126030201472811008L))) //TODO: Make configurable
+		if (sender.getMessage().getAuthor().hasRole(DiscordPlugin.plugin.ModRole().get()))
 			sender.sendMessage("debug " + (CommonListeners.debug() ? "enabled" : "disabled"));
         else
 			sender.sendMessage("you need to be a moderator to use this command.");

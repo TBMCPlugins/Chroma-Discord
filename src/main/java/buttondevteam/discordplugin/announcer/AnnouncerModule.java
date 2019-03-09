@@ -1,5 +1,8 @@
-package buttondevteam.discordplugin;
+package buttondevteam.discordplugin.announcer;
 
+import buttondevteam.discordplugin.DPUtils;
+import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;

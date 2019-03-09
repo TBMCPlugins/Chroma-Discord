@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.announcer.AnnouncerModule;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.discordplugin.commands.*;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;

@@ -38,7 +38,7 @@ class MCListener implements Listener {
 			return;
 		MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
 			.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-			.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
+			.ifPresent(dcp -> MCChatUtils.callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -70,7 +70,7 @@ class MCListener implements Listener {
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin,
 			() -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
 				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(dcp -> buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
+				.ifPresent(dcp -> MCChatUtils.callEventExcludingSome(new PlayerJoinEvent(dcp, ""))));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
 			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.GetPlayer().PlayerName().get() + " left the game";

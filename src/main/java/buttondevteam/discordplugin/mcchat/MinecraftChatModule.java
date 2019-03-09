@@ -19,6 +19,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
+ */
 public class MinecraftChatModule extends Component<DiscordPlugin> {
 	private @Getter MCChatListener listener;
 
@@ -26,17 +29,33 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return listener;
 	}
 
+	/**
+	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
+	 */
 	public ConfigData<ArrayList<String>> whitelistedCommands() {
 		return getConfig().getData("whitelistedCommands", () -> Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki",
 			"yeehaw", "lenny", "rp", "plugins"));
 	}
 
+	/**
+	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
+	 */
 	public ConfigData<IChannel> chatChannel() {
 		return DPUtils.channelData(getConfig(), "chatChannel", 239519012529111040L);
 	}
 
+	/**
+	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
+	 */
 	public ConfigData<IChannel> modlogChannel() {
 		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
+	}
+
+	/**
+	 * 0	 * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
+	 */
+	public ConfigData<String[]> excludedPlugins() {
+		return getConfig().getData("excludedPlugins", new String[]{"ProtocolLib", "LibsDisguises", "JourneyMapServer"});
 	}
 
 	@Override
