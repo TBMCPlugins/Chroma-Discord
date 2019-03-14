@@ -122,6 +122,7 @@ public final class DPUtils {
 
 	public static ConfigData<IRole> roleData(IHaveConfig config, String key, String defName, IGuild guild) {
 		return config.getDataPrimDef(key, defName, name -> {
+			if (!(name instanceof String)) return null;
 			val roles = guild.getRolesByName((String) name);
 			return roles.size() > 0 ? roles.get(0) : null;
 		}, IIDLinkedObject::getLongID);

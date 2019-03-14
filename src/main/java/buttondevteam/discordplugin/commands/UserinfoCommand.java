@@ -22,22 +22,22 @@ import java.util.stream.Collectors;
 })
 public class UserinfoCommand extends ICommand2DC {
 	@Command2.Subcommand
-	public boolean def(Command2DCSender sender, @Command2.OptionalArg String args) {
+	public boolean def(Command2DCSender sender, @Command2.OptionalArg @Command2.TextArg String user) {
 		val message = sender.getMessage();
 		IUser target = null;
-		if (args == null || args.length() == 0)
+		if (user == null || user.length() == 0)
 			target = message.getAuthor();
 		else {
 			final Optional<IUser> firstmention = message.getMentions().stream()
 					.filter(m -> !m.getStringID().equals(DiscordPlugin.dc.getOurUser().getStringID())).findFirst();
 			if (firstmention.isPresent())
 				target = firstmention.get();
-			else if (args.contains("#")) {
-				String[] targettag = args.split("#");
+			else if (user.contains("#")) {
+				String[] targettag = user.split("#");
 				final List<IUser> targets = getUsers(message, targettag[0]);
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-							"The user cannot be found (by name): " + args);
+						"The user cannot be found (by name): " + user);
                     return true;
 				}
 				for (IUser ptarget : targets) {
@@ -48,15 +48,15 @@ public class UserinfoCommand extends ICommand2DC {
 				}
 				if (target == null) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-							"The user cannot be found (by discriminator): " + args + "(Found " + targets.size()
+						"The user cannot be found (by discriminator): " + user + "(Found " + targets.size()
 									+ " users with the name.)");
                     return true;
 				}
 			} else {
-				final List<IUser> targets = getUsers(message, args);
+				final List<IUser> targets = getUsers(message, user);
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-							"The user cannot be found on Discord: " + args);
+						"The user cannot be found on Discord: " + user);
                     return true;
 				}
 				if (targets.size() > 1) {

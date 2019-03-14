@@ -18,7 +18,7 @@ import lombok.val;
 public class MCChatCommand extends ICommand2DC {
 
 	@Command2.Subcommand
-	public boolean def(Command2DCSender sender, String args) {
+	public boolean def(Command2DCSender sender) {
 		val message = sender.getMessage();
 		if (!message.getChannel().isPrivate()) {
 			message.reply("this command can only be issued in a direct message with the bot.");
