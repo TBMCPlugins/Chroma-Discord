@@ -148,7 +148,8 @@ class MCListener implements Listener {
 		String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-		MCChatUtils.forAllMCChat(MCChatUtils.send(name + " <:YEEHAW:" + DiscordPlugin.mainServer.getEmojiByName("YEEHAW").getStringID() + ">s")); //TODO: Don't require emoji
+		val yeehaw = DiscordPlugin.mainServer.getEmojiByName("YEEHAW");
+		MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getStringID() + ">s" : " YEEHAWs")));
 	}
 
 	@EventHandler
