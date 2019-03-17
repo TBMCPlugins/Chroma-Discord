@@ -1,8 +1,10 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.announcer.AnnouncerModule;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
-import buttondevteam.discordplugin.commands.DiscordCommandBase;
+import buttondevteam.discordplugin.commands.*;
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
+import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
@@ -18,9 +20,11 @@ import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
+import lombok.Getter;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
@@ -40,12 +44,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent> {
     public static IDiscordClient dc;
     public static DiscordPlugin plugin;
     public static boolean SafeMode = true;
+	@Getter
+	private Command2DC manager;
 
 	public ConfigData<Character> Prefix() {
 	    return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
@@ -64,13 +71,35 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
+	public ConfigData<IRole> ModRole() {
+		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
+	}
+
     @Override
     public void pluginEnable() {
         try {
-            Bukkit.getLogger().info("Initializing DiscordPlugin...");
+	        getLogger().info("Initializing...");
             plugin = this;
+	        manager = new Command2DC();
             ClientBuilder cb = new ClientBuilder();
-            cb.withToken(Files.readFirstLine(new File("TBMC", "Token.txt"), StandardCharsets.UTF_8));
+	        File tokenFile = new File("TBMC", "Token.txt");
+	        if (tokenFile.exists()) //Legacy support
+		        //noinspection UnstableApiUsage
+		        cb.withToken(Files.readFirstLine(tokenFile, StandardCharsets.UTF_8));
+	        else {
+		        File privateFile = new File(getDataFolder(), "private.yml");
+		        val conf = YamlConfiguration.loadConfiguration(privateFile);
+		        String token = conf.getString("token");
+		        if (token == null) {
+			        conf.set("token", "Token goes here");
+			        conf.save(privateFile);
+
+			        getLogger().severe("Token not found! Set it in private.yml");
+			        Bukkit.getPluginManager().disablePlugin(this);
+			        return;
+		        } else
+			        cb.withToken(token);
+	        }
             dc = cb.login();
             dc.getDispatcher().registerListener(this);
         } catch (Exception e) {
@@ -79,20 +108,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
         }
     }
 
-	public static IChannel botchannel; //Can be removed
-    public static IChannel annchannel;
-    public static IChannel genchannel;
-    public static IChannel chatchannel;
-    public static IChannel botroomchannel;
-    public static IChannel modlogchannel;
-    /**
-     * Don't send messages, just receive, the same channel is used when testing
-     */
-    public static IChannel officechannel;
-    public static IChannel updatechannel;
-    public static IChannel devofficechannel;
     public static IGuild mainServer;
-    public static IGuild devServer;
 
     private static volatile BukkitTask task;
     private static volatile boolean sent = false;
@@ -101,51 +117,49 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     public void handle(ReadyEvent event) {
         try {
             dc.changePresence(StatusType.DND, ActivityType.PLAYING, "booting");
+	        val tries = new AtomicInteger();
             task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
-                if (mainServer == null || devServer == null) {
-                    mainServer = event.getClient().getGuildByID(125813020357165056L);
-                    devServer = event.getClient().getGuildByID(219529124321034241L);
-                }
-                if (mainServer == null || devServer == null)
-                    return; // Retry
+	            tries.incrementAndGet();
+	            if (tries.get() > 10) { //5 seconds
+		            task.cancel();
+		            getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+		            //getIConfig().getConfig().set("mainServer", 219529124321034241L); //Needed because it won't save as long as it's null - made it save
+		            saveConfig(); //Put default there
+		            return;
+	            }
+	            mainServer = MainServer().get(); //Shouldn't change afterwards
+	            if (mainServer == null) {
+		            val guilds = dc.getGuilds();
+		            if (guilds.size() == 0)
+			            return; //If there are no guilds in cache, retry
+		            mainServer = guilds.get(0);
+		            getLogger().warning("Main server set to first one: " + mainServer.getName());
+		            MainServer().set(mainServer); //Save in config
+	            }
                 if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-                    botchannel = mainServer.getChannelByID(209720707188260864L); // bot
-                    annchannel = mainServer.getChannelByID(126795071927353344L); // announcements
-                    genchannel = mainServer.getChannelByID(125813020357165056L); // general
-                    chatchannel = mainServer.getChannelByID(249663564057411596L); // minecraft_chat
-                    botroomchannel = devServer.getChannelByID(239519012529111040L); // bot-room
-                    officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
-                    updatechannel = devServer.getChannelByID(233724163519414272L); // server-updates
-                    devofficechannel = officechannel; // developers-office
-                    modlogchannel = mainServer.getChannelByID(283840717275791360L); // modlog
-                    dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Chromacraft");
+	                dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Minecraft");
                 } else {
-                    botchannel = devServer.getChannelByID(239519012529111040L); // bot-room
-                    annchannel = botchannel; // bot-room
-                    genchannel = botchannel; // bot-room
-                    botroomchannel = botchannel;// bot-room
-                    chatchannel = botchannel;// bot-room
-                    officechannel = devServer.getChannelByID(219626707458457603L); // developers-office
-                    updatechannel = botchannel;
-                    devofficechannel = botchannel;// bot-room
-                    modlogchannel = botchannel; // bot-room
                     dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
                 }
-                if (botchannel == null || annchannel == null || genchannel == null || botroomchannel == null
-                        || chatchannel == null || officechannel == null || updatechannel == null)
-                    return; // Retry
                 SafeMode = false;
                 if (task != null)
                     task.cancel();
                 if (!sent) {
+	                DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
+
 	                Component.registerComponent(this, new GeneralEventBroadcasterModule());
 	                Component.registerComponent(this, new MinecraftChatModule());
 	                Component.registerComponent(this, new ExceptionListenerModule());
 	                Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
 	                Component.registerComponent(this, new AnnouncerModule());
+					Component.registerComponent(this, new FunModule());
 	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
-                    DiscordCommandBase.registerCommands();
+	                getManager().registerCommand(new VersionCommand());
+	                getManager().registerCommand(new UserinfoCommand());
+	                getManager().registerCommand(new HelpCommand());
+	                getManager().registerCommand(new DebugCommand());
+	                getManager().registerCommand(new ConnectCommand());
 	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
@@ -196,6 +210,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 
 	@Override
 	public void pluginPreDisable() {
+		if (ChromaBot.getInstance() == null) return; //Failed to load
 		EmbedObject embed;
 		if (ResetMCCommand.resetting)
 			embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
@@ -226,6 +241,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	public void pluginDisable() {
 		MCChatPrivate.logoutAll();
 		getConfig().set("serverup", false);
+		if (ChromaBot.getInstance() == null) return; //Failed to load
 
 		saveConfig();
         try {
@@ -233,7 +249,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
             ChromaBot.delete();
             dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
             dc.logout();
-            mainServer = devServer = null; //Fetch servers and channels again
+	        //Configs are emptied so channels and servers are fetched again
             sent = false;
         } catch (Exception e) {
             TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
@@ -273,7 +289,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
     private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
         if (message.length() > 1980) {
             message = message.substring(0, 1980);
-            Bukkit.getLogger()
+	        DPUtils.getLogger()
                     .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
         }
         try {
@@ -296,7 +312,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
         } catch (TimeoutException | InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            Bukkit.getLogger().warning(
+	        DPUtils.getLogger().warning(
                     "Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
             throw new RuntimeException(e);
         }

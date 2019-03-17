@@ -1,38 +1,18 @@
 package buttondevteam.discordplugin.commands;
 
-import buttondevteam.discordplugin.DiscordPlugin;
-import sx.blah.discord.handle.obj.IMessage;
+import buttondevteam.lib.chat.CommandClass;
 
-import java.util.stream.Collectors;
-
-public class HelpCommand extends DiscordCommandBase {
-
+@CommandClass(helpText = {
+	"Help command", //
+	"Shows some info about a command or lists the available commands.", //
+})
+public class HelpCommand extends ICommand2DC {
 	@Override
-	public String getCommandName() {
-		return "help";
-	}
-
-	@Override
-    public boolean run(IMessage message, String args) {
-		DiscordCommandBase argdc;
+	public boolean def(Command2DCSender sender, String args) {
 		if (args.length() == 0)
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Available commands:\n" + DiscordCommandBase.commands.values().stream()
-							.map(dc -> DiscordPlugin.getPrefix() + dc.getCommandName()).collect(Collectors.joining("\n")));
+			sender.sendMessage(getManager().getCommandsText());
 		else
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					(argdc = DiscordCommandBase.commands.get(args)) == null ? "Command not found: " + args
-							: String.join("\n", argdc.getHelpText()));
+			sender.sendMessage("Soon:tm:"); //TODO
         return true;
 	}
-
-	@Override
-	public String[] getHelpText() {
-		return new String[] { //
-				"---- Help command ----", //
-				"Shows some info about a command or lists the available commands.", //
-				"Usage: " + DiscordPlugin.getPrefix() + "help [command]"//
-		};
-	}
-
 }

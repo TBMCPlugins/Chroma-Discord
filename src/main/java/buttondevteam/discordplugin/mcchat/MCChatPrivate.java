@@ -15,8 +15,6 @@ import sx.blah.discord.handle.obj.IUser;
 
 import java.util.ArrayList;
 
-import static buttondevteam.discordplugin.listeners.MCListener.callEventExcludingSome;
-
 public class MCChatPrivate {
 
 	/**
@@ -60,11 +58,11 @@ public class MCChatPrivate {
 		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
 			for (val valueEntry : entry.getValue().entrySet())
 				if (MCChatUtils.getSender(MCChatUtils.OnlineSenders, valueEntry.getKey(), valueEntry.getValue().getUser()) == null) //If the player is online then the fake player was already logged out
-					callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
+					MCChatUtils.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
 		MCChatUtils.ConnectedSenders.clear();
 	}
 
 	private static void callEventSync(Event event) {
-		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> callEventExcludingSome(event));
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> MCChatUtils.callEventExcludingSome(event));
 	}
 }

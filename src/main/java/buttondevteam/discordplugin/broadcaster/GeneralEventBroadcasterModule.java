@@ -1,19 +1,19 @@
 package buttondevteam.discordplugin.broadcaster;
 
 import buttondevteam.discordplugin.DPUtils;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 
-public class GeneralEventBroadcasterModule extends Component {
+public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	private static @Getter boolean hooked = false;
 
 	@Override
 	protected void enable() {
 		try {
 			PlayerListWatcher.hookUp();
-			Bukkit.getLogger().info("Finished hooking into the player list");
+			DPUtils.getLogger().info("Finished hooking into the player list");
 			hooked = true;
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list!", e);

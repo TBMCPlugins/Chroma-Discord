@@ -9,10 +9,7 @@ import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
-import buttondevteam.lib.TBMCChatEvent;
-import buttondevteam.lib.TBMCChatPreprocessEvent;
-import buttondevteam.lib.TBMCCommandPreprocessEvent;
-import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.*;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
@@ -377,7 +374,7 @@ public class MCChatListener implements Listener {
                             : dsender.getChromaUser().channel().get().getRTR(dsender);
                     TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
 			                (dsender instanceof Player ? ((Player) dsender).getDisplayName()
-					                : dsender.getName()) + " pinned a message on Discord.");
+				                : dsender.getName()) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL);
                 }
                 else {
 	                val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);

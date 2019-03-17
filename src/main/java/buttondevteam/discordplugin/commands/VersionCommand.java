@@ -1,24 +1,19 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.chat.Command2;
+import buttondevteam.lib.chat.CommandClass;
 import lombok.val;
-import sx.blah.discord.handle.obj.IMessage;
 
-public class VersionCommand extends DiscordCommandBase {
-	@Override
-	public String getCommandName() {
-		return "version";
-	}
-
-	@Override
-	public boolean run(IMessage message, String args) {
-		DiscordPlugin.sendMessageToChannel(message.getChannel(), String.join("\n", getVersion()));
+@CommandClass(helpText = {
+	"Version",
+	"Returns the plugin's version"
+})
+public class VersionCommand extends ICommand2DC {
+	@Command2.Subcommand
+	public boolean def(Command2DCSender sender) {
+		sender.sendMessage(getVersion());
 		return true;
-	}
-
-	@Override
-	public String[] getHelpText() {
-		return VersionCommand.getVersion(); //Heh
 	}
 
 	public static String[] getVersion() {

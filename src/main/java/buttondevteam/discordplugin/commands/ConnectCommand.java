@@ -3,20 +3,21 @@ package buttondevteam.discordplugin.commands;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
+import buttondevteam.lib.chat.Command2;
+import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
 import com.google.common.collect.HashBiMap;
+import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import sx.blah.discord.handle.obj.IMessage;
 
-public class ConnectCommand extends DiscordCommandBase {
-
-	@Override
-	public String getCommandName() {
-		return "connect";
-	}
+@CommandClass(helpText = {
+	"Connect command", //
+	"This command lets you connect your account with a Minecraft account. This allows using the Minecraft chat and other things.", //
+})
+public class ConnectCommand extends ICommand2DC {
 
 	/**
 	 * Key: Minecraft name<br>
@@ -24,22 +25,16 @@ public class ConnectCommand extends DiscordCommandBase {
 	 */
 	public static HashBiMap<String, String> WaitingToConnect = HashBiMap.create();
 
-	@Override
-	public boolean run(IMessage message, String args) {
-		if (args.length() == 0)
-			return false;
-		if (args.contains(" ")) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Too many arguments.\nUsage: " + DiscordPlugin.getPrefix() + "connect <Minecraftname>");
-			return true;
-		}
+	@Command2.Subcommand
+	public boolean def(Command2DCSender sender, String Minecraftname) {
+		val message = sender.getMessage();
 		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-					"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getStringID()) + " with " + args);
+				"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getStringID()) + " with " + Minecraftname);
 			WaitingToConnect.inverse().remove(message.getAuthor().getStringID());
 		}
 		@SuppressWarnings("deprecation")
-		OfflinePlayer p = Bukkit.getOfflinePlayer(args);
+		OfflinePlayer p = Bukkit.getOfflinePlayer(Minecraftname);
 		if (p == null) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
 			return true;
@@ -56,21 +51,12 @@ public class ConnectCommand extends DiscordCommandBase {
 		}
 		WaitingToConnect.put(p.getName(), message.getAuthor().getStringID());
 		DiscordPlugin.sendMessageToChannel(message.getChannel(),
-				"Alright! Now accept the connection in Minecraft from the account " + args
+			"Alright! Now accept the connection in Minecraft from the account " + Minecraftname
 						+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.");
 		if (p.isOnline())
 			((Player) p).sendMessage("§bTo connect with the Discord account " + message.getAuthor().getName() + "#"
 					+ message.getAuthor().getDiscriminator() + " do /discord accept");
 		return true;
-	}
-
-	@Override
-	public String[] getHelpText() {
-		return new String[] { //
-				"---- Connect command ----", //
-				"This command lets you connect your account with a Minecraft account. This allows using the Minecraft chat and other things.", //
-				"Usage: /connect <Minecraftname>" //
-		};
 	}
 
 }
