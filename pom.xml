@@ -40,6 +40,14 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+                    <!-- <compilerArgs>
+                        <arg>-processor</arg>
+                        <arg>buttondevteam.buttonproc.ButtonProcessor, lombok.core.AnnotationProcessor</arg>
+                    </compilerArgs> -->
+                    <!-- <annotationProcessors>
+                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
+                        <annotationProcessor>buttondevteam.buttonproc.ButtonProcessor</annotationProcessor>
+                    </annotationProcessors> -->
 				</configuration>
 			</plugin>
 			<plugin>
@@ -96,6 +104,7 @@
 				</executions> </plugin> -->
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
+                <version>2.4.2</version>
 				<configuration>
 					<useSystemClassLoader>false
 					</useSystemClassLoader> <!-- https://stackoverflow.com/a/53012553/2703239 -->

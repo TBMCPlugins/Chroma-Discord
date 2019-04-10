@@ -40,18 +40,22 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			"When will *you* be open?" // Ali
 	};
 
-	private ConfigData<Boolean> serverReady() {
-		return getConfig().getData("serverReady", true);
+	/**
+	 * Questions that the bot will choose a random answer to give to.
+	 */
+	private ConfigData<String[]> serverReadyQuestions() {
+		return getConfig().getData("serverReady", ()->new String[]{"when will the server be open",
+			"when will the server be ready", "when will the server be done", "when will the server be complete",
+			"when will the server be finished", "when's the server ready", "when's the server open",
+			"Vhen vill ze server be open?"});
 	}
 
+	/**
+	 * Answers for a recognized question. Selected randomly.
+	 */
 	private ConfigData<ArrayList<String>> serverReadyAnswers() {
 		return getConfig().getData("serverReadyAnswers", () -> Lists.newArrayList(serverReadyStrings)); //TODO: Test
 	}
-
-	private static final String[] serverReadyQuestions = new String[]{"when will the server be open",
-			"when will the server be ready", "when will the server be done", "when will the server be complete",
-			"when will the server be finished", "when's the server ready", "when's the server open",
-			"Vhen vill ze server be open?"};
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<>(0);
@@ -93,16 +97,14 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			return true; //Handled
 		}
 		lastlistp = (short) Bukkit.getOnlinePlayers().size(); //Didn't handle
-		if (fm.serverReady().get()) {
-			if (!TBMCCoreAPI.IsTestServer()
-				&& Arrays.stream(serverReadyQuestions).anyMatch(msglowercased::contains)) {
-				int next;
-				if (usableServerReadyStrings.size() == 0)
-					fm.createUsableServerReadyStrings();
-				next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), serverReadyStrings[next]);
-				return false; //Still process it as a command/mcchat if needed
-			}
+		if (!TBMCCoreAPI.IsTestServer()
+			&& Arrays.stream(fm.serverReadyQuestions().get()).anyMatch(msglowercased::contains)) {
+			int next;
+			if (usableServerReadyStrings.size() == 0)
+				fm.createUsableServerReadyStrings();
+			next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
+			DiscordPlugin.sendMessageToChannel(message.getChannel(), serverReadyStrings[next]);
+			return false; //Still process it as a command/mcchat if needed
 		}
 		return false;
 	}

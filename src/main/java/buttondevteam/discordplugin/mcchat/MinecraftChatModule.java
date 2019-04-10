@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 public class MinecraftChatModule extends Component<DiscordPlugin> {
 	private @Getter MCChatListener listener;
 
-	public MCChatListener getListener() { //It doesn't want to generate
-		return listener;
-	}
+	/*public MCChatListener getListener() { //It doesn't want to generate
+		return listener; - And now ButtonProcessor didn't look beyond this - return instead of continue...
+	}*/
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -52,7 +52,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	}
 
 	/**
-	 * 0	 * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
+	 * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
 	 */
 	public ConfigData<String[]> excludedPlugins() {
 		return getConfig().getData("excludedPlugins", new String[]{"ProtocolLib", "LibsDisguises", "JourneyMapServer"});
