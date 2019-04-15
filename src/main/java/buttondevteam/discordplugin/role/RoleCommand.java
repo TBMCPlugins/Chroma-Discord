@@ -7,6 +7,7 @@ import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
+import lombok.val;
 import sx.blah.discord.handle.obj.IRole;
 
 import java.util.List;
@@ -63,12 +64,17 @@ public class RoleCommand extends ICommand2DC {
     }
 
 	private IRole checkAndGetRole(Command2DCSender sender, String rolename) {
-		if (!grm.GameRoles.contains(rolename)) {
-			sender.sendMessage("that role cannot be found.");
-			list(sender);
-            return null;
+		String rname = rolename;
+		if (!grm.GameRoles.contains(rolename)) { //If not found as-is, correct case
+			val orn = grm.GameRoles.stream().filter(r -> r.equalsIgnoreCase(rolename)).findAny();
+			if (!orn.isPresent()) {
+				sender.sendMessage("that role cannot be found.");
+				list(sender);
+				return null;
+			}
+			rname = orn.get();
         }
-		final List<IRole> roles = DiscordPlugin.mainServer.getRolesByName(rolename);
+		final List<IRole> roles = DiscordPlugin.mainServer.getRolesByName(rname);
         if (roles.size() == 0) {
 	        sender.sendMessage("the specified role cannot be found on Discord! Removing from the list.");
 	        grm.GameRoles.remove(rolename);
