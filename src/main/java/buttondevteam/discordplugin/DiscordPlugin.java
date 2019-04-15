@@ -10,8 +10,8 @@ import buttondevteam.discordplugin.listeners.MCListener;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import buttondevteam.discordplugin.mccommands.DiscordMCCommand;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
-import buttondevteam.discordplugin.mccommands.ResetMCCommand;
 import buttondevteam.discordplugin.role.GameRoleModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
@@ -160,7 +160,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	                getManager().registerCommand(new HelpCommand());
 	                getManager().registerCommand(new DebugCommand());
 	                getManager().registerCommand(new ConnectCommand());
-	                if (ResetMCCommand.resetting) //These will only execute if the chat is enabled
+	                if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
                                 .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
                     else if (getConfig().getBoolean("serverup", false)) {
@@ -174,7 +174,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
                         ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
                                 .withTitle("Server started - chat connected.").build(), ChannelconBroadcast.RESTART);
 
-                    ResetMCCommand.resetting = false; //This is the last event handling this flag
+                    DiscordMCCommand.resetting = false; //This is the last event handling this flag
 
                     getConfig().set("serverup", true);
                     saveConfig();
@@ -193,7 +193,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
             for (IListener<?> listener : CommonListeners.getListeners())
                 dc.getDispatcher().registerListener(listener);
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-            TBMCChatAPI.AddCommands(this, DiscordMCCommandBase.class);
+            getCommand2MC().registerCommand(new DiscordMCCommand());
             TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
             ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
                     ? ((DiscordSenderBase) sender).getChromaUser() : null));
@@ -212,7 +212,7 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 		EmbedObject embed;
-		if (ResetMCCommand.resetting)
+		if (DiscordMCCommand.resetting)
 			embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
 		else
 			embed = new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
