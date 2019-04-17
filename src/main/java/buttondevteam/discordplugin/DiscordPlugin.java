@@ -111,7 +111,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	private static volatile BukkitTask task;
 	private static volatile boolean sent = false;
 
-	public void handleReady(ReadyEvent event) {
+	private void handleReady(ReadyEvent event) {
 		try {
 			dc.updatePresence(Presence.doNotDisturb(Activity.playing("booting"))).subscribe();
 			val tries = new AtomicInteger();
@@ -159,11 +159,11 @@ public class DiscordPlugin extends ButtonPlugin {
 					getManager().registerCommand(new DebugCommand());
 					getManager().registerCommand(new ConnectCommand());
 					if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
-						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
-							.withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
+						ChromaBot.getInstance().sendMessageCustomAsWell(ch->ch.createEmbed(ecs->ecs.setColor(Color.CYAN)
+							.setTitle("Discord plugin restarted - chat connected.")), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
 					else if (getConfig().getBoolean("serverup", false)) {
-						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.YELLOW)
-							.withTitle("Server recovered from a crash - chat connected.").build(), ChannelconBroadcast.RESTART);
+						ChromaBot.getInstance().sendMessageCustomAsWell(ch->ch.createEmbed(ecs->ecs.setColor(Color.YELLOW)
+							.setTitle("Server recovered from a crash - chat connected.")), ChannelconBroadcast.RESTART);
 						val thr = new Throwable(
 							"The server shut down unexpectedly. See the log of the previous run for more details.");
 						thr.setStackTrace(new StackTraceElement[0]);
@@ -188,8 +188,7 @@ public class DiscordPlugin extends ButtonPlugin {
 					TBMCCoreAPI.SendUnsentDebugMessages();
 				}
 			}, 0, 10);
-			for (IListener<?> listener : CommonListeners.getListeners())
-				dc.getDispatcher().registerListener(listener);
+			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			getCommand2MC().registerCommand(new DiscordMCCommand());
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);

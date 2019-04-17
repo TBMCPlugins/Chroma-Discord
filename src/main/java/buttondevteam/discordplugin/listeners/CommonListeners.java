@@ -7,6 +7,12 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.role.GameRoleModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
+import discord4j.core.event.EventDispatcher;
+import discord4j.core.event.domain.PresenceUpdateEvent;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.role.RoleCreateEvent;
+import discord4j.core.event.domain.role.RoleDeleteEvent;
+import discord4j.core.event.domain.role.RoleUpdateEvent;
 import lombok.val;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -26,10 +32,8 @@ public class CommonListeners {
 	- Minecraft chat (is enabled in the channel and message isn't [/]mcchat)
 	- CommandListener (with the correct prefix in #bot, or in private)
 	*/
-	public static IListener<?>[] getListeners() {
-		return new IListener[]{new IListener<MessageReceivedEvent>() {
-			@Override
-			public void handle(MessageReceivedEvent event) {
+	public static void register(EventDispatcher dispatcher) {
+		dispatcher.on(MessageCreateEvent.class).subscribe(event->{
 				if (DiscordPlugin.SafeMode)
 					return;
 				if (event.getMessage().getAuthor().isBot())
@@ -39,8 +43,8 @@ public class CommonListeners {
 				try {
 					boolean handled = false;
 					val commandChannel = DiscordPlugin.plugin.CommandChannel().get();
-					if ((commandChannel != null && event.getChannel().getLongID() == commandChannel.getLongID()) //If mentioned, that's higher than chat
-						|| event.getMessage().getContent().contains("channelcon")) //Only 'channelcon' is allowed in other channels
+					if ((commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.getId().asLong()) //If mentioned, that's higher than chat
+						|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
 						handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
 					if (handled) return;
 					val mcchat = Component.getComponents().get(MinecraftChatModule.class);
@@ -51,17 +55,15 @@ public class CommonListeners {
 				} catch (Exception e) {
 					TBMCCoreAPI.SendException("An error occured while handling a message!", e);
 				}
-			}
-		}, new IListener<sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent>() {
-			@Override
-			public void handle(PresenceUpdateEvent event) {
+			});
+		dispatcher.on(PresenceUpdateEvent.class).subscribe(event->{
 				if (DiscordPlugin.SafeMode)
 					return;
 				FunModule.handleFullHouse(event);
-			}
-		}, (IListener<RoleCreateEvent>) GameRoleModule::handleRoleEvent, //
-			(IListener<RoleDeleteEvent>) GameRoleModule::handleRoleEvent, //
-			(IListener<RoleUpdateEvent>) GameRoleModule::handleRoleEvent};
+			});
+		dispatcher.on(RoleCreateEvent.class).subscribe(GameRoleModule::handleRoleEvent);
+		dispatcher.on(RoleDeleteEvent.class).subscribe(GameRoleModule::handleRoleEvent);
+		dispatcher.on(RoleUpdateEvent.class).subscribe(GameRoleModule::handleRoleEvent);
 	}
 
     private static boolean debug = false;

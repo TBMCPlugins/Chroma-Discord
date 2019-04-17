@@ -4,12 +4,10 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
-import discord4j.core.object.entity.Channel;
-import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
+import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
-import sx.blah.discord.util.EmbedBuilder;
 
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
@@ -17,39 +15,39 @@ import java.util.regex.Matcher;
 
 public final class DPUtils {
 
-	public static EmbedBuilder embedWithHead(EmbedBuilder builder, String playername) {
-		return builder.withAuthorIcon("https://minotar.net/avatar/" + playername + "/32.png");
+	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String playername, String profileUrl) {
+		return ecs.setAuthor(playername, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");
 	}
 
-    /**
-     * Removes §[char] colour codes from strings & escapes them for Discord <br>
-     * Ensure that this method only gets called once (escaping)
-     */
-    public static String sanitizeString(String string) {
-        return escape(sanitizeStringNoEscape(string));
-    }
+	/**
+	 * Removes §[char] colour codes from strings & escapes them for Discord <br>
+	 * Ensure that this method only gets called once (escaping)
+	 */
+	public static String sanitizeString(String string) {
+		return escape(sanitizeStringNoEscape(string));
+	}
 
-    /**
-     * Removes §[char] colour codes from strings
-     */
-    public static String sanitizeStringNoEscape(String string) {
-        String sanitizedString = "";
-        boolean random = false;
-        for (int i = 0; i < string.length(); i++) {
-            if (string.charAt(i) == '§') {
-                i++;// Skips the data value, the 4 in "§4Alisolarflare"
-                random = string.charAt(i) == 'k';
-            } else {
-                if (!random) // Skip random/obfuscated characters
-                    sanitizedString += string.charAt(i);
-            }
-        }
-        return sanitizedString;
-    }
+	/**
+	 * Removes §[char] colour codes from strings
+	 */
+	public static String sanitizeStringNoEscape(String string) {
+		StringBuilder sanitizedString = new StringBuilder();
+		boolean random = false;
+		for (int i = 0; i < string.length(); i++) {
+			if (string.charAt(i) == '§') {
+				i++;// Skips the data value, the 4 in "§4Alisolarflare"
+				random = string.charAt(i) == 'k';
+			} else {
+				if (!random) // Skip random/obfuscated characters
+					sanitizedString.append(string.charAt(i));
+			}
+		}
+		return sanitizedString.toString();
+	}
 
-    public static String escape(String message) {
-        return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\")+"$1");
-    }
+	public static String escape(String message) {
+		return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\") + "$1");
+	}
 
 	public static Logger getLogger() {
 		if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger() == null)
@@ -57,8 +55,14 @@ public final class DPUtils {
 		return DiscordPlugin.plugin.getLogger();
 	}
 
-	public static ConfigData<Channel> channelData(IHaveConfig config, String key, long defID) {
-		return config.getDataPrimDef(key, defID, id -> DiscordPlugin.dc.getChannelById(Snowflake.of((long) id)).block(), ch -> ch.getId().asLong()); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	public static ConfigData<MessageChannel> channelData(IHaveConfig config, String key, long defID) {
+		return config.getDataPrimDef(key, defID, id -> {
+			Channel ch = DiscordPlugin.dc.getChannelById(Snowflake.of((long) id)).block();
+			if (ch instanceof MessageChannel)
+				return (MessageChannel) ch;
+			else
+				return null;
+		}, ch -> ch.getId().asLong()); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
 	public static ConfigData<Role> roleData(IHaveConfig config, String key, String defName) {
