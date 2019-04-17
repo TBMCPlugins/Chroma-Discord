@@ -11,15 +11,23 @@ import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand;
-import buttondevteam.discordplugin.mccommands.DiscordMCCommandBase;
 import buttondevteam.discordplugin.role.GameRoleModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
-import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
+import discord4j.core.DiscordClient;
+import discord4j.core.DiscordClientBuilder;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.object.entity.Channel;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Role;
+import discord4j.core.object.presence.Activity;
+import discord4j.core.object.presence.Presence;
+import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
@@ -28,212 +36,194 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.api.ClientBuilder;
-import sx.blah.discord.api.IDiscordClient;
-import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
-import sx.blah.discord.handle.impl.events.ReadyEvent;
-import sx.blah.discord.handle.impl.obj.ReactionEmoji;
-import sx.blah.discord.handle.obj.*;
-import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.RequestBuffer;
 
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent> {
-    public static IDiscordClient dc;
-    public static DiscordPlugin plugin;
-    public static boolean SafeMode = true;
+public class DiscordPlugin extends ButtonPlugin {
+	public static DiscordClient dc;
+	public static DiscordPlugin plugin;
+	public static boolean SafeMode = true;
 	@Getter
 	private Command2DC manager;
 
 	public ConfigData<Character> Prefix() {
-	    return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
-    }
-
-    public static char getPrefix() {
-        if (plugin == null) return '/';
-        return plugin.Prefix().get();
-    }
-
-	public ConfigData<IGuild> MainServer() {
-		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildByID((long) id), IIDLinkedObject::getLongID);
+		return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
 	}
 
-	public ConfigData<IChannel> CommandChannel() {
+	public static char getPrefix() {
+		if (plugin == null) return '/';
+		return plugin.Prefix().get();
+	}
+
+	public ConfigData<Guild> MainServer() {
+		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
+	}
+
+	public ConfigData<Channel> CommandChannel() {
 		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
-	public ConfigData<IRole> ModRole() {
+	public ConfigData<Role> ModRole() {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
 
-    @Override
-    public void pluginEnable() {
-        try {
-	        getLogger().info("Initializing...");
-            plugin = this;
-	        manager = new Command2DC();
-            ClientBuilder cb = new ClientBuilder();
-	        File tokenFile = new File("TBMC", "Token.txt");
-	        if (tokenFile.exists()) //Legacy support
-		        //noinspection UnstableApiUsage
-		        cb.withToken(Files.readFirstLine(tokenFile, StandardCharsets.UTF_8));
-	        else {
-		        File privateFile = new File(getDataFolder(), "private.yml");
-		        val conf = YamlConfiguration.loadConfiguration(privateFile);
-		        String token = conf.getString("token");
-		        if (token == null) {
-			        conf.set("token", "Token goes here");
-			        conf.save(privateFile);
+	@Override
+	public void pluginEnable() {
+		try {
+			getLogger().info("Initializing...");
+			plugin = this;
+			manager = new Command2DC();
+			String token;
+			File tokenFile = new File("TBMC", "Token.txt");
+			if (tokenFile.exists()) //Legacy support
+				//noinspection UnstableApiUsage
+				token = Files.readFirstLine(tokenFile, StandardCharsets.UTF_8);
+			else {
+				File privateFile = new File(getDataFolder(), "private.yml");
+				val conf = YamlConfiguration.loadConfiguration(privateFile);
+				token = conf.getString("token");
+				if (token == null) {
+					conf.set("token", "Token goes here");
+					conf.save(privateFile);
 
-			        getLogger().severe("Token not found! Set it in private.yml");
-			        Bukkit.getPluginManager().disablePlugin(this);
-			        return;
-		        } else
-			        cb.withToken(token);
-	        }
-            dc = cb.login();
-            dc.getDispatcher().registerListener(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Bukkit.getPluginManager().disablePlugin(this);
-        }
-    }
+					getLogger().severe("Token not found! Set it in private.yml");
+					Bukkit.getPluginManager().disablePlugin(this);
+					return;
+				}
+			}
+			val cb = new DiscordClientBuilder(token);
+			dc = cb.build();
+			dc.getEventDispatcher().on(ReadyEvent.class).subscribe(this::handleReady);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Bukkit.getPluginManager().disablePlugin(this);
+		}
+	}
 
-    public static IGuild mainServer;
+	public static Guild mainServer;
 
-    private static volatile BukkitTask task;
-    private static volatile boolean sent = false;
+	private static volatile BukkitTask task;
+	private static volatile boolean sent = false;
 
-    @Override
-    public void handle(ReadyEvent event) {
-        try {
-            dc.changePresence(StatusType.DND, ActivityType.PLAYING, "booting");
-	        val tries = new AtomicInteger();
-            task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
-	            tries.incrementAndGet();
-	            if (tries.get() > 10) { //5 seconds
-		            task.cancel();
-		            getLogger().severe("Main server not found! Invite the bot and do /discord reset");
-		            //getIConfig().getConfig().set("mainServer", 219529124321034241L); //Needed because it won't save as long as it's null - made it save
-		            saveConfig(); //Put default there
-		            return;
-	            }
-	            mainServer = MainServer().get(); //Shouldn't change afterwards
-	            if (mainServer == null) {
-		            val guilds = dc.getGuilds();
-		            if (guilds.size() == 0)
-			            return; //If there are no guilds in cache, retry
-		            mainServer = guilds.get(0);
-		            getLogger().warning("Main server set to first one: " + mainServer.getName());
-		            MainServer().set(mainServer); //Save in config
-	            }
-                if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-	                dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "Minecraft");
-                } else {
-                    dc.changePresence(StatusType.ONLINE, ActivityType.PLAYING, "testing");
-                }
-                SafeMode = false;
-                if (task != null)
-                    task.cancel();
-                if (!sent) {
-	                DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
+	public void handleReady(ReadyEvent event) {
+		try {
+			dc.updatePresence(Presence.doNotDisturb(Activity.playing("booting"))).subscribe();
+			val tries = new AtomicInteger();
+			task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+				tries.incrementAndGet();
+				if (tries.get() > 10) { //5 seconds
+					task.cancel();
+					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+					//getIConfig().getConfig().set("mainServer", 219529124321034241L); //Needed because it won't save as long as it's null - made it save
+					saveConfig(); //Put default there
+					return;
+				}
+				mainServer = MainServer().get(); //Shouldn't change afterwards
+				if (mainServer == null) {
+					val guilds = dc.getGuilds();
+					if (guilds.count().blockOptional().orElse(0L) == 0L)
+						return; //If there are no guilds in cache, retry
+					mainServer = guilds.blockFirst();
+					if (mainServer == null) return;
+					getLogger().warning("Main server set to first one: " + mainServer.getName());
+					MainServer().set(mainServer); //Save in config
+				}
+				if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
+					dc.updatePresence(Presence.online(Activity.playing("Minecraft")));
+				} else {
+					dc.updatePresence(Presence.online(Activity.playing("testing")));
+				}
+				SafeMode = false;
+				if (task != null)
+					task.cancel();
+				if (!sent) {
+					DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
 
-	                Component.registerComponent(this, new GeneralEventBroadcasterModule());
-	                Component.registerComponent(this, new MinecraftChatModule());
-	                Component.registerComponent(this, new ExceptionListenerModule());
-	                Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
-	                Component.registerComponent(this, new AnnouncerModule());
+					Component.registerComponent(this, new GeneralEventBroadcasterModule());
+					Component.registerComponent(this, new MinecraftChatModule());
+					Component.registerComponent(this, new ExceptionListenerModule());
+					Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
+					Component.registerComponent(this, new AnnouncerModule());
 					Component.registerComponent(this, new FunModule());
-	                new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
+					new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
-	                getManager().registerCommand(new VersionCommand());
-	                getManager().registerCommand(new UserinfoCommand());
-	                getManager().registerCommand(new HelpCommand());
-	                getManager().registerCommand(new DebugCommand());
-	                getManager().registerCommand(new ConnectCommand());
-	                if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
-                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
-                                .withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
-                    else if (getConfig().getBoolean("serverup", false)) {
-                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.YELLOW)
-                                .withTitle("Server recovered from a crash - chat connected.").build(), ChannelconBroadcast.RESTART);
-                        val thr = new Throwable(
-                                "The server shut down unexpectedly. See the log of the previous run for more details.");
-                        thr.setStackTrace(new StackTraceElement[0]);
-                        TBMCCoreAPI.SendException("The server crashed!", thr);
-                    } else
-                        ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
-                                .withTitle("Server started - chat connected.").build(), ChannelconBroadcast.RESTART);
+					getManager().registerCommand(new VersionCommand());
+					getManager().registerCommand(new UserinfoCommand());
+					getManager().registerCommand(new HelpCommand());
+					getManager().registerCommand(new DebugCommand());
+					getManager().registerCommand(new ConnectCommand());
+					if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
+						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.CYAN)
+							.withTitle("Discord plugin restarted - chat connected.").build(), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
+					else if (getConfig().getBoolean("serverup", false)) {
+						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.YELLOW)
+							.withTitle("Server recovered from a crash - chat connected.").build(), ChannelconBroadcast.RESTART);
+						val thr = new Throwable(
+							"The server shut down unexpectedly. See the log of the previous run for more details.");
+						thr.setStackTrace(new StackTraceElement[0]);
+						TBMCCoreAPI.SendException("The server crashed!", thr);
+					} else
+						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
+							.withTitle("Server started - chat connected.").build(), ChannelconBroadcast.RESTART);
 
-                    DiscordMCCommand.resetting = false; //This is the last event handling this flag
+					DiscordMCCommand.resetting = false; //This is the last event handling this flag
 
-                    getConfig().set("serverup", true);
-                    saveConfig();
-                    sent = true;
-                    if (TBMCCoreAPI.IsTestServer() && !dc.getOurUser().getName().toLowerCase().contains("test")) {
-                        TBMCCoreAPI.SendException(
-                                "Won't load because we're in testing mode and not using a separate account.",
-                                new Exception(
-	                                "The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
-                        Bukkit.getPluginManager().disablePlugin(this);
-                    }
-                    TBMCCoreAPI.SendUnsentExceptions();
-                    TBMCCoreAPI.SendUnsentDebugMessages();
-                }
-            }, 0, 10);
-            for (IListener<?> listener : CommonListeners.getListeners())
-                dc.getDispatcher().registerListener(listener);
-            TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-            getCommand2MC().registerCommand(new DiscordMCCommand());
-            TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
-            ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
-                    ? ((DiscordSenderBase) sender).getChromaUser() : null));
-            setupProviders();
-        } catch (Exception e) {
-            TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
-        }
-    }
+					getConfig().set("serverup", true);
+					saveConfig();
+					sent = true;
+					if (TBMCCoreAPI.IsTestServer() && !event.getSelf().getUsername().toLowerCase().contains("test")) {
+						TBMCCoreAPI.SendException(
+							"Won't load because we're in testing mode and not using a separate account.",
+							new Exception(
+								"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
+						Bukkit.getPluginManager().disablePlugin(this);
+					}
+					TBMCCoreAPI.SendUnsentExceptions();
+					TBMCCoreAPI.SendUnsentDebugMessages();
+				}
+			}, 0, 10);
+			for (IListener<?> listener : CommonListeners.getListeners())
+				dc.getDispatcher().registerListener(listener);
+			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
+			getCommand2MC().registerCommand(new DiscordMCCommand());
+			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
+			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
+				? ((DiscordSenderBase) sender).getChromaUser() : null));
+			setupProviders();
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
+		}
+	}
 
 	/**
-     * Always true, except when running "stop" from console
-     */
-    public static boolean Restart;
+	 * Always true, except when running "stop" from console
+	 */
+	public static boolean Restart;
 
 	@Override
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
-		EmbedObject embed;
-		if (DiscordMCCommand.resetting)
-			embed = new EmbedBuilder().withColor(Color.ORANGE).withTitle("Discord plugin restarting").build();
-		else
-			embed = new EmbedBuilder().withColor(Restart ? Color.ORANGE : Color.RED)
-				.withTitle(Restart ? "Server restarting" : "Server stopping")
-				.withDescription(
-					Bukkit.getOnlinePlayers().size() > 0
-						? (DPUtils
-						.sanitizeString(Bukkit.getOnlinePlayers().stream()
-							.map(Player::getDisplayName).collect(Collectors.joining(", ")))
-						+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-						+ "kicked the hell out.") //TODO: Make configurable
-						: "") //If 'restart' is disabled then this isn't shown even if joinleave is enabled
-				.build();
-		MCChatUtils.forCustomAndAllMCChat(ch -> {
-			try {
-				DiscordPlugin.sendMessageToChannelWait(ch, "",
-					embed, 5, TimeUnit.SECONDS);
-			} catch (TimeoutException | InterruptedException e) {
-				e.printStackTrace();
-			}
-		}, ChannelconBroadcast.RESTART, false);
+		MCChatUtils.forCustomAndAllMCChat(ch -> ch.createEmbed(ecs -> {
+			if (DiscordMCCommand.resetting)
+				ecs.setColor(Color.ORANGE).setTitle("Discord plugin restarting");
+			else
+				ecs.setColor(Restart ? Color.ORANGE : Color.RED)
+					.setTitle(Restart ? "Server restarting" : "Server stopping")
+					.setDescription(
+						Bukkit.getOnlinePlayers().size() > 0
+							? (DPUtils
+							.sanitizeString(Bukkit.getOnlinePlayers().stream()
+								.map(Player::getDisplayName).collect(Collectors.joining(", ")))
+							+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+							+ "kicked the hell out.") //TODO: Make configurable
+							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
+		}).block(Duration.ofSeconds(5)), ChannelconBroadcast.RESTART, false);
 		ChromaBot.getInstance().updatePlayerList();
 	}
 
@@ -244,93 +234,33 @@ public class DiscordPlugin extends ButtonPlugin implements IListener<ReadyEvent>
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 
 		saveConfig();
-        try {
-            SafeMode = true; // Stop interacting with Discord
-            ChromaBot.delete();
-            dc.changePresence(StatusType.IDLE, ActivityType.PLAYING, "Chromacraft"); //No longer using the same account for testing
-            dc.logout();
-	        //Configs are emptied so channels and servers are fetched again
-            sent = false;
-        } catch (Exception e) {
-            TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
-        }
-    }
+		try {
+			SafeMode = true; // Stop interacting with Discord
+			ChromaBot.delete();
+			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
+			dc.logout().block();
+			//Configs are emptied so channels and servers are fetched again
+			sent = false;
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
+		}
+	}
 
-    public static final ReactionEmoji DELIVERED_REACTION = ReactionEmoji.of("✅");
+	public static final ReactionEmoji DELIVERED_REACTION = ReactionEmoji.unicode("✅");
 
-    public static void sendMessageToChannel(IChannel channel, String message) {
-        sendMessageToChannel(channel, message, null);
-    }
+	public static Permission perms;
 
-    public static void sendMessageToChannel(IChannel channel, String message, EmbedObject embed) {
-        try {
-            sendMessageToChannel(channel, message, embed, false);
-        } catch (TimeoutException | InterruptedException e) {
-            e.printStackTrace(); //Shouldn't happen, as we're not waiting on the result
-        }
-    }
+	public boolean setupProviders() {
+		try {
+			Class.forName("net.milkbowl.vault.permission.Permission");
+			Class.forName("net.milkbowl.vault.chat.Chat");
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
 
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message) throws TimeoutException, InterruptedException {
-        return sendMessageToChannelWait(channel, message, null);
-    }
-
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed) throws TimeoutException, InterruptedException {
-        return sendMessageToChannel(channel, message, embed, true);
-    }
-
-    public static IMessage sendMessageToChannelWait(IChannel channel, String message, EmbedObject embed, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-        return sendMessageToChannel(channel, message, embed, true, timeout, unit);
-    }
-
-    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait) throws TimeoutException, InterruptedException {
-        return sendMessageToChannel(channel, message, embed, wait, -1, null);
-    }
-
-    private static IMessage sendMessageToChannel(IChannel channel, String message, EmbedObject embed, boolean wait, long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-        if (message.length() > 1980) {
-            message = message.substring(0, 1980);
-	        DPUtils.getLogger()
-                    .warning("Message was too long to send to discord and got truncated. In " + channel.getName());
-        }
-        try {
-            MCChatUtils.resetLastMessage(channel); // If this is a chat message, it'll be set again
-            final String content = message;
-            RequestBuffer.IRequest<IMessage> r = () -> embed == null ? channel.sendMessage(content)
-                    : channel.sendMessage(content, embed, false);
-            if (wait) {
-                if (unit != null)
-                    return DPUtils.perform(r, timeout, unit);
-                else
-                    return DPUtils.perform(r);
-            } else {
-                if (unit != null)
-                    plugin.getLogger().warning("Tried to set timeout for non-waiting call.");
-                else
-                    DPUtils.performNoWait(r);
-                return null;
-            }
-        } catch (TimeoutException | InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-	        DPUtils.getLogger().warning(
-                    "Failed to deliver message to Discord! Channel: " + channel.getName() + " Message: " + message);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Permission perms;
-
-    public boolean setupProviders() {
-        try {
-            Class.forName("net.milkbowl.vault.permission.Permission");
-            Class.forName("net.milkbowl.vault.chat.Chat");
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-
-        RegisteredServiceProvider<Permission> permsProvider = Bukkit.getServer().getServicesManager()
-                .getRegistration(Permission.class);
-        perms = permsProvider.getProvider();
-        return perms != null;
-    }
+		RegisteredServiceProvider<Permission> permsProvider = Bukkit.getServer().getServicesManager()
+			.getRegistration(Permission.class);
+		perms = permsProvider.getProvider();
+		return perms != null;
+	}
 }

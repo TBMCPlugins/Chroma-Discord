@@ -5,6 +5,10 @@ import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCSystemChatEvent;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.var;
@@ -16,9 +20,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -34,23 +35,21 @@ public class MCChatUtils {
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<IChannel, DiscordSender>> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, HashMap<IChannel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Channel, DiscordSender>> UnconnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Channel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Channel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
 	static @Nullable LastMsgData lastmsgdata;
-	static LongObjectHashMap<IMessage> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
+	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
 
 	public static void updatePlayerList() {
 		if (notEnabled()) return;
-		DPUtils.performNoWait(() -> {
-			if (lastmsgdata != null)
-				updatePL(lastmsgdata);
-			MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
-		});
+		if (lastmsgdata != null)
+			updatePL(lastmsgdata);
+		MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
 	}
 
 	private static boolean notEnabled() {
@@ -64,8 +63,8 @@ public class MCChatUtils {
 	}
 
 	private static void updatePL(LastMsgData lmd) {
-		String topic = lmd.channel.getTopic();
-		if (topic == null || topic.length() == 0)
+		String topic = lmd.channel.getTopic().orElse("");
+		if (topic.length() == 0)
 			topic = ".\n----\nMinecraft chat\n----\n.";
 		String[] s = topic.split("\\n----\\n");
 		if (s.length < 3)
@@ -74,16 +73,16 @@ public class MCChatUtils {
 				+ " online";
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
 				.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-		lmd.channel.changeTopic(String.join("\n----\n", s));
+		lmd.channel.edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                        IUser user, T sender) {
-		return addSender(senders, user.getStringID(), sender);
+	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<Channel, T>> senders,
+															User user, T sender) {
+		return addSender(senders, user.getId().asLong(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                        String did, T sender) {
+	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<Channel, T>> senders,
+															long did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
@@ -92,23 +91,23 @@ public class MCChatUtils {
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                        IChannel channel, IUser user) {
-		var map = senders.get(user.getStringID());
+	public static <T extends DiscordSenderBase> T getSender(HashMap<Long, HashMap<Channel, T>> senders,
+															Channel channel, User user) {
+		var map = senders.get(user.getId().asLong());
 		if (map != null)
 			return map.get(channel);
 		return null;
 	}
 
-	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                           IChannel channel, IUser user) {
-		var map = senders.get(user.getStringID());
+	public static <T extends DiscordSenderBase> T removeSender(HashMap<Long, HashMap<Channel, T>> senders,
+															   Channel channel, User user) {
+		var map = senders.get(user.getId().asLong());
 		if (map != null)
 			return map.remove(channel);
 		return null;
 	}
 
-	public static void forAllMCChat(Consumer<IChannel> action) {
+	public static void forAllMCChat(Consumer<MessageChannel> action) {
 		if (notEnabled()) return;
 		action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
@@ -123,7 +122,7 @@ public class MCChatUtils {
 	 * @param toggle  The toggle to check
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forCustomAndAllMCChat(Consumer<IChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+	public static void forCustomAndAllMCChat(Consumer<MessageChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
 		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
@@ -141,7 +140,7 @@ public class MCChatUtils {
 	 * @param sender The sender to check perms of or null to send to all that has it toggled
 	 * @param toggle The toggle to check or null to send to all allowed
 	 */
-	public static void forAllowedCustomMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
+	public static void forAllowedCustomMCChat(Consumer<MessageChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
 		if (notEnabled()) return;
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			//new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
@@ -161,19 +160,19 @@ public class MCChatUtils {
 	 * @param toggle  The toggle to check or null to send to all allowed
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+	public static void forAllowedCustomAndAllMCChat(Consumer<MessageChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
 		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
 		forAllowedCustomMCChat(action, sender, toggle);
 	}
 
-	public static Consumer<IChannel> send(String message) {
-		return ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(message));
+	public static Consumer<MessageChannel> send(String message) {
+		return ch -> ch.createMessage(DPUtils.sanitizeString(message)).subscribe();
 	}
 
-	public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
-		if (notEnabled()) return;
+	public static void forAllowedMCChat(Consumer<MessageChannel> action, TBMCSystemChatEvent event) {
+		if (notEnabled()) return
 		if (event.getChannel().isGlobal())
 			action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
@@ -189,7 +188,7 @@ public class MCChatUtils {
 	/**
 	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
 	 */
-	static DiscordSenderBase getSender(IChannel channel, final IUser author) {
+	static DiscordSenderBase getSender(Channel channel, final User author) {
 		//noinspection OptionalGetWithoutIsPresent
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
 				() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
@@ -205,7 +204,7 @@ public class MCChatUtils {
 	 *
 	 * @param channel The channel to reset in - the process is slightly different for the public, private and custom chats
 	 */
-	public static void resetLastMessage(IChannel channel) {
+	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
 		if (channel.getLongID() == module.chatChannel().get().getLongID()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
@@ -286,11 +285,11 @@ public class MCChatUtils {
 
 	@RequiredArgsConstructor
 	public static class LastMsgData {
-		public IMessage message;
+		public Message message;
 		public long time;
 		public String content;
-		public final IChannel channel;
+		public final TextChannel channel;
 		public Channel mcchannel;
-		public final IUser user;
+		public final User user;
 	}
 }

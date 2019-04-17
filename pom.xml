@@ -173,8 +173,8 @@
 		<!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
         <dependency>
             <groupId>com.discord4j</groupId>
-            <artifactId>Discord4J</artifactId>
-            <version>2.10.1</version>
+            <artifactId>discord4j-core</artifactId>
+            <version>3.0.2</version>
         </dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
