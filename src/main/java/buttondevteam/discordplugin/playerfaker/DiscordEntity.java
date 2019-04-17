@@ -11,8 +11,8 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.*;
 
@@ -20,7 +20,7 @@ import java.util.*;
 @Setter
 @SuppressWarnings("deprecated")
 public abstract class DiscordEntity extends DiscordSenderBase implements Entity {
-	protected DiscordEntity(IUser user, IChannel channel, int entityId, UUID uuid) {
+	protected DiscordEntity(IUser user, MessageChannel channel, int entityId, UUID uuid) {
 		super(user, channel);
 		this.entityId = entityId;
 		uniqueId = uuid;

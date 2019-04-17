@@ -80,7 +80,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 
 	private static short ListC = 0;
 
-	public static boolean executeMemes(IMessage message) {
+	public static boolean executeMemes(Message message) {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return false;
 		String msglowercased = message.getContent().toLowerCase();
@@ -119,7 +119,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	}
 
 
-	private ConfigData<IChannel> fullHouseChannel() {
+	private ConfigData<MessageChannel> fullHouseChannel() {
 		return DPUtils.channelData(getConfig(), "fullHouseChannel", 219626707458457603L);
 	}
 

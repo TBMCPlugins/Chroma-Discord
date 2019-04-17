@@ -6,8 +6,8 @@ import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import lombok.NonNull;
 import lombok.val;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class MCChatCustom {
 	 */
 	static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
 
-	public static void addCustomChat(IChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
+	public static void addCustomChat(MessageChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
 		if (mcchannel instanceof ChatRoom) {
 			((ChatRoom) mcchannel).joinRoom(dcp);
 			if (groupid == null) groupid = mcchannel.getGroupID(dcp);
@@ -30,16 +30,16 @@ public class MCChatCustom {
 		lastmsgCustom.add(lmd);
 	}
 
-	public static boolean hasCustomChat(IChannel channel) {
+	public static boolean hasCustomChat(MessageChannel channel) {
 		return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getLongID() == channel.getLongID());
 	}
 
 	@Nullable
-	public static CustomLMD getCustomChat(IChannel channel) {
+	public static CustomLMD getCustomChat(MessageChannel channel) {
 		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
 	}
 
-	public static boolean removeCustomChat(IChannel channel) {
+	public static boolean removeCustomChat(MessageChannel channel) {
 		MCChatUtils.lastmsgfromd.remove(channel.getLongID());
 		return lastmsgCustom.removeIf(lmd -> {
 			if (lmd.channel.getLongID() != channel.getLongID())
@@ -61,8 +61,8 @@ public class MCChatCustom {
 		public int toggles;
 		public Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles;
 
-		private CustomLMD(@NonNull IChannel channel, @NonNull IUser user,
-		                  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
+		private CustomLMD(@NonNull MessageChannel channel, @NonNull IUser user,
+						  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
 			super(channel, user);
 			groupID = groupid;
 			this.mcchannel = mcchannel;

@@ -8,8 +8,8 @@ import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
 import lombok.val;
-import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.Message;
 
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class UserinfoCommand extends ICommand2DC {
         return true;
 	}
 
-	private List<IUser> getUsers(IMessage message, String args) {
+	private List<IUser> getUsers(Message message, String args) {
 		final List<IUser> targets;
 		if (message.getChannel().isPrivate())
 			targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))

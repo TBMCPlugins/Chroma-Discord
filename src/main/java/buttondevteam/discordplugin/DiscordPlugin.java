@@ -21,8 +21,8 @@ import com.google.common.io.Files;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.object.entity.Channel;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
@@ -65,7 +65,7 @@ public class DiscordPlugin extends ButtonPlugin {
 		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
 	}
 
-	public ConfigData<Channel> CommandChannel() {
+	public ConfigData<MessageChannel> CommandChannel() {
 		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
@@ -100,6 +100,13 @@ public class DiscordPlugin extends ButtonPlugin {
 			val cb = new DiscordClientBuilder(token);
 			dc = cb.build();
 			dc.getEventDispatcher().on(ReadyEvent.class).subscribe(this::handleReady);
+			/*dc.getEventDispatcher().on(ReadyEvent.class) // Listen for ReadyEvent(s)
+				.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
+				.flatMap(size -> dc.getEventDispatcher()
+					.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
+					.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
+					.collectList()) // Take all received GuildCreateEvents and make it a List
+				.subscribe(events -> /* All guilds have been received, client is fully connected *);*/ //TODO
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -169,8 +176,8 @@ public class DiscordPlugin extends ButtonPlugin {
 						thr.setStackTrace(new StackTraceElement[0]);
 						TBMCCoreAPI.SendException("The server crashed!", thr);
 					} else
-						ChromaBot.getInstance().sendMessageCustomAsWell("", new EmbedBuilder().withColor(Color.GREEN)
-							.withTitle("Server started - chat connected.").build(), ChannelconBroadcast.RESTART);
+						ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
+							.setTitle("Server started - chat connected.")), ChannelconBroadcast.RESTART);
 
 					DiscordMCCommand.resetting = false; //This is the last event handling this flag
 

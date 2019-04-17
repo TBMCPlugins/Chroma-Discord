@@ -3,9 +3,9 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
 import buttondevteam.lib.TBMCCoreAPI;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IRole;
+import sx.blah.discord.handle.obj.Message;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 public class CommandListener {
 	/**
@@ -15,10 +15,10 @@ public class CommandListener {
 	 * @param mentionedonly Only run the command if ChromaBot is mentioned at the start of the message
 	 * @return Whether it ran the command
 	 */
-	public static boolean runCommand(IMessage message, boolean mentionedonly) {
+	public static boolean runCommand(Message message, boolean mentionedonly) {
 		if (message.getContent().length() == 0)
 			return false; //Pin messages and such, let the mcchat listener deal with it
-		final IChannel channel = message.getChannel();
+		final MessageChannel channel = message.getChannel();
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!message.getChannel().isPrivate()
 				&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
@@ -49,7 +49,7 @@ public class CommandListener {
 		return true;
 	}
 
-	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
+	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, Message message) {
 		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
 				int i = cmdwithargs.indexOf(" ", mention.length());

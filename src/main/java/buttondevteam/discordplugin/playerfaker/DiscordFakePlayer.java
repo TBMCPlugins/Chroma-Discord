@@ -16,15 +16,15 @@ import org.bukkit.map.MapView;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.net.InetSocketAddress;
 import java.util.*;
 
 @SuppressWarnings("deprecation")
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
-    protected DiscordFakePlayer(IUser user, IChannel channel, int entityId, UUID uuid, String mcname) {
+	protected DiscordFakePlayer(IUser user, MessageChannel channel, int entityId, UUID uuid, String mcname) {
         super(user, channel, entityId, uuid);
         perm = new PermissibleBase(Bukkit.getOfflinePlayer(uuid));
         name = mcname;

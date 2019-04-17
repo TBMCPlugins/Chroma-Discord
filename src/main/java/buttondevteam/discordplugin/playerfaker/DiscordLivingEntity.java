@@ -16,14 +16,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.*;
 
 public abstract class DiscordLivingEntity extends DiscordEntity implements LivingEntity {
 
-	protected DiscordLivingEntity(IUser user, IChannel channel, int entityId, UUID uuid) {
+	protected DiscordLivingEntity(IUser user, MessageChannel channel, int entityId, UUID uuid) {
 		super(user, channel, entityId, uuid);
 	}
 

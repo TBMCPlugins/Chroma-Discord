@@ -6,5 +6,5 @@ import sx.blah.discord.util.RateLimitException;
 
 @FunctionalInterface
 public interface DiscordRunnable {
-	public abstract void run() throws DiscordException, RateLimitException, MissingPermissionsException;
+	void run() throws DiscordException, RateLimitException, MissingPermissionsException;
 }

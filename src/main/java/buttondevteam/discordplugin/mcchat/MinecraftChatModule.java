@@ -12,7 +12,7 @@ import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
-import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -40,14 +40,14 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
 	 */
-	public ConfigData<IChannel> chatChannel() {
+	public ConfigData<MessageChannel> chatChannel() {
 		return DPUtils.channelData(getConfig(), "chatChannel", 239519012529111040L);
 	}
 
 	/**
 	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
 	 */
-	public ConfigData<IChannel> modlogChannel() {
+	public ConfigData<MessageChannel> modlogChannel() {
 		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
 	}
 

@@ -11,9 +11,9 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +47,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
     private static void SendException(Throwable e, String sourcemessage) {
 		if (instance == null) return;
         try {
-	        IChannel channel = getChannel();
+			MessageChannel channel = getChannel();
 	        assert channel != null;
 	        IRole coderRole = instance.pingRole(channel.getGuild()).get();
             StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder()
@@ -69,12 +69,12 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 
 	private static ExceptionListenerModule instance;
 
-	public static IChannel getChannel() {
+	public static MessageChannel getChannel() {
 		if (instance != null) return instance.channel().get();
 		return null;
 	}
 
-	private ConfigData<IChannel> channel() {
+	private ConfigData<MessageChannel> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 

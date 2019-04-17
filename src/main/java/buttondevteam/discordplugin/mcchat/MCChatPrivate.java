@@ -9,9 +9,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IPrivateChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 
@@ -22,7 +22,7 @@ public class MCChatPrivate {
 	 */
 	static ArrayList<MCChatUtils.LastMsgData> lastmsgPerUser = new ArrayList<>();
 
-	public static boolean privateMCChat(IChannel channel, boolean start, IUser user, DiscordPlayer dp) {
+	public static boolean privateMCChat(MessageChannel channel, boolean start, IUser user, DiscordPlayer dp) {
 		TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
 		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
 			val p = Bukkit.getPlayer(mcp.getUUID());

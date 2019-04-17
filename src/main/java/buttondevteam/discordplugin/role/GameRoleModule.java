@@ -13,12 +13,6 @@ import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
 import lombok.val;
 import org.bukkit.Bukkit;
-import sx.blah.discord.handle.impl.events.guild.role.RoleCreateEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleDeleteEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleUpdateEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IRole;
 
 import java.awt.*;
 import java.util.List;
@@ -60,7 +54,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 			Role role=((RoleDeleteEvent) roleEvent).getRole().orElse(null);
 			if(role==null) return;
 			if (GameRoles.remove(role.getName()) && logChannel != null)
-				logChannel, "Removed " + role.getName() + " as a game role.");
+				logChannel, "Removed " + role.getName() + " as a game role.")
 		} else if (roleEvent instanceof RoleUpdateEvent) {
 			val event = (RoleUpdateEvent) roleEvent;
 			if(!event.getOld().isPresent()) {

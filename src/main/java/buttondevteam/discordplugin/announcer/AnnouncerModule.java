@@ -11,23 +11,24 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
 import lombok.val;
 import org.bukkit.configuration.file.YamlConfiguration;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import reactor.core.publisher.Flux;
 
 import java.io.File;
-import java.util.List;
+import java.util.Objects;
 
 public class AnnouncerModule extends Component<DiscordPlugin> {
 	/**
 	 * Channel to post new posts.
 	 */
-	public ConfigData<IChannel> channel() {
+	public ConfigData<MessageChannel> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 
-	public ConfigData<IChannel> modChannel() {
+	public ConfigData<MessageChannel> modChannel() {
 		return DPUtils.channelData(getConfig(), "modChannel", 239519012529111040L);
 	}
 
@@ -53,19 +54,11 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 	protected void enable() {
 		if (DPUtils.disableIfConfigError(this, channel(), modChannel())) return;
 		stop = false; //If not the first time
-		DPUtils.performNoWait(() -> {
-			try {
-				val keepPinned = keepPinned().get();
-				if (keepPinned == 0) return;
-				val channel = channel().get();
-				List<IMessage> msgs = channel.getPinnedMessages();
-				for (int i = msgs.size() - 1; i >= keepPinned; i--) { // Unpin all pinned messages except the newest 10
-					channel.unpin(msgs.get(i));
-					Thread.sleep(10);
-				}
-			} catch (InterruptedException ignore) {
-			}
-		});
+		val keepPinned = keepPinned().get();
+		if (keepPinned == 0) return;
+		val channel = channel().get();
+		Flux<Message> msgs = channel.getPinnedMessages();
+		msgs.subscribe(Message::unpin);
 		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
 		if (lastannouncementtime().get() == 0) //Load old data
 			lastannouncementtime().set(yc.getLong("lastannouncementtime"));
@@ -125,13 +118,11 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					}
 				}
 				if (msgsb.length() > 0)
-					channel().get().pin(DiscordPlugin.sendMessageToChannelWait(channel().get(), msgsb.toString()));
+					Objects.requireNonNull(channel().get().createMessage(msgsb.toString()).block()).pin().block();
 				if (modmsgsb.length() > 0)
-					DiscordPlugin.sendMessageToChannel(modChannel().get(), modmsgsb.toString());
-				if (lastannouncementtime().get() != lastanntime) {
+					modChannel().get().createMessage(modmsgsb.toString()).block();
+				if (lastannouncementtime().get() != lastanntime)
 					lastannouncementtime().set(lastanntime); // If sending succeeded
-					getPlugin().saveConfig(); //TODO: Won't be needed if I implement auto-saving
-				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

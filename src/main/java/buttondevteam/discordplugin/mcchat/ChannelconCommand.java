@@ -11,7 +11,7 @@ import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.TBMCPlayer;
 import lombok.val;
 import org.bukkit.Bukkit;
-import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.Message;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.PermissionUtils;
 
@@ -124,7 +124,7 @@ public class ChannelconCommand extends ICommand2DC {
 		return true;
 	}
 
-	private boolean checkPerms(IMessage message) {
+	private boolean checkPerms(Message message) {
 		if (!PermissionUtils.hasPermissions(message.getChannel(), message.getAuthor(), Permissions.MANAGE_CHANNEL)) {
 			message.reply("you need to have manage permissions for this channel!");
 			return true;

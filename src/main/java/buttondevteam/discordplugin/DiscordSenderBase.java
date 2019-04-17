@@ -4,17 +4,17 @@ import buttondevteam.lib.TBMCCoreAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 public abstract class DiscordSenderBase implements CommandSender {
 	/**
 	 * May be null.
 	 */
 	protected IUser user;
-	protected IChannel channel;
+	protected MessageChannel channel;
 
-	protected DiscordSenderBase(IUser user, IChannel channel) {
+	protected DiscordSenderBase(IUser user, MessageChannel channel) {
 		this.user = user;
 		this.channel = channel;
 	}
@@ -31,7 +31,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 		return user;
 	}
 
-	public IChannel getChannel() {
+	public MessageChannel getChannel() {
 		return channel;
 	}
 

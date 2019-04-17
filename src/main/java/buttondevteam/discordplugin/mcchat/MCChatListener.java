@@ -22,9 +22,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.Message;
+import sx.blah.discord.handle.obj.MessageChannel;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
@@ -121,7 +121,7 @@ public class MCChatListener implements Listener {
             };
             // Checks if the given channel is different than where the message was sent from
             // Or if it was from MC
-            Predicate<IChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
+			Predicate<MessageChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
                     || ((DiscordSenderBase) e.getSender()).getChannel().getLongID() != ch.getLongID();
 
 	        if (e.getChannel().isGlobal()
@@ -276,7 +276,7 @@ public class MCChatListener implements Listener {
                 final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
                 dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
             }
-	        for (IChannel ch : event.getMessage().getChannelMentions()) {
+			for (MessageChannel ch : event.getMessage().getChannelMentions()) {
 		        dmessage = dmessage.replace(ch.mention(), "#" + ch.getName()); // TODO: IG Formatting
 	        }
 
@@ -285,7 +285,7 @@ public class MCChatListener implements Listener {
 
             Function<String, String> getChatMessage = msg -> //
                     msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-		                    .getAttachments().stream().map(IMessage.Attachment::getUrl).collect(Collectors.joining("\n"))
+						.getAttachments().stream().map(Message.Attachment::getUrl).collect(Collectors.joining("\n"))
                             : "");
 
             MCChatCustom.CustomLMD clmd = MCChatCustom.getCustomChat(event.getChannel());

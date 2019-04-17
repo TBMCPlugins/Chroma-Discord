@@ -8,13 +8,13 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.InventoryView.Property;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.UUID;
 
 public abstract class DiscordHumanEntity extends DiscordLivingEntity implements HumanEntity {
-	protected DiscordHumanEntity(IUser user, IChannel channel, int entityId, UUID uuid) {
+	protected DiscordHumanEntity(IUser user, MessageChannel channel, int entityId, UUID uuid) {
 		super(user, channel, entityId, uuid);
 	}
 

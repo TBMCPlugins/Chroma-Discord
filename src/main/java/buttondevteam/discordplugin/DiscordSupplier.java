@@ -7,5 +7,5 @@ import sx.blah.discord.util.RateLimitException;
 
 @FunctionalInterface
 public interface DiscordSupplier<T extends IDiscordObject<T>> {
-	public abstract T get() throws DiscordException, RateLimitException, MissingPermissionsException;
+	T get() throws DiscordException, RateLimitException, MissingPermissionsException;
 }

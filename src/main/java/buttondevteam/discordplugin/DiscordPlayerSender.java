@@ -26,8 +26,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -38,7 +38,7 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 	protected Player player;
 	private @Getter VanillaCommandListener<DiscordPlayerSender> vanillaCmdListener;
 
-	public DiscordPlayerSender(IUser user, IChannel channel, Player player) {
+	public DiscordPlayerSender(IUser user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
 		vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
