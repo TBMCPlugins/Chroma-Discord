@@ -1,5 +1,8 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,14 +11,12 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.InventoryView.Property;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.UUID;
 
 public abstract class DiscordHumanEntity extends DiscordLivingEntity implements HumanEntity {
-	protected DiscordHumanEntity(IUser user, MessageChannel channel, int entityId, UUID uuid) {
-		super(user, channel, entityId, uuid);
+	protected DiscordHumanEntity(User user, MessageChannel channel, int entityId, UUID uuid, MinecraftChatModule module) {
+		super(user, channel, entityId, uuid, module);
 	}
 
 	private PlayerInventory inv = new DiscordPlayerInventory(this);

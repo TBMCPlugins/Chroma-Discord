@@ -1,5 +1,8 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
@@ -16,15 +19,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.*;
 
 public abstract class DiscordLivingEntity extends DiscordEntity implements LivingEntity {
 
-	protected DiscordLivingEntity(IUser user, MessageChannel channel, int entityId, UUID uuid) {
-		super(user, channel, entityId, uuid);
+	protected DiscordLivingEntity(User user, MessageChannel channel, int entityId, UUID uuid, MinecraftChatModule module) {
+		super(user, channel, entityId, uuid, module);
 	}
 
 	private @Getter EntityEquipment equipment = new DiscordEntityEquipment(this);

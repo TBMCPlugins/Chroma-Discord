@@ -4,10 +4,12 @@ import buttondevteam.core.component.channel.Channel;
 import buttondevteam.core.component.channel.ChatRoom;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.lib.TBMCSystemChatEvent;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
 import lombok.NonNull;
 import lombok.val;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ public class MCChatCustom {
 	 */
 	static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
 
-	public static void addCustomChat(MessageChannel channel, String groupid, Channel mcchannel, IUser user, DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
+	public static void addCustomChat(MessageChannel channel, String groupid, Channel mcchannel, User user, DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
 		if (mcchannel instanceof ChatRoom) {
 			((ChatRoom) mcchannel).joinRoom(dcp);
 			if (groupid == null) groupid = mcchannel.getGroupID(dcp);
@@ -30,19 +32,19 @@ public class MCChatCustom {
 		lastmsgCustom.add(lmd);
 	}
 
-	public static boolean hasCustomChat(MessageChannel channel) {
-		return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getLongID() == channel.getLongID());
+	public static boolean hasCustomChat(Snowflake channel) {
+		return lastmsgCustom.stream().anyMatch(lmd -> lmd.channel.getId().asLong() == channel.asLong());
 	}
 
 	@Nullable
 	public static CustomLMD getCustomChat(MessageChannel channel) {
-		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getLongID() == channel.getLongID()).findAny().orElse(null);
+		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong()).findAny().orElse(null);
 	}
 
 	public static boolean removeCustomChat(MessageChannel channel) {
-		MCChatUtils.lastmsgfromd.remove(channel.getLongID());
+		MCChatUtils.lastmsgfromd.remove(channel.getId().asLong());
 		return lastmsgCustom.removeIf(lmd -> {
-			if (lmd.channel.getLongID() != channel.getLongID())
+			if (lmd.channel.getId().asLong() != channel.getId().asLong())
 				return false;
 			if (lmd.mcchannel instanceof ChatRoom)
 				((ChatRoom) lmd.mcchannel).leaveRoom(lmd.dcp);
@@ -61,9 +63,9 @@ public class MCChatCustom {
 		public int toggles;
 		public Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles;
 
-		private CustomLMD(@NonNull MessageChannel channel, @NonNull IUser user,
+		private CustomLMD(@NonNull MessageChannel channel, @NonNull User user,
 						  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
-			super(channel, user);
+			super((TextChannel) channel, user);
 			groupID = groupid;
 			this.mcchannel = mcchannel;
 			this.dcp = dcp;

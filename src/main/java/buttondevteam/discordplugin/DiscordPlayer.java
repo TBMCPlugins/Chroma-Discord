@@ -20,7 +20,7 @@ public class DiscordPlayer extends ChromaGamerBase {
 
 	/**
 	 * Returns true if player has the private Minecraft chat enabled. For setting the value, see
-	 * {@link MCChatPrivate#privateMCChat(sx.blah.discord.handle.obj.MessageChannel, boolean, sx.blah.discord.handle.obj.IUser, DiscordPlayer)}
+	 * {@link MCChatPrivate#privateMCChat(sx.blah.discord.handle.obj.MessageChannel, boolean, sx.blah.discord.handle.obj.User, DiscordPlayer)}
 	 */
 	public boolean isMinecraftChatEnabled() {
 		return MCChatPrivate.isMinecraftChatEnabled(this);

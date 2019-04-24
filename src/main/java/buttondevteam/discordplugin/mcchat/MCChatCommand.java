@@ -24,7 +24,7 @@ public class MCChatCommand extends ICommand2DC {
 			message.reply("this command can only be issued in a direct message with the bot.");
 			return true;
 		}
-		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class)) {
+		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getId().asString(), DiscordPlayer.class)) {
 			boolean mcchat = !user.isMinecraftChatEnabled();
 			MCChatPrivate.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
 			message.reply("Minecraft chat " + (mcchat //

@@ -1,10 +1,11 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.playerfaker.DiscordFakePlayer;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.UUID;
 
@@ -12,8 +13,8 @@ public class DiscordConnectedPlayer extends DiscordFakePlayer implements IMCPlay
 	private static int nextEntityId = 10000;
 	private @Getter VanillaCommandListener<DiscordConnectedPlayer> vanillaCmdListener;
 
-	public DiscordConnectedPlayer(IUser user, MessageChannel channel, UUID uuid, String mcname) {
-		super(user, channel, nextEntityId++, uuid, mcname);
+	public DiscordConnectedPlayer(User user, MessageChannel channel, UUID uuid, String mcname, MinecraftChatModule module) {
+		super(user, channel, nextEntityId++, uuid, mcname ,module);
 		vanillaCmdListener = new VanillaCommandListener<>(this);
 	}
 

@@ -8,13 +8,13 @@ import buttondevteam.lib.player.TBMCPlayerJoinEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerCommandEvent;
-import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.User;
 
 public class MCListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
 		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
-			@SuppressWarnings("ConstantConditions") IUser user = DiscordPlugin.dc
+			@SuppressWarnings("ConstantConditions") User user = DiscordPlugin.dc
 				.getUserByID(Long.parseLong(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get())));
 			e.getPlayer().sendMessage("§bTo connect with the Discord account @" + user.getName() + "#" + user.getDiscriminator()
 				+ " do /discord accept");
@@ -29,7 +29,7 @@ public class MCListener implements Listener {
         DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
         if (dp == null || dp.getDiscordID() == null || dp.getDiscordID().equals(""))
             return;
-        IUser user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
+        User user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
         e.addInfo("Discord tag: " + user.getName() + "#" + user.getDiscriminator());
         e.addInfo(user.getPresence().getStatus().toString());
         if (user.getPresence().getActivity().isPresent() && user.getPresence().getText().isPresent())

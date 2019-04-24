@@ -10,7 +10,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import sx.blah.discord.handle.obj.IPrivateChannel;
-import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.User;
 import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class MCChatPrivate {
 	 */
 	static ArrayList<MCChatUtils.LastMsgData> lastmsgPerUser = new ArrayList<>();
 
-	public static boolean privateMCChat(MessageChannel channel, boolean start, IUser user, DiscordPlayer dp) {
+	public static boolean privateMCChat(MessageChannel channel, boolean start, User user, DiscordPlayer dp) {
 		TBMCPlayer mcp = dp.getAs(TBMCPlayer.class);
 		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
 			val p = Bukkit.getPlayer(mcp.getUUID());
@@ -39,10 +39,10 @@ public class MCChatPrivate {
 			}
 		} // ---- PermissionsEx warning is normal on logout ----
 		if (!start)
-			MCChatUtils.lastmsgfromd.remove(channel.getLongID());
+			MCChatUtils.lastmsgfromd.remove(channel.getId().asLong());
 		return start //
 				? lastmsgPerUser.add(new MCChatUtils.LastMsgData(channel, user)) // Doesn't support group DMs
-				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getLongID() == channel.getLongID());
+				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong());
 	}
 
 	public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
@@ -51,7 +51,7 @@ public class MCChatPrivate {
 
 	public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
 		return lastmsgPerUser.stream()
-				.anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getStringID().equals(did));
+				.anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getId().asString().equals(did));
 	}
 
 	public static void logoutAll() {

@@ -3,6 +3,10 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
 import buttondevteam.lib.TBMCCoreAPI;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.PrivateChannel;
+import lombok.val;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.Message;
 import sx.blah.discord.handle.obj.MessageChannel;
@@ -16,22 +20,28 @@ public class CommandListener {
 	 * @return Whether it ran the command
 	 */
 	public static boolean runCommand(Message message, boolean mentionedonly) {
-		if (message.getContent().length() == 0)
+		if (message.getContent().isEmpty())
 			return false; //Pin messages and such, let the mcchat listener deal with it
-		final MessageChannel channel = message.getChannel();
+		final MessageChannel channel = message.getChannel().block();
+		@SuppressWarnings("OptionalGetWithoutIsPresent") val content = message.getContent().get();
+		if (channel == null) return false;
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
-			if (!message.getChannel().isPrivate()
-				&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
-				&& channel.getStringID().equals(DiscordPlugin.plugin.CommandChannel().get().getStringID()))) //
+			if (!(channel instanceof PrivateChannel)
+				&& !(content.charAt(0) == DiscordPlugin.getPrefix()
+				&& channel.getId().asString().equals(DiscordPlugin.plugin.CommandChannel().get().getId().asString()))) //
 				return false;
-			message.getChannel().setTypingStatus(true); // Fun
+			channel.type().subscribe(); // Fun
 		}
-		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
-		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
-		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
+		final StringBuilder cmdwithargs = new StringBuilder(content);
+		val self=DiscordPlugin.dc.getSelf().block();
+		if(self==null) return false;
+		val member=self.asMember(DiscordPlugin.mainServer.getId()).block();
+		if(member==null) return false;
+		final String mention = self.getMention();
+		final String mentionNick = member.getNicknameMention();
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
 		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
-		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(IRole::mention)::iterator)
+		for (String mentionRole : (Iterable<String>) message.getRoleMentions().filter(r -> member.getRoles().filter(r)).map(IRole::mention)::iterator) //TODO: Remove all that matches
 			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
 		if (mentionedonly && !gotmention) {
 			message.getChannel().setTypingStatus(false);

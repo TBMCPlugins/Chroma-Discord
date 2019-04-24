@@ -8,7 +8,7 @@ import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
 import lombok.val;
-import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.User;
 import sx.blah.discord.handle.obj.Message;
 
 import java.util.List;
@@ -24,23 +24,23 @@ public class UserinfoCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, @Command2.OptionalArg @Command2.TextArg String user) {
 		val message = sender.getMessage();
-		IUser target = null;
+		User target = null;
 		if (user == null || user.length() == 0)
 			target = message.getAuthor();
 		else {
-			final Optional<IUser> firstmention = message.getMentions().stream()
-					.filter(m -> !m.getStringID().equals(DiscordPlugin.dc.getOurUser().getStringID())).findFirst();
+			final Optional<User> firstmention = message.getMentions().stream()
+					.filter(m -> !m.getId().asString().equals(DiscordPlugin.dc.getSelf().getId().asString())).findFirst();
 			if (firstmention.isPresent())
 				target = firstmention.get();
 			else if (user.contains("#")) {
 				String[] targettag = user.split("#");
-				final List<IUser> targets = getUsers(message, targettag[0]);
+				final List<User> targets = getUsers(message, targettag[0]);
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"The user cannot be found (by name): " + user);
                     return true;
 				}
-				for (IUser ptarget : targets) {
+				for (User ptarget : targets) {
 					if (ptarget.getDiscriminator().equalsIgnoreCase(targettag[1])) {
 						target = ptarget;
 						break;
@@ -53,7 +53,7 @@ public class UserinfoCommand extends ICommand2DC {
                     return true;
 				}
 			} else {
-				final List<IUser> targets = getUsers(message, user);
+				final List<User> targets = getUsers(message, user);
 				if (targets.size() == 0) {
 					DiscordPlugin.sendMessageToChannel(message.getChannel(),
 						"The user cannot be found on Discord: " + user);
@@ -67,7 +67,7 @@ public class UserinfoCommand extends ICommand2DC {
 				target = targets.get(0);
 			}
 		}
-		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getStringID(), DiscordPlayer.class)) {
+		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getId().asString(), DiscordPlayer.class)) {
 			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
 			uinfo.append(dp.getInfo(InfoTarget.Discord));
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
@@ -78,8 +78,8 @@ public class UserinfoCommand extends ICommand2DC {
         return true;
 	}
 
-	private List<IUser> getUsers(Message message, String args) {
-		final List<IUser> targets;
+	private List<User> getUsers(Message message, String args) {
+		final List<User> targets;
 		if (message.getChannel().isPrivate())
 			targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))
 					.collect(Collectors.toList());

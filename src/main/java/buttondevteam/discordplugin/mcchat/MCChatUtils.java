@@ -81,7 +81,7 @@ public class MCChatUtils {
 		return addSender(senders, user.getId().asLong(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<Channel, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<MessageChannel, T>> senders,
 															long did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
@@ -91,8 +91,8 @@ public class MCChatUtils {
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<Long, HashMap<Channel, T>> senders,
-															Channel channel, User user) {
+	public static <T extends DiscordSenderBase> T getSender(HashMap<Long, HashMap<MessageChannel, T>> senders,
+															MessageChannel channel, User user) {
 		var map = senders.get(user.getId().asLong());
 		if (map != null)
 			return map.get(channel);
@@ -172,7 +172,7 @@ public class MCChatUtils {
 	}
 
 	public static void forAllowedMCChat(Consumer<MessageChannel> action, TBMCSystemChatEvent event) {
-		if (notEnabled()) return
+		if (notEnabled()) return;
 		if (event.getChannel().isGlobal())
 			action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
@@ -188,7 +188,7 @@ public class MCChatUtils {
 	/**
 	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
 	 */
-	static DiscordSenderBase getSender(Channel channel, final User author) {
+	static DiscordSenderBase getSender(MessageChannel channel, final User author) {
 		//noinspection OptionalGetWithoutIsPresent
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
 				() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
@@ -206,13 +206,13 @@ public class MCChatUtils {
 	 */
 	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
-		if (channel.getLongID() == module.chatChannel().get().getLongID()) {
+		if (channel.getId().asLong() == module.chatChannel().get().getId().asLong()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
 					: lastmsgdata).message = null;
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
 		for (LastMsgData data : channel.isPrivate() ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
-			if (data.channel.getLongID() == channel.getLongID()) {
+			if (data.channel.getId().asLong() == channel.getId().asLong()) {
 				data.message = null;
 				return;
 			}

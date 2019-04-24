@@ -1,6 +1,9 @@
 package buttondevteam.discordplugin.playerfaker;
 
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.bukkit.*;
@@ -16,16 +19,14 @@ import org.bukkit.map.MapView;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.net.InetSocketAddress;
 import java.util.*;
 
 @SuppressWarnings("deprecation")
 public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
-	protected DiscordFakePlayer(IUser user, MessageChannel channel, int entityId, UUID uuid, String mcname) {
-        super(user, channel, entityId, uuid);
+	protected DiscordFakePlayer(User user, MessageChannel channel, int entityId, UUID uuid, String mcname, MinecraftChatModule module) {
+        super(user, channel, entityId, uuid, module);
         perm = new PermissibleBase(Bukkit.getOfflinePlayer(uuid));
         name = mcname;
     }
@@ -42,7 +43,7 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 
     @Override
     public String getCustomName() {
-        return user.getName();
+        return user.getUsername();
     }
 
     @Override
@@ -127,7 +128,7 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 
     @Override
     public String getDisplayName() {
-        return user.getDisplayName(DiscordPlugin.mainServer);
+        return Objects.requireNonNull(user.asMember(DiscordPlugin.mainServer.getId()).block()).getDisplayName();
     }
 
     @Override

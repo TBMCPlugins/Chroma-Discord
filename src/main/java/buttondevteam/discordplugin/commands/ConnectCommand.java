@@ -28,10 +28,10 @@ public class ConnectCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String Minecraftname) {
 		val message = sender.getMessage();
-		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getStringID())) {
+		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getId().asString())) {
 			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-				"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getStringID()) + " with " + Minecraftname);
-			WaitingToConnect.inverse().remove(message.getAuthor().getStringID());
+				"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getId().asString()) + " with " + Minecraftname);
+			WaitingToConnect.inverse().remove(message.getAuthor().getId().asString());
 		}
 		@SuppressWarnings("deprecation")
 		OfflinePlayer p = Bukkit.getOfflinePlayer(Minecraftname);
@@ -41,7 +41,7 @@ public class ConnectCommand extends ICommand2DC {
 		}
 		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
 			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
-			if (dp != null && message.getAuthor().getStringID().equals(dp.getDiscordID())) {
+			if (dp != null && message.getAuthor().getId().asString().equals(dp.getDiscordID())) {
 				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
 				return true;
 			}
@@ -49,7 +49,7 @@ public class ConnectCommand extends ICommand2DC {
 			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
 			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An internal error occured!\n" + e);
 		}
-		WaitingToConnect.put(p.getName(), message.getAuthor().getStringID());
+		WaitingToConnect.put(p.getName(), message.getAuthor().getId().asString());
 		DiscordPlugin.sendMessageToChannel(message.getChannel(),
 			"Alright! Now accept the connection in Minecraft from the account " + Minecraftname
 						+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.");

@@ -24,7 +24,7 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.User;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 
@@ -115,7 +115,7 @@ class MCListener implements Listener {
 				final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
 					.getAs(DiscordPlayer.class);
 				if (p == null) return;
-				final IUser user = DiscordPlugin.dc.getUserByID(
+				final User user = DiscordPlugin.dc.getUserByID(
 					Long.parseLong(p.getDiscordID()));
 				if (e.getValue())
 					user.addRole(role);
@@ -149,7 +149,7 @@ class MCListener implements Listener {
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
 		val yeehaw = DiscordPlugin.mainServer.getEmojiByName("YEEHAW");
-		MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getStringID() + ">s" : " YEEHAWs")));
+		MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getId().asString() + ">s" : " YEEHAWs")));
 	}
 
 	@EventHandler

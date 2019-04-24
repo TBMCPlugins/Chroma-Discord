@@ -95,7 +95,7 @@ public class ChannelconCommand extends ICommand2DC {
 			message.reply("MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.");
 			return true;
 		}
-		val dp = DiscordPlayer.getUser(message.getAuthor().getStringID(), DiscordPlayer.class);
+		val dp = DiscordPlayer.getUser(message.getAuthor().getId().asString(), DiscordPlayer.class);
 		val chp = dp.getAs(TBMCPlayer.class);
 		if (chp == null) {
 			message.reply("you need to connect your Minecraft account. On our server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>");
@@ -140,7 +140,7 @@ public class ChannelconCommand extends ICommand2DC {
                 "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
 	        "You also need to have your Minecraft account connected. In " + DPUtils.botmention() + " use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
 		        "Call this command from the channel you want to use.", //
-		        "Usage: @" + DiscordPlugin.dc.getOurUser().getName() + " channelcon <mcchannel>", //
+		        "Usage: @" + DiscordPlugin.dc.getSelf().getName() + " channelcon <mcchannel>", //
 		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
 	        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //

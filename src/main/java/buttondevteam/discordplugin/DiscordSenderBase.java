@@ -1,20 +1,20 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.handle.obj.IUser;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 public abstract class DiscordSenderBase implements CommandSender {
 	/**
 	 * May be null.
 	 */
-	protected IUser user;
+	protected User user;
 	protected MessageChannel channel;
 
-	protected DiscordSenderBase(IUser user, MessageChannel channel) {
+	protected DiscordSenderBase(User user, MessageChannel channel) {
 		this.user = user;
 		this.channel = channel;
 	}
@@ -27,7 +27,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 	 * 
 	 * @return The user or null.
 	 */
-	public IUser getUser() {
+	public User getUser() {
 		return user;
 	}
 
@@ -43,7 +43,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 	 * @return A Chroma user of Discord or a Discord user of Chroma
 	 */
 	public DiscordPlayer getChromaUser() {
-		if (chromaUser == null) chromaUser = DiscordPlayer.getUser(user.getStringID(), DiscordPlayer.class);
+		if (chromaUser == null) chromaUser = DiscordPlayer.getUser(user.getId().asString(), DiscordPlayer.class);
 		return chromaUser;
 	}
 
@@ -58,8 +58,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-					DiscordPlugin.sendMessageToChannel(channel,
-							(!broadcast && user != null ? user.mention() + "\n" : "") + msgtosend.trim());
+					channel.createMessage((!broadcast && user != null ? user.getMention() + "\n" : "") + msgtosend.trim());
 					sendtask = null;
 					msgtosend = "";
 				}, 4); // Waits a 0.2 second to gather all/most of the different messages

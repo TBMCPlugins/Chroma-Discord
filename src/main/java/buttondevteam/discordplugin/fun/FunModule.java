@@ -135,7 +135,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		if (event.getOldPresence().getStatus().equals(StatusType.OFFLINE)
 			&& !event.getNewPresence().getStatus().equals(StatusType.OFFLINE)
 			&& event.getUser().getRolesForGuild(channel.getGuild()).stream()
-			.anyMatch(r -> r.getLongID() == devrole.getLongID())
+			.anyMatch(r -> r.getId().asLong() == devrole.getId().asLong())
 			&& channel.getGuild().getUsersByRole(devrole).stream()
 			.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
 			&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
