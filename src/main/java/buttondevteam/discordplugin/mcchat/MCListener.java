@@ -6,6 +6,9 @@ import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.player.*;
 import com.earth2me.essentials.CommandSource;
+import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
@@ -23,10 +26,9 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
-import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.handle.obj.User;
-import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.MissingPermissionsException;
+import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 @RequiredArgsConstructor
 class MCListener implements Listener {
@@ -49,9 +51,9 @@ class MCListener implements Listener {
 			final Player p = e.getPlayer();
 			DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
 			if (dp != null) {
-				val user = DiscordPlugin.dc.getUserByID(Long.parseLong(dp.getDiscordID()));
+				val user = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).block();
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, user.getOrCreatePMChannel(), p));
+					new DiscordPlayerSender(user, Objects.requireNonNull(user).getPrivateChannel().block(), p));
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
 					new DiscordPlayerSender(user, module.chatChannel().get(), p)); //Stored per-channel
 			}
@@ -99,38 +101,34 @@ class MCListener implements Listener {
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
 	}
 
-	private ConfigData<IRole> muteRole() {
+	private ConfigData<Role> muteRole() {
 		return DPUtils.roleData(module.getConfig(), "muteRole", "Muted");
 	}
 
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
-		try {
-			DPUtils.performNoWait(() -> {
-				final IRole role = muteRole().get();
-				if (role == null) return;
-				final CommandSource source = e.getAffected().getSource();
-				if (!source.isPlayer())
-					return;
-				final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
-					.getAs(DiscordPlayer.class);
-				if (p == null) return;
-				final User user = DiscordPlugin.dc.getUserByID(
-					Long.parseLong(p.getDiscordID()));
+		final Role role = muteRole().get();
+		if (role == null) return;
+		final CommandSource source = e.getAffected().getSource();
+		if (!source.isPlayer())
+			return;
+		final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
+			.getAs(DiscordPlayer.class);
+		if (p == null) return;
+		DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
+			.flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId()))
+			.flatMap(user -> {
 				if (e.getValue())
-					user.addRole(role);
+					user.addRole(role.getId());
 				else
-					user.removeRole(role);
+					user.removeRole(role.getId());
 				val modlog = module.modlogChannel().get();
-				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getName();
-				if (modlog != null)
-					DiscordPlugin.sendMessageToChannel(modlog, msg);
+				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getUsername() + "#" + user.getDiscriminator();
 				DPUtils.getLogger().info(msg);
-			});
-		} catch (DiscordException | MissingPermissionsException ex) {
-			TBMCCoreAPI.SendException("Failed to give/take Muted role to player " + e.getAffected().getName() + "!",
-				ex);
-		}
+				if (modlog != null)
+					return modlog.createMessage(msg);
+				return Mono.empty();
+			}).subscribe();
 	}
 
 	@EventHandler
@@ -148,8 +146,8 @@ class MCListener implements Listener {
 		String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-		val yeehaw = DiscordPlugin.mainServer.getEmojiByName("YEEHAW");
-		MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getId().asString() + ">s" : " YEEHAWs")));
+		DiscordPlugin.mainServer.getEmojis().filter(e -> "YEEHAW".equals(e.getName())).subscribe(yeehaw ->
+			MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getId().asString() + ">s" : " YEEHAWs"))));
 	}
 
 	@EventHandler

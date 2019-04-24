@@ -4,6 +4,7 @@ import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.player.TBMCPlayer;
+import discord4j.core.object.entity.MessageChannel;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;

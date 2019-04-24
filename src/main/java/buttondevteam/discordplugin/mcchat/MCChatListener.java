@@ -18,6 +18,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.PrivateChannel;
 import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -25,14 +26,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.User;
-import sx.blah.discord.handle.obj.Message;
-import sx.blah.discord.handle.obj.MessageChannel;
-import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
 
 import java.awt.*;
 import java.time.Instant;
@@ -265,22 +258,21 @@ public class MCChatListener implements Listener {
 	}
 
 	private void processDiscordToMC() {
-		@val
-		sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent event;
+		MessageCreateEvent event;
 		try {
 			event = recevents.take();
 		} catch (InterruptedException e1) {
 			rectask.cancel();
 			return;
 		}
-		val sender = event.getMessage().getAuthor();
-		String dmessage = event.getMessage().getContent();
+		val sender = event.getMessage().getAuthor().orElse(null);
+		String dmessage = event.getMessage().getContent().orElse("");
 		try {
-			final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannel(), sender);
+			final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannelId(), sender);
 			val user = dsender.getChromaUser();
 
-			for (User u : event.getMessage().getMentions()) {
-				dmessage = dmessage.replace(u.mention(false), "@" + u.getName()); // TODO: IG Formatting
+			for (User u : event.getMessage().getUserMentions()) { //TODO: Role mentions
+				dmessage = dmessage.replace(u.me(false), "@" + u.getName()); // TODO: IG Formatting
 				final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
 				dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
 			}

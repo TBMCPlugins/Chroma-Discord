@@ -1,14 +1,11 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.ComponentManager;
-import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCSystemChatEvent;
-import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.entity.TextChannel;
-import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.util.Snowflake;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.var;
@@ -35,12 +32,12 @@ public class MCChatUtils {
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<Channel, DiscordSender>> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, HashMap<Channel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordSender>> UnconnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<Channel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
 	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
@@ -76,31 +73,31 @@ public class MCChatUtils {
 		lmd.channel.edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Channel, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
 															User user, T sender) {
 		return addSender(senders, user.getId().asString(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<MessageChannel, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
 															String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
-		map.put(sender.getChannel(), sender);
+		map.put(sender.getChannel().getId(), sender);
 		senders.put(did, map);
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<MessageChannel, T>> senders,
-															MessageChannel channel, User user) {
+	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
+															Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
 		return null;
 	}
 
-	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Channel, T>> senders,
-															   Channel channel, User user) {
+	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
+															   Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);
@@ -176,7 +173,7 @@ public class MCChatUtils {
 		if (event.getChannel().isGlobal())
 			action.accept(module.chatChannel().get());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
-			if (event.shouldSendTo(getSender(data.channel, data.user)))
+			if (event.shouldSendTo(getSender(data.channel.getId(), data.user)))
 				action.accept(data.channel);
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			if (!clmd.brtoggles.contains(event.getTarget()))
@@ -188,14 +185,14 @@ public class MCChatUtils {
 	/**
 	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
 	 */
-	static DiscordSenderBase getSender(MessageChannel channel, final User author) {
+	static DiscordSenderBase getSender(Snowflake channel, final User author) {
 		//noinspection OptionalGetWithoutIsPresent
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
 				() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
 				() -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
 				() -> Optional.ofNullable(getSender(UnconnectedSenders, channel, author)), //
 				() -> Optional.of(addSender(UnconnectedSenders, author,
-						new DiscordSender(author, channel)))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
+						new DiscordSender(author, (MessageChannel) DiscordPlugin.dc.getChannelById(channel).block())))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
 	}
 
 	/**
@@ -207,11 +204,11 @@ public class MCChatUtils {
 	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
 		if (channel.getId().asLong() == module.chatChannel().get().getId().asLong()) {
-			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
+			(lastmsgdata == null ? lastmsgdata = new LastMsgData((TextChannel) module.chatChannel().get(), null)
 					: lastmsgdata).message = null;
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
-		for (LastMsgData data : channel.isPrivate() ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
+		for (LastMsgData data : channel instanceof PrivateChannel ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
 			if (data.channel.getId().asLong() == channel.getId().asLong()) {
 				data.message = null;
 				return;
