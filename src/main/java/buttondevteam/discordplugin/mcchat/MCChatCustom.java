@@ -37,14 +37,14 @@ public class MCChatCustom {
 	}
 
 	@Nullable
-	public static CustomLMD getCustomChat(MessageChannel channel) {
-		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong()).findAny().orElse(null);
+	public static CustomLMD getCustomChat(Snowflake channel) {
+		return lastmsgCustom.stream().filter(lmd -> lmd.channel.getId().asLong() == channel.asLong()).findAny().orElse(null);
 	}
 
-	public static boolean removeCustomChat(MessageChannel channel) {
-		MCChatUtils.lastmsgfromd.remove(channel.getId().asLong());
+	public static boolean removeCustomChat(Snowflake channel) {
+		MCChatUtils.lastmsgfromd.remove(channel.asLong());
 		return lastmsgCustom.removeIf(lmd -> {
-			if (lmd.channel.getId().asLong() != channel.getId().asLong())
+			if (lmd.channel.getId().asLong() != channel.asLong())
 				return false;
 			if (lmd.mcchannel instanceof ChatRoom)
 				((ChatRoom) lmd.mcchannel).leaveRoom(lmd.dcp);

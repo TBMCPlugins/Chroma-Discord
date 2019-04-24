@@ -7,13 +7,14 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCExceptionEvent;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.GuildChannel;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.Role;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,19 +50,19 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
         try {
 			MessageChannel channel = getChannel();
 	        assert channel != null;
-	        IRole coderRole = instance.pingRole(channel.getGuild()).get();
+			Role coderRole = instance.pingRole(((GuildChannel) channel).getGuild().block()).get();
             StringBuilder sb = TBMCCoreAPI.IsTestServer() ? new StringBuilder()
-	            : new StringBuilder(coderRole == null ? "" : coderRole.mention()).append("\n");
+				: new StringBuilder(coderRole == null ? "" : coderRole.getMention()).append("\n");
             sb.append(sourcemessage).append("\n");
             sb.append("```").append("\n");
             String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
                     .filter(s -> !s.contains("\tat ") || s.contains("\tat buttondevteam."))
                     .collect(Collectors.joining("\n"));
-            if (stackTrace.length() > 1800)
-                stackTrace = stackTrace.substring(0, 1800);
+			if (sb.length() + stackTrace.length() >= 2000)
+				stackTrace = stackTrace.substring(0, 1999 - sb.length());
             sb.append(stackTrace).append("\n");
             sb.append("```");
-	        DiscordPlugin.sendMessageToChannel(channel, sb.toString()); //Instance isn't null here
+			channel.createMessage(sb.toString()).subscribe();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -78,7 +79,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 
-	private ConfigData<IRole> pingRole(IGuild guild) {
+	private ConfigData<Role> pingRole(Guild guild) {
 		return DPUtils.roleData(getConfig(), "pingRole", "Coder", guild);
 	}
 

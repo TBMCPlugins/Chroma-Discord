@@ -18,8 +18,9 @@ public class Command2DCSender implements Command2Sender {
 		message = DPUtils.sanitizeString(message);
 		message = Character.toLowerCase(message.charAt(0)) + message.substring(1);
 		val msg = message;
-		this.message.getChannel().flatMap(ch -> ch.createMessage(this.message.getAuthorAsMember().a->
-		a.getNicknameMention() + ", " + msg)))
+		val author = this.message.getAuthorAsMember().block();
+		if (author == null) return;
+		this.message.getChannel().subscribe(ch -> ch.createMessage(author.getNicknameMention() + ", " + msg));
 	}
 
 	@Override

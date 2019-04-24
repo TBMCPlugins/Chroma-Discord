@@ -7,14 +7,14 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import com.google.common.collect.Lists;
+import discord4j.core.event.domain.PresenceUpdateEvent;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.presence.Status;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent;
-import sx.blah.discord.handle.obj.*;
-import sx.blah.discord.util.EmbedBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,26 +25,26 @@ import java.util.stream.IntStream;
 
 public class FunModule extends Component<DiscordPlugin> implements Listener {
 	private static final String[] serverReadyStrings = new String[]{"In one week from now", // Ali
-			"Between now and the heat-death of the universe.", // Ghostise
-			"Soon™", "Ask again this time next month", // Ghostise
-			"In about 3 seconds", // Nicolai
-			"After we finish 8 plugins", // Ali
-			"Tomorrow.", // Ali
-			"After one tiiiny feature", // Ali
-			"Next commit", // Ali
-			"After we finish strangling Towny", // Ali
-			"When we kill every *fucking* bug", // Ali
-			"Once the server stops screaming.", // Ali
-			"After HL3 comes out", // Ali
-			"Next time you ask", // Ali
-			"When will *you* be open?" // Ali
+		"Between now and the heat-death of the universe.", // Ghostise
+		"Soon™", "Ask again this time next month", // Ghostise
+		"In about 3 seconds", // Nicolai
+		"After we finish 8 plugins", // Ali
+		"Tomorrow.", // Ali
+		"After one tiiiny feature", // Ali
+		"Next commit", // Ali
+		"After we finish strangling Towny", // Ali
+		"When we kill every *fucking* bug", // Ali
+		"Once the server stops screaming.", // Ali
+		"After HL3 comes out", // Ali
+		"Next time you ask", // Ali
+		"When will *you* be open?" // Ali
 	};
 
 	/**
 	 * Questions that the bot will choose a random answer to give to.
 	 */
 	private ConfigData<String[]> serverReadyQuestions() {
-		return getConfig().getData("serverReady", ()->new String[]{"when will the server be open",
+		return getConfig().getData("serverReady", () -> new String[]{"when will the server be open",
 			"when will the server be ready", "when will the server be done", "when will the server be complete",
 			"when will the server be finished", "when's the server ready", "when's the server open",
 			"Vhen vill ze server be open?"});
@@ -83,7 +83,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	public static boolean executeMemes(Message message) {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return false;
-		String msglowercased = message.getContent().toLowerCase();
+		String msglowercased = message.getContent().orElse("").toLowerCase();
 		lastlist++;
 		if (lastlist > 5) {
 			ListC = 0;
@@ -91,7 +91,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		}
 		if (msglowercased.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
 		{
-			message.reply("Stop it. You know the answer.");
+			DPUtils.reply(message, null, "Stop it. You know the answer.").subscribe();
 			lastlist = 0;
 			lastlistp = (short) Bukkit.getOnlinePlayers().size();
 			return true; //Handled
@@ -103,7 +103,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			if (usableServerReadyStrings.size() == 0)
 				fm.createUsableServerReadyStrings();
 			next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), serverReadyStrings[next]);
+			DPUtils.reply(message, null, serverReadyStrings[next]).subscribe();
 			return false; //Still process it as a command/mcchat if needed
 		}
 		return false;
@@ -114,7 +114,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		ListC = 0;
 	}
 
-	private ConfigData<IRole> fullHouseDevRole(IGuild guild) {
+	private ConfigData<Role> fullHouseDevRole(Guild guild) {
 		return DPUtils.roleData(getConfig(), "fullHouseDevRole", "Developer", guild);
 	}
 
@@ -125,26 +125,26 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 
 	private static long lasttime = 0;
 
+	@SuppressWarnings("ConstantConditions")
 	public static void handleFullHouse(PresenceUpdateEvent event) {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return;
 		val channel = fm.fullHouseChannel().get();
 		if (channel == null) return;
-		val devrole = fm.fullHouseDevRole(channel.getGuild()).get();
+		val devrole = fm.fullHouseDevRole(((GuildChannel) channel).getGuild().block()).get();
 		if (devrole == null) return;
-		if (event.getOldPresence().getStatus().equals(StatusType.OFFLINE)
-			&& !event.getNewPresence().getStatus().equals(StatusType.OFFLINE)
-			&& event.getUser().getRolesForGuild(channel.getGuild()).stream()
-			.anyMatch(r -> r.getId().asLong() == devrole.getId().asLong())
-			&& channel.getGuild().getUsersByRole(devrole).stream()
-			.noneMatch(u -> u.getPresence().getStatus().equals(StatusType.OFFLINE))
+		if (event.getOld().map(p -> p.getStatus().equals(Status.OFFLINE)).orElse(false)
+			&& !event.getCurrent().getStatus().equals(Status.OFFLINE)
+			&& event.getMember().flatMap(m -> m.getRoles()
+			.any(r -> r.getId().asLong() == devrole.getId().asLong())).block()
+			&& event.getGuild().flatMap(g -> g.getMembers().filter(m -> m.getRoleIds().stream().anyMatch(s -> s.equals(devrole.getId())))
+			.flatMap(Member::getPresence).all(pr -> !pr.getStatus().equals(Status.OFFLINE))).block()
 			&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
 			&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
-			DiscordPlugin.sendMessageToChannel(channel, "Full house!",
-				new EmbedBuilder()
-					.withImage(
-						"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
-					.build());
+			channel.createMessage(mcs -> mcs.setContent("Full house!").setEmbed(ecs ->
+				ecs.setImage(
+					"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
+			));
 			lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
 		}
 	}

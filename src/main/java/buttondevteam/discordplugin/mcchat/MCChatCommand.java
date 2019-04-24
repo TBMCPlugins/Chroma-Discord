@@ -21,13 +21,13 @@ public class MCChatCommand extends ICommand2DC {
 	public boolean def(Command2DCSender sender) {
 		val message = sender.getMessage();
 		if (!message.getChannel().isPrivate()) {
-			message.reply("this command can only be issued in a direct message with the bot.");
+			DPUtils.reply(message, null, "this command can only be issued in a direct message with the bot.");
 			return true;
 		}
 		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getId().asString(), DiscordPlayer.class)) {
 			boolean mcchat = !user.isMinecraftChatEnabled();
 			MCChatPrivate.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
-			message.reply("Minecraft chat " + (mcchat //
+			DPUtils.reply(message, null, "Minecraft chat " + (mcchat //
 				? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
 				: "disabled."));
 		} catch (Exception e) {

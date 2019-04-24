@@ -15,7 +15,6 @@ import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 import java.util.Objects;

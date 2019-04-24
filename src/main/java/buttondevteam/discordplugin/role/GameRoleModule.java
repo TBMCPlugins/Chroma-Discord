@@ -15,6 +15,7 @@ import lombok.val;
 import org.bukkit.Bukkit;
 
 import java.awt.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 			Role role=((RoleDeleteEvent) roleEvent).getRole().orElse(null);
 			if(role==null) return;
 			if (GameRoles.remove(role.getName()) && logChannel != null)
-				logChannel, "Removed " + role.getName() + " as a game role.")
+				logChannel.createMessage("Removed " + role.getName() + " as a game role.").subscribe();
 		} else if (roleEvent instanceof RoleUpdateEvent) {
 			val event = (RoleUpdateEvent) roleEvent;
 			if(!event.getOld().isPresent()) {
@@ -80,11 +81,12 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		}
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	private boolean isGameRole(Role r) {
 		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
 			return false; //Only allow on the main server
 		val rc = new Color(149, 165, 166, 0);
 		return r.getColor().equals(rc)
-			&& DiscordPlugin.dc.getSelf().block().asMember(DiscordPlugin.mainServer.getId()).block().hasHigherRoles(r); //Below one of our roles
+			&& DiscordPlugin.dc.getSelf().block().asMember(DiscordPlugin.mainServer.getId()).block().hasHigherRoles(Collections.singleton(r)).block(); //Below one of our roles
 	}
 }

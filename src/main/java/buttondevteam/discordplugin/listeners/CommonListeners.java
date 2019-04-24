@@ -14,12 +14,6 @@ import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
 import lombok.val;
-import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleCreateEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleDeleteEvent;
-import sx.blah.discord.handle.impl.events.guild.role.RoleUpdateEvent;
-import sx.blah.discord.handle.impl.events.user.PresenceUpdateEvent;
 
 public class CommonListeners {
 
@@ -36,7 +30,8 @@ public class CommonListeners {
 		dispatcher.on(MessageCreateEvent.class).subscribe(event->{
 				if (DiscordPlugin.SafeMode)
 					return;
-				if (event.getMessage().getAuthor().isBot())
+			val author = event.getMessage().getAuthor();
+			if (!author.isPresent() || author.get().isBot())
 					return;
 				if (FunModule.executeMemes(event.getMessage()))
 					return;

@@ -76,13 +76,13 @@ public class MCChatUtils {
 		lmd.channel.edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<Channel, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Channel, T>> senders,
 															User user, T sender) {
-		return addSender(senders, user.getId().asLong(), sender);
+		return addSender(senders, user.getId().asString(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<Long, HashMap<MessageChannel, T>> senders,
-															long did, T sender) {
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<MessageChannel, T>> senders,
+															String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
@@ -91,17 +91,17 @@ public class MCChatUtils {
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<Long, HashMap<MessageChannel, T>> senders,
+	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<MessageChannel, T>> senders,
 															MessageChannel channel, User user) {
-		var map = senders.get(user.getId().asLong());
+		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
 		return null;
 	}
 
-	public static <T extends DiscordSenderBase> T removeSender(HashMap<Long, HashMap<Channel, T>> senders,
+	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Channel, T>> senders,
 															   Channel channel, User user) {
-		var map = senders.get(user.getId().asLong());
+		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);
 		return null;

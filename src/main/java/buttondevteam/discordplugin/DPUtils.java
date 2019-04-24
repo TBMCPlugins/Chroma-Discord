@@ -8,6 +8,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
@@ -114,6 +115,16 @@ public final class DPUtils {
 			}
 		}
 		return false;
+	}
+
+	public static Mono<Message> reply(Message original, @Nullable MessageChannel channel, String message) {
+		Mono<MessageChannel> ch;
+		if (channel == null)
+			ch = original.getChannel();
+		else
+			ch = Mono.just(channel);
+		return ch.flatMap(chan -> chan.createMessage((original.getAuthor().isPresent()
+			? original.getAuthor().get().getMention() + ", " : "") + message));
 	}
 
 }
