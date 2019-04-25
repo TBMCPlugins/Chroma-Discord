@@ -104,9 +104,9 @@ public class DiscordMCCommand extends ICommand2MC {
 		}
 		DiscordPlugin.mainServer.getInvites().limitRequest(1)
 			.switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("§cNo invites found for the server.")))
-			.subscribe(inv -> {//TODO: Needs manage server perms
+			.subscribe(inv -> {
 				sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode());
-			});
+			}, e -> sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it."));
 	}
 
 	@Override

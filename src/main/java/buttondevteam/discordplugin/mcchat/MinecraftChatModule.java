@@ -9,7 +9,6 @@ import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import com.google.common.collect.Lists;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
@@ -74,7 +73,6 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	protected void enable() {
 		if (DPUtils.disableIfConfigError(this, chatChannel())) return;
 		listener = new MCChatListener(this);
-		DiscordPlugin.dc.getEventDispatcher().on(MessageCreateEvent.class).subscribe(listener::handleDiscord);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
 		getPlugin().getManager().registerCommand(new MCChatCommand());

@@ -58,7 +58,10 @@ public final class DPUtils {
 
 	public static ConfigData<MessageChannel> channelData(IHaveConfig config, String key, long defID) {
 		return config.getDataPrimDef(key, defID, id -> {
-			Channel ch = DiscordPlugin.dc.getChannelById(Snowflake.of((long) id)).block();
+			Channel ch = DiscordPlugin.dc.getChannelById(Snowflake.of((long) id)).onErrorResume(e -> {
+				getLogger().warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage());
+				return Mono.empty();
+			}).block();
 			if (ch instanceof MessageChannel)
 				return (MessageChannel) ch;
 			else
@@ -125,6 +128,10 @@ public final class DPUtils {
 			ch = Mono.just(channel);
 		return ch.flatMap(chan -> chan.createMessage((original.getAuthor().isPresent()
 			? original.getAuthor().get().getMention() + ", " : "") + message));
+	}
+
+	public static String nickMention(Snowflake userId) {
+		return "<@!" + userId.asString() + ">";
 	}
 
 }

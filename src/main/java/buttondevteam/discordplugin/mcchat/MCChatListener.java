@@ -236,6 +236,7 @@ public class MCChatListener implements Listener {
 		if (CommandListener.runCommand(ev.getMessage(), true))
 			return true; //Allow running commands in chat channels
 		MCChatUtils.resetLastMessage(channel);
+		//System.out.println("Message: "+ev.getMessage().getAuthor().toString());
 		recevents.add(ev);
 		if (rectask != null)
 			return true;

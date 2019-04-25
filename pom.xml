@@ -174,7 +174,7 @@
         <dependency>
             <groupId>com.discord4j</groupId>
             <artifactId>discord4j-core</artifactId>
-            <version>3.0.2</version>
+            <version>3.0.3</version>
         </dependency>
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
@@ -199,11 +199,6 @@
 			<artifactId>Essentials</artifactId>
 			<version>2.13.1</version>
             <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.xaanit</groupId>
-			<artifactId>D4J-OAuth</artifactId>
-			<version>master-SNAPSHOT</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
 		<dependency>

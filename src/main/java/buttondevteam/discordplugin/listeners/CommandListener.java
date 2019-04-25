@@ -22,7 +22,7 @@ public class CommandListener {
 		if (!message.getContent().isPresent())
 			return false; //Pin messages and such, let the mcchat listener deal with it
 		final MessageChannel channel = message.getChannel().block();
-		@SuppressWarnings("OptionalGetWithoutIsPresent") val content = message.getContent().get();
+		val content = message.getContent().get();
 		if (channel == null) return false;
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!(channel instanceof PrivateChannel)
@@ -32,10 +32,10 @@ public class CommandListener {
 			channel.type().subscribe(); // Fun
 		}
 		final StringBuilder cmdwithargs = new StringBuilder(content);
-		val self=DiscordPlugin.dc.getSelf().block();
-		if(self==null) return false;
-		val member=self.asMember(DiscordPlugin.mainServer.getId()).block();
-		if(member==null) return false;
+		val self = DiscordPlugin.dc.getSelf().block();
+		if (self == null) return false;
+		val member = self.asMember(DiscordPlugin.mainServer.getId()).block();
+		if (member == null) return false;
 		final String mention = self.getMention();
 		final String mentionNick = member.getNicknameMention();
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
@@ -57,6 +57,7 @@ public class CommandListener {
 	}
 
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, Message message) {
+		final char prefix = DiscordPlugin.getPrefix();
 		if (message.getContent().orElse("").startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
 				int i = cmdwithargs.indexOf(" ", mention.length());
@@ -67,14 +68,16 @@ public class CommandListener {
 					for (; i < cmdwithargs.length() && cmdwithargs.charAt(i) == ' '; i++)
 						; //Removes any space before the command
 				cmdwithargs.delete(0, i);
-				cmdwithargs.insert(0, DiscordPlugin.getPrefix()); //Always use the prefix for processing
+				cmdwithargs.insert(0, prefix); //Always use the prefix for processing
 			} else
-				cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
+				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
 		else {
+			if (cmdwithargs.length() == 0)
+				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
+			else if (cmdwithargs.charAt(0) != prefix)
+				cmdwithargs.insert(0, prefix);
 			return false; //Don't treat / as mention, mentions can be used in public mcchat
 		}
-		if (cmdwithargs.length() == 0)
-			cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
 		return true;
 	}
 }

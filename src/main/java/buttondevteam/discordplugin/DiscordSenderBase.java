@@ -58,7 +58,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 			msgtosend += "\n" + sendmsg;
 			if (sendtask == null)
 				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-					channel.createMessage((!broadcast && user != null ? user.getMention() + "\n" : "") + msgtosend.trim());
+					channel.createMessage((!broadcast && user != null ? user.getMention() + "\n" : "") + msgtosend.trim()).subscribe();
 					sendtask = null;
 					msgtosend = "";
 				}, 4); // Waits a 0.2 second to gather all/most of the different messages

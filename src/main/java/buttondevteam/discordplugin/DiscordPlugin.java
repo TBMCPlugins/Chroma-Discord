@@ -20,6 +20,7 @@ import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
+import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.MessageChannel;
@@ -35,14 +36,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DiscordPlugin extends ButtonPlugin {
@@ -105,15 +106,16 @@ public class DiscordPlugin extends ButtonPlugin {
 				}
 			}
 			val cb = new DiscordClientBuilder(token);
+			cb.setInitialPresence(Presence.doNotDisturb(Activity.playing("booting")));
 			dc = cb.build();
-			dc.getEventDispatcher().on(ReadyEvent.class).subscribe(this::handleReady);
-			/*dc.getEventDispatcher().on(ReadyEvent.class) // Listen for ReadyEvent(s)
+			dc.getEventDispatcher().on(ReadyEvent.class) // Listen for ReadyEvent(s)
 				.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
 				.flatMap(size -> dc.getEventDispatcher()
 					.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
 					.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
 					.collectList()) // Take all received GuildCreateEvents and make it a List
-				.subscribe(events -> /* All guilds have been received, client is fully connected *);*/ //TODO
+				.subscribe(this::handleReady); /* All guilds have been received, client is fully connected */
+			dc.login().subscribe();
 		} catch (Exception e) {
 			e.printStackTrace();
 			Bukkit.getPluginManager().disablePlugin(this);
@@ -122,86 +124,68 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	public static Guild mainServer;
 
-	private static volatile BukkitTask task;
-	private static volatile boolean sent = false;
-
-	private void handleReady(ReadyEvent event) {
+	private void handleReady(List<GuildCreateEvent> event) {
 		try {
-			dc.updatePresence(Presence.doNotDisturb(Activity.playing("booting"))).subscribe();
-			val tries = new AtomicInteger();
-			task = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
-				tries.incrementAndGet();
-				if (tries.get() > 10) { //5 seconds
-					task.cancel();
+			mainServer = MainServer().get(); //Shouldn't change afterwards
+			if (mainServer == null) {
+				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
-					//getIConfig().getConfig().set("mainServer", 219529124321034241L); //Needed because it won't save as long as it's null - made it save
 					saveConfig(); //Put default there
-					return;
+					return; //We should have all guilds by now, no need to retry
 				}
-				mainServer = MainServer().get(); //Shouldn't change afterwards
-				if (mainServer == null) {
-					val guilds = dc.getGuilds();
-					if (guilds.count().blockOptional().orElse(0L) == 0L)
-						return; //If there are no guilds in cache, retry
-					mainServer = guilds.blockFirst();
-					if (mainServer == null) return;
-					getLogger().warning("Main server set to first one: " + mainServer.getName());
-					MainServer().set(mainServer); //Save in config
-				}
-				if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-					dc.updatePresence(Presence.online(Activity.playing("Minecraft")));
-				} else {
-					dc.updatePresence(Presence.online(Activity.playing("testing")));
-				}
-				SafeMode = false;
-				if (task != null)
-					task.cancel();
-				if (!sent) {
-					DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
+				mainServer = event.get(0).getGuild();
+				getLogger().warning("Main server set to first one: " + mainServer.getName());
+				MainServer().set(mainServer); //Save in config
+			}
+			if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
+				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
+			} else {
+				dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe();
+			}
+			SafeMode = false;
+			DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
 
-					Component.registerComponent(this, new GeneralEventBroadcasterModule());
-					Component.registerComponent(this, new MinecraftChatModule());
-					Component.registerComponent(this, new ExceptionListenerModule());
-					Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
-					Component.registerComponent(this, new AnnouncerModule());
-					Component.registerComponent(this, new FunModule());
-					new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
+			Component.registerComponent(this, new GeneralEventBroadcasterModule());
+			Component.registerComponent(this, new MinecraftChatModule());
+			Component.registerComponent(this, new ExceptionListenerModule());
+			Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
+			Component.registerComponent(this, new AnnouncerModule());
+			Component.registerComponent(this, new FunModule());
+			new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
 
-					getManager().registerCommand(new VersionCommand());
-					getManager().registerCommand(new UserinfoCommand());
-					getManager().registerCommand(new HelpCommand());
-					getManager().registerCommand(new DebugCommand());
-					getManager().registerCommand(new ConnectCommand());
-					if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
-						ChromaBot.getInstance().sendMessageCustomAsWell(ch->ch.createEmbed(ecs->ecs.setColor(Color.CYAN)
-							.setTitle("Discord plugin restarted - chat connected.")), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
-					else if (getConfig().getBoolean("serverup", false)) {
-						ChromaBot.getInstance().sendMessageCustomAsWell(ch->ch.createEmbed(ecs->ecs.setColor(Color.YELLOW)
-							.setTitle("Server recovered from a crash - chat connected.")), ChannelconBroadcast.RESTART);
-						val thr = new Throwable(
-							"The server shut down unexpectedly. See the log of the previous run for more details.");
-						thr.setStackTrace(new StackTraceElement[0]);
-						TBMCCoreAPI.SendException("The server crashed!", thr);
-					} else
-						ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
-							.setTitle("Server started - chat connected.")), ChannelconBroadcast.RESTART);
+			getManager().registerCommand(new VersionCommand());
+			getManager().registerCommand(new UserinfoCommand());
+			getManager().registerCommand(new HelpCommand());
+			getManager().registerCommand(new DebugCommand());
+			getManager().registerCommand(new ConnectCommand());
+			if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
+				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.CYAN)
+					.setTitle("Discord plugin restarted - chat connected.")), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
+			else if (getConfig().getBoolean("serverup", false)) {
+				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.YELLOW)
+					.setTitle("Server recovered from a crash - chat connected.")), ChannelconBroadcast.RESTART);
+				val thr = new Throwable(
+					"The server shut down unexpectedly. See the log of the previous run for more details.");
+				thr.setStackTrace(new StackTraceElement[0]);
+				TBMCCoreAPI.SendException("The server crashed!", thr);
+			} else
+				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
+					.setTitle("Server started - chat connected.")), ChannelconBroadcast.RESTART);
 
-					DiscordMCCommand.resetting = false; //This is the last event handling this flag
+			DiscordMCCommand.resetting = false; //This is the last event handling this flag
 
-					getConfig().set("serverup", true);
-					saveConfig();
-					sent = true;
-					if (TBMCCoreAPI.IsTestServer() && !event.getSelf().getUsername().toLowerCase().contains("test")) {
-						TBMCCoreAPI.SendException(
-							"Won't load because we're in testing mode and not using a separate account.",
-							new Exception(
-								"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
-						Bukkit.getPluginManager().disablePlugin(this);
-					}
-					TBMCCoreAPI.SendUnsentExceptions();
-					TBMCCoreAPI.SendUnsentDebugMessages();
-				}
-			}, 0, 10);
+			getConfig().set("serverup", true);
+			saveConfig();
+			if (TBMCCoreAPI.IsTestServer() && !Objects.requireNonNull(dc.getSelf().block()).getUsername().toLowerCase().contains("test")) {
+				TBMCCoreAPI.SendException(
+					"Won't load because we're in testing mode and not using a separate account.",
+					new Exception(
+						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
+				Bukkit.getPluginManager().disablePlugin(this);
+			}
+			TBMCCoreAPI.SendUnsentExceptions();
+			TBMCCoreAPI.SendUnsentDebugMessages();
+
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			getCommand2MC().registerCommand(new DiscordMCCommand());
@@ -253,7 +237,6 @@ public class DiscordPlugin extends ButtonPlugin {
 			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
 			dc.logout().block();
 			//Configs are emptied so channels and servers are fetched again
-			sent = false;
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
 		}
@@ -263,7 +246,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	public static Permission perms;
 
-	public boolean setupProviders() {
+	private boolean setupProviders() {
 		try {
 			Class.forName("net.milkbowl.vault.permission.Permission");
 			Class.forName("net.milkbowl.vault.chat.Chat");

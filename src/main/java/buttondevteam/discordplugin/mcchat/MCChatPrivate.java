@@ -7,7 +7,6 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.player.TBMCPlayer;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.PrivateChannel;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -44,7 +43,7 @@ public class MCChatPrivate {
 		if (!start)
 			MCChatUtils.lastmsgfromd.remove(channel.getId().asLong());
 		return start //
-			? lastmsgPerUser.add(new MCChatUtils.LastMsgData((TextChannel) channel, user)) // Doesn't support group DMs
+			? lastmsgPerUser.add(new MCChatUtils.LastMsgData(channel, user)) // Doesn't support group DMs
 			: lastmsgPerUser.removeIf(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong());
 	}
 
