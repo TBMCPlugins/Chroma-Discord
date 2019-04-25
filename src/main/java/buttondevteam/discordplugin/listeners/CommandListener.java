@@ -19,7 +19,7 @@ public class CommandListener {
 	 * @return Whether it ran the command
 	 */
 	public static boolean runCommand(Message message, boolean mentionedonly) {
-		if (message.getContent().isEmpty())
+		if (!message.getContent().isPresent())
 			return false; //Pin messages and such, let the mcchat listener deal with it
 		final MessageChannel channel = message.getChannel().block();
 		@SuppressWarnings("OptionalGetWithoutIsPresent") val content = message.getContent().get();

@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
@@ -60,7 +61,12 @@ public class MCChatUtils {
 	}
 
 	private static void updatePL(LastMsgData lmd) {
-		String topic = lmd.channel.getTopic().orElse("");
+		if (!(lmd.channel instanceof TextChannel)) {
+			TBMCCoreAPI.SendException("Failed to update player list for channel " + lmd.channel.getId(),
+				new Exception("The channel isn't a (guild) text channel."));
+			return;
+		}
+		String topic = ((TextChannel) lmd.channel).getTopic().orElse("");
 		if (topic.length() == 0)
 			topic = ".\n----\nMinecraft chat\n----\n.";
 		String[] s = topic.split("\\n----\\n");
@@ -70,7 +76,7 @@ public class MCChatUtils {
 				+ " online";
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
 				.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-		lmd.channel.edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
+		((TextChannel) lmd.channel).edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
@@ -204,7 +210,7 @@ public class MCChatUtils {
 	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
 		if (channel.getId().asLong() == module.chatChannel().get().getId().asLong()) {
-			(lastmsgdata == null ? lastmsgdata = new LastMsgData((TextChannel) module.chatChannel().get(), null)
+			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
 					: lastmsgdata).message = null;
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
@@ -285,8 +291,8 @@ public class MCChatUtils {
 		public Message message;
 		public long time;
 		public String content;
-		public final TextChannel channel;
-		public Channel mcchannel;
+		public final MessageChannel channel;
+		public buttondevteam.core.component.channel.Channel mcchannel;
 		public final User user;
 	}
 }

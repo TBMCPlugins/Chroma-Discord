@@ -1,18 +1,19 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.player.TBMCPlayer;
 import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.PrivateChannel;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import sx.blah.discord.handle.obj.IPrivateChannel;
-import sx.blah.discord.handle.obj.User;
-import sx.blah.discord.handle.obj.MessageChannel;
 
 import java.util.ArrayList;
 
@@ -28,13 +29,14 @@ public class MCChatPrivate {
 		if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
 			val p = Bukkit.getPlayer(mcp.getUUID());
 			val op = Bukkit.getOfflinePlayer(mcp.getUUID());
+			val mcm = ComponentManager.getIfEnabled(MinecraftChatModule.class);
 			if (start) {
-				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName());
+				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName(), mcm);
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
 					callEventSync(new PlayerJoinEvent(sender, ""));
 			} else {
-				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel, user);
+				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel.getId(), user);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
 					callEventSync(new PlayerQuitEvent(sender, ""));
 			}
@@ -42,8 +44,8 @@ public class MCChatPrivate {
 		if (!start)
 			MCChatUtils.lastmsgfromd.remove(channel.getId().asLong());
 		return start //
-				? lastmsgPerUser.add(new MCChatUtils.LastMsgData(channel, user)) // Doesn't support group DMs
-				: lastmsgPerUser.removeIf(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong());
+			? lastmsgPerUser.add(new MCChatUtils.LastMsgData((TextChannel) channel, user)) // Doesn't support group DMs
+			: lastmsgPerUser.removeIf(lmd -> lmd.channel.getId().asLong() == channel.getId().asLong());
 	}
 
 	public static boolean isMinecraftChatEnabled(DiscordPlayer dp) {
@@ -52,7 +54,8 @@ public class MCChatPrivate {
 
 	public static boolean isMinecraftChatEnabled(String did) { // Don't load the player data just for this
 		return lastmsgPerUser.stream()
-				.anyMatch(lmd -> ((IPrivateChannel) lmd.channel).getRecipient().getId().asString().equals(did));
+			.anyMatch(lmd -> ((PrivateChannel) lmd.channel)
+				.getRecipientIds().stream().anyMatch(u -> u.asString().equals(did)));
 	}
 
 	public static void logoutAll() {

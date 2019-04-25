@@ -8,16 +8,15 @@ import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.chat.Command2;
-import buttondevteam.lib.chat.Command2MCSender;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.chat.ICommand2MC;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.TBMCPlayer;
 import buttondevteam.lib.player.TBMCPlayerBase;
-import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
 
@@ -98,11 +97,16 @@ public class DiscordMCCommand extends ICommand2MC {
 		"Shows an invite link to the server"
 	})
 	public void invite(CommandSender sender) {
-		val inv=DiscordPlugin.mainServer.getExtendedInvites().stream().findAny(); //TODO: Needs manage server perms
-		if (!inv.isPresent())
-			sender.sendMessage("§cNo invites found for the server.");
-		else
-			sender.sendMessage("§bInvite link: https://discord.gg/"+inv.get().getCode());
+		String invi = DiscordPlugin.plugin.InviteLink().get();
+		if (invi.length() > 0) {
+			sender.sendMessage("§bInvite link: " + invi);
+			return;
+		}
+		DiscordPlugin.mainServer.getInvites().limitRequest(1)
+			.switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("§cNo invites found for the server.")))
+			.subscribe(inv -> {//TODO: Needs manage server perms
+				sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode());
+			});
 	}
 
 	@Override

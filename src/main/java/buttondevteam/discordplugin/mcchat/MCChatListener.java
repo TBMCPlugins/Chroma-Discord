@@ -15,10 +15,8 @@ import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import com.vdurmont.emoji.EmojiParser;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.entity.PrivateChannel;
-import discord4j.core.object.entity.TextChannel;
-import discord4j.core.object.entity.User;
+import discord4j.core.object.Embed;
+import discord4j.core.object.entity.*;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -34,6 +32,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -75,46 +74,39 @@ public class MCChatListener implements Listener {
 
 			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
 				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
-				+ (DPUtils.sanitizeStringNoEscape(e.getSender() instanceof Player //
-				? ((Player) e.getSender()).getDisplayName() //
-				: e.getSender().getName()));
+				+ (DPUtils.sanitizeStringNoEscape(ThorpeUtils.getDisplayName(e.getSender())));
 			val color = e.getChannel().Color().get();
-			final EmbedCreateSpec embed = new EmbedBuilder().withAuthorName(authorPlayer)
-				.withDescription(e.getMessage()).withColor(new Color(color.getRed(),
+			final Consumer<EmbedCreateSpec> embed = ecs -> {
+				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),
 					color.getGreen(), color.getBlue()));
-			// embed.appendField("Channel", ((e.getSender() instanceof DiscordSenderBase ? "d|" : "")
-			// + DiscordPlugin.sanitizeString(e.getChannel().DisplayName)), false);
-			if (e.getSender() instanceof Player)
-				DPUtils.embedWithHead(
-					embed.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-						+ ((Player) e.getSender()).getUniqueId()),
-					e.getSender().getName());
-			else if (e.getSender() instanceof DiscordSenderBase)
-				embed.withAuthorIcon(((DiscordSenderBase) e.getSender()).getUser().getAvatarURL())
-					.withAuthorUrl("https://tbmcplugins.github.io/profile.html?type=discord&id="
-						+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString()); // TODO: Constant/method to get URLs like this
-			// embed.withFooterText(e.getChannel().DisplayName);
-			embed.withTimestamp(time);
+				if (e.getSender() instanceof Player)
+					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(),
+						"https://tbmcplugins.github.io/profile.html?type=minecraft&id="
+							+ ((Player) e.getSender()).getUniqueId());
+				else if (e.getSender() instanceof DiscordSenderBase)
+					ecs.setAuthor(authorPlayer, "https://tbmcplugins.github.io/profile.html?type=discord&id=" // TODO: Constant/method to get URLs like this
+							+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString(),
+						((DiscordSenderBase) e.getSender()).getUser().getAvatarUrl());
+				else
+					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(), null);
+				ecs.setTimestamp(time);
+			};
 			final long nanoTime = System.nanoTime();
 			InterruptibleConsumer<MCChatUtils.LastMsgData> doit = lastmsgdata -> {
-				final EmbedObject embedObject = embed.build();
-				if (lastmsgdata.message == null || lastmsgdata.message.isDeleted()
-					|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().getName())
+				if (lastmsgdata.message == null
+					|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().map(Embed.Author::getName).orElse(null))
 					|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
 					|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
-					lastmsgdata.message = DiscordPlugin.sendMessageToChannelWait(lastmsgdata.channel, "",
-						embedObject); // TODO Use ChromaBot API
+					lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block();
 					lastmsgdata.time = nanoTime;
 					lastmsgdata.mcchannel = e.getChannel();
-					lastmsgdata.content = embedObject.description;
-				} else
-					try {
-						lastmsgdata.content = embedObject.description = lastmsgdata.content + "\n"
-							+ embedObject.description;// The message object doesn't get updated
-						lastmsgdata.message.edit(mes -> mes.setEmbed(ecs -> embedObject)).block();
-					} catch (MissingPermissionsException | DiscordException e1) {
-						TBMCCoreAPI.SendException("An error occurred while editing chat message!", e1);
-					}
+					lastmsgdata.content = e.getMessage();
+				} else {
+					lastmsgdata.content = lastmsgdata.content + "\n"
+						+ e.getMessage(); // The message object doesn't get updated
+					lastmsgdata.message.edit(mes -> mes.setEmbed(embed.andThen(ecs ->
+						ecs.setDescription(lastmsgdata.content)))).block();
+				}
 			};
 			// Checks if the given channel is different than where the message was sent from
 			// Or if it was from MC
@@ -124,12 +116,12 @@ public class MCChatListener implements Listener {
 			if (e.getChannel().isGlobal()
 				&& (e.isFromCommand() || isdifferentchannel.test(module.chatChannel().get())))
 				doit.accept(MCChatUtils.lastmsgdata == null
-					? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData((TextChannel) module.chatChannel().get(), null)
+					? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannel().get(), null)
 					: MCChatUtils.lastmsgdata);
 
 			for (MCChatUtils.LastMsgData data : MCChatPrivate.lastmsgPerUser) {
 				if ((e.isFromCommand() || isdifferentchannel.test(data.channel))
-					&& e.shouldSendTo(MCChatUtils.getSender(data.channel, data.user)))
+					&& e.shouldSendTo(MCChatUtils.getSender(data.channel.getId(), data.user)))
 					doit.accept(data);
 			}
 
@@ -143,7 +135,7 @@ public class MCChatListener implements Listener {
 						doit.accept(lmd);
 					else {
 						iterator.remove(); //If the user no longer has permission, remove the connection
-						DiscordPlugin.sendMessageToChannel(lmd.channel, "The user no longer has permission to view the channel, connection removed.");
+						lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe();
 					}
 				}
 			}
@@ -271,13 +263,16 @@ public class MCChatListener implements Listener {
 			final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannelId(), sender);
 			val user = dsender.getChromaUser();
 
-			for (User u : event.getMessage().getUserMentions()) { //TODO: Role mentions
-				dmessage = dmessage.replace(u.me(false), "@" + u.getName()); // TODO: IG Formatting
-				final String nick = u.getNicknameForGuild(DiscordPlugin.mainServer);
-				dmessage = dmessage.replace(u.mention(true), "@" + (nick != null ? nick : u.getName()));
+			for (User u : event.getMessage().getUserMentions().toIterable()) { //TODO: Role mentions
+				dmessage = dmessage.replace(u.getMention(), "@" + u.getUsername()); // TODO: IG Formatting
+				val m = u.asMember(DiscordPlugin.mainServer.getId()).block();
+				if (m != null) {
+					final String nick = m.getDisplayName();
+					dmessage = dmessage.replace(m.getNicknameMention(), "@" + nick);
+				}
 			}
-			for (MessageChannel ch : event.getMessage().getChannelMentions()) {
-				dmessage = dmessage.replace(ch.mention(), "#" + ch.getName()); // TODO: IG Formatting
+			for (GuildChannel ch : event.getGuild().flux().flatMap(Guild::getChannels).toIterable()) {
+				dmessage = dmessage.replace(ch.getMention(), "#" + ch.getName()); // TODO: IG Formatting
 			}
 
 			dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
@@ -285,18 +280,18 @@ public class MCChatListener implements Listener {
 
 			Function<String, String> getChatMessage = msg -> //
 				msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
-					.getAttachments().stream().map(Message.Attachment::getUrl).collect(Collectors.joining("\n"))
+					.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.joining("\n"))
 					: "");
 
-			MCChatCustom.CustomLMD clmd = MCChatCustom.getCustomChat(event.getChannel());
+			MCChatCustom.CustomLMD clmd = MCChatCustom.getCustomChat(event.getMessage().getChannelId());
 
 			boolean react = false;
 
+			val sendChannel = event.getMessage().getChannel().block();
+			boolean isPrivate = sendChannel instanceof PrivateChannel;
 			if (dmessage.startsWith("/")) { // Ingame command
-				DPUtils.perform(() -> {
-					if (!event.getMessage().isDeleted() && !event.getChannel().isPrivate())
-						event.getMessage().delete();
-				});
+				if (!isPrivate)
+					event.getMessage().delete().subscribe();
 				final String cmd = dmessage.substring(1);
 				final String cmdlowercased = cmd.toLowerCase();
 				if (dsender instanceof DiscordSender && module.whitelistedCommands().get().stream()
@@ -338,7 +333,7 @@ public class MCChatListener implements Listener {
 						});
 				else {
 					Channel chc = ch.get();
-					if (!chc.isGlobal() && !event.getMessage().getChannel().isPrivate())
+					if (!chc.isGlobal() && !isPrivate)
 						dsender.sendMessage(
 							"You can only talk in a public chat here. DM `mcchat` to enable private chat to talk in the other channels.");
 					else {
@@ -369,7 +364,7 @@ public class MCChatListener implements Listener {
 				}
 			} else {// Not a command
 				if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-					&& !event.getChannel().isPrivate() && event.getMessage().isSystemMessage()) {
+					&& !isPrivate && event.getMessage().getType() == Message.Type.CHANNEL_PINNED_MESSAGE) {
 					val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
 						: dsender.getChromaUser().channel().get().getRTR(dsender);
 					TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
@@ -386,16 +381,15 @@ public class MCChatListener implements Listener {
 			}
 			if (react) {
 				try {
-					val lmfd = MCChatUtils.lastmsgfromd.get(event.getChannel().getId().asLong());
+					val lmfd = MCChatUtils.lastmsgfromd.get(event.getMessage().getChannelId().asLong());
 					if (lmfd != null) {
-						DPUtils.perform(() -> lmfd.removeReaction(DiscordPlugin.dc.getSelf(),
-							DiscordPlugin.DELIVERED_REACTION)); // Remove it no matter what, we know it's there 99.99% of the time
+						lmfd.removeSelfReaction(DiscordPlugin.DELIVERED_REACTION).subscribe(); // Remove it no matter what, we know it's there 99.99% of the time
 					}
 				} catch (Exception e) {
 					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
 				}
-				MCChatUtils.lastmsgfromd.put(event.getChannel().getId().asLong(), event.getMessage());
-				DPUtils.perform(() -> event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION));
+				MCChatUtils.lastmsgfromd.put(event.getMessage().getChannelId().asLong(), event.getMessage());
+				event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION).subscribe();
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);

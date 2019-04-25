@@ -73,6 +73,13 @@ public class DiscordPlugin extends ButtonPlugin {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
 
+	/**
+	 * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
+	 */
+	public ConfigData<String> InviteLink() {
+		return getIConfig().getData("inviteLink", "");
+	}
+
 	@Override
 	public void pluginEnable() {
 		try {

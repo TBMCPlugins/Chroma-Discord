@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
@@ -28,34 +27,37 @@ public class ConnectCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String Minecraftname) {
 		val message = sender.getMessage();
-		if (WaitingToConnect.inverse().containsKey(message.getAuthor().getId().asString())) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(),
-				"Replacing " + WaitingToConnect.inverse().get(message.getAuthor().getId().asString()) + " with " + Minecraftname);
-			WaitingToConnect.inverse().remove(message.getAuthor().getId().asString());
+		val channel = message.getChannel().block();
+		val author = message.getAuthor().orElse(null);
+		if (author == null || channel == null) return true;
+		if (WaitingToConnect.inverse().containsKey(author.getId().asString())) {
+			channel.createMessage(
+				"Replacing " + WaitingToConnect.inverse().get(author.getId().asString()) + " with " + Minecraftname).subscribe();
+			WaitingToConnect.inverse().remove(author.getId().asString());
 		}
 		@SuppressWarnings("deprecation")
 		OfflinePlayer p = Bukkit.getOfflinePlayer(Minecraftname);
 		if (p == null) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "The specified Minecraft player cannot be found");
+			channel.createMessage("The specified Minecraft player cannot be found").subscribe();
 			return true;
 		}
 		try (TBMCPlayer pl = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class)) {
 			DiscordPlayer dp = pl.getAs(DiscordPlayer.class);
-			if (dp != null && message.getAuthor().getId().asString().equals(dp.getDiscordID())) {
-				DiscordPlugin.sendMessageToChannel(message.getChannel(), "You already have this account connected.");
+			if (dp != null && author.getId().asString().equals(dp.getDiscordID())) {
+				channel.createMessage("You already have this account connected.").subscribe();
 				return true;
 			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An internal error occured!\n" + e);
+			channel.createMessage("An internal error occured!\n" + e).subscribe();
 		}
-		WaitingToConnect.put(p.getName(), message.getAuthor().getId().asString());
-		DiscordPlugin.sendMessageToChannel(message.getChannel(),
+		WaitingToConnect.put(p.getName(), author.getId().asString());
+		channel.createMessage(
 			"Alright! Now accept the connection in Minecraft from the account " + Minecraftname
-						+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.");
+				+ " before the next server restart. You can also adjust the Minecraft name you want to connect to with the same command.").subscribe();
 		if (p.isOnline())
-			((Player) p).sendMessage("§bTo connect with the Discord account " + message.getAuthor().getName() + "#"
-					+ message.getAuthor().getDiscriminator() + " do /discord accept");
+			((Player) p).sendMessage("§bTo connect with the Discord account " + author.getUsername() + "#"
+				+ author.getDiscriminator() + " do /discord accept");
 		return true;
 	}
 

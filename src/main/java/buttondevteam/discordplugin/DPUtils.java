@@ -16,8 +16,8 @@ import java.util.regex.Matcher;
 
 public final class DPUtils {
 
-	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String playername, String profileUrl) {
-		return ecs.setAuthor(playername, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");
+	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String displayname, String playername, String profileUrl) {
+		return ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");
 	}
 
 	/**

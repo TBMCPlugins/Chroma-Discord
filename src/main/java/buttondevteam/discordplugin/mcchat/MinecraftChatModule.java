@@ -78,7 +78,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
 		getPlugin().getManager().registerCommand(new MCChatCommand());
-		getPlugin().getManager().registerCommand(new ChannelconCommand());
+		getPlugin().getManager().registerCommand(new ChannelconCommand(this));
 
 		val chcons = getConfig().getConfig().getConfigurationSection("chcons");
 		if (chcons == null) //Fallback to old place

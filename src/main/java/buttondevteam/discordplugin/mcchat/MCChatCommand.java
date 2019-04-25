@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
@@ -7,6 +8,7 @@ import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
+import discord4j.core.object.entity.PrivateChannel;
 import lombok.val;
 
 @CommandClass(helpText = {
@@ -20,18 +22,20 @@ public class MCChatCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender) {
 		val message = sender.getMessage();
-		if (!message.getChannel().isPrivate()) {
-			DPUtils.reply(message, null, "this command can only be issued in a direct message with the bot.");
+		val channel = message.getChannel().block();
+		@SuppressWarnings("OptionalGetWithoutIsPresent") val author = message.getAuthor().get();
+		if (!(channel instanceof PrivateChannel)) {
+			DPUtils.reply(message, null, "this command can only be issued in a direct message with the bot.").subscribe();
 			return true;
 		}
-		try (final DiscordPlayer user = DiscordPlayer.getUser(message.getAuthor().getId().asString(), DiscordPlayer.class)) {
+		try (final DiscordPlayer user = DiscordPlayer.getUser(author.getId().asString(), DiscordPlayer.class)) {
 			boolean mcchat = !user.isMinecraftChatEnabled();
-			MCChatPrivate.privateMCChat(message.getChannel(), mcchat, message.getAuthor(), user);
+			MCChatPrivate.privateMCChat(channel, mcchat, author, user);
 			DPUtils.reply(message, null, "Minecraft chat " + (mcchat //
 				? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
-				: "disabled."));
+				: "disabled.")).subscribe();
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while setting mcchat for user" + message.getAuthor().getName(), e);
+			TBMCCoreAPI.SendException("Error while setting mcchat for user " + author.getUsername() + "#" + author.getDiscriminator(), e);
 		}
 		return true;
 	} // TODO: Pin channel switching to indicate the current channel
