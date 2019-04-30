@@ -16,6 +16,7 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.IHaveConfig;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
 import discord4j.core.DiscordClient;
@@ -36,16 +37,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import reactor.core.publisher.Mono;
 
 import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@ButtonPlugin.ConfigOpts(disableConfigGen = true)
 public class DiscordPlugin extends ButtonPlugin {
 	public static DiscordClient dc;
 	public static DiscordPlugin plugin;
@@ -53,7 +55,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Getter
 	private Command2DC manager;
 
-	public ConfigData<Character> Prefix() {
+	private ConfigData<Character> Prefix() {
 		return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
 	}
 
@@ -62,7 +64,7 @@ public class DiscordPlugin extends ButtonPlugin {
 		return plugin.Prefix().get();
 	}
 
-	public ConfigData<Guild> MainServer() {
+	private ConfigData<Guild> MainServer() {
 		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
 	}
 
@@ -70,7 +72,7 @@ public class DiscordPlugin extends ButtonPlugin {
 		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
-	public ConfigData<Role> ModRole() {
+	public ConfigData<Mono<Role>> ModRole() {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
 
@@ -193,6 +195,8 @@ public class DiscordPlugin extends ButtonPlugin {
 			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
 				? ((DiscordSenderBase) sender).getChromaUser() : null));
 			setupProviders();
+
+			IHaveConfig.pregenConfig(this, null);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
 		}
@@ -220,7 +224,7 @@ public class DiscordPlugin extends ButtonPlugin {
 							+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
 							+ "kicked the hell out.") //TODO: Make configurable
 							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
-		}).block(Duration.ofSeconds(5)), ChannelconBroadcast.RESTART, false);
+		}).block(), ChannelconBroadcast.RESTART, false);
 		ChromaBot.getInstance().updatePlayerList();
 	}
 

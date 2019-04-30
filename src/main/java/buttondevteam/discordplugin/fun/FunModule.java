@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,7 +115,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		ListC = 0;
 	}
 
-	private ConfigData<Role> fullHouseDevRole(Guild guild) {
+	private ConfigData<Mono<Role>> fullHouseDevRole(Mono<Guild> guild) {
 		return DPUtils.roleData(getConfig(), "fullHouseDevRole", "Developer", guild);
 	}
 
@@ -131,20 +132,21 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		if (fm == null) return;
 		val channel = fm.fullHouseChannel().get();
 		if (channel == null) return;
-		val devrole = fm.fullHouseDevRole(((GuildChannel) channel).getGuild().block()).get();
+		if (!(channel instanceof GuildChannel)) return;
+		val devrole = fm.fullHouseDevRole(((GuildChannel) channel).getGuild()).get();
 		if (devrole == null) return;
 		if (event.getOld().map(p -> p.getStatus().equals(Status.OFFLINE)).orElse(false)
 			&& !event.getCurrent().getStatus().equals(Status.OFFLINE)
-			&& event.getMember().flatMap(m -> m.getRoles()
-			.any(r -> r.getId().asLong() == devrole.getId().asLong())).block()
-			&& event.getGuild().flatMap(g -> g.getMembers().filter(m -> m.getRoleIds().stream().anyMatch(s -> s.equals(devrole.getId())))
+			&& event.getMember().flatMap(m -> devrole.flatMap(dr -> m.getRoles()
+			.any(r -> r.getId().asLong() == dr.getId().asLong()))).block()
+			&& event.getGuild().flatMap(g -> devrole.flatMapMany(dr -> g.getMembers().filter(m -> m.getRoleIds().stream().anyMatch(s -> s.equals(dr.getId()))))
 			.flatMap(Member::getPresence).all(pr -> !pr.getStatus().equals(Status.OFFLINE))).block()
 			&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
 			&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
 			channel.createMessage(mcs -> mcs.setContent("Full house!").setEmbed(ecs ->
 				ecs.setImage(
 					"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
-			));
+			)).subscribe();
 			lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
 		}
 	}

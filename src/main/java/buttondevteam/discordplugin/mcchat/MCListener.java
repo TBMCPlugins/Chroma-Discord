@@ -1,13 +1,11 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.discordplugin.*;
-import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.player.*;
 import com.earth2me.essentials.CommandSource;
 import discord4j.core.object.entity.Role;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Snowflake;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -101,13 +99,13 @@ class MCListener implements Listener {
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
 	}
 
-	private ConfigData<Role> muteRole() {
+	private ConfigData<Mono<Role>> muteRole() {
 		return DPUtils.roleData(module.getConfig(), "muteRole", "Muted");
 	}
 
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
-		final Role role = muteRole().get();
+		final Mono<Role> role = muteRole().get();
 		if (role == null) return;
 		final CommandSource source = e.getAffected().getSource();
 		if (!source.isPlayer())
@@ -117,18 +115,18 @@ class MCListener implements Listener {
 		if (p == null) return;
 		DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
 			.flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId()))
-			.flatMap(user -> {
+			.flatMap(user -> role.flatMap(r -> {
 				if (e.getValue())
-					user.addRole(role.getId());
+					user.addRole(r.getId());
 				else
-					user.removeRole(role.getId());
+					user.removeRole(r.getId());
 				val modlog = module.modlogChannel().get();
 				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getUsername() + "#" + user.getDiscriminator();
 				DPUtils.getLogger().info(msg);
 				if (modlog != null)
 					return modlog.createMessage(msg);
 				return Mono.empty();
-			}).subscribe();
+			})).subscribe();
 	}
 
 	@EventHandler

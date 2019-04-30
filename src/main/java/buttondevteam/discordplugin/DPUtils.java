@@ -46,7 +46,7 @@ public final class DPUtils {
 		return sanitizedString.toString();
 	}
 
-	public static String escape(String message) {
+	private static String escape(String message) {
 		return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\") + "$1");
 	}
 
@@ -69,15 +69,18 @@ public final class DPUtils {
 		}, ch -> ch.getId().asLong()); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
-	public static ConfigData<Role> roleData(IHaveConfig config, String key, String defName) {
-		return roleData(config, key, defName, DiscordPlugin.mainServer);
+	public static ConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName) {
+		return roleData(config, key, defName, Mono.just(DiscordPlugin.mainServer));
 	}
 
-	public static ConfigData<Role> roleData(IHaveConfig config, String key, String defName, Guild guild) {
+	/**
+	 * Needs to be a {@link ConfigData} for checking if it's set
+	 */
+	public static ConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
 		return config.getDataPrimDef(key, defName, name -> {
-			if (!(name instanceof String)) return null;
-			return guild.getRoles().filter(r -> r.getName().equals(name)).blockFirst();
-		}, r -> r.getId().asLong());
+			if (!(name instanceof String)) return Mono.empty();
+			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).last();
+		}, r -> defName);
 	}
 
 	/**

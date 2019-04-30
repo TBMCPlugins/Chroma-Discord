@@ -12,7 +12,8 @@ public class DebugCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String args) {
 		sender.getMessage().getAuthorAsMember()
-			.map(m -> m.getRoleIds().stream().anyMatch(r -> r.equals(DiscordPlugin.plugin.ModRole().get().getId())))
+			.flatMap(m -> DiscordPlugin.plugin.ModRole().get()
+				.map(mr -> m.getRoleIds().stream().anyMatch(r -> r.equals(mr.getId()))))
 			.subscribe(success -> {
 				if (success)
 					sender.sendMessage("debug " + (CommonListeners.debug() ? "enabled" : "disabled"));
