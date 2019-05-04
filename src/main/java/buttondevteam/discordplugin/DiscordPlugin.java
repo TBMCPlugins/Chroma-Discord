@@ -24,7 +24,6 @@ import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
@@ -68,8 +67,8 @@ public class DiscordPlugin extends ButtonPlugin {
 		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
 	}
 
-	public ConfigData<MessageChannel> CommandChannel() {
-		return DPUtils.channelData(getIConfig(), "commandChannel", 239519012529111040L);
+	public ConfigData<Snowflake> CommandChannel() {
+		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
 	public ConfigData<Mono<Role>> ModRole() {
@@ -210,7 +209,9 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Override
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
+		System.out.println("Disable start");
 		MCChatUtils.forCustomAndAllMCChat(ch -> ch.createEmbed(ecs -> {
+			System.out.println("Sending message to " + ch.getMention());
 			if (DiscordMCCommand.resetting)
 				ecs.setColor(Color.ORANGE).setTitle("Discord plugin restarting");
 			else
@@ -225,12 +226,16 @@ public class DiscordPlugin extends ButtonPlugin {
 							+ "kicked the hell out.") //TODO: Make configurable
 							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
 		}).block(), ChannelconBroadcast.RESTART, false);
+		System.out.println("Updating player list");
 		ChromaBot.getInstance().updatePlayerList();
+		System.out.println("Done");
 	}
 
 	@Override
 	public void pluginDisable() {
+		System.out.println("Actual disable start (logout)");
 		MCChatPrivate.logoutAll();
+		System.out.println("Config setup");
 		getConfig().set("serverup", false);
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 
@@ -238,7 +243,9 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
+			System.out.println("Updating presence...");
 			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
+			System.out.println("Logging out...");
 			dc.logout().block();
 			//Configs are emptied so channels and servers are fetched again
 		} catch (Exception e) {

@@ -6,6 +6,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -16,19 +17,22 @@ import discord4j.core.object.entity.MessageChannel;
 import lombok.val;
 import org.bukkit.configuration.file.YamlConfiguration;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
-import java.util.Objects;
 
 public class AnnouncerModule extends Component<DiscordPlugin> {
 	/**
 	 * Channel to post new posts.
 	 */
-	public ConfigData<MessageChannel> channel() {
+	public ReadOnlyConfigData<Mono<MessageChannel>> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 
-	public ConfigData<MessageChannel> modChannel() {
+	/**
+	 * Channel where distinguished (moderator) posts go.
+	 */
+	public ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
 		return DPUtils.channelData(getConfig(), "modChannel", 239519012529111040L);
 	}
 
@@ -56,8 +60,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		stop = false; //If not the first time
 		val keepPinned = keepPinned().get();
 		if (keepPinned == 0) return;
-		val channel = channel().get();
-		Flux<Message> msgs = channel.getPinnedMessages();
+		Flux<Message> msgs = channel().get().flatMapMany(MessageChannel::getPinnedMessages);
 		msgs.subscribe(Message::unpin);
 		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
 		if (lastannouncementtime().get() == 0) //Load old data
@@ -118,9 +121,11 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					}
 				}
 				if (msgsb.length() > 0)
-					Objects.requireNonNull(channel().get().createMessage(msgsb.toString()).block()).pin().block();
+					channel().get().flatMap(ch -> ch.createMessage(msgsb.toString()))
+						.flatMap(Message::pin).subscribe();
 				if (modmsgsb.length() > 0)
-					modChannel().get().createMessage(modmsgsb.toString()).block();
+					modChannel().get().flatMap(ch -> ch.createMessage(modmsgsb.toString()))
+						.flatMap(Message::pin).subscribe();
 				if (lastannouncementtime().get() != lastanntime)
 					lastannouncementtime().set(lastanntime); // If sending succeeded
 			} catch (Exception e) {

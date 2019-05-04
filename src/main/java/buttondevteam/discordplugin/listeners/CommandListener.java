@@ -27,7 +27,7 @@ public class CommandListener {
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!(channel instanceof PrivateChannel)
 				&& !(content.charAt(0) == DiscordPlugin.getPrefix()
-				&& channel.getId().asString().equals(DiscordPlugin.plugin.CommandChannel().get().getId().asString()))) //
+				&& channel.getId().asString().equals(DiscordPlugin.plugin.CommandChannel().get().asString()))) //
 				return false;
 			channel.type().subscribe(); // Fun
 		}

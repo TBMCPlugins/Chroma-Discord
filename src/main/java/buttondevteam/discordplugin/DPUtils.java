@@ -4,7 +4,11 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
-import discord4j.core.object.entity.*;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.Role;
 import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
@@ -56,31 +60,26 @@ public final class DPUtils {
 		return DiscordPlugin.plugin.getLogger();
 	}
 
-	public static ConfigData<MessageChannel> channelData(IHaveConfig config, String key, long defID) {
-		return config.getDataPrimDef(key, defID, id -> {
-			Channel ch = DiscordPlugin.dc.getChannelById(Snowflake.of((long) id)).onErrorResume(e -> {
-				getLogger().warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage());
-				return Mono.empty();
-			}).block();
-			if (ch instanceof MessageChannel)
-				return (MessageChannel) ch;
-			else
-				return null;
-		}, ch -> ch.getId().asLong()); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	public static ReadOnlyConfigData<Mono<MessageChannel>> channelData(IHaveConfig config, String key, long defID) {
+		return config.getReadOnlyDataPrimDef(key, defID, id -> getMessageChannel(key, Snowflake.of((Long) id)), ch -> defID); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
-	public static ConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName) {
+	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName) {
 		return roleData(config, key, defName, Mono.just(DiscordPlugin.mainServer));
 	}
 
 	/**
 	 * Needs to be a {@link ConfigData} for checking if it's set
 	 */
-	public static ConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
-		return config.getDataPrimDef(key, defName, name -> {
+	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
+		return config.getReadOnlyDataPrimDef(key, defName, name -> {
 			if (!(name instanceof String)) return Mono.empty();
 			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).last();
 		}, r -> defName);
+	}
+
+	public static ConfigData<Snowflake> snowflakeData(IHaveConfig config, String key, long defID) {
+		return config.getDataPrimDef(key, defID, id -> Snowflake.of((long) id), Snowflake::asLong);
 	}
 
 	/**
@@ -89,10 +88,8 @@ public final class DPUtils {
 	 * @return The string for mentioning the channel
 	 */
 	public static String botmention() {
-		Channel channel;
-		if (DiscordPlugin.plugin == null
-			|| (channel = DiscordPlugin.plugin.CommandChannel().get()) == null) return "#bot";
-		return channel.getMention();
+		if (DiscordPlugin.plugin == null) return "#bot";
+		return channelMention(DiscordPlugin.plugin.CommandChannel().get());
 	}
 
 	/**
@@ -104,14 +101,14 @@ public final class DPUtils {
 	 */
 	public static boolean disableIfConfigError(@Nullable Component<DiscordPlugin> component, ConfigData<?>... configs) {
 		for (val config : configs) {
-			if (config.get() == null) {
+			Object v = config.get();
+			//noinspection ConstantConditions
+			if (v == null || (v instanceof Mono<?> && !((Mono<?>) v).hasElement().block())) {
 				String path = null;
 				try {
 					if (component != null)
 						Component.setComponentEnabled(component, false);
-					val f = ConfigData.class.getDeclaredField("path");
-					f.setAccessible(true); //Hacking my own plugin
-					path = (String) f.get(config);
+					path = config.getPath();
 				} catch (Exception e) {
 					TBMCCoreAPI.SendException("Failed to disable component after config error!", e);
 				}
@@ -135,6 +132,17 @@ public final class DPUtils {
 
 	public static String nickMention(Snowflake userId) {
 		return "<@!" + userId.asString() + ">";
+	}
+
+	public static String channelMention(Snowflake channelId) {
+		return "<#" + channelId.asString() + ">";
+	}
+
+	public static Mono<MessageChannel> getMessageChannel(String key, Snowflake id) {
+		return DiscordPlugin.dc.getChannelById(id).onErrorResume(e -> {
+			getLogger().warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage());
+			return Mono.empty();
+		}).filter(ch -> ch instanceof MessageChannel).cast(MessageChannel.class);
 	}
 
 }

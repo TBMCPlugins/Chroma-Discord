@@ -17,6 +17,7 @@ import com.vdurmont.emoji.EmojiParser;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
+import discord4j.core.object.util.Snowflake;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -110,17 +111,17 @@ public class MCChatListener implements Listener {
 			};
 			// Checks if the given channel is different than where the message was sent from
 			// Or if it was from MC
-			Predicate<MessageChannel> isdifferentchannel = ch -> !(e.getSender() instanceof DiscordSenderBase)
-				|| ((DiscordSenderBase) e.getSender()).getChannel().getId().asLong() != ch.getId().asLong();
+			Predicate<Snowflake> isdifferentchannel = id -> !(e.getSender() instanceof DiscordSenderBase)
+				|| ((DiscordSenderBase) e.getSender()).getChannel().getId().asLong() != id.asLong();
 
 			if (e.getChannel().isGlobal()
 				&& (e.isFromCommand() || isdifferentchannel.test(module.chatChannel().get())))
 				doit.accept(MCChatUtils.lastmsgdata == null
-					? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannel().get(), null)
+					? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono().block(), null)
 					: MCChatUtils.lastmsgdata);
 
 			for (MCChatUtils.LastMsgData data : MCChatPrivate.lastmsgPerUser) {
-				if ((e.isFromCommand() || isdifferentchannel.test(data.channel))
+				if ((e.isFromCommand() || isdifferentchannel.test(data.channel.getId()))
 					&& e.shouldSendTo(MCChatUtils.getSender(data.channel.getId(), data.user)))
 					doit.accept(data);
 			}
@@ -128,7 +129,7 @@ public class MCChatListener implements Listener {
 			val iterator = MCChatCustom.lastmsgCustom.iterator();
 			while (iterator.hasNext()) {
 				val lmd = iterator.next();
-				if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel)) //Test if msg is from Discord
+				if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel.getId())) //Test if msg is from Discord
 					&& e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
 					&& e.getGroupID().equals(lmd.groupID)) { //Check if this is the group we want to test - #58
 					if (e.shouldSendTo(lmd.dcp)) //Check original user's permissions
@@ -222,7 +223,7 @@ public class MCChatListener implements Listener {
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
 		val channel = ev.getMessage().getChannel().block();
-		if (ev.getMessage().getChannelId().asLong() != module.chatChannel().get().getId().asLong()
+		if (ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
 			&& !(channel instanceof PrivateChannel
 			&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
 			&& !hasCustomChat))

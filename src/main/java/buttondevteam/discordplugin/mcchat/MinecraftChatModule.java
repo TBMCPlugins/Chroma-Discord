@@ -8,12 +8,14 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import com.google.common.collect.Lists;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -42,14 +44,18 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
 	 */
-	public ConfigData<MessageChannel> chatChannel() {
-		return DPUtils.channelData(getConfig(), "chatChannel", 239519012529111040L);
+	public ConfigData<Snowflake> chatChannel() {
+		return DPUtils.snowflakeData(getConfig(), "chatChannel", 239519012529111040L);
+	}
+
+	public Mono<MessageChannel> chatChannelMono() {
+		return DPUtils.getMessageChannel(chatChannel().getPath(), chatChannel().get());
 	}
 
 	/**
 	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
 	 */
-	public ConfigData<MessageChannel> modlogChannel() {
+	public ReadOnlyConfigData<Mono<MessageChannel>> modlogChannel() {
 		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
 	}
 

@@ -6,6 +6,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import com.google.common.collect.Lists;
 import discord4j.core.event.domain.PresenceUpdateEvent;
 import discord4j.core.object.entity.*;
@@ -120,34 +121,33 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	}
 
 
-	private ConfigData<MessageChannel> fullHouseChannel() {
+	private ReadOnlyConfigData<Mono<MessageChannel>> fullHouseChannel() {
 		return DPUtils.channelData(getConfig(), "fullHouseChannel", 219626707458457603L);
 	}
 
 	private static long lasttime = 0;
 
-	@SuppressWarnings("ConstantConditions")
 	public static void handleFullHouse(PresenceUpdateEvent event) {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return;
-		val channel = fm.fullHouseChannel().get();
-		if (channel == null) return;
-		if (!(channel instanceof GuildChannel)) return;
-		val devrole = fm.fullHouseDevRole(((GuildChannel) channel).getGuild()).get();
-		if (devrole == null) return;
-		if (event.getOld().map(p -> p.getStatus().equals(Status.OFFLINE)).orElse(false)
-			&& !event.getCurrent().getStatus().equals(Status.OFFLINE)
-			&& event.getMember().flatMap(m -> devrole.flatMap(dr -> m.getRoles()
-			.any(r -> r.getId().asLong() == dr.getId().asLong()))).block()
-			&& event.getGuild().flatMap(g -> devrole.flatMapMany(dr -> g.getMembers().filter(m -> m.getRoleIds().stream().anyMatch(s -> s.equals(dr.getId()))))
-			.flatMap(Member::getPresence).all(pr -> !pr.getStatus().equals(Status.OFFLINE))).block()
-			&& lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())
-			&& Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 == 0) {
-			channel.createMessage(mcs -> mcs.setContent("Full house!").setEmbed(ecs ->
-				ecs.setImage(
-					"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
-			)).subscribe();
-			lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
-		}
+		if (Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 != 0) return;
+		fm.fullHouseChannel().get()
+			.filter(ch -> ch instanceof GuildChannel)
+			.flatMap(channel -> fm.fullHouseDevRole(((GuildChannel) channel).getGuild()).get()
+				.filter(role -> event.getOld().map(p -> p.getStatus().equals(Status.OFFLINE)).orElse(false))
+				.filter(role -> !event.getCurrent().getStatus().equals(Status.OFFLINE))
+				.filterWhen(devrole -> event.getMember().flatMap(m -> m.getRoles()
+					.any(r -> r.getId().asLong() == devrole.getId().asLong())))
+				.filterWhen(devrole ->
+					event.getGuild().flatMapMany(g -> g.getMembers().filter(m -> m.getRoleIds().stream().anyMatch(s -> s.equals(devrole.getId()))))
+						.flatMap(Member::getPresence).all(pr -> !pr.getStatus().equals(Status.OFFLINE)))
+				.filter(devrole -> lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime())) //This should stay so it checks this last
+				.flatMap(devrole -> {
+					lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime());
+					return channel.createMessage(mcs -> mcs.setContent("Full house!").setEmbed(ecs ->
+						ecs.setImage(
+							"https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")
+					));
+				})).subscribe();
 	}
 }

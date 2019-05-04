@@ -7,6 +7,7 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCExceptionEvent;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.MessageChannel;
@@ -49,7 +50,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 	private static void SendException(Throwable e, String sourcemessage) {
 		if (instance == null) return;
 		try {
-			MessageChannel channel = getChannel();
+			Mono<MessageChannel> channel = getChannel();
 			assert channel != null;
 			Mono<Role> coderRole;
 			if (channel instanceof GuildChannel)
@@ -69,7 +70,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 						stackTrace = stackTrace.substring(0, 1999 - sb.length());
 					sb.append(stackTrace).append("\n");
 					sb.append("```");
-					return channel.createMessage(sb.toString());
+					return channel.flatMap(ch -> ch.createMessage(sb.toString()));
 				}).subscribe();
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -78,12 +79,12 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 
 	private static ExceptionListenerModule instance;
 
-	public static MessageChannel getChannel() {
+	public static Mono<MessageChannel> getChannel() {
 		if (instance != null) return instance.channel().get();
-		return null;
+		return Mono.empty();
 	}
 
-	private ConfigData<MessageChannel> channel() {
+	private ReadOnlyConfigData<Mono<MessageChannel>> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 
