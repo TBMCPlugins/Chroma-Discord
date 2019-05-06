@@ -51,9 +51,9 @@ class MCListener implements Listener {
 			if (dp != null) {
 				val user = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).block();
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, Objects.requireNonNull(user).getPrivateChannel().block(), p));
+					new DiscordPlayerSender(user, Objects.requireNonNull(user).getPrivateChannel().block(), p)); //TODO: Don't block
 				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, module.chatChannel().get(), p)); //Stored per-channel
+					new DiscordPlayerSender(user, module.chatChannelMono().block(), p)); //Stored per-channel
 			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
@@ -124,7 +124,7 @@ class MCListener implements Listener {
 				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getUsername() + "#" + user.getDiscriminator();
 				DPUtils.getLogger().info(msg);
 				if (modlog != null)
-					return modlog.createMessage(msg);
+					return modlog.flatMap(ch -> ch.createMessage(msg));
 				return Mono.empty();
 			})).subscribe();
 	}

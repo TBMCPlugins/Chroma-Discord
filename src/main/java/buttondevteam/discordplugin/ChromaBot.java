@@ -38,7 +38,7 @@ public class ChromaBot {
 	 * @param message
 	 *            The message to send, duh (use {@link MessageChannel#createMessage(String)})
 	 */
-	public void sendMessage(Function<MessageChannel, Mono<Message>> message) {
+	public void sendMessage(Function<Mono<MessageChannel>, Mono<Message>> message) {
 		MCChatUtils.forAllMCChat(ch -> message.apply(ch).subscribe());
 	}
 
@@ -48,7 +48,7 @@ public class ChromaBot {
      * @param message The message to send, duh
      * @param toggle The toggle type for channelcon
      */
-	public void sendMessageCustomAsWell(Function<MessageChannel, Mono<Message>> message, @Nullable ChannelconBroadcast toggle) {
+	public void sendMessageCustomAsWell(Function<Mono<MessageChannel>, Mono<Message>> message, @Nullable ChannelconBroadcast toggle) {
 		MCChatUtils.forCustomAndAllMCChat(ch -> message.apply(ch).subscribe(), toggle, false);
     }
 

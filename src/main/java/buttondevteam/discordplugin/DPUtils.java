@@ -145,4 +145,8 @@ public final class DPUtils {
 		}).filter(ch -> ch instanceof MessageChannel).cast(MessageChannel.class);
 	}
 
+	public static Mono<MessageChannel> getMessageChannel(ConfigData<Snowflake> config) {
+		return getMessageChannel(config.getPath(), config.get());
+	}
+
 }

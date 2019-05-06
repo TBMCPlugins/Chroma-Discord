@@ -4,7 +4,7 @@ import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.architecture.Component;
-import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleEvent;
@@ -13,6 +13,7 @@ import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
 import lombok.val;
 import org.bukkit.Bukkit;
+import reactor.core.publisher.Mono;
 
 import java.awt.*;
 import java.util.Collections;
@@ -33,7 +34,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 
 	}
 
-	private ConfigData<MessageChannel> logChannel() {
+	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel() {
 		return DPUtils.channelData(getConfig(), "logChannel", 239519012529111040L);
 	}
 
@@ -49,13 +50,13 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 					return; //Deleted or not a game role
 				GameRoles.add(role.getName());
 				if (logChannel != null)
-					logChannel.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the default.").subscribe();
+					logChannel.flatMap(ch -> ch.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the default.")).subscribe();
 			}, 100);
 		} else if (roleEvent instanceof RoleDeleteEvent) {
 			Role role=((RoleDeleteEvent) roleEvent).getRole().orElse(null);
 			if(role==null) return;
 			if (GameRoles.remove(role.getName()) && logChannel != null)
-				logChannel.createMessage("Removed " + role.getName() + " as a game role.").subscribe();
+				logChannel.flatMap(ch -> ch.createMessage("Removed " + role.getName() + " as a game role.")).subscribe();
 		} else if (roleEvent instanceof RoleUpdateEvent) {
 			val event = (RoleUpdateEvent) roleEvent;
 			if(!event.getOld().isPresent()) {
@@ -65,7 +66,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 			Role or=event.getOld().get();
 			if (!grm.isGameRole(event.getCurrent())) {
 				if (GameRoles.remove(or.getName()) && logChannel != null)
-					logChannel.createMessage("Removed " + or.getName() + " as a game role because it's color changed.").subscribe();
+					logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed.")).subscribe();
 			} else {
 				if (GameRoles.contains(or.getName()) && or.getName().equals(event.getCurrent().getName()))
 					return;
@@ -73,9 +74,9 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				GameRoles.add(event.getCurrent().getName()); //Add it because it has no color
 				if (logChannel != null) {
 					if (removed)
-						logChannel.createMessage("Changed game role from " + or.getName() + " to " + event.getCurrent().getName() + ".").subscribe();
+						logChannel.flatMap(ch -> ch.createMessage("Changed game role from " + or.getName() + " to " + event.getCurrent().getName() + ".")).subscribe();
 					else
-						logChannel.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the default color.").subscribe();
+						logChannel.flatMap(ch -> ch.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the default color.")).subscribe();
 				}
 			}
 		}
