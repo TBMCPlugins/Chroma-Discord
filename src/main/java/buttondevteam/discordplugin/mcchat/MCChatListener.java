@@ -220,22 +220,28 @@ public class MCChatListener implements Listener {
 	public boolean handleDiscord(MessageCreateEvent ev) {
 		if (!ComponentManager.isEnabled(MinecraftChatModule.class))
 			return false;
+		System.out.println("Chat event");
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
+		System.out.println("C1");
 		val channel = ev.getMessage().getChannel().block();
+		System.out.println("C2");
 		if (ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
 			&& !(channel instanceof PrivateChannel
 			&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
 			&& !hasCustomChat))
 			return false; //Chat isn't enabled on this channel
+		System.out.println("C3");
 		if (channel instanceof PrivateChannel //Only in private chat
 			&& ev.getMessage().getContent().isPresent()
 			&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
 			&& ev.getMessage().getContent().get().replace("/", "")
 			.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
 			return false; //Allow disabling the chat if needed
+		System.out.println("C4");
 		if (CommandListener.runCommand(ev.getMessage(), true))
 			return true; //Allow running commands in chat channels
+		System.out.println("C5");
 		MCChatUtils.resetLastMessage(channel);
 		//System.out.println("Message: "+ev.getMessage().getAuthor().toString());
 		recevents.add(ev);
@@ -259,12 +265,14 @@ public class MCChatListener implements Listener {
 			rectask.cancel();
 			return;
 		}
+		System.out.println("Processing...");
 		val sender = event.getMessage().getAuthor().orElse(null);
 		String dmessage = event.getMessage().getContent().orElse("");
 		try {
 			final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannelId(), sender);
 			val user = dsender.getChromaUser();
 
+			System.out.println("Mentions start");
 			for (User u : event.getMessage().getUserMentions().toIterable()) { //TODO: Role mentions
 				dmessage = dmessage.replace(u.getMention(), "@" + u.getUsername()); // TODO: IG Formatting
 				val m = u.asMember(DiscordPlugin.mainServer.getId()).block();
@@ -276,6 +284,7 @@ public class MCChatListener implements Listener {
 			for (GuildChannel ch : event.getGuild().flux().flatMap(Guild::getChannels).toIterable()) {
 				dmessage = dmessage.replace(ch.getMention(), "#" + ch.getName()); // TODO: IG Formatting
 			}
+			System.out.println("Mentions end");
 
 			dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
 			dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:"); //Convert to Discord's format so it still shows up
@@ -289,7 +298,9 @@ public class MCChatListener implements Listener {
 
 			boolean react = false;
 
+			System.out.println("Getting channel...");
 			val sendChannel = event.getMessage().getChannel().block();
+			System.out.println("Got channel");
 			boolean isPrivate = sendChannel instanceof PrivateChannel;
 			if (dmessage.startsWith("/")) { // Ingame command
 				if (!isPrivate)
@@ -365,6 +376,7 @@ public class MCChatListener implements Listener {
 					}
 				}
 			} else {// Not a command
+				System.out.println("Not a command");
 				if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 					&& !isPrivate && event.getMessage().getType() == Message.Type.CHANNEL_PINNED_MESSAGE) {
 					val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
@@ -374,11 +386,13 @@ public class MCChatListener implements Listener {
 							: dsender.getName()) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL);
 				} else {
 					val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);
+					System.out.println("Message created");
 					if (clmd != null)
 						TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), clmd.mcchannel);
 					else
 						TBMCChatAPI.SendChatMessage(cmb.build());
 					react = true;
+					System.out.println("Message sent");
 				}
 			}
 			if (react) {

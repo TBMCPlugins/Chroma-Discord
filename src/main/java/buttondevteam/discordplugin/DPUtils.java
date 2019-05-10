@@ -74,7 +74,7 @@ public final class DPUtils {
 	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
 		return config.getReadOnlyDataPrimDef(key, defName, name -> {
 			if (!(name instanceof String)) return Mono.empty();
-			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).last();
+			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).next();
 		}, r -> defName);
 	}
 

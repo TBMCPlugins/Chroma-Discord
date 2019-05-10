@@ -160,18 +160,18 @@ public class DiscordPlugin extends ButtonPlugin {
 			getManager().registerCommand(new DebugCommand());
 			getManager().registerCommand(new ConnectCommand());
 			if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
-				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.CYAN)
-					.setTitle("Discord plugin restarted - chat connected.")), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
+				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.CYAN)
+					.setTitle("Discord plugin restarted - chat connected."))), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
 			else if (getConfig().getBoolean("serverup", false)) {
-				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.YELLOW)
-					.setTitle("Server recovered from a crash - chat connected.")), ChannelconBroadcast.RESTART);
+				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.YELLOW)
+					.setTitle("Server recovered from a crash - chat connected."))), ChannelconBroadcast.RESTART);
 				val thr = new Throwable(
 					"The server shut down unexpectedly. See the log of the previous run for more details.");
 				thr.setStackTrace(new StackTraceElement[0]);
 				TBMCCoreAPI.SendException("The server crashed!", thr);
 			} else
-				ChromaBot.getInstance().sendMessageCustomAsWell(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
-					.setTitle("Server started - chat connected.")), ChannelconBroadcast.RESTART);
+				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
+					.setTitle("Server started - chat connected."))), ChannelconBroadcast.RESTART);
 
 			DiscordMCCommand.resetting = false; //This is the last event handling this flag
 
@@ -181,7 +181,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				TBMCCoreAPI.SendException(
 					"Won't load because we're in testing mode and not using a separate account.",
 					new Exception(
-						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in it's name.)"));
+						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in its name.)"));
 				Bukkit.getPluginManager().disablePlugin(this);
 			}
 			TBMCCoreAPI.SendUnsentExceptions();
@@ -197,7 +197,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 			IHaveConfig.pregenConfig(this, null);
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while enabling DiscordPlugin!", e);
+			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e);
 		}
 	}
 
@@ -210,7 +210,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 		System.out.println("Disable start");
-		MCChatUtils.forCustomAndAllMCChat(ch -> ch.createEmbed(ecs -> {
+		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> {
 			System.out.println("Sending message to " + ch.getMention());
 			if (DiscordMCCommand.resetting)
 				ecs.setColor(Color.ORANGE).setTitle("Discord plugin restarting");
@@ -225,7 +225,7 @@ public class DiscordPlugin extends ButtonPlugin {
 							+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
 							+ "kicked the hell out.") //TODO: Make configurable
 							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
-		}).block(), ChannelconBroadcast.RESTART, false);
+		})).subscribe(), ChannelconBroadcast.RESTART, false);
 		System.out.println("Updating player list");
 		ChromaBot.getInstance().updatePlayerList();
 		System.out.println("Done");

@@ -35,25 +35,36 @@ public class CommonListeners {
 				return;
 			//System.out.println("Author: "+author.get());
 			//System.out.println("Bot: "+author.get().isBot());
+			System.out.println("A");
 			if (FunModule.executeMemes(event.getMessage()))
 				return;
+			System.out.println("B");
 			try {
 				boolean handled = false;
 				val commandChannel = DiscordPlugin.plugin.CommandChannel().get();
+				System.out.println("C");
 				if ((commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 					|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
 					handled = CommandListener.runCommand(event.getMessage(), true); //#bot is handled here
+				System.out.println("D");
 				if (handled) return;
 				//System.out.println("Message handling");
 				val mcchat = Component.getComponents().get(MinecraftChatModule.class);
 				if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
 					handled = ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
+				System.out.println("E");
 				if (!handled)
 					handled = CommandListener.runCommand(event.getMessage(), false);
+				System.out.println("F");
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("An error occured while handling a message!", e);
 			}
 		});
+		/*dispatcher.on(MessageCreateEvent.class).doOnNext(x -> System.out.println("Got message"))
+			.flatMap(MessageCreateEvent::getGuild)
+			.flatMap(guild -> DiscordPlugin.dc.getSelf())
+			.flatMap(self -> self.asMember(DiscordPlugin.mainServer.getId()))
+			.flatMap(Member::getRoles).subscribe(roles -> System.out.println("Roles: " + roles));*/
 		dispatcher.on(PresenceUpdateEvent.class).subscribe(event -> {
 			if (DiscordPlugin.SafeMode)
 				return;

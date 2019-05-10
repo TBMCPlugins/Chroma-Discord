@@ -21,7 +21,9 @@ public class CommandListener {
 	public static boolean runCommand(Message message, boolean mentionedonly) {
 		if (!message.getContent().isPresent())
 			return false; //Pin messages and such, let the mcchat listener deal with it
+		System.out.println("1");
 		final MessageChannel channel = message.getChannel().block();
+		System.out.println("2");
 		val content = message.getContent().get();
 		if (channel == null) return false;
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
@@ -31,28 +33,36 @@ public class CommandListener {
 				return false;
 			channel.type().subscribe(); // Fun
 		}
+		System.out.println("3");
 		final StringBuilder cmdwithargs = new StringBuilder(content);
 		val self = DiscordPlugin.dc.getSelf().block();
+		System.out.println("4");
 		if (self == null) return false;
 		val member = self.asMember(DiscordPlugin.mainServer.getId()).block();
+		System.out.println("5");
 		if (member == null) return false;
 		final String mention = self.getMention();
 		final String mentionNick = member.getNicknameMention();
+		System.out.println("6");
 		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
 		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
+		System.out.println("7");
 		val mentions = message.getRoleMentions();
 		for (String mentionRole : member.getRoles().filter(r -> mentions.any(rr -> rr.getName().equals(r.getName())).blockOptional().orElse(false)).map(Role::getMention).toIterable())
 			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
 		if (mentionedonly && !gotmention)
 			return false;
+		System.out.println("8");
 		channel.type().subscribe();
 		String cmdwithargsString = cmdwithargs.toString();
+		System.out.println("9");
 		try {
 			if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
 				DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString).subscribe();
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
 		}
+		System.out.println("10");
 		return true;
 	}
 
