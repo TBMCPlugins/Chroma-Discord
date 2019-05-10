@@ -68,6 +68,7 @@
 									<exclude>net.ess3:Essentials</exclude>
                                 </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
 							</artifactSet>
+                            <minimizeJar>true</minimizeJar>
 						</configuration>
 					</execution>
 				</executions>

@@ -9,6 +9,9 @@ import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.PrivateChannel;
 import discord4j.core.object.entity.Role;
 import lombok.val;
+import reactor.core.publisher.Mono;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommandListener {
 	/**
@@ -16,54 +19,44 @@ public class CommandListener {
 	 *
 	 * @param message       The Discord message
 	 * @param mentionedonly Only run the command if ChromaBot is mentioned at the start of the message
-	 * @return Whether it ran the command
+	 * @return Whether it <b>did not run</b> the command
 	 */
-	public static boolean runCommand(Message message, boolean mentionedonly) {
+	public static Mono<Boolean> runCommand(Message message, MessageChannel channel, boolean mentionedonly) {
+		Mono<Boolean> ret = Mono.just(true);
 		if (!message.getContent().isPresent())
-			return false; //Pin messages and such, let the mcchat listener deal with it
-		System.out.println("1");
-		final MessageChannel channel = message.getChannel().block();
-		System.out.println("2");
+			return ret; //Pin messages and such, let the mcchat listener deal with it
 		val content = message.getContent().get();
-		if (channel == null) return false;
+		Mono<?> tmp = ret;
 		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
 			if (!(channel instanceof PrivateChannel)
 				&& !(content.charAt(0) == DiscordPlugin.getPrefix()
 				&& channel.getId().asString().equals(DiscordPlugin.plugin.CommandChannel().get().asString()))) //
-				return false;
-			channel.type().subscribe(); // Fun
+				return ret;
+			tmp = ret.then(channel.type()); // Fun
 		}
-		System.out.println("3");
 		final StringBuilder cmdwithargs = new StringBuilder(content);
-		val self = DiscordPlugin.dc.getSelf().block();
-		System.out.println("4");
-		if (self == null) return false;
-		val member = self.asMember(DiscordPlugin.mainServer.getId()).block();
-		System.out.println("5");
-		if (member == null) return false;
-		final String mention = self.getMention();
-		final String mentionNick = member.getNicknameMention();
-		System.out.println("6");
-		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
-		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
-		System.out.println("7");
-		val mentions = message.getRoleMentions();
-		for (String mentionRole : member.getRoles().filter(r -> mentions.any(rr -> rr.getName().equals(r.getName())).blockOptional().orElse(false)).map(Role::getMention).toIterable())
-			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
-		if (mentionedonly && !gotmention)
-			return false;
-		System.out.println("8");
-		channel.type().subscribe();
-		String cmdwithargsString = cmdwithargs.toString();
-		System.out.println("9");
-		try {
-			if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
-				DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString).subscribe();
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
-		}
-		System.out.println("10");
-		return true;
+		val gotmention = new AtomicBoolean();
+		return tmp.flatMapMany(x ->
+			DiscordPlugin.dc.getSelf().flatMap(self -> self.asMember(DiscordPlugin.mainServer.getId()))
+				.flatMapMany(self -> {
+					gotmention.set(checkanddeletemention(cmdwithargs, self.getMention(), message));
+					gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention(), message) || gotmention.get());
+					val mentions = message.getRoleMentions();
+					return self.getRoles().filterWhen(r -> mentions.any(rr -> rr.getName().equals(r.getName())))
+						.map(Role::getMention);
+				}).map(mentionRole -> {
+				gotmention.set(checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention.get()); // Delete all mentions
+				return !mentionedonly || gotmention.get(); //Stops here if false
+			})).filter(b -> b).last(false).flatMap(b -> channel.type()).flatMap(v -> {
+			String cmdwithargsString = cmdwithargs.toString();
+			try {
+				if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
+					return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString);
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
+			}
+			return Mono.empty();
+		}).map(m -> false).defaultIfEmpty(true);
 	}
 
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, Message message) {

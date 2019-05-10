@@ -25,6 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
+import reactor.core.publisher.Mono;
 
 import java.awt.*;
 import java.time.Instant;
@@ -217,44 +218,42 @@ public class MCChatListener implements Listener {
 	private static Thread recthread;
 
 	// Discord
-	public boolean handleDiscord(MessageCreateEvent ev) {
+	public Mono<Boolean> handleDiscord(MessageCreateEvent ev) {
+		val ret = Mono.just(true);
 		if (!ComponentManager.isEnabled(MinecraftChatModule.class))
-			return false;
+			return ret;
 		System.out.println("Chat event");
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
-		System.out.println("C1");
-		val channel = ev.getMessage().getChannel().block();
-		System.out.println("C2");
-		if (ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
-			&& !(channel instanceof PrivateChannel
-			&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
-			&& !hasCustomChat))
-			return false; //Chat isn't enabled on this channel
-		System.out.println("C3");
-		if (channel instanceof PrivateChannel //Only in private chat
-			&& ev.getMessage().getContent().isPresent()
-			&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
-			&& ev.getMessage().getContent().get().replace("/", "")
-			.equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
-			return false; //Allow disabling the chat if needed
-		System.out.println("C4");
-		if (CommandListener.runCommand(ev.getMessage(), true))
-			return true; //Allow running commands in chat channels
-		System.out.println("C5");
-		MCChatUtils.resetLastMessage(channel);
-		//System.out.println("Message: "+ev.getMessage().getAuthor().toString());
-		recevents.add(ev);
-		if (rectask != null)
-			return true;
-		recrun = () -> { //Don't return in a while loop next time
-			recthread = Thread.currentThread();
-			processDiscordToMC();
-			if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
-				rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
-		};
-		rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
-		return true;
+		return ev.getMessage().getChannel().filter(channel -> {
+			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
+				&& !(channel instanceof PrivateChannel
+				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
+				&& !hasCustomChat)); //Chat isn't enabled on this channel
+		}).filter(channel -> {
+			return !(channel instanceof PrivateChannel //Only in private chat
+				&& ev.getMessage().getContent().isPresent()
+				&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
+				&& ev.getMessage().getContent().get().replace("/", "")
+				.equalsIgnoreCase("mcchat")); //Either mcchat or /mcchat
+			//Allow disabling the chat if needed
+		}).filterWhen(channel -> CommandListener.runCommand(ev.getMessage(), channel, true))
+			//Allow running commands in chat channels
+			.filter(channel -> {
+				MCChatUtils.resetLastMessage(channel);
+				recevents.add(ev);
+				System.out.println("Message event added");
+				if (rectask != null)
+					return true;
+				recrun = () -> { //Don't return in a while loop next time
+					recthread = Thread.currentThread();
+					processDiscordToMC();
+					if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
+						rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
+				};
+				rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing
+				return true;
+			}).map(b -> false).defaultIfEmpty(true);
 	}
 
 	private void processDiscordToMC() {
