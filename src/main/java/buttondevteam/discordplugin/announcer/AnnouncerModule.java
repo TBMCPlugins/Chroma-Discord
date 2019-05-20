@@ -43,11 +43,11 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		return getConfig().getData("keepPinned", (short) 40);
 	}
 
-	private ConfigData<Long> lastannouncementtime() {
+	private ConfigData<Long> lastAnnouncementTime() {
 		return getConfig().getData("lastAnnouncementTime", 0L);
 	}
 
-	private ConfigData<Long> lastseentime() {
+	private ConfigData<Long> lastSeenTime() {
 		return getConfig().getData("lastSeenTime", 0L);
 	}
 
@@ -63,10 +63,10 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		Flux<Message> msgs = channel().get().flatMapMany(MessageChannel::getPinnedMessages);
 		msgs.subscribe(Message::unpin);
 		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
-		if (lastannouncementtime().get() == 0) //Load old data
-			lastannouncementtime().set(yc.getLong("lastannouncementtime"));
-		if (lastseentime().get() == 0)
-			lastseentime().set(yc.getLong("lastseentime"));
+		if (lastAnnouncementTime().get() == 0) //Load old data
+			lastAnnouncementTime().set(yc.getLong("lastannouncementtime"));
+		if (lastSeenTime().get() == 0)
+			lastSeenTime().set(yc.getLong("lastseentime"));
 		new Thread(this::AnnouncementGetterThreadMethod).start();
 	}
 
@@ -87,7 +87,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
 				StringBuilder modmsgsb = new StringBuilder();
-				long lastanntime = lastannouncementtime().get();
+				long lastanntime = lastAnnouncementTime().get();
 				for (int i = json.size() - 1; i >= 0; i--) {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
@@ -100,9 +100,9 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 						distinguished = distinguishedjson.getAsString();
 					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
-					if (date > lastseentime().get())
-						lastseentime().set(date);
-					else if (date > lastannouncementtime().get()) {
+					if (date > lastSeenTime().get())
+						lastSeenTime().set(date);
+					else if (date > lastAnnouncementTime().get()) {
 						do {
 							val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit");
 							if (reddituserclass == null)
@@ -126,8 +126,8 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 				if (modmsgsb.length() > 0)
 					modChannel().get().flatMap(ch -> ch.createMessage(modmsgsb.toString()))
 						.flatMap(Message::pin).subscribe();
-				if (lastannouncementtime().get() != lastanntime)
-					lastannouncementtime().set(lastanntime); // If sending succeeded
+				if (lastAnnouncementTime().get() != lastanntime)
+					lastAnnouncementTime().set(lastanntime); // If sending succeeded
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

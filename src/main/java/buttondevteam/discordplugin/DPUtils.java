@@ -89,7 +89,7 @@ public final class DPUtils {
 	 */
 	public static String botmention() {
 		if (DiscordPlugin.plugin == null) return "#bot";
-		return channelMention(DiscordPlugin.plugin.CommandChannel().get());
+		return channelMention(DiscordPlugin.plugin.commandChannel().get());
 	}
 
 	/**

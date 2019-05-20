@@ -45,7 +45,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	/**
 	 * Questions that the bot will choose a random answer to give to.
 	 */
-	private ConfigData<String[]> serverReadyQuestions() {
+	private ConfigData<String[]> serverReady() {
 		return getConfig().getData("serverReady", () -> new String[]{"when will the server be open",
 			"when will the server be ready", "when will the server be done", "when will the server be complete",
 			"when will the server be finished", "when's the server ready", "when's the server open",
@@ -100,7 +100,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		}
 		lastlistp = (short) Bukkit.getOnlinePlayers().size(); //Didn't handle
 		if (!TBMCCoreAPI.IsTestServer()
-			&& Arrays.stream(fm.serverReadyQuestions().get()).anyMatch(msglowercased::contains)) {
+			&& Arrays.stream(fm.serverReady().get()).anyMatch(msglowercased::contains)) {
 			int next;
 			if (usableServerReadyStrings.size() == 0)
 				fm.createUsableServerReadyStrings();

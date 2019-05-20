@@ -12,7 +12,7 @@ public class DebugCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String args) {
 		sender.getMessage().getAuthorAsMember()
-			.flatMap(m -> DiscordPlugin.plugin.ModRole().get()
+			.flatMap(m -> DiscordPlugin.plugin.modRole().get()
 				.map(mr -> m.getRoleIds().stream().anyMatch(r -> r.equals(mr.getId()))))
 			.subscribe(success -> {
 				if (success)

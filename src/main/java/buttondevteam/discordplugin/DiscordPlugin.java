@@ -54,31 +54,31 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Getter
 	private Command2DC manager;
 
-	private ConfigData<Character> Prefix() {
+	private ConfigData<Character> prefix() {
 		return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
 	}
 
 	public static char getPrefix() {
 		if (plugin == null) return '/';
-		return plugin.Prefix().get();
+		return plugin.prefix().get();
 	}
 
-	private ConfigData<Guild> MainServer() {
+	private ConfigData<Guild> mainServer() {
 		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
 	}
 
-	public ConfigData<Snowflake> CommandChannel() {
+	public ConfigData<Snowflake> commandChannel() {
 		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
-	public ConfigData<Mono<Role>> ModRole() {
+	public ConfigData<Mono<Role>> modRole() {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
 
 	/**
 	 * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
 	 */
-	public ConfigData<String> InviteLink() {
+	public ConfigData<String> inviteLink() {
 		return getIConfig().getData("inviteLink", "");
 	}
 
@@ -127,7 +127,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
-			mainServer = MainServer().get(); //Shouldn't change afterwards
+			mainServer = mainServer().get(); //Shouldn't change afterwards
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
@@ -136,7 +136,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				}
 				mainServer = event.get(0).getGuild();
 				getLogger().warning("Main server set to first one: " + mainServer.getName());
-				MainServer().set(mainServer); //Save in config
+				mainServer().set(mainServer); //Save in config
 			}
 			if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
 				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
@@ -144,7 +144,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe();
 			}
 			SafeMode = false;
-			DPUtils.disableIfConfigError(null, CommandChannel(), ModRole()); //Won't disable, just prints the warning here
+			DPUtils.disableIfConfigError(null, commandChannel(), modRole()); //Won't disable, just prints the warning here
 
 			Component.registerComponent(this, new GeneralEventBroadcasterModule());
 			Component.registerComponent(this, new MinecraftChatModule());

@@ -97,7 +97,7 @@ public class DiscordMCCommand extends ICommand2MC {
 		"Shows an invite link to the server"
 	})
 	public void invite(CommandSender sender) {
-		String invi = DiscordPlugin.plugin.InviteLink().get();
+		String invi = DiscordPlugin.plugin.inviteLink().get();
 		if (invi.length() > 0) {
 			sender.sendMessage("§bInvite link: " + invi);
 			return;

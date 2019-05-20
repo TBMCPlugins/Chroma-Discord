@@ -39,8 +39,8 @@ public class CommonListeners {
 			//System.out.println("Bot: "+author.get().isBot());
 			if (FunModule.executeMemes(event.getMessage()))
 				return def;
-			val commandChannel = DiscordPlugin.plugin.CommandChannel().get();
-			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.CommandChannel());
+			val commandChannel = DiscordPlugin.plugin.commandChannel().get();
+			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.commandChannel());
 			return commandCh.filter(ch -> (commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 				|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
 				.filterWhen(ch -> { //Only continue if this doesn't handle the event
