@@ -210,14 +210,17 @@ public class MCChatUtils {
 	 */
 	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
+		System.out.println("Reset last message");
 		if (channel.getId().asLong() == module.chatChannel().get().asLong()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannelMono().block(), null)
 					: lastmsgdata).message = null;
+			System.out.println("Reset done: public chat");
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
 		for (LastMsgData data : channel instanceof PrivateChannel ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
 			if (data.channel.getId().asLong() == channel.getId().asLong()) {
 				data.message = null;
+				System.out.println("Reset done: private/custom chat");
 				return;
 			}
 		}

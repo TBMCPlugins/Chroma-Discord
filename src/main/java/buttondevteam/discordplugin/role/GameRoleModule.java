@@ -26,7 +26,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	@Override
 	protected void enable() {
 		getPlugin().getManager().registerCommand(new RoleCommand(this));
-		GameRoles = DiscordPlugin.mainServer.getRoles().filter(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
+		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
 	}
 
 	@Override
@@ -46,11 +46,14 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		if (roleEvent instanceof RoleCreateEvent) {
 			Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
 				Role role=((RoleCreateEvent) roleEvent).getRole();
-				if (!grm.isGameRole(role))
-					return; //Deleted or not a game role
-				GameRoles.add(role.getName());
-				if (logChannel != null)
-					logChannel.flatMap(ch -> ch.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the default.")).subscribe();
+				grm.isGameRole(role).flatMap(b -> {
+					if (!b)
+						return Mono.empty(); //Deleted or not a game role
+					GameRoles.add(role.getName());
+					if (logChannel != null)
+						return logChannel.flatMap(ch -> ch.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the default."));
+					return Mono.empty();
+				}).subscribe();
 			}, 100);
 		} else if (roleEvent instanceof RoleDeleteEvent) {
 			Role role=((RoleDeleteEvent) roleEvent).getRole().orElse(null);
@@ -64,30 +67,33 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				return;
 			}
 			Role or=event.getOld().get();
-			if (!grm.isGameRole(event.getCurrent())) {
-				if (GameRoles.remove(or.getName()) && logChannel != null)
-					logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed.")).subscribe();
-			} else {
-				if (GameRoles.contains(or.getName()) && or.getName().equals(event.getCurrent().getName()))
-					return;
-				boolean removed = GameRoles.remove(or.getName()); //Regardless of whether it was a game role
-				GameRoles.add(event.getCurrent().getName()); //Add it because it has no color
-				if (logChannel != null) {
-					if (removed)
-						logChannel.flatMap(ch -> ch.createMessage("Changed game role from " + or.getName() + " to " + event.getCurrent().getName() + ".")).subscribe();
-					else
-						logChannel.flatMap(ch -> ch.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the default color.")).subscribe();
+			grm.isGameRole(event.getCurrent()).flatMap(b -> {
+				if (!b) {
+					if (GameRoles.remove(or.getName()) && logChannel != null)
+						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed."));
+				} else {
+					if (GameRoles.contains(or.getName()) && or.getName().equals(event.getCurrent().getName()))
+						return Mono.empty();
+					boolean removed = GameRoles.remove(or.getName()); //Regardless of whether it was a game role
+					GameRoles.add(event.getCurrent().getName()); //Add it because it has no color
+					if (logChannel != null) {
+						if (removed)
+							return logChannel.flatMap(ch -> ch.createMessage("Changed game role from " + or.getName() + " to " + event.getCurrent().getName() + "."));
+						else
+							return logChannel.flatMap(ch -> ch.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the default color."));
+					}
 				}
-			}
+				return Mono.empty();
+			}).subscribe();
 		}
 	}
 
-	@SuppressWarnings("ConstantConditions")
-	private boolean isGameRole(Role r) {
+	private Mono<Boolean> isGameRole(Role r) {
 		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
-			return false; //Only allow on the main server
+			return Mono.just(false); //Only allow on the main server
 		val rc = new Color(149, 165, 166, 0);
-		return r.getColor().equals(rc)
-			&& DiscordPlugin.dc.getSelf().block().asMember(DiscordPlugin.mainServer.getId()).block().hasHigherRoles(Collections.singleton(r)).block(); //Below one of our roles
+		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
+			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId())).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
+			.defaultIfEmpty(false);
 	}
 }

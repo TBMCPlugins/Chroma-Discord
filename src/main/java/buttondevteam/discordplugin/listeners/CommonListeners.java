@@ -13,6 +13,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
+import discord4j.core.object.entity.PrivateChannel;
 import lombok.val;
 import reactor.core.publisher.Mono;
 
@@ -41,16 +42,23 @@ public class CommonListeners {
 				return def;
 			val commandChannel = DiscordPlugin.plugin.commandChannel().get();
 			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.commandChannel());
-			return commandCh.filter(ch -> (commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
-				|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
+			return commandCh.filterWhen(ch -> event.getMessage().getChannel().map(mch ->
+				commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.asLong() //If mentioned, that's higher than chat
+					|| mch instanceof PrivateChannel
+					|| event.getMessage().getContent().orElse("").contains("channelcon"))) //Only 'channelcon' is allowed in other channels
 				.filterWhen(ch -> { //Only continue if this doesn't handle the event
+					System.out.println("Run command 1");
 					return CommandListener.runCommand(event.getMessage(), ch, true); //#bot is handled here
 				}).filterWhen(ch -> {
+					System.out.println("mcchat");
 					val mcchat = Component.getComponents().get(MinecraftChatModule.class);
 					if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
 						return ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
 					return Mono.empty(); //Wasn't handled, continue
-				}).filterWhen(ch -> CommandListener.runCommand(event.getMessage(), ch, false));
+				}).filterWhen(ch -> {
+					System.out.println("Run command 2");
+					return CommandListener.runCommand(event.getMessage(), ch, false);
+				});
 		}).onErrorContinue((err, obj) -> TBMCCoreAPI.SendException("An error occured while handling a message!", err))
 			.subscribe();
 		/*dispatcher.on(MessageCreateEvent.class).doOnNext(x -> System.out.println("Got message"))

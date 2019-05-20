@@ -226,11 +226,13 @@ public class MCChatListener implements Listener {
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
 		return ev.getMessage().getChannel().filter(channel -> {
+			System.out.println("Filter 1");
 			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
 				&& !(channel instanceof PrivateChannel
 				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
 				&& !hasCustomChat)); //Chat isn't enabled on this channel
 		}).filter(channel -> {
+			System.out.println("Filter 2");
 			return !(channel instanceof PrivateChannel //Only in private chat
 				&& ev.getMessage().getContent().isPresent()
 				&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
