@@ -11,7 +11,6 @@ import discord4j.core.object.entity.User;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ public class MCChatPrivate {
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName(), mcm);
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					callEventSync(new PlayerJoinEvent(sender, ""));
+					MCListener.callLoginEvents(sender);
 			} else {
 				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel.getId(), user);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
