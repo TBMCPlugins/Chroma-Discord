@@ -1,9 +1,11 @@
 package buttondevteam.discordplugin.mcchat;
 
+import buttondevteam.core.MainPlugin;
 import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.playerfaker.perm.LPInjector;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.Component;
@@ -105,6 +107,12 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 					MCChatCustom.addCustomChat((MessageChannel) ch, groupid, mcch.get(), user, dcp, toggles, brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::get).filter(Objects::nonNull).collect(Collectors.toSet()));
 				});
 			}
+		}
+
+		try {
+			new LPInjector(MainPlugin.Instance);
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e);
 		}
 	}
 

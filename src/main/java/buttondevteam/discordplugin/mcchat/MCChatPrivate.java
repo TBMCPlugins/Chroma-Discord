@@ -3,15 +3,12 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
-import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.player.TBMCPlayer;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.PrivateChannel;
 import discord4j.core.object.entity.User;
 import lombok.val;
 import org.bukkit.Bukkit;
-import org.bukkit.event.Event;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.ArrayList;
 
@@ -32,11 +29,14 @@ public class MCChatPrivate {
 				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName(), mcm);
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
-					MCListener.callLoginEvents(sender);
+					MCChatUtils.callLoginEvents(sender);
 			} else {
 				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel.getId(), user);
-				if (p == null)// Player is offline - If the player is online, that takes precedence
-					callEventSync(new PlayerQuitEvent(sender, ""));
+				assert sender != null;
+				if (p == null // Player is offline - If the player is online, that takes precedence
+					&& sender.isLoggedIn()) //Don't call the quit event if login failed
+					MCChatUtils.callLogoutEvent(sender, true);
+				sender.setLoggedIn(false);
 			}
 		} // ---- PermissionsEx warning is normal on logout ----
 		if (!start)
@@ -60,11 +60,8 @@ public class MCChatPrivate {
 		for (val entry : MCChatUtils.ConnectedSenders.entrySet())
 			for (val valueEntry : entry.getValue().entrySet())
 				if (MCChatUtils.getSender(MCChatUtils.OnlineSenders, valueEntry.getKey(), valueEntry.getValue().getUser()) == null) //If the player is online then the fake player was already logged out
-					MCChatUtils.callEventExcludingSome(new PlayerQuitEvent(valueEntry.getValue(), "")); //This is sync
+					MCChatUtils.callLogoutEvent(valueEntry.getValue(), false); //This is sync
 		MCChatUtils.ConnectedSenders.clear();
 	}
 
-	private static void callEventSync(Event event) {
-		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> MCChatUtils.callEventExcludingSome(event));
-	}
 }

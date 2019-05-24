@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
+import com.google.common.collect.Sets;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
 import io.netty.util.collection.LongObjectHashMap;
@@ -15,14 +16,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,6 +50,7 @@ public class MCChatUtils {
 	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
+	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
 
 	public static void updatePlayerList() {
 		if (notEnabled()) return;
@@ -74,19 +82,19 @@ public class MCChatUtils {
 		if (s.length < 3)
 			return;
 		s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
-				+ " online";
+			+ " online";
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
-				.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
+			.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
 		((TextChannel) lmd.channel).edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															User user, T sender) {
+	                                                        User user, T sender) {
 		return addSender(senders, user.getId().asString(), sender);
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															String did, T sender) {
+	                                                        String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
@@ -96,7 +104,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															Snowflake channel, User user) {
+	                                                        Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
@@ -104,7 +112,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															   Snowflake channel, User user) {
+	                                                           Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);
@@ -195,11 +203,11 @@ public class MCChatUtils {
 	static DiscordSenderBase getSender(Snowflake channel, final User author) {
 		//noinspection OptionalGetWithoutIsPresent
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
-				() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
-				() -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
-				() -> Optional.ofNullable(getSender(UnconnectedSenders, channel, author)), //
-				() -> Optional.of(addSender(UnconnectedSenders, author,
-						new DiscordSender(author, (MessageChannel) DiscordPlugin.dc.getChannelById(channel).block())))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
+			() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
+			() -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
+			() -> Optional.ofNullable(getSender(UnconnectedSenders, channel, author)), //
+			() -> Optional.of(addSender(UnconnectedSenders, author,
+				new DiscordSender(author, (MessageChannel) DiscordPlugin.dc.getChannelById(channel).block())))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
 	}
 
 	/**
@@ -213,7 +221,7 @@ public class MCChatUtils {
 		System.out.println("Reset last message");
 		if (channel.getId().asLong() == module.chatChannel().get().asLong()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannelMono().block(), null)
-					: lastmsgdata).message = null;
+				: lastmsgdata).message = null;
 			System.out.println("Reset done: public chat");
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
@@ -227,9 +235,23 @@ public class MCChatUtils {
 		//If it gets here, it's sending a message to a non-chat channel
 	}
 
+	public static void addStaticExcludedPlugin(Class<? extends Event> event, String plugin) {
+		staticExcludedPlugins.compute(event, (e, hs) -> hs == null
+			? Sets.newHashSet(plugin)
+			: (hs.add(plugin) ? hs : hs));
+	}
+
 	public static void callEventExcludingSome(Event event) {
 		if (notEnabled()) return;
-		callEventExcluding(event, false, module.excludedPlugins().get());
+		val second = staticExcludedPlugins.get(event.getClass());
+		String[] first = module.excludedPlugins().get();
+		String[] both = second == null ? first
+			: Arrays.copyOf(first, first.length + second.size());
+		int i = first.length;
+		if (second != null)
+			for (String plugin : second)
+				both[i++] = plugin;
+		callEventExcluding(event, false, both);
 	}
 
 	/**
@@ -288,6 +310,50 @@ public class MCChatUtils {
 					+ registration.getPlugin().getDescription().getFullName(), ex);
 			}
 		}
+	}
+
+	/**
+	 * Call it from an async thread.
+	 */
+	public static void callLoginEvents(DiscordConnectedPlayer dcp) {
+		Consumer<Supplier<String>> loginFail = kickMsg -> {
+			dcp.sendMessage("Minecraft chat disabled, as the login failed: " + kickMsg.get());
+			MCChatPrivate.privateMCChat(dcp.getChannel(), false, dcp.getUser(), dcp.getChromaUser());
+		}; //Probably also happens if the user is banned or so
+		val event = new AsyncPlayerPreLoginEvent(dcp.getName(), InetAddress.getLoopbackAddress(), dcp.getUniqueId());
+		callEventExcludingSome(event);
+		if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+			loginFail.accept(event::getKickMessage);
+			return;
+		}
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> {
+			val ev = new PlayerLoginEvent(dcp, "localhost", InetAddress.getLoopbackAddress());
+			callEventExcludingSome(ev);
+			if (ev.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+				loginFail.accept(ev::getKickMessage);
+				return;
+			}
+			callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
+			dcp.setLoggedIn(true);
+		});
+	}
+
+	/**
+	 * Only calls the events if the player is actually logged in
+	 *
+	 * @param dcp       The player
+	 * @param needsSync Whether we're in an async thread
+	 */
+	public static void callLogoutEvent(DiscordConnectedPlayer dcp, boolean needsSync) {
+		if (!dcp.isLoggedIn()) return;
+		val event = new PlayerQuitEvent(dcp, "");
+		if (needsSync) callEventSync(event);
+		else callEventExcludingSome(event);
+		dcp.setLoggedIn(false);
+	}
+
+	static void callEventSync(Event event) {
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> callEventExcludingSome(event));
 	}
 
 	@RequiredArgsConstructor

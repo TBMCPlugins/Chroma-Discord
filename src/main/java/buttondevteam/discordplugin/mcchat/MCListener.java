@@ -18,12 +18,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import reactor.core.publisher.Mono;
 
-import java.net.InetAddress;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ class MCListener implements Listener {
 			return;
 		MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
 			.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-			.ifPresent(dcp -> MCChatUtils.callEventExcludingSome(new PlayerQuitEvent(dcp, "")));
+			.ifPresent(dcp -> MCChatUtils.callLogoutEvent(dcp, false));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -70,28 +70,11 @@ class MCListener implements Listener {
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin,
 			() -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
 				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(MCListener::callLoginEvents));
+				.ifPresent(MCChatUtils::callLoginEvents));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
 			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.GetPlayer().PlayerName().get() + " left the game";
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
-	}
-
-	/**
-	 * Call it from an async thread.
-	 */
-	public static void callLoginEvents(DiscordConnectedPlayer dcp) {
-		val event = new AsyncPlayerPreLoginEvent(dcp.getName(), InetAddress.getLoopbackAddress(), dcp.getUniqueId());
-		MCChatUtils.callEventExcludingSome(event);
-		if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED)
-			return;
-		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> {
-			val ev = new PlayerLoginEvent(dcp, "localhost", InetAddress.getLoopbackAddress());
-			MCChatUtils.callEventExcludingSome(ev);
-			if (ev.getResult() != Result.ALLOWED)
-				return;
-			MCChatUtils.callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
-		});
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
