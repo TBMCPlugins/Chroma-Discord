@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
+import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
@@ -22,44 +23,44 @@ public class CommandListener {
 	 * @return Whether it <b>did not run</b> the command
 	 */
 	public static Mono<Boolean> runCommand(Message message, MessageChannel commandChannel, boolean mentionedonly) {
+		Timings timings = CommonListeners.timings;
 		Mono<Boolean> ret = Mono.just(true);
 		if (!message.getContent().isPresent())
 			return ret; //Pin messages and such, let the mcchat listener deal with it
 		val content = message.getContent().get();
-		System.out.println("A");
+		timings.printElapsed("A");
 		return message.getChannel().flatMap(channel -> {
 			Mono<?> tmp = ret;
 			if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
-				System.out.println("B");
-				//System.out.println("Channel type: " + commandChannel.getClass().getSimpleName());
-				//System.out.println("Guild: " + ((TextChannel) commandChannel).getGuildId());
+				timings.printElapsed("B");
 				if (!(channel instanceof PrivateChannel)
 					&& !(content.charAt(0) == DiscordPlugin.getPrefix()
 					&& channel.getId().asLong() == commandChannel.getId().asLong())) //
 					return ret;
-				System.out.println("C");
+				timings.printElapsed("C");
 				tmp = ret.then(channel.type()).thenReturn(true); // Fun (this true is ignored - x)
 			}
 			final StringBuilder cmdwithargs = new StringBuilder(content);
 			val gotmention = new AtomicBoolean();
+			timings.printElapsed("Before self");
 			return tmp.flatMapMany(x ->
 				DiscordPlugin.dc.getSelf().flatMap(self -> self.asMember(DiscordPlugin.mainServer.getId()))
 					.flatMapMany(self -> {
-						System.out.println("D");
+						timings.printElapsed("D");
 						gotmention.set(checkanddeletemention(cmdwithargs, self.getMention(), message));
 						gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention(), message) || gotmention.get());
 						val mentions = message.getRoleMentions();
 						return self.getRoles().filterWhen(r -> mentions.any(rr -> rr.getName().equals(r.getName())))
 							.map(Role::getMention);
 					}).map(mentionRole -> {
-					System.out.println("E");
+					timings.printElapsed("E");
 					gotmention.set(checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention.get()); // Delete all mentions
 					return !mentionedonly || gotmention.get(); //Stops here if false
 				}).switchIfEmpty(Mono.fromSupplier(() -> !mentionedonly || gotmention.get())))
 				.filter(b -> b).last(false).filter(b -> b).doOnNext(b -> channel.type().subscribe()).flatMap(b -> {
 					String cmdwithargsString = cmdwithargs.toString();
 					try {
-						System.out.println("F");
+						timings.printElapsed("F");
 						if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
 							return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString);
 					} catch (Exception e) {

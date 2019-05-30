@@ -12,6 +12,7 @@ import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand;
 import buttondevteam.discordplugin.role.GameRoleModule;
+import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
 import buttondevteam.lib.architecture.Component;
@@ -29,6 +30,7 @@ import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.object.util.Snowflake;
+import discord4j.store.jdk.JdkStoreService;
 import lombok.Getter;
 import lombok.val;
 import net.milkbowl.vault.permission.Permission;
@@ -108,6 +110,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			}
 			val cb = new DiscordClientBuilder(token);
 			cb.setInitialPresence(Presence.doNotDisturb(Activity.playing("booting")));
+			cb.setStoreService(new JdkStoreService()); //The default doesn't work for some reason - it's waaay faster now
 			dc = cb.build();
 			dc.getEventDispatcher().on(ReadyEvent.class) // Listen for ReadyEvent(s)
 				.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
@@ -137,11 +140,6 @@ public class DiscordPlugin extends ButtonPlugin {
 				mainServer = event.get(0).getGuild();
 				getLogger().warning("Main server set to first one: " + mainServer.getName());
 				mainServer().set(mainServer); //Save in config
-			}
-			if (!TBMCCoreAPI.IsTestServer()) { //Don't change conditions here, see mainServer=devServer=null in onDisable()
-				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
-			} else {
-				dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe();
 			}
 			SafeMode = false;
 			DPUtils.disableIfConfigError(null, commandChannel(), modRole()); //Won't disable, just prints the warning here
@@ -196,6 +194,11 @@ public class DiscordPlugin extends ButtonPlugin {
 			setupProviders();
 
 			IHaveConfig.pregenConfig(this, null);
+			if (!TBMCCoreAPI.IsTestServer()) {
+				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
+			} else {
+				dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe();
+			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e);
 		}
@@ -209,9 +212,10 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Override
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
-		System.out.println("Disable start");
+		Timings timings = new Timings();
+		timings.printElapsed("Disable start");
 		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> {
-			System.out.println("Sending message to " + ch.getMention());
+			timings.printElapsed("Sending message to " + ch.getMention());
 			if (DiscordMCCommand.resetting)
 				ecs.setColor(Color.ORANGE).setTitle("Discord plugin restarting");
 			else
@@ -226,16 +230,17 @@ public class DiscordPlugin extends ButtonPlugin {
 							+ "kicked the hell out.") //TODO: Make configurable
 							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
 		})).subscribe(), ChannelconBroadcast.RESTART, false);
-		System.out.println("Updating player list");
+		timings.printElapsed("Updating player list");
 		ChromaBot.getInstance().updatePlayerList();
-		System.out.println("Done");
+		timings.printElapsed("Done");
 	}
 
 	@Override
 	public void pluginDisable() {
-		System.out.println("Actual disable start (logout)");
+		Timings timings = new Timings();
+		timings.printElapsed("Actual disable start (logout)");
 		MCChatPrivate.logoutAll();
-		System.out.println("Config setup");
+		timings.printElapsed("Config setup");
 		getConfig().set("serverup", false);
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 
@@ -243,9 +248,9 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
-			System.out.println("Updating presence...");
+			timings.printElapsed("Updating presence...");
 			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
-			System.out.println("Logging out...");
+			timings.printElapsed("Logging out...");
 			dc.logout().block();
 			//Configs are emptied so channels and servers are fetched again
 		} catch (Exception e) {

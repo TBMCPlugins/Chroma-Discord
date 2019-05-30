@@ -8,7 +8,9 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSender;
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.listeners.CommandListener;
+import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.TBMCChatAPI;
@@ -222,17 +224,18 @@ public class MCChatListener implements Listener {
 		val ret = Mono.just(true);
 		if (!ComponentManager.isEnabled(MinecraftChatModule.class))
 			return ret;
-		System.out.println("Chat event");
+		Timings timings = CommonListeners.timings;
+		timings.printElapsed("Chat event");
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
 		return ev.getMessage().getChannel().filter(channel -> {
-			System.out.println("Filter 1");
+			timings.printElapsed("Filter 1");
 			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
 				&& !(channel instanceof PrivateChannel
 				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
 				&& !hasCustomChat)); //Chat isn't enabled on this channel
 		}).filter(channel -> {
-			System.out.println("Filter 2");
+			timings.printElapsed("Filter 2");
 			return !(channel instanceof PrivateChannel //Only in private chat
 				&& ev.getMessage().getContent().isPresent()
 				&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
@@ -244,7 +247,7 @@ public class MCChatListener implements Listener {
 			.filter(channel -> {
 				MCChatUtils.resetLastMessage(channel);
 				recevents.add(ev);
-				System.out.println("Message event added");
+				timings.printElapsed("Message event added");
 				if (rectask != null)
 					return true;
 				recrun = () -> { //Don't return in a while loop next time
