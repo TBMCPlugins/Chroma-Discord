@@ -72,7 +72,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>io.netty</pattern>
-                                    <shadedPattern>buttondevteam.discordplugin.io.netty</shadedPattern>
+                                    <shadedPattern>btndvtm.dp.io.netty</shadedPattern>
                                     <excludes>
                                     </excludes>
                                 </relocation>

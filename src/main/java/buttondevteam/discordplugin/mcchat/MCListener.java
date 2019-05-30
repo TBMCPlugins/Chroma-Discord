@@ -25,6 +25,7 @@ import org.bukkit.event.server.BroadcastMessageEvent;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 class MCListener implements Listener {
@@ -144,8 +145,9 @@ class MCListener implements Listener {
 		String name = event.getSender() instanceof Player ? ((Player) event.getSender()).getDisplayName()
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-		DiscordPlugin.mainServer.getEmojis().filter(e -> "YEEHAW".equals(e.getName())).subscribe(yeehaw ->
-			MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw != null ? " <:YEEHAW:" + yeehaw.getId().asString() + ">s" : " YEEHAWs"))));
+		DiscordPlugin.mainServer.getEmojis().filter(e -> "YEEHAW".equals(e.getName()))
+			.take(1).singleOrEmpty().map(Optional::of).defaultIfEmpty(Optional.empty()).subscribe(yeehaw ->
+			MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw.map(guildEmoji -> " <:YEEHAW:" + guildEmoji.getId().asString() + ">s").orElse(" YEEHAWs")))));
 	}
 
 	@EventHandler

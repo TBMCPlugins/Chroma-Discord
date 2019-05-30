@@ -66,8 +66,8 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 					String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
 						.filter(s -> !s.contains("\tat ") || s.contains("\tat buttondevteam."))
 						.collect(Collectors.joining("\n"));
-					if (sb.length() + stackTrace.length() >= 2000)
-						stackTrace = stackTrace.substring(0, 1999 - sb.length());
+					if (sb.length() + stackTrace.length() >= 1980)
+						stackTrace = stackTrace.substring(0, 1980 - sb.length());
 					sb.append(stackTrace).append("\n");
 					sb.append("```");
 					return channel.flatMap(ch -> ch.createMessage(sb.toString()));

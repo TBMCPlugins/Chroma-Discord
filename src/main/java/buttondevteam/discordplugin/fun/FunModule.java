@@ -25,6 +25,9 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+/**
+ * The YEEHAW event uses an emoji named :YEEHAW: if available
+ */
 public class FunModule extends Component<DiscordPlugin> implements Listener {
 	private static final String[] serverReadyStrings = new String[]{"In one week from now", // Ali
 		"Between now and the heat-death of the universe.", // Ghostise

@@ -62,12 +62,13 @@ public class CommandListener {
 					try {
 						timings.printElapsed("F");
 						if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
-							return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString);
+							return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
+								.map(m -> false);
 					} catch (Exception e) {
 						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
 					}
-					return Mono.empty();
-				}).map(m -> false).defaultIfEmpty(true);
+					return Mono.just(false); //If the command succeeded or there was an error, return false
+				}).defaultIfEmpty(true);
 		});
 	}
 

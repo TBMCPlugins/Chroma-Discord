@@ -332,6 +332,7 @@ public class MCChatUtils {
 			}
 			callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
 			dcp.setLoggedIn(true);
+			DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged in from Discord");
 		});
 	}
 
@@ -347,6 +348,7 @@ public class MCChatUtils {
 		if (needsSync) callEventSync(event);
 		else callEventExcludingSome(event);
 		dcp.setLoggedIn(false);
+		DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged out from Discord");
 	}
 
 	static void callEventSync(Event event) {

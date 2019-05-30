@@ -45,7 +45,7 @@ public class CommonListeners {
 			val commandChannel = DiscordPlugin.plugin.commandChannel().get();
 			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.commandChannel());
 			return commandCh.filterWhen(ch -> event.getMessage().getChannel().map(mch ->
-				commandChannel != null && event.getMessage().getChannelId().asLong() == commandChannel.asLong() //If mentioned, that's higher than chat
+				(commandChannel != null && mch.getId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 					|| mch instanceof PrivateChannel
 					|| event.getMessage().getContent().orElse("").contains("channelcon"))) //Only 'channelcon' is allowed in other channels
 				.filterWhen(ch -> { //Only continue if this doesn't handle the event
