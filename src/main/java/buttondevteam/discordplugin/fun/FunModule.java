@@ -108,7 +108,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			if (usableServerReadyStrings.size() == 0)
 				fm.createUsableServerReadyStrings();
 			next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
-			DPUtils.reply(message, null, serverReadyStrings[next]).subscribe();
+			DPUtils.reply(message, null, fm.serverReadyAnswers().get().get(next)).subscribe();
 			return false; //Still process it as a command/mcchat if needed
 		}
 		return false;

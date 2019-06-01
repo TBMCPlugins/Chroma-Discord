@@ -65,8 +65,11 @@ public class DiscordPlugin extends ButtonPlugin {
 		return plugin.prefix().get();
 	}
 
-	private ConfigData<Guild> mainServer() {
-		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L, id -> dc.getGuildById(Snowflake.of((long) id)).block(), g -> g.getId().asLong());
+	private ConfigData<Optional<Guild>> mainServer() {
+		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L,
+			id -> dc.getGuildById(Snowflake.of((long) id))
+				.onErrorContinue((t, o) -> getLogger().warning("Failed to get guild: " + t)).blockOptional(),
+			g -> g.map(gg -> gg.getId().asLong()).orElse(0L));
 	}
 
 	public ConfigData<Snowflake> commandChannel() {
@@ -130,7 +133,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
-			mainServer = mainServer().get(); //Shouldn't change afterwards
+			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
@@ -139,7 +142,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				}
 				mainServer = event.get(0).getGuild();
 				getLogger().warning("Main server set to first one: " + mainServer.getName());
-				mainServer().set(mainServer); //Save in config
+				mainServer().set(Optional.of(mainServer)); //Save in config
 			}
 			SafeMode = false;
 			DPUtils.disableIfConfigError(null, commandChannel(), modRole()); //Won't disable, just prints the warning here
