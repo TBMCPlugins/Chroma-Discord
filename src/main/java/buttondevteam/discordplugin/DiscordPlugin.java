@@ -66,9 +66,14 @@ public class DiscordPlugin extends ButtonPlugin {
 	}
 
 	private ConfigData<Optional<Guild>> mainServer() {
-		return getIConfig().getDataPrimDef("mainServer", 219529124321034241L,
-			id -> dc.getGuildById(Snowflake.of((long) id))
-				.onErrorContinue((t, o) -> getLogger().warning("Failed to get guild: " + t)).blockOptional(),
+		return getIConfig().getDataPrimDef("mainServer", 0L,
+			id -> {
+				System.out.println("WTF ID: " + id); //TODO: It attempts to get the default as well
+				if ((long) id == 0L)
+					return Optional.empty(); //Hack?
+				return dc.getGuildById(Snowflake.of((long) id))
+					.onErrorResume(t -> Mono.fromRunnable(() -> getLogger().warning("Failed to get guild: " + t.getMessage()))).blockOptional();
+			},
 			g -> g.map(gg -> gg.getId().asLong()).orElse(0L));
 	}
 
@@ -102,7 +107,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				File privateFile = new File(getDataFolder(), "private.yml");
 				val conf = YamlConfiguration.loadConfiguration(privateFile);
 				token = conf.getString("token");
-				if (token == null) {
+				if (token == null || token.equalsIgnoreCase("Token goes here")) {
 					conf.set("token", "Token goes here");
 					conf.save(privateFile);
 
@@ -133,7 +138,10 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
+			System.out.println("w t f: " + mainServer);
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
+			System.out.println("Main server: " + mainServer);
+			System.out.println("wtf: " + mainServer().get());
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
@@ -182,7 +190,8 @@ public class DiscordPlugin extends ButtonPlugin {
 				TBMCCoreAPI.SendException(
 					"Won't load because we're in testing mode and not using a separate account.",
 					new Exception(
-						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in its name.)"));
+						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in its name.)"
+							+ "\nYou can disable test mode in ThorpeCore config."));
 				Bukkit.getPluginManager().disablePlugin(this);
 			}
 			TBMCCoreAPI.SendUnsentExceptions();

@@ -79,7 +79,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 
 	@Override
 	protected void enable() {
-		if (DPUtils.disableIfConfigError(this, chatChannel())) return;
+		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
+			return;
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
@@ -113,6 +114,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			new LPInjector(MainPlugin.Instance);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e);
+		} catch (NoClassDefFoundError e) {
+			getPlugin().getLogger().info("No LuckPerms, not injecting");
 		}
 	}
 

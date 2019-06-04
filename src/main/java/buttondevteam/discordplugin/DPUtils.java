@@ -102,20 +102,34 @@ public final class DPUtils {
 	public static boolean disableIfConfigError(@Nullable Component<DiscordPlugin> component, ConfigData<?>... configs) {
 		for (val config : configs) {
 			Object v = config.get();
-			//noinspection ConstantConditions
-			if (v == null || (v instanceof Mono<?> && !((Mono<?>) v).hasElement().block())) {
-				String path = null;
-				try {
-					if (component != null)
-						Component.setComponentEnabled(component, false);
-					path = config.getPath();
-				} catch (Exception e) {
-					TBMCCoreAPI.SendException("Failed to disable component after config error!", e);
-				}
-				getLogger().warning("The config value " + path + " isn't set correctly " + (component == null ? "in global settings!" : "for component " + component.getClass().getSimpleName() + "!"));
-				getLogger().warning("Set the correct ID in the config" + (component == null ? "" : " or disable this component") + " to remove this message.");
+			if (disableIfConfigErrorRes(component, config, v))
 				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Disables the component if one of the given configs return null. Useful for channel/role configs.
+	 *
+	 * @param component The component to disable if needed
+	 * @param config    The (snowflake) config to check for null
+	 * @param result    The result of getting the value
+	 * @return Whether the component got disabled and a warning logged
+	 */
+	public static boolean disableIfConfigErrorRes(@Nullable Component<DiscordPlugin> component, ConfigData<?> config, Object result) {
+		//noinspection ConstantConditions
+		if (result == null || (result instanceof Mono<?> && !((Mono<?>) result).hasElement().block())) {
+			String path = null;
+			try {
+				if (component != null)
+					Component.setComponentEnabled(component, false);
+				path = config.getPath();
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("Failed to disable component after config error!", e);
 			}
+			getLogger().warning("The config value " + path + " isn't set correctly " + (component == null ? "in global settings!" : "for component " + component.getClass().getSimpleName() + "!"));
+			getLogger().warning("Set the correct ID in the config" + (component == null ? "" : " or disable this component") + " to remove this message.");
+			return true;
 		}
 		return false;
 	}
