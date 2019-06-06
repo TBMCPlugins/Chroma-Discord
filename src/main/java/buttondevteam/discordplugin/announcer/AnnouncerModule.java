@@ -6,40 +6,48 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
+import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
 import lombok.val;
 import org.bukkit.configuration.file.YamlConfiguration;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
-import java.util.List;
 
 public class AnnouncerModule extends Component<DiscordPlugin> {
-	public ConfigData<IChannel> channel() {
+	/**
+	 * Channel to post new posts.
+	 */
+	public ReadOnlyConfigData<Mono<MessageChannel>> channel() {
 		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
 	}
 
-	public ConfigData<IChannel> modChannel() {
+	/**
+	 * Channel where distinguished (moderator) posts go.
+	 */
+	public ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
 		return DPUtils.channelData(getConfig(), "modChannel", 239519012529111040L);
 	}
 
 	/**
-	 * Set to 0 or >50 to disable
+	 * Automatically unpins all messages except the last few. Set to 0 or >50 to disable
 	 */
 	public ConfigData<Short> keepPinned() {
 		return getConfig().getData("keepPinned", (short) 40);
 	}
 
-	private ConfigData<Long> lastannouncementtime() {
+	private ConfigData<Long> lastAnnouncementTime() {
 		return getConfig().getData("lastAnnouncementTime", 0L);
 	}
 
-	private ConfigData<Long> lastseentime() {
+	private ConfigData<Long> lastSeenTime() {
 		return getConfig().getData("lastSeenTime", 0L);
 	}
 
@@ -50,24 +58,15 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 	protected void enable() {
 		if (DPUtils.disableIfConfigError(this, channel(), modChannel())) return;
 		stop = false; //If not the first time
-		DPUtils.performNoWait(() -> {
-			try {
-				val keepPinned = keepPinned().get();
-				if (keepPinned == 0) return;
-				val channel = channel().get();
-				List<IMessage> msgs = channel.getPinnedMessages();
-				for (int i = msgs.size() - 1; i >= keepPinned; i--) { // Unpin all pinned messages except the newest 10
-					channel.unpin(msgs.get(i));
-					Thread.sleep(10);
-				}
-			} catch (InterruptedException ignore) {
-			}
-		});
+		val keepPinned = keepPinned().get();
+		if (keepPinned == 0) return;
+		Flux<Message> msgs = channel().get().flatMapMany(MessageChannel::getPinnedMessages);
+		msgs.subscribe(Message::unpin);
 		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
-		if (lastannouncementtime().get() == 0) //Load old data
-			lastannouncementtime().set(yc.getLong("lastannouncementtime"));
-		if (lastseentime().get() == 0)
-			lastseentime().set(yc.getLong("lastseentime"));
+		if (lastAnnouncementTime().get() == 0) //Load old data
+			lastAnnouncementTime().set(yc.getLong("lastannouncementtime"));
+		if (lastSeenTime().get() == 0)
+			lastSeenTime().set(yc.getLong("lastseentime"));
 		new Thread(this::AnnouncementGetterThreadMethod).start();
 	}
 
@@ -88,7 +87,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
 				StringBuilder modmsgsb = new StringBuilder();
-				long lastanntime = lastannouncementtime().get();
+				long lastanntime = lastAnnouncementTime().get();
 				for (int i = json.size() - 1; i >= 0; i--) {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
@@ -101,9 +100,9 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 						distinguished = distinguishedjson.getAsString();
 					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
-					if (date > lastseentime().get())
-						lastseentime().set(date);
-					else if (date > lastannouncementtime().get()) {
+					if (date > lastSeenTime().get())
+						lastSeenTime().set(date);
+					else if (date > lastAnnouncementTime().get()) {
 						do {
 							val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit");
 							if (reddituserclass == null)
@@ -122,13 +121,13 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					}
 				}
 				if (msgsb.length() > 0)
-					channel().get().pin(DiscordPlugin.sendMessageToChannelWait(channel().get(), msgsb.toString()));
+					channel().get().flatMap(ch -> ch.createMessage(msgsb.toString()))
+						.flatMap(Message::pin).subscribe();
 				if (modmsgsb.length() > 0)
-					DiscordPlugin.sendMessageToChannel(modChannel().get(), modmsgsb.toString());
-				if (lastannouncementtime().get() != lastanntime) {
-					lastannouncementtime().set(lastanntime); // If sending succeeded
-					getPlugin().saveConfig(); //TODO: Won't be needed if I implement auto-saving
-				}
+					modChannel().get().flatMap(ch -> ch.createMessage(modmsgsb.toString()))
+						.flatMap(Message::pin).subscribe();
+				if (lastAnnouncementTime().get() != lastanntime)
+					lastAnnouncementTime().set(lastanntime); // If sending succeeded
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

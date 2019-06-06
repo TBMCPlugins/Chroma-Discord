@@ -1,5 +1,9 @@
 package buttondevteam.discordplugin;
 
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
+import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
@@ -8,8 +12,6 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IUser;
 
 import java.util.Set;
 
@@ -18,12 +20,13 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 
 	private String name;
 
-	public DiscordSender(IUser user, IChannel channel) {
+	public DiscordSender(User user, MessageChannel channel) {
 		super(user, channel);
-		name = user == null ? "Discord user" : user.getDisplayName(DiscordPlugin.mainServer);
+		val def = "Discord user";
+		name = user == null ? def : user.asMember(DiscordPlugin.mainServer.getId()).blockOptional().map(Member::getDisplayName).orElse(def);
 	}
 
-	public DiscordSender(IUser user, IChannel channel, String name) {
+	public DiscordSender(User user, MessageChannel channel, String name) {
 		super(user, channel);
 		this.name = name;
 	}

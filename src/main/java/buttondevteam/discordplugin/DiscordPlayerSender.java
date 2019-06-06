@@ -1,6 +1,8 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
@@ -26,8 +28,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IUser;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -38,7 +38,7 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 	protected Player player;
 	private @Getter VanillaCommandListener<DiscordPlayerSender> vanillaCmdListener;
 
-	public DiscordPlayerSender(IUser user, IChannel channel, Player player) {
+	public DiscordPlayerSender(User user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
 		vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);

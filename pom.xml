@@ -1,208 +1,225 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.TBMCPlugins</groupId>
-	<artifactId>DiscordPlugin</artifactId>
-	<version>master-SNAPSHOT</version>
-	<packaging>jar</packaging>
+    <groupId>com.github.TBMCPlugins</groupId>
+    <artifactId>DiscordPlugin</artifactId>
+    <version>master-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
-	<name>DiscordPlugin</name>
-	<url>http://maven.apache.org</url>
+    <name>DiscordPlugin</name>
+    <url>http://maven.apache.org</url>
 
-	<build>
-		<!-- <sourceDirectory>target/generated-sources/delombok</sourceDirectory> 
-			<testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory> -->
-		<sourceDirectory>src/main/java</sourceDirectory>
-		<resources>
-			<resource>
-				<directory>src</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>*.properties</include>
-					<include>*.yml</include>
-					<include>*.csv</include>
-					<include>*.txt</include>
-				</includes>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
-		<finalName>DiscordPlugin</finalName>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.2</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.4.2</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<artifactSet>
-								<excludes>
-									<exclude>org.spigotmc:spigot-api</exclude>
-									<exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
-									<exclude>net.ess3:Essentials</exclude>
+    <build>
+        <!-- <sourceDirectory>target/generated-sources/delombok</sourceDirectory>
+            <testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory> -->
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src</directory>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>*.properties</include>
+                    <include>*.yml</include>
+                    <include>*.csv</include>
+                    <include>*.txt</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <finalName>DiscordPlugin</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.2</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <!-- <compilerArgs>
+                        <arg>-processor</arg>
+                        <arg>buttondevteam.buttonproc.ButtonProcessor, lombok.core.AnnotationProcessor</arg>
+                    </compilerArgs> -->
+                    <!-- <annotationProcessors>
+                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
+                        <annotationProcessor>buttondevteam.buttonproc.ButtonProcessor</annotationProcessor>
+                    </annotationProcessors> -->
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.2</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.spigotmc:spigot-api</exclude>
+                                    <exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
+                                    <exclude>net.ess3:Essentials</exclude>
                                 </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
-							</artifactSet>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>3.0.1</version>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>target</outputDirectory>
-							<resources>
-								<resource>
-									<directory>resources</directory>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<!-- <plugin> <groupId>org.projectlombok</groupId> <artifactId>lombok-maven-plugin</artifactId> 
-				<version>1.16.16.0</version> <executions> <execution> <id>delombok</id> <phase>generate-sources</phase> 
-				<goals> <goal>delombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory> 
-				<sourceDirectory>src/main/java</sourceDirectory> <verbose>true</verbose> 
-				</configuration> </execution> <execution> <id>test-delombok</id> <phase>generate-test-sources</phase> 
-				<goals> <goal>testDelombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory> 
-				<sourceDirectory>src/test/java</sourceDirectory> </configuration> </execution> 
-				</executions> </plugin> -->
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<useSystemClassLoader>false
-					</useSystemClassLoader> <!-- https://stackoverflow.com/a/53012553/2703239 -->
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+                            </artifactSet>
+                            <minimizeJar>true</minimizeJar>
+                            <relocations>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>btndvtm.dp.io.netty</shadedPattern>
+                                    <excludes>
+                                    </excludes>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- <plugin> <groupId>org.projectlombok</groupId> <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.16.16.0</version> <executions> <execution> <id>delombok</id> <phase>generate-sources</phase>
+                <goals> <goal>delombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory>
+                <sourceDirectory>src/main/java</sourceDirectory> <verbose>true</verbose>
+                </configuration> </execution> <execution> <id>test-delombok</id> <phase>generate-test-sources</phase>
+                <goals> <goal>testDelombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory>
+                <sourceDirectory>src/test/java</sourceDirectory> </configuration> </execution>
+                </executions> </plugin> -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.4.2</version>
+                <configuration>
+                    <useSystemClassLoader>false
+                    </useSystemClassLoader> <!-- https://stackoverflow.com/a/53012553/2703239 -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <branch>
             master
         </branch> <!-- Should be master if building ButtonCore locally - the CI will overwrite it (see below) -->
-	</properties>
+    </properties>
 
-	<repositories>
-		<repository>
-			<id>spigot-repo</id>
-			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-		</repository>
-		<repository> <!-- This repo fixes issues with transitive dependencies -->
-			<id>jcenter</id>
-			<url>http://jcenter.bintray.com</url>
-		</repository>
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository> <!-- This repo fixes issues with transitive dependencies -->
+            <id>jcenter</id>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
         <!-- <repository>
             <id>vault-repo</id>
             <url>http://nexus.hc.to/content/repositories/pub_releases</url>
         </repository> -->
-		<repository>
-			<id>Essentials</id>
-			<url>http://repo.ess3.net/content/repositories/essrel/</url>
-		</repository>
-		<repository>
-			<id>projectlombok.org</id>
-			<url>http://projectlombok.org/mavenrepo</url>
-		</repository>
+        <repository>
+            <id>Essentials</id>
+            <url>http://repo.ess3.net/content/repositories/essrel/</url>
+        </repository>
+        <repository>
+            <id>projectlombok.org</id>
+            <url>http://projectlombok.org/mavenrepo</url>
+        </repository>
         <!-- <repository>
             <id>pex-repo</id>
             <url>http://pex-repo.aoeu.xyz</url>
         </repository> -->
-	</repositories>
+        <!-- <repository>
+            <id>Reactor-Tools</id>
+            <url>https://repo.spring.io/milestone</url>
+        </repository> -->
+    </repositories>
 
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>3.8.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.spigotmc</groupId>
-			<artifactId>spigot-api</artifactId>
-			<version>1.12-R0.1-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.spigotmc</groupId>
-			<artifactId>spigot</artifactId>
-			<version>1.12.2-R0.1-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.12-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot</artifactId>
+            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
         <dependency>
             <groupId>com.discord4j</groupId>
-            <artifactId>Discord4J</artifactId>
-            <version>2.10.1</version>
+            <artifactId>discord4j-core</artifactId>
+            <version>3.0.6</version>
         </dependency>
-		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.21</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.TBMCPlugins.ButtonCore</groupId>
-			<artifactId>ButtonCore</artifactId>
-			<version>${branch}-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.milkbowl</groupId> <!-- net.milkbowl.vault -->
-			<artifactId>VaultAPI</artifactId>
-			<version>master-SNAPSHOT</version> <!-- 1.6 -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.ess3</groupId>
-			<artifactId>Essentials</artifactId>
-			<version>2.13.1</version>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.TBMCPlugins.ButtonCore</groupId>
+            <artifactId>ButtonCore</artifactId>
+            <version>${branch}-SNAPSHOT</version>
             <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.xaanit</groupId>
-			<artifactId>D4J-OAuth</artifactId>
-			<version>master-SNAPSHOT</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.16.16</version>
-			<scope>provided</scope>
-		</dependency>
+        </dependency>
+        <dependency>
+            <groupId>com.github.milkbowl</groupId> <!-- net.milkbowl.vault -->
+            <artifactId>VaultAPI</artifactId>
+            <version>master-SNAPSHOT</version> <!-- 1.6 -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.ess3</groupId>
+            <artifactId>Essentials</artifactId>
+            <version>2.13.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.16</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- <dependency>
             <groupId>ru.tehkode</groupId>
             <artifactId>PermissionsEx</artifactId>
@@ -215,32 +232,44 @@
                 </exclusion>
             </exclusions>
         </dependency> -->
-		<!-- https://mvnrepository.com/artifact/org.objenesis/objenesis -->
-		<dependency>
-			<groupId>org.objenesis</groupId>
-			<artifactId>objenesis</artifactId>
-			<version>2.6</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.vdurmont</groupId>
-			<artifactId>emoji-java</artifactId>
-			<version>4.0.0</version>
-		</dependency>
-	</dependencies>
+        <!-- https://mvnrepository.com/artifact/org.objenesis/objenesis -->
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+            <version>2.6</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.vdurmont</groupId>
+            <artifactId>emoji-java</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.projectreactor.tools/blockhound -->
+        <!-- <dependency>
+            <groupId>io.projectreactor.tools</groupId>
+            <artifactId>blockhound</artifactId>
+            <version>1.0.0.M3</version>
+        </dependency> -->
+        <dependency>
+            <groupId>com.github.lucko</groupId>
+            <artifactId>LuckPerms</artifactId>
+            <version>v4.4</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
-	<profiles>
-		<profile>
-			<id>ci</id>
-			<activation>
-				<property>
-					<name>env.TRAVIS_BRANCH</name>
-				</property>
-			</activation>
-			<properties>
-				<!-- Override only if necessary -->
-				<branch>${env.TRAVIS_BRANCH}</branch>
-			</properties>
-		</profile>
-	</profiles>
+    <profiles>
+        <profile>
+            <id>ci</id>
+            <activation>
+                <property>
+                    <name>env.TRAVIS_BRANCH</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- Override only if necessary -->
+                <branch>${env.TRAVIS_BRANCH}</branch>
+            </properties>
+        </profile>
+    </profiles>
 </project>

@@ -7,13 +7,11 @@ import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
 import lombok.val;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @CommandClass(helpText = {
 	"User information", //
@@ -24,67 +22,71 @@ public class UserinfoCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, @Command2.OptionalArg @Command2.TextArg String user) {
 		val message = sender.getMessage();
-		IUser target = null;
+		User target = null;
+		val channel = message.getChannel().block();
+		assert channel != null;
 		if (user == null || user.length() == 0)
-			target = message.getAuthor();
+			target = message.getAuthor().orElse(null);
 		else {
-			final Optional<IUser> firstmention = message.getMentions().stream()
-					.filter(m -> !m.getStringID().equals(DiscordPlugin.dc.getOurUser().getStringID())).findFirst();
-			if (firstmention.isPresent())
-				target = firstmention.get();
+			@SuppressWarnings("OptionalGetWithoutIsPresent") final User firstmention = message.getUserMentions()
+				.filter(m -> !m.getId().asString().equals(DiscordPlugin.dc.getSelfId().get().asString())).blockFirst();
+			if (firstmention != null)
+				target = firstmention;
 			else if (user.contains("#")) {
 				String[] targettag = user.split("#");
-				final List<IUser> targets = getUsers(message, targettag[0]);
+				final List<User> targets = getUsers(message, targettag[0]);
 				if (targets.size() == 0) {
-					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"The user cannot be found (by name): " + user);
-                    return true;
+					channel.createMessage("The user cannot be found (by name): " + user).subscribe();
+					return true;
 				}
-				for (IUser ptarget : targets) {
+				for (User ptarget : targets) {
 					if (ptarget.getDiscriminator().equalsIgnoreCase(targettag[1])) {
 						target = ptarget;
 						break;
 					}
 				}
 				if (target == null) {
-					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"The user cannot be found (by discriminator): " + user + "(Found " + targets.size()
-									+ " users with the name.)");
-                    return true;
+					channel.createMessage("The user cannot be found (by discriminator): " + user + "(Found " + targets.size()
+						+ " users with the name.)").subscribe();
+					return true;
 				}
 			} else {
-				final List<IUser> targets = getUsers(message, user);
+				final List<User> targets = getUsers(message, user);
 				if (targets.size() == 0) {
-					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-						"The user cannot be found on Discord: " + user);
-                    return true;
+					channel.createMessage("The user cannot be found on Discord: " + user).subscribe();
+					return true;
 				}
 				if (targets.size() > 1) {
-					DiscordPlugin.sendMessageToChannel(message.getChannel(),
-							"Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.");
-                    return true;
+					channel.createMessage("Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.").subscribe();
+					return true;
 				}
 				target = targets.get(0);
 			}
 		}
-		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getStringID(), DiscordPlayer.class)) {
-			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getName()).append(":\n");
-			uinfo.append(dp.getInfo(InfoTarget.Discord));
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), uinfo.toString());
-		} catch (Exception e) {
-			DiscordPlugin.sendMessageToChannel(message.getChannel(), "An error occured while getting the user!");
-			TBMCCoreAPI.SendException("Error while getting info about " + target.getName() + "!", e);
+		if (target == null) {
+			sender.sendMessage("An error occurred.");
+			return true;
 		}
-        return true;
+		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getId().asString(), DiscordPlayer.class)) {
+			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getUsername()).append(":\n");
+			uinfo.append(dp.getInfo(InfoTarget.Discord));
+			channel.createMessage(uinfo.toString()).subscribe();
+		} catch (Exception e) {
+			channel.createMessage("An error occured while getting the user!").subscribe();
+			TBMCCoreAPI.SendException("Error while getting info about " + target.getUsername() + "!", e);
+		}
+		return true;
 	}
 
-	private List<IUser> getUsers(IMessage message, String args) {
-		final List<IUser> targets;
-		if (message.getChannel().isPrivate())
-			targets = DiscordPlugin.dc.getUsers().stream().filter(u -> u.getName().equalsIgnoreCase(args))
-					.collect(Collectors.toList());
+	private List<User> getUsers(Message message, String args) {
+		final List<User> targets;
+		val guild = message.getGuild().block();
+		if (guild == null) //Private channel
+			targets = DiscordPlugin.dc.getUsers().filter(u -> u.getUsername().equalsIgnoreCase(args))
+				.collectList().block();
 		else
-			targets = message.getGuild().getUsersByName(args, true);
+			targets = guild.getMembers().filter(m -> m.getUsername().equalsIgnoreCase(args))
+				.map(m -> (User) m).collectList().block();
 		return targets;
 	}
 

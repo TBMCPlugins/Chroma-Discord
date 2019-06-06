@@ -1,10 +1,13 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.ComponentManager;
-import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
+import com.google.common.collect.Sets;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.util.Snowflake;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.var;
@@ -13,16 +16,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -34,23 +41,22 @@ public class MCChatUtils {
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<IChannel, DiscordSender>> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, HashMap<IChannel, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordSender>> UnconnectedSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<IChannel, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
+	public static final HashMap<String, HashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
 	static @Nullable LastMsgData lastmsgdata;
-	static LongObjectHashMap<IMessage> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
+	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
+	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
 
 	public static void updatePlayerList() {
 		if (notEnabled()) return;
-		DPUtils.performNoWait(() -> {
-			if (lastmsgdata != null)
-				updatePL(lastmsgdata);
-			MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
-		});
+		if (lastmsgdata != null)
+			updatePL(lastmsgdata);
+		MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
 	}
 
 	private static boolean notEnabled() {
@@ -64,55 +70,60 @@ public class MCChatUtils {
 	}
 
 	private static void updatePL(LastMsgData lmd) {
-		String topic = lmd.channel.getTopic();
-		if (topic == null || topic.length() == 0)
+		if (!(lmd.channel instanceof TextChannel)) {
+			TBMCCoreAPI.SendException("Failed to update player list for channel " + lmd.channel.getId(),
+				new Exception("The channel isn't a (guild) text channel."));
+			return;
+		}
+		String topic = ((TextChannel) lmd.channel).getTopic().orElse("");
+		if (topic.length() == 0)
 			topic = ".\n----\nMinecraft chat\n----\n.";
 		String[] s = topic.split("\\n----\\n");
 		if (s.length < 3)
 			return;
 		s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
-				+ " online";
+			+ " online";
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
-				.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
-		lmd.channel.changeTopic(String.join("\n----\n", s));
+			.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
+		((TextChannel) lmd.channel).edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                        IUser user, T sender) {
-		return addSender(senders, user.getStringID(), sender);
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	                                                        User user, T sender) {
+		return addSender(senders, user.getId().asString(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<IChannel, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
 	                                                        String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
-		map.put(sender.getChannel(), sender);
+		map.put(sender.getChannel().getId(), sender);
 		senders.put(did, map);
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                        IChannel channel, IUser user) {
-		var map = senders.get(user.getStringID());
+	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	                                                        Snowflake channel, User user) {
+		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
 		return null;
 	}
 
-	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<IChannel, T>> senders,
-	                                                           IChannel channel, IUser user) {
-		var map = senders.get(user.getStringID());
+	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	                                                           Snowflake channel, User user) {
+		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);
 		return null;
 	}
 
-	public static void forAllMCChat(Consumer<IChannel> action) {
+	public static void forAllMCChat(Consumer<Mono<MessageChannel>> action) {
 		if (notEnabled()) return;
-		action.accept(module.chatChannel().get());
+		action.accept(module.chatChannelMono());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
-			action.accept(data.channel);
+			action.accept(Mono.just(data.channel));
 		// lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
 	}
 
@@ -123,11 +134,11 @@ public class MCChatUtils {
 	 * @param toggle  The toggle to check
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forCustomAndAllMCChat(Consumer<IChannel> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+	public static void forCustomAndAllMCChat(Consumer<Mono<MessageChannel>> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
 		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
-		final Consumer<MCChatCustom.CustomLMD> customLMDConsumer = cc -> action.accept(cc.channel);
+		final Consumer<MCChatCustom.CustomLMD> customLMDConsumer = cc -> action.accept(Mono.just(cc.channel));
 		if (toggle == null)
 			MCChatCustom.lastmsgCustom.forEach(customLMDConsumer);
 		else
@@ -141,7 +152,7 @@ public class MCChatUtils {
 	 * @param sender The sender to check perms of or null to send to all that has it toggled
 	 * @param toggle The toggle to check or null to send to all allowed
 	 */
-	public static void forAllowedCustomMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
+	public static void forAllowedCustomMCChat(Consumer<Mono<MessageChannel>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
 		if (notEnabled()) return;
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			//new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
@@ -150,7 +161,7 @@ public class MCChatUtils {
 			if (sender == null)
 				return true;
 			return clmd.groupID.equals(clmd.mcchannel.getGroupID(sender));
-		}).forEach(cc -> action.accept(cc.channel)); //TODO: Send error messages on channel connect
+		}).forEach(cc -> action.accept(Mono.just(cc.channel))); //TODO: Send error messages on channel connect
 	}
 
 	/**
@@ -161,42 +172,42 @@ public class MCChatUtils {
 	 * @param toggle  The toggle to check or null to send to all allowed
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forAllowedCustomAndAllMCChat(Consumer<IChannel> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+	public static void forAllowedCustomAndAllMCChat(Consumer<Mono<MessageChannel>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
 		if (notEnabled()) return;
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
 			forAllMCChat(action);
 		forAllowedCustomMCChat(action, sender, toggle);
 	}
 
-	public static Consumer<IChannel> send(String message) {
-		return ch -> DiscordPlugin.sendMessageToChannel(ch, DPUtils.sanitizeString(message));
+	public static Consumer<Mono<MessageChannel>> send(String message) {
+		return ch -> ch.flatMap(mc -> mc.createMessage(DPUtils.sanitizeString(message))).subscribe();
 	}
 
-	public static void forAllowedMCChat(Consumer<IChannel> action, TBMCSystemChatEvent event) {
+	public static void forAllowedMCChat(Consumer<Mono<MessageChannel>> action, TBMCSystemChatEvent event) {
 		if (notEnabled()) return;
 		if (event.getChannel().isGlobal())
-			action.accept(module.chatChannel().get());
+			action.accept(module.chatChannelMono());
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
-			if (event.shouldSendTo(getSender(data.channel, data.user)))
-				action.accept(data.channel);
+			if (event.shouldSendTo(getSender(data.channel.getId(), data.user)))
+				action.accept(Mono.just(data.channel)); //TODO: Only store ID?
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			if (!clmd.brtoggles.contains(event.getTarget()))
 				return false;
 			return event.shouldSendTo(clmd.dcp);
-		}).map(clmd -> clmd.channel).forEach(action);
+		}).map(clmd -> Mono.just(clmd.channel)).forEach(action);
 	}
 
 	/**
 	 * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
 	 */
-	static DiscordSenderBase getSender(IChannel channel, final IUser author) {
+	static DiscordSenderBase getSender(Snowflake channel, final User author) {
 		//noinspection OptionalGetWithoutIsPresent
 		return Stream.<Supplier<Optional<DiscordSenderBase>>>of( // https://stackoverflow.com/a/28833677/2703239
-				() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
-				() -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
-				() -> Optional.ofNullable(getSender(UnconnectedSenders, channel, author)), //
-				() -> Optional.of(addSender(UnconnectedSenders, author,
-						new DiscordSender(author, channel)))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
+			() -> Optional.ofNullable(getSender(OnlineSenders, channel, author)), // Find first non-null
+			() -> Optional.ofNullable(getSender(ConnectedSenders, channel, author)), // This doesn't support the public chat, but it'll always return null for it
+			() -> Optional.ofNullable(getSender(UnconnectedSenders, channel, author)), //
+			() -> Optional.of(addSender(UnconnectedSenders, author,
+				new DiscordSender(author, (MessageChannel) DiscordPlugin.dc.getChannelById(channel).block())))).map(Supplier::get).filter(Optional::isPresent).map(Optional::get).findFirst().get();
 	}
 
 	/**
@@ -205,15 +216,15 @@ public class MCChatUtils {
 	 *
 	 * @param channel The channel to reset in - the process is slightly different for the public, private and custom chats
 	 */
-	public static void resetLastMessage(IChannel channel) {
+	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
-		if (channel.getLongID() == module.chatChannel().get().getLongID()) {
-			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannel().get(), null)
-					: lastmsgdata).message = null;
+		if (channel.getId().asLong() == module.chatChannel().get().asLong()) {
+			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannelMono().block(), null)
+				: lastmsgdata).message = null;
 			return;
 		} // Don't set the whole object to null, the player and channel information should be preserved
-		for (LastMsgData data : channel.isPrivate() ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
-			if (data.channel.getLongID() == channel.getLongID()) {
+		for (LastMsgData data : channel instanceof PrivateChannel ? MCChatPrivate.lastmsgPerUser : MCChatCustom.lastmsgCustom) {
+			if (data.channel.getId().asLong() == channel.getId().asLong()) {
 				data.message = null;
 				return;
 			}
@@ -221,9 +232,23 @@ public class MCChatUtils {
 		//If it gets here, it's sending a message to a non-chat channel
 	}
 
+	public static void addStaticExcludedPlugin(Class<? extends Event> event, String plugin) {
+		staticExcludedPlugins.compute(event, (e, hs) -> hs == null
+			? Sets.newHashSet(plugin)
+			: (hs.add(plugin) ? hs : hs));
+	}
+
 	public static void callEventExcludingSome(Event event) {
 		if (notEnabled()) return;
-		callEventExcluding(event, false, module.excludedPlugins().get());
+		val second = staticExcludedPlugins.get(event.getClass());
+		String[] first = module.excludedPlugins().get();
+		String[] both = second == null ? first
+			: Arrays.copyOf(first, first.length + second.size());
+		int i = first.length;
+		if (second != null)
+			for (String plugin : second)
+				both[i++] = plugin;
+		callEventExcluding(event, false, both);
 	}
 
 	/**
@@ -284,13 +309,59 @@ public class MCChatUtils {
 		}
 	}
 
+	/**
+	 * Call it from an async thread.
+	 */
+	public static void callLoginEvents(DiscordConnectedPlayer dcp) {
+		Consumer<Supplier<String>> loginFail = kickMsg -> {
+			dcp.sendMessage("Minecraft chat disabled, as the login failed: " + kickMsg.get());
+			MCChatPrivate.privateMCChat(dcp.getChannel(), false, dcp.getUser(), dcp.getChromaUser());
+		}; //Probably also happens if the user is banned or so
+		val event = new AsyncPlayerPreLoginEvent(dcp.getName(), InetAddress.getLoopbackAddress(), dcp.getUniqueId());
+		callEventExcludingSome(event);
+		if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+			loginFail.accept(event::getKickMessage);
+			return;
+		}
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> {
+			val ev = new PlayerLoginEvent(dcp, "localhost", InetAddress.getLoopbackAddress());
+			callEventExcludingSome(ev);
+			if (ev.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+				loginFail.accept(ev::getKickMessage);
+				return;
+			}
+			callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
+			dcp.setLoggedIn(true);
+			DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged in from Discord");
+		});
+	}
+
+	/**
+	 * Only calls the events if the player is actually logged in
+	 *
+	 * @param dcp       The player
+	 * @param needsSync Whether we're in an async thread
+	 */
+	public static void callLogoutEvent(DiscordConnectedPlayer dcp, boolean needsSync) {
+		if (!dcp.isLoggedIn()) return;
+		val event = new PlayerQuitEvent(dcp, "");
+		if (needsSync) callEventSync(event);
+		else callEventExcludingSome(event);
+		dcp.setLoggedIn(false);
+		DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged out from Discord");
+	}
+
+	static void callEventSync(Event event) {
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> callEventExcludingSome(event));
+	}
+
 	@RequiredArgsConstructor
 	public static class LastMsgData {
-		public IMessage message;
+		public Message message;
 		public long time;
 		public String content;
-		public final IChannel channel;
-		public Channel mcchannel;
-		public final IUser user;
+		public final MessageChannel channel;
+		public buttondevteam.core.component.channel.Channel mcchannel;
+		public final User user;
 	}
 }

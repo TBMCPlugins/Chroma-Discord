@@ -1,6 +1,10 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSenderBase;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.*;
@@ -11,8 +15,6 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IUser;
 
 import java.util.*;
 
@@ -20,10 +22,11 @@ import java.util.*;
 @Setter
 @SuppressWarnings("deprecated")
 public abstract class DiscordEntity extends DiscordSenderBase implements Entity {
-	protected DiscordEntity(IUser user, IChannel channel, int entityId, UUID uuid) {
+	protected DiscordEntity(User user, MessageChannel channel, int entityId, UUID uuid, MinecraftChatModule module) {
 		super(user, channel);
 		this.entityId = entityId;
 		uniqueId = uuid;
+		this.module = module;
 	}
 
 	private HashMap<String, MetadataValue> metadata = new HashMap<String, MetadataValue>();
@@ -34,6 +37,7 @@ public abstract class DiscordEntity extends DiscordSenderBase implements Entity 
 	private EntityDamageEvent lastDamageCause;
 	private final Set<String> scoreboardTags = new HashSet<String>();
 	private final UUID uniqueId;
+	private final MinecraftChatModule module;
 
 	@Override
 	public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -42,7 +46,7 @@ public abstract class DiscordEntity extends DiscordSenderBase implements Entity 
 
 	@Override
 	public List<MetadataValue> getMetadata(String metadataKey) {
-		return Arrays.asList(metadata.get(metadataKey)); // Who needs multiple data anyways
+		return Collections.singletonList(metadata.get(metadataKey)); // Who needs multiple data anyways
 	}
 
 	@Override
@@ -91,31 +95,35 @@ public abstract class DiscordEntity extends DiscordSenderBase implements Entity 
 
 	@Override
 	public boolean teleport(Location location) {
-		this.location = location;
+		if (module.allowFakePlayerTeleports().get())
+			this.location = location;
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Location location, TeleportCause cause) {
-		this.location = location;
+		if (module.allowFakePlayerTeleports().get())
+			this.location = location;
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Entity destination) {
-		this.location = destination.getLocation();
+		if (module.allowFakePlayerTeleports().get())
+			this.location = destination.getLocation();
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Entity destination, TeleportCause cause) {
-		this.location = destination.getLocation();
+		if (module.allowFakePlayerTeleports().get())
+			this.location = destination.getLocation();
 		return true;
 	}
 
 	@Override
 	public List<Entity> getNearbyEntities(double x, double y, double z) {
-		return Arrays.asList();
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -163,7 +171,7 @@ public abstract class DiscordEntity extends DiscordSenderBase implements Entity 
 
 	@Override
 	public List<Entity> getPassengers() {
-		return Arrays.asList();
+		return Collections.emptyList();
 	}
 
 	@Override

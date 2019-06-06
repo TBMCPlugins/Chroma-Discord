@@ -4,17 +4,27 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
+import reactor.core.publisher.Mono;
 
 @CommandClass(helpText = {
 	"Switches debug mode."
 })
 public class DebugCommand extends ICommand2DC {
 	@Command2.Subcommand
-	public boolean def(Command2DCSender sender, String args) {
-		if (sender.getMessage().getAuthor().hasRole(DiscordPlugin.plugin.ModRole().get()))
-			sender.sendMessage("debug " + (CommonListeners.debug() ? "enabled" : "disabled"));
-        else
-			sender.sendMessage("you need to be a moderator to use this command.");
-        return true;
-    }
+	public boolean def(Command2DCSender sender) {
+		sender.getMessage().getAuthorAsMember()
+			.switchIfEmpty(sender.getMessage().getAuthor() //Support DMs
+				.map(u -> u.asMember(DiscordPlugin.mainServer.getId()))
+				.orElse(Mono.empty()))
+			.flatMap(m -> DiscordPlugin.plugin.modRole().get()
+				.map(mr -> m.getRoleIds().stream().anyMatch(r -> r.equals(mr.getId())))
+				.switchIfEmpty(Mono.fromSupplier(() -> DiscordPlugin.mainServer.getOwnerId().asLong() == m.getId().asLong()))) //Role not found
+			.subscribe(success -> {
+				if (success)
+					sender.sendMessage("debug " + (CommonListeners.debug() ? "enabled" : "disabled"));
+				else
+					sender.sendMessage("you need to be a moderator to use this command.");
+			});
+		return true;
+	}
 }

@@ -1,15 +1,14 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
 import lombok.Getter;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
-import sx.blah.discord.api.internal.json.objects.EmbedObject;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.util.EmbedBuilder;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
-import java.awt.*;
+import java.util.function.Function;
 
 public class ChromaBot {
 	/**
@@ -34,111 +33,24 @@ public class ChromaBot {
 	}
 
 	/**
-	 * Send a message to the chat channel and private chats.
-	 * 
-	 * @param message
-	 *            The message to send, duh
-	 */
-	public void sendMessage(String message) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message));
-	}
-
-	/**
 	 * Send a message to the chat channels and private chats.
      *
 	 * @param message
-	 *            The message to send, duh
-	 * @param embed
-	 *            Custom fancy stuff, use {@link EmbedBuilder} to create one
+	 *            The message to send, duh (use {@link MessageChannel#createMessage(String)})
 	 */
-	public void sendMessage(String message, EmbedObject embed) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed));
+	public void sendMessage(Function<Mono<MessageChannel>, Mono<Message>> message) {
+		MCChatUtils.forAllMCChat(ch -> message.apply(ch).subscribe());
 	}
 
     /**
      * Send a message to the chat channels, private chats and custom chats.
      *
      * @param message The message to send, duh
-     * @param embed   Custom fancy stuff, use {@link EmbedBuilder} to create one
      * @param toggle The toggle type for channelcon
      */
-    public void sendMessageCustomAsWell(String message, EmbedObject embed, @Nullable ChannelconBroadcast toggle) {
-	    MCChatUtils.forCustomAndAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, embed), toggle, false);
+	public void sendMessageCustomAsWell(Function<Mono<MessageChannel>, Mono<Message>> message, @Nullable ChannelconBroadcast toggle) {
+		MCChatUtils.forCustomAndAllMCChat(ch -> message.apply(ch).subscribe(), toggle, false);
     }
-
-	/**
-	 * Send a message to an arbitrary channel. This will not send it to the private chats.
-	 * 
-	 * @param channel
-	 *            The channel to send to, use the channel variables in {@link DiscordPlugin}
-	 * @param message
-	 *            The message to send, duh
-	 * @param embed
-	 *            Custom fancy stuff, use {@link EmbedBuilder} to create one
-	 */
-	public void sendMessage(IChannel channel, String message, EmbedObject embed) {
-		DiscordPlugin.sendMessageToChannel(channel, message, embed);
-	}
-
-	/**
-	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
-	 * 
-	 * @param message
-	 *            The message to send, duh
-	 * @param color
-	 *            The color of the line before the text
-	 */
-	public void sendMessage(String message, Color color) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
-				new EmbedBuilder().withTitle(message).withColor(color).build()));
-	}
-
-	/**
-	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
-	 * 
-	 * @param message
-	 *            The message to send, duh
-	 * @param color
-	 *            The color of the line before the text
-	 * @param mcauthor
-	 *            The name of the Minecraft player who is the author of this message
-	 */
-	public void sendMessage(String message, Color color, String mcauthor) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message,
-				DPUtils.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), mcauthor).build()));
-	}
-
-	/**
-	 * Send a fancy message to the chat channels. This will show a bold text with a colored line.
-	 * 
-	 * @param message
-	 *            The message to send, duh
-	 * @param color
-	 *            The color of the line before the text
-	 * @param authorname
-	 *            The name of the author of this message
-	 * @param authorimg
-	 *            The URL of the avatar image for this message's author
-	 */
-	public void sendMessage(String message, Color color, String authorname, String authorimg) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, new EmbedBuilder()
-				.withTitle(message).withColor(color).withAuthorName(authorname).withAuthorIcon(authorimg).build()));
-	}
-
-	/**
-	 * Send a message to the chat channels. This will show a bold text with a colored line.
-	 * 
-	 * @param message
-	 *            The message to send, duh
-	 * @param color
-	 *            The color of the line before the text
-	 * @param sender
-	 *            The player who sends this message
-	 */
-	public void sendMessage(String message, Color color, Player sender) {
-		MCChatUtils.forAllMCChat(ch -> DiscordPlugin.sendMessageToChannel(ch, message, DPUtils
-				.embedWithHead(new EmbedBuilder().withTitle(message).withColor(color), sender.getName()).build()));
-	}
 
 	public void updatePlayerList() {
 		MCChatUtils.updatePlayerList();

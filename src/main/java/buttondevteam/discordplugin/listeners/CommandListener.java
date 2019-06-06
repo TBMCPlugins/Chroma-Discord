@@ -1,11 +1,18 @@
 package buttondevteam.discordplugin.listeners;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
+import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IRole;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.PrivateChannel;
+import discord4j.core.object.entity.Role;
+import lombok.val;
+import reactor.core.publisher.Mono;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommandListener {
 	/**
@@ -13,44 +20,61 @@ public class CommandListener {
 	 *
 	 * @param message       The Discord message
 	 * @param mentionedonly Only run the command if ChromaBot is mentioned at the start of the message
-	 * @return Whether it ran the command
+	 * @return Whether it <b>did not run</b> the command
 	 */
-	public static boolean runCommand(IMessage message, boolean mentionedonly) {
-		if (message.getContent().length() == 0)
-			return false; //Pin messages and such, let the mcchat listener deal with it
-		final IChannel channel = message.getChannel();
-		if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
-			if (!message.getChannel().isPrivate()
-				&& !(message.getContent().charAt(0) == DiscordPlugin.getPrefix()
-				&& channel.getStringID().equals(DiscordPlugin.plugin.CommandChannel().get().getStringID()))) //
-				return false;
-			message.getChannel().setTypingStatus(true); // Fun
-		}
-		final StringBuilder cmdwithargs = new StringBuilder(message.getContent());
-		final String mention = DiscordPlugin.dc.getOurUser().mention(false);
-		final String mentionNick = DiscordPlugin.dc.getOurUser().mention(true);
-		boolean gotmention = checkanddeletemention(cmdwithargs, mention, message);
-		gotmention = checkanddeletemention(cmdwithargs, mentionNick, message) || gotmention;
-		for (String mentionRole : (Iterable<String>) message.getRoleMentions().stream().filter(r -> DiscordPlugin.dc.getOurUser().hasRole(r)).map(IRole::mention)::iterator)
-			gotmention = checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention; // Delete all mentions
-		if (mentionedonly && !gotmention) {
-			message.getChannel().setTypingStatus(false);
-			return false;
-		}
-		message.getChannel().setTypingStatus(true);
-		String cmdwithargsString = cmdwithargs.toString();
-		try {
-			if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
-				message.reply("Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString);
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
-		}
-		message.getChannel().setTypingStatus(false);
-		return true;
+	public static Mono<Boolean> runCommand(Message message, MessageChannel commandChannel, boolean mentionedonly) {
+		Timings timings = CommonListeners.timings;
+		Mono<Boolean> ret = Mono.just(true);
+		if (!message.getContent().isPresent())
+			return ret; //Pin messages and such, let the mcchat listener deal with it
+		val content = message.getContent().get();
+		timings.printElapsed("A");
+		return message.getChannel().flatMap(channel -> {
+			Mono<?> tmp = ret;
+			if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
+				timings.printElapsed("B");
+				if (!(channel instanceof PrivateChannel)
+					&& !(content.charAt(0) == DiscordPlugin.getPrefix()
+					&& channel.getId().asLong() == commandChannel.getId().asLong())) //
+					return ret;
+				timings.printElapsed("C");
+				tmp = ret.then(channel.type()).thenReturn(true); // Fun (this true is ignored - x)
+			}
+			final StringBuilder cmdwithargs = new StringBuilder(content);
+			val gotmention = new AtomicBoolean();
+			timings.printElapsed("Before self");
+			return tmp.flatMapMany(x ->
+				DiscordPlugin.dc.getSelf().flatMap(self -> self.asMember(DiscordPlugin.mainServer.getId()))
+					.flatMapMany(self -> {
+						timings.printElapsed("D");
+						gotmention.set(checkanddeletemention(cmdwithargs, self.getMention(), message));
+						gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention(), message) || gotmention.get());
+						val mentions = message.getRoleMentions();
+						return self.getRoles().filterWhen(r -> mentions.any(rr -> rr.getName().equals(r.getName())))
+							.map(Role::getMention);
+					}).map(mentionRole -> {
+					timings.printElapsed("E");
+					gotmention.set(checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention.get()); // Delete all mentions
+					return !mentionedonly || gotmention.get(); //Stops here if false
+				}).switchIfEmpty(Mono.fromSupplier(() -> !mentionedonly || gotmention.get())))
+				.filter(b -> b).last(false).filter(b -> b).doOnNext(b -> channel.type().subscribe()).flatMap(b -> {
+					String cmdwithargsString = cmdwithargs.toString();
+					try {
+						timings.printElapsed("F");
+						if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
+							return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
+								.map(m -> false);
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
+					}
+					return Mono.just(false); //If the command succeeded or there was an error, return false
+				}).defaultIfEmpty(true);
+		});
 	}
 
-	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, IMessage message) {
-		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
+	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, Message message) {
+		final char prefix = DiscordPlugin.getPrefix();
+		if (message.getContent().orElse("").startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
 				int i = cmdwithargs.indexOf(" ", mention.length());
 				if (i == -1)
@@ -60,14 +84,16 @@ public class CommandListener {
 					for (; i < cmdwithargs.length() && cmdwithargs.charAt(i) == ' '; i++)
 						; //Removes any space before the command
 				cmdwithargs.delete(0, i);
-				cmdwithargs.insert(0, DiscordPlugin.getPrefix()); //Always use the prefix for processing
+				cmdwithargs.insert(0, prefix); //Always use the prefix for processing
 			} else
-				cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
+				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
 		else {
+			if (cmdwithargs.length() == 0)
+				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
+			else if (cmdwithargs.charAt(0) != prefix)
+				cmdwithargs.insert(0, prefix);
 			return false; //Don't treat / as mention, mentions can be used in public mcchat
 		}
-		if (cmdwithargs.length() == 0)
-			cmdwithargs.replace(0, cmdwithargs.length(), DiscordPlugin.getPrefix() + "help");
 		return true;
 	}
 }
