@@ -47,20 +47,22 @@ public class CommonListeners {
 			return commandCh.filterWhen(ch -> event.getMessage().getChannel().map(mch ->
 				(commandChannel != null && mch.getId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 					|| mch instanceof PrivateChannel
-					|| event.getMessage().getContent().orElse("").contains("channelcon"))) //Only 'channelcon' is allowed in other channels
-				.filterWhen(ch -> { //Only continue if this doesn't handle the event
+					|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
+				.flatMap(shouldRun -> { //Only continue if this doesn't handle the event
+					if (!shouldRun)
+						return Mono.just(true); //The condition is only for the first command execution, not mcchat
 					timings.printElapsed("Run command 1");
 					return CommandListener.runCommand(event.getMessage(), ch, true); //#bot is handled here
-				}).filterWhen(ch -> {
-					timings.printElapsed("mcchat");
-					val mcchat = Component.getComponents().get(MinecraftChatModule.class);
-					if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
-						return ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
-					return Mono.empty(); //Wasn't handled, continue
-				}).filterWhen(ch -> {
-					timings.printElapsed("Run command 2");
-					return CommandListener.runCommand(event.getMessage(), ch, false);
-				});
+				})).filterWhen(ch -> {
+				timings.printElapsed("mcchat");
+				val mcchat = Component.getComponents().get(MinecraftChatModule.class);
+				if (mcchat != null && mcchat.isEnabled()) //ComponentManager.isEnabled() searches the component again
+					return ((MinecraftChatModule) mcchat).getListener().handleDiscord(event); //Also runs Discord commands in chat channels
+				return Mono.empty(); //Wasn't handled, continue
+			}).filterWhen(ch -> {
+				timings.printElapsed("Run command 2");
+				return CommandListener.runCommand(event.getMessage(), ch, false);
+			});
 		}).onErrorContinue((err, obj) -> TBMCCoreAPI.SendException("An error occured while handling a message!", err))
 			.subscribe();
 		dispatcher.on(PresenceUpdateEvent.class).subscribe(event -> {

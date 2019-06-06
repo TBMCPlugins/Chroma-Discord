@@ -68,7 +68,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	private ConfigData<Optional<Guild>> mainServer() {
 		return getIConfig().getDataPrimDef("mainServer", 0L,
 			id -> {
-				System.out.println("WTF ID: " + id); //TODO: It attempts to get the default as well
+				//It attempts to get the default as well
 				if ((long) id == 0L)
 					return Optional.empty(); //Hack?
 				return dc.getGuildById(Snowflake.of((long) id))
@@ -81,6 +81,9 @@ public class DiscordPlugin extends ButtonPlugin {
 		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 239519012529111040L);
 	}
 
+	/**
+	 * If the role doesn't exist, then it will only allow for the owner.
+	 */
 	public ConfigData<Mono<Role>> modRole() {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
@@ -138,10 +141,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
-			System.out.println("w t f: " + mainServer);
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
-			System.out.println("Main server: " + mainServer);
-			System.out.println("wtf: " + mainServer().get());
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
@@ -153,7 +153,8 @@ public class DiscordPlugin extends ButtonPlugin {
 				mainServer().set(Optional.of(mainServer)); //Save in config
 			}
 			SafeMode = false;
-			DPUtils.disableIfConfigError(null, commandChannel(), modRole()); //Won't disable, just prints the warning here
+			DPUtils.disableIfConfigErrorRes(null, commandChannel(), DPUtils.getMessageChannel(commandChannel()));
+			DPUtils.disableIfConfigError(null, modRole()); //Won't disable, just prints the warning here
 
 			Component.registerComponent(this, new GeneralEventBroadcasterModule());
 			Component.registerComponent(this, new MinecraftChatModule());
