@@ -15,20 +15,21 @@ public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 			PlayerListWatcher.hookUp();
 			DPUtils.getLogger().info("Finished hooking into the player list");
 			hooked = true;
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
+		} catch (Exception | NoClassDefFoundError e) {
+			TBMCCoreAPI.SendException("Error while hacking the player list! Disable this module if you're on an incompatible version.", e);
 		}
 	}
 
 	@Override
 	protected void disable() {
 		try {
+			if (!hooked) return;
 			if (PlayerListWatcher.hookDown())
 				DPUtils.getLogger().info("Finished unhooking the player list!");
 			else
 				DPUtils.getLogger().info("Didn't have the player list hooked.");
 			hooked = false;
-		} catch (Exception e) {
+		} catch (Exception | NoClassDefFoundError e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list!", e);
 		}
 	}
