@@ -19,7 +19,11 @@ public class DiscordConnectedPlayer extends DiscordFakePlayer implements IMCPlay
 
 	public DiscordConnectedPlayer(User user, MessageChannel channel, UUID uuid, String mcname, MinecraftChatModule module) {
 		super(user, channel, nextEntityId++, uuid, mcname, module);
-		vanillaCmdListener = new VanillaCommandListener<>(this);
+		try {
+			vanillaCmdListener = new VanillaCommandListener<>(this);
+		} catch (NoClassDefFoundError e) {
+			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
+		}
 	}
 
 }

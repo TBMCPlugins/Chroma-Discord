@@ -321,7 +321,8 @@ public class MCChatListener implements Listener {
 					return;
 				}
 				val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
-				Bukkit.getPluginManager().callEvent(ev);
+				Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () ->
+					Bukkit.getPluginManager().callEvent(ev));
 				if (ev.isCancelled())
 					return;
 				int spi = cmdlowercased.indexOf(' ');
@@ -338,7 +339,11 @@ public class MCChatListener implements Listener {
 							if (clmd != null) {
 								channel.set(clmd.mcchannel); //Hack to send command in the channel
 							} //TODO: Permcheck isn't implemented for commands
-							VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+							try {
+								VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+							} catch (NoClassDefFoundError e) {
+								Bukkit.dispatchCommand(dsender, cmd);
+							}
 							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
 							if (clmd != null)
 								channel.set(chtmp);

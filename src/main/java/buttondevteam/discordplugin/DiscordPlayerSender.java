@@ -41,7 +41,11 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 	public DiscordPlayerSender(User user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
-		vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
+		try {
+			vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
+		} catch (NoClassDefFoundError e) {
+			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
+		}
 	}
 
 	@Override
