@@ -302,10 +302,6 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 		return player.addAttachment(plugin);
 	}
 
-	public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance) {
-		return player.getTargetBlock(transparent, maxDistance);
-	}
-
 	public World getWorld() {
 		return player.getWorld();
 	}
@@ -352,10 +348,6 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 
 	public void setCompassTarget(Location loc) {
 		player.setCompassTarget(loc);
-	}
-
-	public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance) {
-		return player.getLastTwoTargetBlocks(transparent, maxDistance);
 	}
 
 	public Location getCompassTarget() {
@@ -1096,11 +1088,21 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 	}
 
 	public void hidePlayer(Player player) {
-		player.hidePlayer(player);
+		this.player.hidePlayer(player);
+	}
+
+	@Override
+	public void hidePlayer(Plugin plugin, Player player) {
+		this.player.hidePlayer(plugin, player);
 	}
 
 	public void showPlayer(Player player) {
-		player.showPlayer(player);
+		this.player.showPlayer(player);
+	}
+
+	@Override
+	public void showPlayer(Plugin plugin, Player player) {
+		this.player.showPlayer(plugin, player);
 	}
 
 	public boolean canSee(Player player) {

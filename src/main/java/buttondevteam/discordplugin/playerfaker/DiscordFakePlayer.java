@@ -553,7 +553,17 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 	}
 
 	@Override
+	public void hidePlayer(Plugin plugin, Player player) {
+
+	}
+
+	@Override
 	public void showPlayer(Player player) {
+	}
+
+	@Override
+	public void showPlayer(Plugin plugin, Player player) {
+
 	}
 
 	@Override

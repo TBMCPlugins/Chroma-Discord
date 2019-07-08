@@ -127,18 +127,8 @@ public abstract class DiscordLivingEntity extends DiscordEntity implements Livin
 	}
 
 	@Override
-	public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance) {
-		return null;
-	}
-
-	@Override
 	public Block getTargetBlock(Set<Material> transparent, int maxDistance) {
 		return null;
-	}
-
-	@Override
-	public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance) {
-		return Arrays.asList();
 	}
 
 	@Override

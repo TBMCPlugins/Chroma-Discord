@@ -148,7 +148,7 @@
         </repository> -->
         <repository>
             <id>Essentials</id>
-            <url>http://repo.ess3.net/content/repositories/essrel/</url>
+            <url>https://ci.ender.zone/plugin/repository/everything/</url>
         </repository>
         <repository>
             <id>projectlombok.org</id>
@@ -174,7 +174,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.12-R0.1-SNAPSHOT</version>
+            <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
