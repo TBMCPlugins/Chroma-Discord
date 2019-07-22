@@ -104,7 +104,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 				if (!mcch.isPresent() || ch == null || user == null || groupid == null)
 					continue;
 				Bukkit.getScheduler().runTask(getPlugin(), () -> { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
-					val dcp = new DiscordConnectedPlayer(user, (MessageChannel) ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this);
+					val dcp = DiscordConnectedPlayer.create(user, (MessageChannel) ch, UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this);
 					MCChatCustom.addCustomChat((MessageChannel) ch, groupid, mcch.get(), user, dcp, toggles, brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::get).filter(Objects::nonNull).collect(Collectors.toSet()));
 				});
 			}

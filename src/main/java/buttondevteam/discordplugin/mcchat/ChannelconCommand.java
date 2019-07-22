@@ -107,7 +107,7 @@ public class ChannelconCommand extends ICommand2DC {
 			return true;
 		}
 		val channel = message.getChannel().block();
-		DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor().get(), channel, chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName(), module);
+		DiscordConnectedPlayer dcp = DiscordConnectedPlayer.create(message.getAuthor().get(), channel, chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName(), module);
 		//Using a fake player with no login/logout, should be fine for this event
 		String groupid = chan.get().getGroupID(dcp);
 		if (groupid == null && !(chan.get() instanceof ChatRoom)) { //ChatRooms don't allow it unless the user joins, which happens later

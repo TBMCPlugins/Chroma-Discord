@@ -180,7 +180,10 @@ public class MCChatUtils {
 	}
 
 	public static Consumer<Mono<MessageChannel>> send(String message) {
-		return ch -> ch.flatMap(mc -> mc.createMessage(DPUtils.sanitizeString(message))).subscribe();
+		return ch -> ch.flatMap(mc -> {
+			resetLastMessage(mc);
+			return mc.createMessage(DPUtils.sanitizeString(message));
+		}).subscribe();
 	}
 
 	public static void forAllowedMCChat(Consumer<Mono<MessageChannel>> action, TBMCSystemChatEvent event) {

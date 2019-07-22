@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin;
 
+import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
@@ -36,13 +37,13 @@ import java.util.*;
 public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<DiscordPlayerSender> {
 
 	protected Player player;
-	private @Getter VanillaCommandListener<DiscordPlayerSender> vanillaCmdListener;
+	private @Getter VCMDWrapper<DiscordPlayerSender> vanillaCmdListener;
 
 	public DiscordPlayerSender(User user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
 		try {
-			vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
+			vanillaCmdListener = new VCMDWrapper<>(new VanillaCommandListener<DiscordPlayerSender>(this, player));
 		} catch (NoClassDefFoundError e) {
 			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
 		}

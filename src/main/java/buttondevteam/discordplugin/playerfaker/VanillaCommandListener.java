@@ -87,7 +87,7 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 		if (!vcmd.testPermission(sender))
 			return true;
 
-		ICommandListener icommandlistener = sender.getVanillaCmdListener();
+		ICommandListener icommandlistener = sender.getVanillaCmdListener().getListener();
 		String[] args = cmdstr.split(" ");
 		args = Arrays.copyOfRange(args, 1, args.length);
 		try {
