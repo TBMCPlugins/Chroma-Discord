@@ -12,6 +12,7 @@ import lombok.val;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerCommandEvent;
+import reactor.core.publisher.Mono;
 
 public class MCListener implements Listener {
 	@EventHandler
@@ -33,13 +34,16 @@ public class MCListener implements Listener {
 		DiscordPlayer dp = e.getPlayer().getAs(DiscordPlayer.class);
 		if (dp == null || dp.getDiscordID() == null || dp.getDiscordID().equals(""))
 			return;
-		User user = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).block();
-		if (user == null) return;
+		val userOpt = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).onErrorResume(t -> Mono.empty()).blockOptional();
+		if (!userOpt.isPresent()) return;
+		User user = userOpt.get();
 		e.addInfo("Discord tag: " + user.getUsername() + "#" + user.getDiscriminator());
-		Member member = user.asMember(DiscordPlugin.mainServer.getId()).block();
-		if (member == null) return;
-		val pr = member.getPresence().block();
-		if (pr == null) return;
+		val memberOpt = user.asMember(DiscordPlugin.mainServer.getId()).blockOptional();
+		if (!memberOpt.isPresent()) return;
+		Member member = memberOpt.get();
+		val prOpt = member.getPresence().blockOptional();
+		if (!prOpt.isPresent()) return;
+		val pr = prOpt.get();
 		e.addInfo(pr.getStatus().toString());
 		if (pr.getActivity().isPresent()) {
 			val activity = pr.getActivity().get();

@@ -8,6 +8,7 @@ import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import discord4j.core.object.entity.Role;
 import lombok.val;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +32,8 @@ public class RoleCommand extends ICommand2DC {
 			return true;
 		try {
 			sender.getMessage().getAuthorAsMember()
-				.subscribe(m -> m.addRole(role.getId()).subscribe(r -> sender.sendMessage("added role.")));
+				.flatMap(m -> m.addRole(role.getId()).switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("added role."))))
+				.subscribe();
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while adding role!", e);
 			sender.sendMessage("an error occured while adding the role.");
@@ -49,7 +51,8 @@ public class RoleCommand extends ICommand2DC {
 			return true;
 		try {
 			sender.getMessage().getAuthorAsMember()
-				.subscribe(m -> m.removeRole(role.getId()).subscribe(r -> sender.sendMessage("removed role.")));
+				.flatMap(m -> m.removeRole(role.getId()).switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("removed role."))))
+				.subscribe();
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while removing role!", e);
 			sender.sendMessage("an error occured while removing the role.");

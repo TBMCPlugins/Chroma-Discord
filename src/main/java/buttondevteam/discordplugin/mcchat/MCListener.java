@@ -27,7 +27,6 @@ import org.bukkit.event.server.TabCompleteEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -53,11 +52,13 @@ class MCListener implements Listener {
 			final Player p = e.getPlayer();
 			DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
 			if (dp != null) {
-				val user = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).block();
-				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, Objects.requireNonNull(user).getPrivateChannel().block(), p)); //TODO: Don't block
-				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, module.chatChannelMono().block(), p)); //Stored per-channel
+				DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).flatMap(user -> user.getPrivateChannel().flatMap(chan -> module.chatChannelMono().flatMap(cc -> {
+					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
+						new DiscordPlayerSender(user, chan, p));
+					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
+						new DiscordPlayerSender(user, cc, p)); //Stored per-channel
+					return Mono.empty();
+				}))).subscribe();
 			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
