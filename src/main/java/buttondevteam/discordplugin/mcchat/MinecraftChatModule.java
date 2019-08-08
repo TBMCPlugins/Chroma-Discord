@@ -77,6 +77,33 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return getConfig().getData("allowFakePlayerTeleports", false);
 	}
 
+	/**
+	 * If this is on, each chat channel will have a player list in their description.
+	 * It only gets added if there's no description yet or there are (at least) two lines of "----" following each other.
+	 * Note that it will replace <b>everything</b> between the first and last "----" but it will only detect exactly four dashes.
+	 * So if you want to use dashes for something else in the description, make sure it's either less or more dashes in one line.
+	 */
+	public ConfigData<Boolean> showPlayerListOnDC() {
+		return getConfig().getData("showPlayerListOnDC", true);
+	}
+
+	/**
+	 * This setting controls whether custom chat connections can be <i>created</i> (existing connections will always work).
+	 * Custom chat connections can be created using the channelcon command and they allow players to display town chat in a Discord channel for example.
+	 * See the channelcon command for more details.
+	 */
+	public ConfigData<Boolean> allowCustomChat() {
+		return getConfig().getData("allowCustomChat", true);
+	}
+
+	/**
+	 * This setting allows you to control if players can DM the bot to log on the server from Discord.
+	 * This allows them to both chat and perform any command they can in-game.
+	 */
+	public ConfigData<Boolean> allowPrivateChat() {
+		return getConfig().getData("allowPrivateChat", true);
+	}
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
@@ -84,7 +111,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
-		getPlugin().getManager().registerCommand(new MCChatCommand());
+		getPlugin().getManager().registerCommand(new MCChatCommand(this));
 		getPlugin().getManager().registerCommand(new ChannelconCommand(this));
 
 		val chcons = getConfig().getConfig().getConfigurationSection("chcons");

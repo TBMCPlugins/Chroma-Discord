@@ -9,6 +9,7 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import discord4j.core.object.entity.PrivateChannel;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 
 @CommandClass(helpText = {
@@ -17,10 +18,17 @@ import lombok.val;
 	"It can be useful if you don't want your messages to be visible, for example when talking in a private channel.", //
 	"You can also run all of the ingame commands you have access to using this command, if you have your accounts connected." //
 })
+@RequiredArgsConstructor
 public class MCChatCommand extends ICommand2DC {
+
+	private final MinecraftChatModule module;
 
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender) {
+		if (!module.allowPrivateChat().get()) {
+			sender.sendMessage("using the private chat is not allowed on this Minecraft server.");
+			return true;
+		}
 		val message = sender.getMessage();
 		val channel = message.getChannel().block();
 		@SuppressWarnings("OptionalGetWithoutIsPresent") val author = message.getAuthor().get();

@@ -53,7 +53,8 @@ public class MCChatUtils {
 	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
 
 	public static void updatePlayerList() {
-		if (notEnabled()) return;
+		val mod = getModule();
+		if (mod == null || !mod.showPlayerListOnDC().get()) return;
 		if (lastmsgdata != null)
 			updatePL(lastmsgdata);
 		MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);

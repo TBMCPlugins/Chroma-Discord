@@ -90,6 +90,10 @@ public class ChannelconCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String channelID) {
 		val message = sender.getMessage();
+		if (!module.allowCustomChat().get()) {
+			sender.sendMessage("channel connection is not allowed on this Minecraft server.");
+			return true;
+		}
 		if (checkPerms(message)) return true;
 		if (MCChatCustom.hasCustomChat(message.getChannelId()))
 			return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
