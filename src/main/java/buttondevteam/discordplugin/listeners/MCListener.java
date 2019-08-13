@@ -38,7 +38,7 @@ public class MCListener implements Listener {
 		if (!userOpt.isPresent()) return;
 		User user = userOpt.get();
 		e.addInfo("Discord tag: " + user.getUsername() + "#" + user.getDiscriminator());
-		val memberOpt = user.asMember(DiscordPlugin.mainServer.getId()).blockOptional();
+		val memberOpt = user.asMember(DiscordPlugin.mainServer.getId()).onErrorResume(t -> Mono.empty()).blockOptional();
 		if (!memberOpt.isPresent()) return;
 		Member member = memberOpt.get();
 		val prOpt = member.getPresence().blockOptional();

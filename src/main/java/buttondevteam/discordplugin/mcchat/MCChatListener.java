@@ -10,6 +10,7 @@ import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener14;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.ChatMessage;
@@ -277,10 +278,11 @@ public class MCChatListener implements Listener {
 
 			for (User u : event.getMessage().getUserMentions().toIterable()) { //TODO: Role mentions
 				dmessage = dmessage.replace(u.getMention(), "@" + u.getUsername()); // TODO: IG Formatting
-				val m = u.asMember(DiscordPlugin.mainServer.getId()).block();
-				if (m != null) {
-					final String nick = m.getDisplayName();
-					dmessage = dmessage.replace(m.getNicknameMention(), "@" + nick);
+				val m = u.asMember(DiscordPlugin.mainServer.getId()).onErrorResume(t -> Mono.empty()).blockOptional();
+				if (m.isPresent()) {
+					val mm = m.get();
+					final String nick = mm.getDisplayName();
+					dmessage = dmessage.replace(mm.getNicknameMention(), "@" + nick);
 				}
 			}
 			for (GuildChannel ch : event.getGuild().flux().flatMap(Guild::getChannels).toIterable()) {
@@ -340,7 +342,11 @@ public class MCChatListener implements Listener {
 								channel.set(clmd.mcchannel); //Hack to send command in the channel
 							} //TODO: Permcheck isn't implemented for commands
 							try {
-								VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+								String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
+								if (mcpackage.contains("1_12"))
+									VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+								else if (mcpackage.contains("1_14"))
+									VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
 							} catch (NoClassDefFoundError e) {
 								Bukkit.dispatchCommand(dsender, cmd);
 							}

@@ -118,7 +118,7 @@ class MCListener implements Listener {
 		final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
 			.getAs(DiscordPlayer.class);
 		if (p == null) return;
-		DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
+		DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
 			.flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId()))
 			.flatMap(user -> role.flatMap(r -> {
 				if (e.getValue())
@@ -131,7 +131,7 @@ class MCListener implements Listener {
 				if (modlog != null)
 					return modlog.flatMap(ch -> ch.createMessage(msg));
 				return Mono.empty();
-			})).subscribe();
+			}))).subscribe();
 	}
 
 	@EventHandler

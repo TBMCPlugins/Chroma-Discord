@@ -1,7 +1,9 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
 import lombok.Getter;
@@ -143,7 +145,8 @@ public class DiscordFakePlayer extends DiscordHumanEntity implements Player {
 
 	@Override
 	public String getDisplayName() {
-		return Objects.requireNonNull(user.asMember(DiscordPlugin.mainServer.getId()).block()).getDisplayName();
+		return DPUtils.ignoreError(user.asMember(DiscordPlugin.mainServer.getId())).blockOptional()
+			.map(Member::getDisplayName).orElse(name);
 	}
 
 	@Override

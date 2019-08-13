@@ -2,7 +2,6 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
-import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
 import lombok.Getter;
@@ -21,7 +20,7 @@ import java.util.HashSet;
 import java.util.UUID;
 
 public abstract class DiscordConnectedPlayer extends DiscordSenderBase implements IMCPlayer<DiscordConnectedPlayer> {
-	private @Getter VCMDWrapper<DiscordConnectedPlayer> vanillaCmdListener;
+	private @Getter VCMDWrapper vanillaCmdListener;
 	@Getter
 	@Setter
 	private boolean loggedIn = false;
@@ -56,7 +55,9 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		uniqueId = uuid;
 		displayName = mcname;
 		try {
-			vanillaCmdListener = new VCMDWrapper<>(new VanillaCommandListener<>(this));
+			vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this));
+			if (vanillaCmdListener.getListener() == null)
+				DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
 		} catch (NoClassDefFoundError e) {
 			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
 		}
