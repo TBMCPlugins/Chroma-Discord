@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.broadcaster;
 
+import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -53,57 +53,75 @@ public class PlayerListWatcher {
 		}
 	}*/
 
-	static void hookUp() throws Exception {
+	static boolean hookUpDown(boolean up) throws Exception {
 		val csc = Bukkit.getServer().getClass();
 		Field conf = csc.getDeclaredField("console");
 		conf.setAccessible(true);
 		val server = conf.get(Bukkit.getServer());
 		val nms = server.getClass().getPackage().getName();
 		val dplc = Class.forName(nms + ".DedicatedPlayerList");
-		mock = Mockito.mock(dplc, new Answer() { // Cannot call super constructor
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				return invocation.getMethod().invoke(plist, invocation.getArguments());
-			}
-		});
-		plist = server.getClass().getMethod("getPlayerList").invoke(server);
-		try {
-			Field mpf = mock.getClass().getField("maxPlayers");
-			mpf.setAccessible(true);
-			Field modf = mpf.getClass().getDeclaredField("modifiers");
-			modf.setAccessible(true);
-			modf.set(mpf, mpf.getModifiers() & ~Modifier.FINAL);
-			mpf.set(mock, mpf.get(plist));
-		} catch (NoSuchFieldException ignored) {
-			//The field no longer exists on 1.14
-		}
-		Field plf = mock.getClass().getField("players");
-		plf.setAccessible(true);
-		Field modf = plf.getClass().getDeclaredField("modifiers");
-		modf.setAccessible(true);
-		modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
-		plf.set(mock, plf.get(plist));
-		try {
-			server.getClass().getMethod("a", dplc).invoke(server, mock);
-		} catch (NoSuchMethodException e) {
-			server.getClass().getMethod("a", Class.forName(server.getClass().getPackage().getName() + ".PlayerList")).invoke(server, mock);
-		}
-		Field pllf = CraftServer.class.getDeclaredField("playerList");
-		pllf.setAccessible(true);
-		pllf.set(Bukkit.getServer(), mock);
-	}
+		val currentPL = server.getClass().getMethod("getPlayerList").invoke(server);
+		if (up) {
+			mock = Mockito.mock(dplc, new Answer() { // Cannot call super constructor
+				@Override
+				public Object answer(InvocationOnMock invocation) throws Throwable {
+					if (!invocation.getMethod().getName().equals("sendMessage"))
+						return invocation.getMethod().invoke(plist, invocation.getArguments());
+					val args = invocation.getArguments();
+					val params = invocation.getMethod().getParameterTypes();
+					if (params.length == 0) {
+						TBMCCoreAPI.SendException("Found a strange method",
+							new Exception("Found a sendMessage() method without arguments."));
+						return null;
+					}
+					if (params[0].getSimpleName().equals("IChatBaseComponent[]"))
+						for (val arg : (Object[]) args[0])
+							sendMessage(arg, true);
+					else if (params[0].getSimpleName().equals("IChatBaseComponent"))
+						if (params.length > 1 && params[1].getSimpleName().equalsIgnoreCase("boolean"))
+							sendMessage(args[0], (Boolean) args[1]);
+						else
+							sendMessage(args[0], true);
+					else
+						TBMCCoreAPI.SendException("Found a method with interesting params",
+							new Exception("Found a sendMessage(" + params[0].getSimpleName() + ") method"));
+					return null;
+				}
 
-	static boolean hookDown() throws Exception {
-		/*Field conf = CraftServer.class.getDeclaredField("console");
-		conf.setAccessible(true);
-		val server = (MinecraftServer) conf.get(Bukkit.getServer());
-		val plist = (DedicatedPlayerList) server.getPlayerList();
-		if (!(plist instanceof PlayerListWatcher))
-			return false;
-		server.a(((PlayerListWatcher) plist).plist);
-		Field pllf = CraftServer.class.getDeclaredField("playerList");
+				private void sendMessage(Object chatComponent, boolean system) {
+					//TODO
+				}
+			});
+			plist = currentPL;
+			try {
+				Field mpf = mock.getClass().getField("maxPlayers");
+				mpf.setAccessible(true);
+				Field modf = mpf.getClass().getDeclaredField("modifiers");
+				modf.setAccessible(true);
+				modf.set(mpf, mpf.getModifiers() & ~Modifier.FINAL);
+				mpf.set(mock, mpf.get(plist));
+			} catch (NoSuchFieldException ignored) {
+				//The field no longer exists on 1.14
+			}
+			Field plf = mock.getClass().getField("players");
+			plf.setAccessible(true);
+			Field modf = plf.getClass().getDeclaredField("modifiers");
+			modf.setAccessible(true);
+			modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
+			plf.set(mock, plf.get(plist));
+		} else {
+			if (!(mock instanceof PlayerListWatcher))
+				return false;
+		}
+		try {
+			server.getClass().getMethod("a", dplc).invoke(server, up ? mock : plist);
+		} catch (NoSuchMethodException e) {
+			server.getClass().getMethod("a", Class.forName(server.getClass().getPackage().getName() + ".PlayerList"))
+				.invoke(server, up ? mock : plist);
+		}
+		Field pllf = csc.getDeclaredField("playerList");
 		pllf.setAccessible(true);
-		pllf.set(Bukkit.getServer(), ((PlayerListWatcher) plist).plist);*/
+		pllf.set(Bukkit.getServer(), up ? mock : plist);
 		return true;
 	}
 }

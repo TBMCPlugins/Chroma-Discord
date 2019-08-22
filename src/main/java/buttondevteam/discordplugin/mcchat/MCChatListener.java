@@ -347,10 +347,12 @@ public class MCChatListener implements Listener {
 									VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
 								else if (mcpackage.contains("1_14"))
 									VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
+								else
+									Bukkit.dispatchCommand(dsender, cmd);
 							} catch (NoClassDefFoundError e) {
-								Bukkit.dispatchCommand(dsender, cmd);
+								TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
 							}
-							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
+							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
 							if (clmd != null)
 								channel.set(chtmp);
 						});

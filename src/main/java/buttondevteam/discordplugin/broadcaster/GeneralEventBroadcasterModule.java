@@ -12,7 +12,7 @@ public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	@Override
 	protected void enable() {
 		try {
-			PlayerListWatcher.hookUp();
+			PlayerListWatcher.hookUpDown(true);
 			DPUtils.getLogger().info("Finished hooking into the player list");
 			hooked = true;
 		} catch (Exception e) {
@@ -27,7 +27,7 @@ public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	protected void disable() {
 		try {
 			if (!hooked) return;
-			if (PlayerListWatcher.hookDown())
+			if (PlayerListWatcher.hookUpDown(false))
 				DPUtils.getLogger().info("Finished unhooking the player list!");
 			else
 				DPUtils.getLogger().info("Didn't have the player list hooked.");
