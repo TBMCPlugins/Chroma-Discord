@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.role;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.event.domain.role.RoleCreateEvent;
@@ -89,11 +90,24 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	}
 
 	private Mono<Boolean> isGameRole(Role r) {
-		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
+		boolean debug = r.getName().equalsIgnoreCase("Minecraft");
+		if (debug) TBMCCoreAPI.sendDebugMessage("Checking if Minecraft is a game role...");
+		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong()) {
+			if (debug) TBMCCoreAPI.sendDebugMessage("Not in the main server: " + r.getGuildId().asString());
 			return Mono.just(false); //Only allow on the main server
+		}
 		val rc = new Color(149, 165, 166, 0);
-		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
-			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId())).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
-			.defaultIfEmpty(false);
+		if (debug) TBMCCoreAPI.sendDebugMessage("Game role color: " + rc + " - MC color: " + r.getColor());
+		return Mono.just(r.getColor().equals(rc))
+			.doAfterSuccessOrError((b, e) -> {
+				if (debug) TBMCCoreAPI.sendDebugMessage("1. b: " + b + " - e: " + e);
+			}).filter(b -> b).flatMap(b ->
+				DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
+					.doAfterSuccessOrError((m, e) -> {
+						if (debug) TBMCCoreAPI.sendDebugMessage("2. m: " + m.getDisplayName() + " e: " + e);
+					}).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
+			.doAfterSuccessOrError((b, e) -> {
+				if (debug) TBMCCoreAPI.sendDebugMessage("3. b: " + b + " - e: " + e);
+			}).defaultIfEmpty(false);
 	}
 }
