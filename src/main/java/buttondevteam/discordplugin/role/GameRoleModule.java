@@ -27,7 +27,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	@Override
 	protected void enable() {
 		getPlugin().getManager().registerCommand(new RoleCommand(this));
-		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
+		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(r -> isGameRole(r, false)).map(Role::getName).collect(Collectors.toList()).block();
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		if (roleEvent instanceof RoleCreateEvent) {
 			Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
 				Role role=((RoleCreateEvent) roleEvent).getRole();
-				grm.isGameRole(role).flatMap(b -> {
+				grm.isGameRole(role, false).flatMap(b -> {
 					if (!b)
 						return Mono.empty(); //Deleted or not a game role
 					GameRoles.add(role.getName());
@@ -68,7 +68,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				return;
 			}
 			Role or=event.getOld().get();
-			grm.isGameRole(event.getCurrent()).flatMap(b -> {
+			grm.isGameRole(event.getCurrent(), true).flatMap(b -> {
 				if (!b) {
 					if (GameRoles.remove(or.getName()) && logChannel != null)
 						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed."));
@@ -89,8 +89,8 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		}
 	}
 
-	private Mono<Boolean> isGameRole(Role r) {
-		boolean debug = r.getName().equalsIgnoreCase("Minecraft");
+	private Mono<Boolean> isGameRole(Role r, boolean debugMC) {
+		boolean debug = debugMC && r.getName().equalsIgnoreCase("Minecraft");
 		if (debug) TBMCCoreAPI.sendDebugMessage("Checking if Minecraft is a game role...");
 		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong()) {
 			if (debug) TBMCCoreAPI.sendDebugMessage("Not in the main server: " + r.getGuildId().asString());
