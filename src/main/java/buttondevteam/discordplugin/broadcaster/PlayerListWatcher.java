@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.broadcaster;
 
+import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -8,6 +9,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class PlayerListWatcher {
@@ -62,13 +64,38 @@ public class PlayerListWatcher {
 		val dplc = Class.forName(nms + ".DedicatedPlayerList");
 		val currentPL = server.getClass().getMethod("getPlayerList").invoke(server);
 		if (up) {
+			val icbcl = Class.forName(nms + ".IChatBaseComponent");
+			val sendMessage = server.getClass().getMethod("sendMessage", icbcl);
+			val cmtcl = Class.forName(nms + ".ChatMessageType");
+			val systemType = cmtcl.getDeclaredField("SYSTEM").get(null);
+			val chatType = cmtcl.getDeclaredField("CHAT").get(null);
+
+			val obc = csc.getPackage().getName();
+			val ccmcl = Class.forName(obc + ".util.CraftChatMessage");
+			val fixComponent = ccmcl.getMethod("fixComponent", icbcl);
+			val ppoc = Class.forName(nms + ".PacketPlayOutChat");
+			val ppocC = Class.forName(nms + ".PacketPlayOutChat").getConstructor(icbcl, cmtcl);
+			val sendAll = dplc.getMethod("sendAll", Class.forName(nms + ".Packet"));
+			Method tpt;
+			try {
+				tpt = icbcl.getMethod("toPlainText");
+			} catch (NoSuchMethodException e) {
+				tpt = icbcl.getMethod("getString");
+			}
+			val toPlainText = tpt;
 			mock = Mockito.mock(dplc, new Answer() { // Cannot call super constructor
 				@Override
 				public Object answer(InvocationOnMock invocation) throws Throwable {
-					if (!invocation.getMethod().getName().equals("sendMessage"))
-						return invocation.getMethod().invoke(plist, invocation.getArguments());
+					final Method method = invocation.getMethod();
+					if (!method.getName().equals("sendMessage")) {
+						if (method.getName().equals("sendAll")) {
+							sendAll(invocation.getArgument(0));
+							return null;
+						}
+						return method.invoke(plist, invocation.getArguments());
+					}
 					val args = invocation.getArguments();
-					val params = invocation.getMethod().getParameterTypes();
+					val params = method.getParameterTypes();
 					if (params.length == 0) {
 						TBMCCoreAPI.SendException("Found a strange method",
 							new Exception("Found a sendMessage() method without arguments."));
@@ -89,7 +116,29 @@ public class PlayerListWatcher {
 				}
 
 				private void sendMessage(Object chatComponent, boolean system) {
-					//TODO
+					try { //Converted to use reflection
+						sendMessage.invoke(server, chatComponent);
+						Object chatmessagetype = system ? systemType : chatType;
+
+						// CraftBukkit start - we run this through our processor first so we can get web links etc
+						this.sendAll(ppocC.newInstance(fixComponent.invoke(null, chatComponent), chatmessagetype));
+						// CraftBukkit end
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("An error occurred while passing a vanilla message through the player list", e);
+					}
+				}
+
+				private void sendAll(Object packet) {
+					try { // Some messages get sent by directly constructing a packet
+						sendAll.invoke(plist, packet);
+						if (packet.getClass() == ppoc) {
+							Field msgf = ppoc.getDeclaredField("a");
+							msgf.setAccessible(true);
+							MCChatUtils.forAllMCChat(MCChatUtils.send((String) toPlainText.invoke(msgf.get(packet))));
+						}
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
+					}
 				}
 			});
 			plist = currentPL;
