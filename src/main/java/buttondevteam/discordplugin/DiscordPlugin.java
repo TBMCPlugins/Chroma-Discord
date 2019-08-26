@@ -142,9 +142,13 @@ public class DiscordPlugin extends ButtonPlugin {
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
+			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+					dc.getApplicationInfo().subscribe(info -> {
+						getLogger().severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId().asString() + "&scope=bot&permissions=268509264");
+					});
 					saveConfig(); //Put default there
 					return; //We should have all guilds by now, no need to retry
 				}
@@ -200,7 +204,6 @@ public class DiscordPlugin extends ButtonPlugin {
 
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-			getCommand2MC().registerCommand(new DiscordMCCommand());
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
 			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
 				? ((DiscordSenderBase) sender).getChromaUser() : null));

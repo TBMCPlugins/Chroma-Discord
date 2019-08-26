@@ -104,10 +104,13 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return getConfig().getData("allowPrivateChat", true);
 	}
 
+	String clientID;
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
 			return;
+		DiscordPlugin.dc.getApplicationInfo().subscribe(info -> clientID = info.getId().asString());
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
