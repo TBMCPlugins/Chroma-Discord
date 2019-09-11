@@ -141,6 +141,10 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
+			if(!SafeMode) {
+				getLogger().info("Ready again, already enabled."); //TODO: It should probably handle disconnections
+				return;
+			}
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
 			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			if (mainServer == null) {
@@ -264,8 +268,8 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
-			timings.printElapsed("Updating presence...");
-			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
+			//timings.printElapsed("Updating presence...");
+			//dc.updatePresence(Presence.idle(Activity.playing("logging out"))).block(); //No longer using the same account for testing
 			timings.printElapsed("Logging out...");
 			dc.logout().block();
 			//Configs are emptied so channels and servers are fetched again
