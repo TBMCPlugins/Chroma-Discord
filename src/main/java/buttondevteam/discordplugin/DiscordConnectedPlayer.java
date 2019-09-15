@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.Delegate;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.permissions.PermissibleBase;
@@ -142,6 +143,16 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	public Location getLocation() {
 		return new Location(getWorld(), location.getX(), location.getY(), location.getZ(),
 			location.getYaw(), location.getPitch());
+	}
+
+	@Override
+	public double getMaxHealth() {
+		return 20;
+	}
+
+	@Override
+	public Player getPlayer() {
+		return this;
 	}
 
 	@Getter

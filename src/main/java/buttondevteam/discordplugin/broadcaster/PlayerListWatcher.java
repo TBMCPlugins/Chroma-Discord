@@ -158,9 +158,6 @@ public class PlayerListWatcher {
 			modf.setAccessible(true);
 			modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
 			plf.set(mock, plf.get(plist));
-		} else {
-			if (!(mock instanceof PlayerListWatcher))
-				return false;
 		}
 		try {
 			server.getClass().getMethod("a", dplc).invoke(server, up ? mock : plist);
