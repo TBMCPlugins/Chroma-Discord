@@ -10,7 +10,6 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.var;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;

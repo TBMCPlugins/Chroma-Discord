@@ -79,7 +79,7 @@ public class MCChatListener implements Listener {
 
 			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
 				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
-				+ (DPUtils.sanitizeStringNoEscape(ThorpeUtils.getDisplayName(e.getSender())));
+				+ (DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender())));
 			val color = e.getChannel().Color().get();
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
 				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),

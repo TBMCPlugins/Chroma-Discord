@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.playerfaker.perm;
 
 import buttondevteam.core.MainPlugin;
+import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
-import buttondevteam.discordplugin.playerfaker.DiscordFakePlayer;
 import buttondevteam.lib.TBMCCoreAPI;
 import me.lucko.luckperms.bukkit.LPBukkitBootstrap;
 import me.lucko.luckperms.bukkit.LPBukkitPlugin;
@@ -87,10 +87,10 @@ public final class LPInjector implements Listener { //Disable login event for Lu
         /* Called when the player starts logging into the server.
            At this point, the users data should be present and loaded. */
 
-		if (!(e.getPlayer() instanceof DiscordFakePlayer))
+		if (!(e.getPlayer() instanceof DiscordConnectedPlayer))
 			return; //Normal players must be handled by the plugin
 
-		final DiscordFakePlayer player = (DiscordFakePlayer) e.getPlayer();
+		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
 		if (plugin.getConfiguration().get(ConfigKeys.DEBUG_LOGINS)) {
 			plugin.getLogger().info("Processing login for " + player.getUniqueId() + " - " + player.getName());
@@ -155,10 +155,10 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 	// Wait until the last priority to unload, so plugins can still perform permission checks on this event
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerQuit(PlayerQuitEvent e) {
-		if (!(e.getPlayer() instanceof DiscordFakePlayer))
+		if (!(e.getPlayer() instanceof DiscordConnectedPlayer))
 			return;
 
-		final DiscordFakePlayer player = (DiscordFakePlayer) e.getPlayer();
+		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
 		connectionListener.handleDisconnect(player.getUniqueId());
 
@@ -183,7 +183,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 	}
 
 	//me.lucko.luckperms.bukkit.inject.permissible.PermissibleInjector
-	private void inject(DiscordFakePlayer player, LPPermissible newPermissible, PermissibleBase oldPermissible) throws IllegalAccessException, InvocationTargetException {
+	private void inject(DiscordConnectedPlayer player, LPPermissible newPermissible, PermissibleBase oldPermissible) throws IllegalAccessException, InvocationTargetException {
 
 		// seems we have already injected into this player.
 		if (oldPermissible instanceof LPPermissible) {
@@ -207,7 +207,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		player.setPerm(newPermissible);
 	}
 
-	private void uninject(DiscordFakePlayer player, boolean dummy) throws Exception {
+	private void uninject(DiscordConnectedPlayer player, boolean dummy) throws Exception {
 
 		// gets the players current permissible.
 		PermissibleBase permissible = player.getPerm();
