@@ -2,6 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.github.TBMCPlugins.ButtonCore</groupId>
+        <artifactId>CorePOM</artifactId>
+        <version>master-SNAPSHOT</version>
+    </parent>
+
     <groupId>com.github.TBMCPlugins</groupId>
     <artifactId>DiscordPlugin</artifactId>
     <version>master-SNAPSHOT</version>
@@ -34,22 +40,6 @@
         </resources>
         <finalName>DiscordPlugin</finalName>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.2</version>
-                <configuration>
-                    <source>10</source>
-                    <target>10</target>
-                    <!-- <compilerArgs>
-                        <arg>-processor</arg>
-                        <arg>buttondevteam.buttonproc.ButtonProcessor, lombok.core.AnnotationProcessor</arg>
-                    </compilerArgs> -->
-                    <!-- <annotationProcessors>
-                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
-                        <annotationProcessor>buttondevteam.buttonproc.ButtonProcessor</annotationProcessor>
-                    </annotationProcessors> -->
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

@@ -142,22 +142,15 @@ public class PlayerListWatcher {
 				}
 			});
 			plist = currentPL;
-			try {
-				Field mpf = mock.getClass().getField("maxPlayers");
-				mpf.setAccessible(true);
-				Field modf = mpf.getClass().getDeclaredField("modifiers");
-				modf.setAccessible(true);
-				modf.set(mpf, mpf.getModifiers() & ~Modifier.FINAL);
-				mpf.set(mock, mpf.get(plist));
-			} catch (NoSuchFieldException ignored) {
-				//The field no longer exists on 1.14
+			for (var plc = dplc; plc != null; plc = plc.getSuperclass()) { //Set all fields
+				for (var f : plc.getDeclaredFields()) {
+					f.setAccessible(true);
+					Field modf = f.getClass().getDeclaredField("modifiers");
+					modf.setAccessible(true);
+					modf.set(f, f.getModifiers() & ~Modifier.FINAL);
+					f.set(mock, f.get(plist));
+				}
 			}
-			Field plf = mock.getClass().getField("players");
-			plf.setAccessible(true);
-			Field modf = plf.getClass().getDeclaredField("modifiers");
-			modf.setAccessible(true);
-			modf.set(plf, plf.getModifiers() & ~Modifier.FINAL);
-			plf.set(mock, plf.get(plist));
 		}
 		try {
 			server.getClass().getMethod("a", dplc).invoke(server, up ? mock : plist);
