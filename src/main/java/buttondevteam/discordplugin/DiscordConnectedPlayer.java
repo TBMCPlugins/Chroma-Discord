@@ -9,6 +9,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Delegate;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -21,6 +24,8 @@ import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -174,6 +179,48 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	@Getter
 	@Setter
 	private String displayName;
+
+	@Override
+	public AttributeInstance getAttribute(Attribute attribute) {
+		return new AttributeInstance() {
+			@Override
+			public Attribute getAttribute() {
+				return attribute;
+			}
+
+			@Override
+			public double getBaseValue() {
+				return getDefaultValue();
+			}
+
+			@Override
+			public void setBaseValue(double value) {
+			}
+
+			@Override
+			public Collection<AttributeModifier> getModifiers() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public void addModifier(AttributeModifier modifier) {
+			}
+
+			@Override
+			public void removeModifier(AttributeModifier modifier) {
+			}
+
+			@Override
+			public double getValue() {
+				return getDefaultValue();
+			}
+
+			@Override
+			public double getDefaultValue() {
+				return 20; //Works for max health, should be okay for the rest
+			}
+		};
+	}
 
 	public static DiscordConnectedPlayer create(User user, MessageChannel channel, UUID uuid, String mcname,
 	                                            MinecraftChatModule module) {

@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bukkit.entity.Damageable;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 
 /**
@@ -34,9 +34,7 @@ public class AppTest extends TestCase {
 	public void testApp() {
 		Player dcp = DiscordConnectedPlayer.createTest();
 
-		double h = dcp.getMaxHealth();
+		double h = dcp.getAttribute(Attribute.GENERIC_MAX_HEALTH).getDefaultValue(); ; ;
 		System.out.println(h);
-		Damageable d = (Damageable) dcp;
-		System.out.println(d.getMaxHealth());
 	}
 }
