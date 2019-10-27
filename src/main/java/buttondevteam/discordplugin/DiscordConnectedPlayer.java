@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import buttondevteam.discordplugin.playerfaker.DiscordInventory;
 import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
@@ -12,13 +13,18 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.ServerOperator;
-import org.mockito.Answers;
+import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.UUID;
+
+import static org.mockito.Answers.RETURNS_DEFAULTS;
 
 public abstract class DiscordConnectedPlayer extends DiscordSenderBase implements IMCPlayer<DiscordConnectedPlayer> {
 	private @Getter VCMDWrapper vanillaCmdListener;
@@ -37,7 +43,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	@Setter
 	private PermissibleBase perm;
 
-	private Location location = Bukkit.getWorlds().get(0).getSpawnLocation();
+	private Location location;
 
 	private final MinecraftChatModule module;
 
@@ -50,6 +56,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	protected DiscordConnectedPlayer(User user, MessageChannel channel, UUID uuid, String mcname,
 	                                 MinecraftChatModule module) {
 		super(user, channel);
+		location = Bukkit.getWorlds().get(0).getSpawnLocation();
 		origPerm = perm = new PermissibleBase(basePlayer = Bukkit.getOfflinePlayer(uuid));
 		name = mcname;
 		this.module = module;
@@ -62,6 +69,15 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		} catch (NoClassDefFoundError e) {
 			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
 		}
+	}
+
+	/**
+	 * For testing
+	 */
+	protected DiscordConnectedPlayer(User user, MessageChannel channel) {
+		super(user, channel);
+		module = null;
+		uniqueId = UUID.randomUUID();
 	}
 
 	public void setOp(boolean value) { //CraftPlayer-compatible implementation
@@ -161,7 +177,30 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 
 	public static DiscordConnectedPlayer create(User user, MessageChannel channel, UUID uuid, String mcname,
 	                                            MinecraftChatModule module) {
-		return Mockito.mock(DiscordConnectedPlayer.class, Mockito.withSettings()
-			.defaultAnswer(Answers.CALLS_REAL_METHODS).useConstructor(user, channel, uuid, mcname, module));
+		return Mockito.mock(DiscordConnectedPlayer.class,
+			getSettings().useConstructor(user, channel, uuid, mcname, module));
+	}
+
+	public static DiscordConnectedPlayer createTest() {
+		return Mockito.mock(DiscordConnectedPlayer.class, getSettings().useConstructor(null, null));
+	}
+
+	private static MockSettings getSettings() {
+		return Mockito.withSettings()
+			.defaultAnswer(invocation -> {
+				try {
+					if (!Modifier.isAbstract(invocation.getMethod().getModifiers()))
+						return invocation.callRealMethod();
+					if (PlayerInventory.class.isAssignableFrom(invocation.getMethod().getReturnType()))
+						return Mockito.mock(DiscordInventory.class, Mockito.withSettings().extraInterfaces(PlayerInventory.class));
+					if (Inventory.class.isAssignableFrom(invocation.getMethod().getReturnType()))
+						return new DiscordInventory();
+					return RETURNS_DEFAULTS.answer(invocation);
+				} catch (Exception e) {
+					System.err.println("Error in mocked player!");
+					e.printStackTrace();
+					return RETURNS_DEFAULTS.answer(invocation);
+				}
+			});
 	}
 }

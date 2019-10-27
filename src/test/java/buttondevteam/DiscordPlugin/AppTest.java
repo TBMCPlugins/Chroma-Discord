@@ -1,8 +1,11 @@
 package buttondevteam.DiscordPlugin;
 
+import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bukkit.entity.Damageable;
+import org.bukkit.entity.Player;
 
 /**
  * Unit test for simple App.
@@ -29,6 +32,11 @@ public class AppTest extends TestCase {
 	 * Rigourous Test :-)
 	 */
 	public void testApp() {
-		assertTrue(true);
+		Player dcp = DiscordConnectedPlayer.createTest();
+
+		double h = dcp.getMaxHealth();
+		System.out.println(h);
+		Damageable d = (Damageable) dcp;
+		System.out.println(d.getMaxHealth());
 	}
 }
