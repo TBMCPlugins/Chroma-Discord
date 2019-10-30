@@ -222,6 +222,11 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		};
 	}
 
+	@Override
+	public GameMode getGameMode() {
+		return GameMode.SPECTATOR;
+	}
+
 	public static DiscordConnectedPlayer create(User user, MessageChannel channel, UUID uuid, String mcname,
 	                                            MinecraftChatModule module) {
 		return Mockito.mock(DiscordConnectedPlayer.class,
