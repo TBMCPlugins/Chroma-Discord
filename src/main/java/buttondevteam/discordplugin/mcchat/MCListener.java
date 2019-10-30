@@ -18,13 +18,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.server.BroadcastMessageEvent;
+import org.bukkit.event.server.TabCompleteEvent;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -50,11 +52,13 @@ class MCListener implements Listener {
 			final Player p = e.getPlayer();
 			DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
 			if (dp != null) {
-				val user = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).block();
-				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, Objects.requireNonNull(user).getPrivateChannel().block(), p)); //TODO: Don't block
-				MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-					new DiscordPlayerSender(user, module.chatChannelMono().block(), p)); //Stored per-channel
+				DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).flatMap(user -> user.getPrivateChannel().flatMap(chan -> module.chatChannelMono().flatMap(cc -> {
+					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
+						new DiscordPlayerSender(user, chan, p));
+					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
+						new DiscordPlayerSender(user, cc, p)); //Stored per-channel
+					return Mono.empty();
+				}))).subscribe();
 			}
 			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
@@ -114,7 +118,7 @@ class MCListener implements Listener {
 		final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
 			.getAs(DiscordPlayer.class);
 		if (p == null) return;
-		DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
+		DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
 			.flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId()))
 			.flatMap(user -> role.flatMap(r -> {
 				if (e.getValue())
@@ -127,7 +131,7 @@ class MCListener implements Listener {
 				if (modlog != null)
 					return modlog.flatMap(ch -> ch.createMessage(msg));
 				return Mono.empty();
-			})).subscribe();
+			}))).subscribe();
 	}
 
 	@EventHandler
@@ -153,5 +157,27 @@ class MCListener implements Listener {
 	@EventHandler
 	public void onNickChange(NickChangeEvent event) {
 		MCChatUtils.updatePlayerList();
+	}
+
+	@EventHandler
+	public void onTabComplete(TabCompleteEvent event) {
+		int i = event.getBuffer().lastIndexOf(' ');
+		String t = event.getBuffer().substring(i + 1); //0 if not found
+		//System.out.println("Last token: " + t);
+		if (!t.startsWith("@"))
+			return;
+		String token = t.substring(1);
+		//System.out.println("Token: " + token);
+		val x = DiscordPlugin.mainServer.getMembers()
+			.flatMap(m -> Flux.just(m.getUsername(), m.getNickname().orElse("")))
+			.filter(s -> s.startsWith(token))
+			.map(s -> "@" + s)
+			.doOnNext(event.getCompletions()::add).blockLast();
+		//System.out.println("Finished - last: " + x);
+	}
+
+	@EventHandler
+	public void onCommandSend(PlayerCommandSendEvent event) {
+		event.getCommands().add("g");
 	}
 }

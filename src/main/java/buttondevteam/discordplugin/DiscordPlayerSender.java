@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
 import lombok.Getter;
@@ -36,12 +36,18 @@ import java.util.*;
 public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<DiscordPlayerSender> {
 
 	protected Player player;
-	private @Getter VanillaCommandListener<DiscordPlayerSender> vanillaCmdListener;
+	private @Getter VCMDWrapper vanillaCmdListener;
 
 	public DiscordPlayerSender(User user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
-		vanillaCmdListener = new VanillaCommandListener<DiscordPlayerSender>(this);
+		try {
+			vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, player));
+			if (vanillaCmdListener.getListener() == null)
+				DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
+		} catch (NoClassDefFoundError e) {
+			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
+		}
 	}
 
 	@Override
@@ -298,10 +304,6 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 		return player.addAttachment(plugin);
 	}
 
-	public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance) {
-		return player.getTargetBlock(transparent, maxDistance);
-	}
-
 	public World getWorld() {
 		return player.getWorld();
 	}
@@ -348,10 +350,6 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 
 	public void setCompassTarget(Location loc) {
 		player.setCompassTarget(loc);
-	}
-
-	public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance) {
-		return player.getLastTwoTargetBlocks(transparent, maxDistance);
 	}
 
 	public Location getCompassTarget() {
@@ -1092,11 +1090,21 @@ public class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<
 	}
 
 	public void hidePlayer(Player player) {
-		player.hidePlayer(player);
+		this.player.hidePlayer(player);
+	}
+
+	@Override
+	public void hidePlayer(Plugin plugin, Player player) {
+		this.player.hidePlayer(plugin, player);
 	}
 
 	public void showPlayer(Player player) {
-		player.showPlayer(player);
+		this.player.showPlayer(player);
+	}
+
+	@Override
+	public void showPlayer(Plugin plugin, Player player) {
+		this.player.showPlayer(plugin, player);
 	}
 
 	public boolean canSee(Player player) {

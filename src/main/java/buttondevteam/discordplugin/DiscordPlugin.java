@@ -143,13 +143,17 @@ public class DiscordPlugin extends ButtonPlugin {
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
 			if (mainServer != null) { //This is not the first ready event
-				getLogger().info("Ready event already handled");
+				getLogger().info("Ready event already handled"); //TODO: It should probably handle disconnections
 				return;
 			}
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
+			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+					dc.getApplicationInfo().subscribe(info -> {
+						getLogger().severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId().asString() + "&scope=bot&permissions=268509264");
+					});
 					saveConfig(); //Put default there
 					return; //We should have all guilds by now, no need to retry
 				}
@@ -205,7 +209,6 @@ public class DiscordPlugin extends ButtonPlugin {
 
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-			getCommand2MC().registerCommand(new DiscordMCCommand());
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
 			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
 				? ((DiscordSenderBase) sender).getChromaUser() : null));
@@ -266,8 +269,8 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
-			timings.printElapsed("Updating presence...");
-			dc.updatePresence(Presence.idle(Activity.playing("Chromacraft"))).block(); //No longer using the same account for testing
+			//timings.printElapsed("Updating presence...");
+			//dc.updatePresence(Presence.idle(Activity.playing("logging out"))).block(); //No longer using the same account for testing
 			timings.printElapsed("Logging out...");
 			dc.logout().block();
 			mainServer = null; //Allow ReadyEvent again

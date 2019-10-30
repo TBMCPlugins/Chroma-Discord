@@ -26,7 +26,7 @@ public class MCChatPrivate {
 			val op = Bukkit.getOfflinePlayer(mcp.getUUID());
 			val mcm = ComponentManager.getIfEnabled(MinecraftChatModule.class);
 			if (start) {
-				val sender = new DiscordConnectedPlayer(user, channel, mcp.getUUID(), op.getName(), mcm);
+				val sender = DiscordConnectedPlayer.create(user, channel, mcp.getUUID(), op.getName(), mcm);
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
 				if (p == null)// Player is offline - If the player is online, that takes precedence
 					MCChatUtils.callLoginEvents(sender);

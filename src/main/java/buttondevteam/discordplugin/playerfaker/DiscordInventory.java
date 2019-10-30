@@ -1,110 +1,110 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class DiscordInventory implements Inventory {
-	public DiscordInventory(DiscordHumanEntity holder) {
-		this.holder = holder;
-	}
+	private ItemStack[] items = new ItemStack[27];
+	private List<ItemStack> itemStacks = Arrays.asList(items);
+	@Getter
+	@Setter
+	public int maxStackSize;
+	private static ItemStack emptyStack = new ItemStack(Material.AIR, 0);
 
 	@Override
 	public int getSize() {
-		return 0;
-	}
-
-	@Override
-	public int getMaxStackSize() {
-		return 0;
-	}
-
-	@Override
-	public void setMaxStackSize(int size) {
+		return items.length;
 	}
 
 	@Override
 	public String getName() {
-		return "Player inventory";
+		return "Discord inventory";
 	}
 
 	@Override
 	public ItemStack getItem(int index) {
-		return null;
+		if (index >= items.length)
+			return emptyStack;
+		else
+			return items[index];
 	}
 
 	@Override
-	public HashMap<Integer, ItemStack> addItem(ItemStack... items) throws IllegalArgumentException { // Can't add anything
-		return new HashMap<>(
-				IntStream.range(0, items.length).boxed().collect(Collectors.toMap(i -> i, i -> items[i])));
+	public void setItem(int index, ItemStack item) {
+		if (index < items.length)
+			items[index] = item;
+	}
+
+	@Override
+	public HashMap<Integer, ItemStack> addItem(ItemStack... items) throws IllegalArgumentException {
+		return IntStream.range(0, items.length).collect(HashMap::new, (map, i) -> map.put(i, items[i]), HashMap::putAll); //Pretend that we can't add anything
 	}
 
 	@Override
 	public HashMap<Integer, ItemStack> removeItem(ItemStack... items) throws IllegalArgumentException {
-		return new HashMap<>(
-				IntStream.range(0, items.length).boxed().collect(Collectors.toMap(i -> i, i -> items[i])));
+		return IntStream.range(0, items.length).collect(HashMap::new, (map, i) -> map.put(i, items[i]), HashMap::putAll); //Pretend that we can't add anything
 	}
 
 	@Override
 	public ItemStack[] getContents() {
-		return new ItemStack[0];
+		return items;
 	}
 
 	@Override
 	public void setContents(ItemStack[] items) throws IllegalArgumentException {
-		if (items.length > 0)
-			throw new IllegalArgumentException("This inventory does not support items");
+		this.items = items;
 	}
 
 	@Override
 	public ItemStack[] getStorageContents() {
-		return new ItemStack[0];
+		return items;
 	}
 
 	@Override
 	public void setStorageContents(ItemStack[] items) throws IllegalArgumentException {
-		if (items.length > 0)
-			throw new IllegalArgumentException("This inventory does not support items");
+		this.items = items;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean contains(int materialId) {
-		return false;
+		return itemStacks.stream().anyMatch(is -> is.getType().getId() == materialId);
 	}
 
 	@Override
 	public boolean contains(Material material) throws IllegalArgumentException {
-		return false;
+		return itemStacks.stream().anyMatch(is -> is.getType() == material);
 	}
 
 	@Override
 	public boolean contains(ItemStack item) {
-		return false;
+		return itemStacks.stream().anyMatch(is -> is.getType() == item.getType() && is.getAmount() == item.getAmount());
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean contains(int materialId, int amount) {
-		return false;
+		return itemStacks.stream().anyMatch(is -> is.getType().getId() == materialId && is.getAmount() == amount);
 	}
 
 	@Override
 	public boolean contains(Material material, int amount) throws IllegalArgumentException {
-		return false;
+		return itemStacks.stream().anyMatch(is -> is.getType() == material && is.getAmount() == amount);
 	}
 
 	@Override
-	public boolean contains(ItemStack item, int amount) {
-		return false;
+	public boolean contains(ItemStack item, int amount) { //Not correct implementation but whatever
+		return itemStacks.stream().anyMatch(is -> is.getType() == item.getType() && is.getAmount() == amount);
 	}
 
 	@Override
@@ -161,52 +161,48 @@ public class DiscordInventory implements Inventory {
 
 	@Override
 	public void clear(int index) {
+		if (index < items.length)
+			items[index] = null;
 	}
 
 	@Override
 	public void clear() {
+		Arrays.fill(items, null);
 	}
 
 	@Override
 	public List<HumanEntity> getViewers() {
-		return new ArrayList<>(0);
+		return Collections.emptyList();
 	}
 
 	@Override
 	public String getTitle() {
-		return "Player inventory";
+		return "Discord inventory";
 	}
 
 	@Override
 	public InventoryType getType() {
-		return InventoryType.PLAYER;
+		return InventoryType.CHEST;
 	}
 
-	private ListIterator<ItemStack> iterator = new ArrayList<ItemStack>(0).listIterator();
+	@Override
+	public InventoryHolder getHolder() {
+		return null;
+	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public ListIterator<ItemStack> iterator() {
-		return iterator;
+		return itemStacks.listIterator();
 	}
 
 	@Override
 	public ListIterator<ItemStack> iterator(int index) {
-		return iterator;
+		return itemStacks.listIterator(index);
 	}
 
 	@Override
 	public Location getLocation() {
-		return holder.getLocation();
-	}
-
-	@Override
-	public void setItem(int index, ItemStack item) {
-	}
-
-	private HumanEntity holder;
-
-	@Override
-	public HumanEntity getHolder() {
-		return holder;
+		return null;
 	}
 }

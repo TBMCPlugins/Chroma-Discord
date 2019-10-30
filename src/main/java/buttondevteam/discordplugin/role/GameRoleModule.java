@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.role;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.event.domain.role.RoleCreateEvent;
@@ -26,7 +27,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	@Override
 	protected void enable() {
 		getPlugin().getManager().registerCommand(new RoleCommand(this));
-		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
+		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(r -> isGameRole(r, false)).map(Role::getName).collect(Collectors.toList()).block();
 	}
 
 	@Override
@@ -46,7 +47,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		if (roleEvent instanceof RoleCreateEvent) {
 			Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
 				Role role=((RoleCreateEvent) roleEvent).getRole();
-				grm.isGameRole(role).flatMap(b -> {
+				grm.isGameRole(role, false).flatMap(b -> {
 					if (!b)
 						return Mono.empty(); //Deleted or not a game role
 					GameRoles.add(role.getName());
@@ -67,7 +68,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				return;
 			}
 			Role or=event.getOld().get();
-			grm.isGameRole(event.getCurrent()).flatMap(b -> {
+			grm.isGameRole(event.getCurrent(), true).flatMap(b -> {
 				if (!b) {
 					if (GameRoles.remove(or.getName()) && logChannel != null)
 						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed."));
@@ -88,12 +89,25 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		}
 	}
 
-	private Mono<Boolean> isGameRole(Role r) {
-		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
+	private Mono<Boolean> isGameRole(Role r, boolean debugMC) {
+		boolean debug = debugMC && r.getName().equalsIgnoreCase("Minecraft");
+		if (debug) TBMCCoreAPI.sendDebugMessage("Checking if Minecraft is a game role...");
+		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong()) {
+			if (debug) TBMCCoreAPI.sendDebugMessage("Not in the main server: " + r.getGuildId().asString());
 			return Mono.just(false); //Only allow on the main server
+		}
 		val rc = new Color(149, 165, 166, 0);
-		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
-			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId())).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
-			.defaultIfEmpty(false);
+		if (debug) TBMCCoreAPI.sendDebugMessage("Game role color: " + rc + " - MC color: " + r.getColor());
+		return Mono.just(r.getColor().equals(rc))
+			.doAfterSuccessOrError((b, e) -> {
+				if (debug) TBMCCoreAPI.sendDebugMessage("1. b: " + b + " - e: " + e);
+			}).filter(b -> b).flatMap(b ->
+				DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
+					.doAfterSuccessOrError((m, e) -> {
+						if (debug) TBMCCoreAPI.sendDebugMessage("2. m: " + m.getDisplayName() + " e: " + e);
+					}).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
+			.doAfterSuccessOrError((b, e) -> {
+				if (debug) TBMCCoreAPI.sendDebugMessage("3. b: " + b + " - e: " + e);
+			}).defaultIfEmpty(false);
 	}
 }

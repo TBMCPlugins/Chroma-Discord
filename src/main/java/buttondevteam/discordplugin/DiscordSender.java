@@ -12,6 +12,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
+import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
@@ -23,7 +24,8 @@ public class DiscordSender extends DiscordSenderBase implements CommandSender {
 	public DiscordSender(User user, MessageChannel channel) {
 		super(user, channel);
 		val def = "Discord user";
-		name = user == null ? def : user.asMember(DiscordPlugin.mainServer.getId()).blockOptional().map(Member::getDisplayName).orElse(def);
+		name = user == null ? def : user.asMember(DiscordPlugin.mainServer.getId())
+			.onErrorResume(t -> Mono.empty()).blockOptional().map(Member::getDisplayName).orElse(def);
 	}
 
 	public DiscordSender(User user, MessageChannel channel, String name) {

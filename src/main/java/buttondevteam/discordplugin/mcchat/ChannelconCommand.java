@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 	"Use the ID (command) of the channel, for example `g` for the global chat.", //
 	"To remove a connection use @ChromaBot channelcon remove in the channel.", //
 	"Mentioning the bot is needed in this case because the / prefix only works in #bot.", //
-	"Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot&permissions=268509264>" //
+	"Invite link: <Unknown>" //
 })
 @RequiredArgsConstructor
 public class ChannelconCommand extends ICommand2DC {
@@ -90,6 +90,10 @@ public class ChannelconCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String channelID) {
 		val message = sender.getMessage();
+		if (!module.allowCustomChat().get()) {
+			sender.sendMessage("channel connection is not allowed on this Minecraft server.");
+			return true;
+		}
 		if (checkPerms(message)) return true;
 		if (MCChatCustom.hasCustomChat(message.getChannelId()))
 			return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
@@ -107,7 +111,7 @@ public class ChannelconCommand extends ICommand2DC {
 			return true;
 		}
 		val channel = message.getChannel().block();
-		DiscordConnectedPlayer dcp = new DiscordConnectedPlayer(message.getAuthor().get(), channel, chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName(), module);
+		DiscordConnectedPlayer dcp = DiscordConnectedPlayer.create(message.getAuthor().get(), channel, chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName(), module);
 		//Using a fake player with no login/logout, should be fine for this event
 		String groupid = chan.get().getGroupID(dcp);
 		if (groupid == null && !(chan.get() instanceof ChatRoom)) { //ChatRooms don't allow it unless the user joins, which happens later
@@ -151,7 +155,7 @@ public class ChannelconCommand extends ICommand2DC {
 		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
 	        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //
-	        "Invite link: <https://discordapp.com/oauth2/authorize?client_id=226443037893591041&scope=bot&permissions=268509264>" // TODO: Set correct client ID
+	        "Invite link: <https://discordapp.com/oauth2/authorize?client_id=" + module.clientID + "&scope=bot&permissions=268509264>"
         };
     }
 }

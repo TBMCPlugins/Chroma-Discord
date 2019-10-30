@@ -163,4 +163,8 @@ public final class DPUtils {
 		return getMessageChannel(config.getPath(), config.get());
 	}
 
+	public static <T> Mono<T> ignoreError(Mono<T> mono) {
+		return mono.onErrorResume(t -> Mono.empty());
+	}
+
 }

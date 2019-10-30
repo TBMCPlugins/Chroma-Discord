@@ -10,6 +10,7 @@ import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener14;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.ChatMessage;
@@ -78,7 +79,7 @@ public class MCChatListener implements Listener {
 
 			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
 				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
-				+ (DPUtils.sanitizeStringNoEscape(ThorpeUtils.getDisplayName(e.getSender())));
+				+ (DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender())));
 			val color = e.getChannel().Color().get();
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
 				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),
@@ -232,8 +233,8 @@ public class MCChatListener implements Listener {
 			timings.printElapsed("Filter 1");
 			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
 				&& !(channel instanceof PrivateChannel
-				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false)
-				&& !hasCustomChat)); //Chat isn't enabled on this channel
+				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false))
+				&& !hasCustomChat); //Chat isn't enabled on this channel
 		}).filter(channel -> {
 			timings.printElapsed("Filter 2");
 			return !(channel instanceof PrivateChannel //Only in private chat
@@ -277,10 +278,11 @@ public class MCChatListener implements Listener {
 
 			for (User u : event.getMessage().getUserMentions().toIterable()) { //TODO: Role mentions
 				dmessage = dmessage.replace(u.getMention(), "@" + u.getUsername()); // TODO: IG Formatting
-				val m = u.asMember(DiscordPlugin.mainServer.getId()).block();
-				if (m != null) {
-					final String nick = m.getDisplayName();
-					dmessage = dmessage.replace(m.getNicknameMention(), "@" + nick);
+				val m = u.asMember(DiscordPlugin.mainServer.getId()).onErrorResume(t -> Mono.empty()).blockOptional();
+				if (m.isPresent()) {
+					val mm = m.get();
+					final String nick = mm.getDisplayName();
+					dmessage = dmessage.replace(mm.getNicknameMention(), "@" + nick);
 				}
 			}
 			for (GuildChannel ch : event.getGuild().flux().flatMap(Guild::getChannels).toIterable()) {
@@ -321,7 +323,8 @@ public class MCChatListener implements Listener {
 					return;
 				}
 				val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
-				Bukkit.getPluginManager().callEvent(ev);
+				Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () ->
+					Bukkit.getPluginManager().callEvent(ev));
 				if (ev.isCancelled())
 					return;
 				int spi = cmdlowercased.indexOf(' ');
@@ -338,8 +341,18 @@ public class MCChatListener implements Listener {
 							if (clmd != null) {
 								channel.set(clmd.mcchannel); //Hack to send command in the channel
 							} //TODO: Permcheck isn't implemented for commands
-							VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmdlowercased);
+							try {
+								String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
+								if (mcpackage.contains("1_12"))
+									VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+								else if (mcpackage.contains("1_14"))
+									VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
+								else
+									Bukkit.dispatchCommand(dsender, cmd);
+							} catch (NoClassDefFoundError e) {
+								TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
+							}
+							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
 							if (clmd != null)
 								channel.set(chtmp);
 						});

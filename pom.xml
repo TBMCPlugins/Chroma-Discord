@@ -2,6 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.github.TBMCPlugins.ButtonCore</groupId>
+        <artifactId>CorePOM</artifactId>
+        <version>master-SNAPSHOT</version>
+    </parent>
+
     <groupId>com.github.TBMCPlugins</groupId>
     <artifactId>DiscordPlugin</artifactId>
     <version>master-SNAPSHOT</version>
@@ -35,25 +41,9 @@
         <finalName>DiscordPlugin</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <!-- <compilerArgs>
-                        <arg>-processor</arg>
-                        <arg>buttondevteam.buttonproc.ButtonProcessor, lombok.core.AnnotationProcessor</arg>
-                    </compilerArgs> -->
-                    <!-- <annotationProcessors>
-                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
-                        <annotationProcessor>buttondevteam.buttonproc.ButtonProcessor</annotationProcessor>
-                    </annotationProcessors> -->
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.2</version>
+                <version>3.2.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -148,7 +138,7 @@
         </repository> -->
         <repository>
             <id>Essentials</id>
-            <url>http://repo.ess3.net/content/repositories/essrel/</url>
+            <url>https://ci.ender.zone/plugin/repository/everything/</url>
         </repository>
         <repository>
             <id>projectlombok.org</id>
@@ -174,7 +164,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.12-R0.1-SNAPSHOT</version>
+            <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -183,11 +173,17 @@
             <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.spigotmc.</groupId>
+            <artifactId>spigot</artifactId>
+            <version>1.14.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
         <dependency>
             <groupId>com.discord4j</groupId>
             <artifactId>discord4j-core</artifactId>
-            <version>3.0.6</version>
+            <version>3.0.10</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
         <dependency>
@@ -217,7 +213,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.16</version>
+            <version>1.18.10</version>
             <scope>provided</scope>
         </dependency>
         <!-- <dependency>

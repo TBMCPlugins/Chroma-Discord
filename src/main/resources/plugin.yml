@@ -1,8 +1,8 @@
-name: Thorpe-Discord
+name: Chroma-Discord
 main: buttondevteam.discordplugin.DiscordPlugin
 version: 1.0
 author: NorbiPeti
-depend: [ThorpeCore]
+depend: [ChromaCore]
 commands:
   discord:
 website: 'https://github.com/TBMCPlugins/DiscordPlugin'

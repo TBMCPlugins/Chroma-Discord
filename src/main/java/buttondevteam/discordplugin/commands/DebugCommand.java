@@ -19,7 +19,7 @@ public class DebugCommand extends ICommand2DC {
 			.flatMap(m -> DiscordPlugin.plugin.modRole().get()
 				.map(mr -> m.getRoleIds().stream().anyMatch(r -> r.equals(mr.getId())))
 				.switchIfEmpty(Mono.fromSupplier(() -> DiscordPlugin.mainServer.getOwnerId().asLong() == m.getId().asLong()))) //Role not found
-			.subscribe(success -> {
+			.onErrorReturn(false).subscribe(success -> {
 				if (success)
 					sender.sendMessage("debug " + (CommonListeners.debug() ? "enabled" : "disabled"));
 				else

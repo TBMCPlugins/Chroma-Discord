@@ -10,7 +10,6 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.util.Snowflake;
 import io.netty.util.collection.LongObjectHashMap;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.var;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -53,7 +52,8 @@ public class MCChatUtils {
 	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
 
 	public static void updatePlayerList() {
-		if (notEnabled()) return;
+		val mod = getModule();
+		if (mod == null || !mod.showPlayerListOnDC().get()) return;
 		if (lastmsgdata != null)
 			updatePL(lastmsgdata);
 		MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
@@ -180,7 +180,10 @@ public class MCChatUtils {
 	}
 
 	public static Consumer<Mono<MessageChannel>> send(String message) {
-		return ch -> ch.flatMap(mc -> mc.createMessage(DPUtils.sanitizeString(message))).subscribe();
+		return ch -> ch.flatMap(mc -> {
+			resetLastMessage(mc);
+			return mc.createMessage(DPUtils.sanitizeString(message));
+		}).subscribe();
 	}
 
 	public static void forAllowedMCChat(Consumer<Mono<MessageChannel>> action, TBMCSystemChatEvent event) {

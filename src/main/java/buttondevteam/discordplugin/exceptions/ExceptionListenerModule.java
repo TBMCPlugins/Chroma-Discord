@@ -50,28 +50,28 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 	private static void SendException(Throwable e, String sourcemessage) {
 		if (instance == null) return;
 		try {
-			Mono<MessageChannel> channel = getChannel();
-			assert channel != null;
-			Mono<Role> coderRole;
-			if (channel instanceof GuildChannel)
-				coderRole = instance.pingRole(((GuildChannel) channel).getGuild()).get();
-			else
-				coderRole = Mono.empty();
-			coderRole.map(role -> TBMCCoreAPI.IsTestServer() ? new StringBuilder()
-				: new StringBuilder(role.getMention()).append("\n"))
-				.defaultIfEmpty(new StringBuilder())
-				.flatMap(sb -> {
-					sb.append(sourcemessage).append("\n");
-					sb.append("```").append("\n");
-					String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
-						.filter(s -> !s.contains("\tat ") || s.contains("\tat buttondevteam."))
-						.collect(Collectors.joining("\n"));
-					if (sb.length() + stackTrace.length() >= 1980)
-						stackTrace = stackTrace.substring(0, 1980 - sb.length());
-					sb.append(stackTrace).append("\n");
-					sb.append("```");
-					return channel.flatMap(ch -> ch.createMessage(sb.toString()));
-				}).subscribe();
+			getChannel().flatMap(channel -> {
+				Mono<Role> coderRole;
+				if (channel instanceof GuildChannel)
+					coderRole = instance.pingRole(((GuildChannel) channel).getGuild()).get();
+				else
+					coderRole = Mono.empty();
+				return coderRole.map(role -> TBMCCoreAPI.IsTestServer() ? new StringBuilder()
+					: new StringBuilder(role.getMention()).append("\n"))
+					.defaultIfEmpty(new StringBuilder())
+					.flatMap(sb -> {
+						sb.append(sourcemessage).append("\n");
+						sb.append("```").append("\n");
+						String stackTrace = Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
+							.filter(s -> !s.contains("\tat ") || s.contains("\tat buttondevteam."))
+							.collect(Collectors.joining("\n"));
+						if (sb.length() + stackTrace.length() >= 1980)
+							stackTrace = stackTrace.substring(0, 1980 - sb.length());
+						sb.append(stackTrace).append("\n");
+						sb.append("```");
+						return channel.createMessage(sb.toString());
+					});
+			}).subscribe();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
