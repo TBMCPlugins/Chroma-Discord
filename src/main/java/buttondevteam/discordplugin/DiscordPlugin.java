@@ -130,6 +130,7 @@ public class DiscordPlugin extends ButtonPlugin {
 					.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
 					.collectList()) // Take all received GuildCreateEvents and make it a List
 				.subscribe(this::handleReady); /* All guilds have been received, client is fully connected */
+			//dc.getEventDispatcher().on(DisconnectEvent.class);
 			dc.login().subscribe();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -141,8 +142,8 @@ public class DiscordPlugin extends ButtonPlugin {
 
 	private void handleReady(List<GuildCreateEvent> event) {
 		try {
-			if(!SafeMode) {
-				getLogger().info("Ready again, already enabled."); //TODO: It should probably handle disconnections
+			if (mainServer != null) { //This is not the first ready event
+				getLogger().info("Ready event already handled"); //TODO: It should probably handle disconnections
 				return;
 			}
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
@@ -272,6 +273,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			//dc.updatePresence(Presence.idle(Activity.playing("logging out"))).block(); //No longer using the same account for testing
 			timings.printElapsed("Logging out...");
 			dc.logout().block();
+			mainServer = null; //Allow ReadyEvent again
 			//Configs are emptied so channels and servers are fetched again
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
