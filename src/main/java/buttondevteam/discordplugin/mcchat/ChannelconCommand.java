@@ -155,7 +155,7 @@ public class ChannelconCommand extends ICommand2DC {
 		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
                 "To remove a connection use @ChromaBot channelcon remove in the channel.", //
 	        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //
-	        "Invite link: <https://discordapp.com/oauth2/authorize?client_id=" + module.clientID + "&scope=bot&permissions=268509264>"
+	        "Invite link: <https://discordapp.com/oauth2/authorize?client_id=" + DiscordPlugin.dc.getApplicationInfo().map(info -> info.getId().asString()).blockOptional().orElse("Unknown") + "&scope=bot&permissions=268509264>"
         };
     }
 }

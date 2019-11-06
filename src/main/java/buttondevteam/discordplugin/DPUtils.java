@@ -15,10 +15,18 @@ import lombok.val;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 
 public final class DPUtils {
+
+	public static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
+	public static final Pattern FORMAT_PATTERN = Pattern.compile("[*_~]");
 
 	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String displayname, String playername, String profileUrl) {
 		return ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");
@@ -51,8 +59,17 @@ public final class DPUtils {
 	}
 
 	private static String escape(String message) {
-		return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\") + "$1");
-	}
+		//var ts = new TreeSet<>();
+		var ts = new TreeSet<int[]>(Comparator.comparingInt(a -> a[0])); //Compare the start, then check the end
+		var matcher = URL_PATTERN.matcher(message);
+		while (matcher.find())
+			ts.add(new int[]{matcher.start(), matcher.end()});
+		matcher = FORMAT_PATTERN.matcher(message);
+		Function<MatchResult, String> aFunctionalInterface = result ->
+			Optional.ofNullable(ts.floor(new int[]{result.start(), 0})).map(a -> a[1]).orElse(0) < result.start()
+				? "\\\\" + result.group() : result.group();
+		return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape
+	} //TODO: Java 11 method overload, not present in Java 8
 
 	public static Logger getLogger() {
 		if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger() == null)
