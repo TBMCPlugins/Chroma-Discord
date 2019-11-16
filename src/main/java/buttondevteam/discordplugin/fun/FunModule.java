@@ -125,7 +125,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 
 
 	private ReadOnlyConfigData<Mono<MessageChannel>> fullHouseChannel() {
-		return DPUtils.channelData(getConfig(), "fullHouseChannel", 219626707458457603L);
+		return DPUtils.channelData(getConfig(), "fullHouseChannel");
 	}
 
 	private static long lasttime = 0;

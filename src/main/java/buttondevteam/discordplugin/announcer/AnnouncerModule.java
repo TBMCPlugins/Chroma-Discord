@@ -26,14 +26,14 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 	 * Channel to post new posts.
 	 */
 	public ReadOnlyConfigData<Mono<MessageChannel>> channel() {
-		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
+		return DPUtils.channelData(getConfig(), "channel");
 	}
 
 	/**
 	 * Channel where distinguished (moderator) posts go.
 	 */
 	public ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
-		return DPUtils.channelData(getConfig(), "modChannel", 239519012529111040L);
+		return DPUtils.channelData(getConfig(), "modChannel");
 	}
 
 	/**

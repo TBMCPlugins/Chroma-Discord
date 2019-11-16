@@ -201,7 +201,7 @@ public class DiscordPlugin extends ButtonPlugin {
 					"Won't load because we're in testing mode and not using a separate account.",
 					new Exception(
 						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in its name.)"
-							+ "\nYou can disable test mode in ThorpeCore config."));
+							+ "\nYou can disable test mode in ChromaCore config."));
 				Bukkit.getPluginManager().disablePlugin(this);
 			}
 			TBMCCoreAPI.SendUnsentExceptions();

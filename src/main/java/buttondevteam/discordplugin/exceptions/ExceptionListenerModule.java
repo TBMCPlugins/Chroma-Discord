@@ -85,7 +85,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 	}
 
 	private ReadOnlyConfigData<Mono<MessageChannel>> channel() {
-		return DPUtils.channelData(getConfig(), "channel", 239519012529111040L);
+		return DPUtils.channelData(getConfig(), "channel");
 	}
 
 	private ConfigData<Mono<Role>> pingRole(Mono<Guild> guild) {

@@ -18,9 +18,7 @@ import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
 public final class DPUtils {
@@ -65,11 +63,19 @@ public final class DPUtils {
 		while (matcher.find())
 			ts.add(new int[]{matcher.start(), matcher.end()});
 		matcher = FORMAT_PATTERN.matcher(message);
-		Function<MatchResult, String> aFunctionalInterface = result ->
+		/*Function<MatchResult, String> aFunctionalInterface = result ->
 			Optional.ofNullable(ts.floor(new int[]{result.start(), 0})).map(a -> a[1]).orElse(0) < result.start()
 				? "\\\\" + result.group() : result.group();
-		return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape
-	} //TODO: Java 11 method overload, not present in Java 8
+		return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape*/
+		StringBuffer sb = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(sb, Optional.ofNullable(ts.floor(new int[]{matcher.start(), 0})) //Find a URL start <= our start
+				.map(a -> a[1]).orElse(-1) < matcher.start() //Check if URL end < our start
+				? "\\\\" + matcher.group() : matcher.group());
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
 
 	public static Logger getLogger() {
 		if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger() == null)
@@ -77,8 +83,8 @@ public final class DPUtils {
 		return DiscordPlugin.plugin.getLogger();
 	}
 
-	public static ReadOnlyConfigData<Mono<MessageChannel>> channelData(IHaveConfig config, String key, long defID) {
-		return config.getReadOnlyDataPrimDef(key, defID, id -> getMessageChannel(key, Snowflake.of((Long) id)), ch -> defID); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	public static ReadOnlyConfigData<Mono<MessageChannel>> channelData(IHaveConfig config, String key) {
+		return config.getReadOnlyDataPrimDef(key, 0L, id -> getMessageChannel(key, Snowflake.of((Long) id)), ch -> 0L); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
 	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName) {
@@ -169,7 +175,15 @@ public final class DPUtils {
 		return "<#" + channelId.asString() + ">";
 	}
 
+	/**
+	 * Gets a message channel for a config. Returns empty for ID 0.
+	 *
+	 * @param key The config key
+	 * @param id  The channel ID
+	 * @return A message channel
+	 */
 	public static Mono<MessageChannel> getMessageChannel(String key, Snowflake id) {
+		if (id.asLong() == 0L) return Mono.empty();
 		return DiscordPlugin.dc.getChannelById(id).onErrorResume(e -> {
 			getLogger().warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage());
 			return Mono.empty();

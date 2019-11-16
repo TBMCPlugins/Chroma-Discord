@@ -84,13 +84,14 @@ public class MCChatListener implements Listener {
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
 				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),
 					color.getGreen(), color.getBlue()));
+				String url = module.profileURL().get();
 				if (e.getSender() instanceof Player)
 					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(),
-						"https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-							+ ((Player) e.getSender()).getUniqueId());
+						url.length() > 0 ? url + "?type=minecraft&id="
+							+ ((Player) e.getSender()).getUniqueId() : null);
 				else if (e.getSender() instanceof DiscordSenderBase)
-					ecs.setAuthor(authorPlayer, "https://tbmcplugins.github.io/profile.html?type=discord&id=" // TODO: Constant/method to get URLs like this
-							+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString(),
+					ecs.setAuthor(authorPlayer, url.length() > 0 ? url + "?type=discord&id="
+							+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString() : null,
 						((DiscordSenderBase) e.getSender()).getUser().getAvatarUrl());
 				else
 					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(), null);

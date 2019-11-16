@@ -58,7 +58,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
 	 */
 	public ReadOnlyConfigData<Mono<MessageChannel>> modlogChannel() {
-		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
+		return DPUtils.channelData(getConfig(), "modlogChannel");
 	}
 
 	/**
@@ -102,6 +102,13 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 */
 	public ConfigData<Boolean> allowPrivateChat() {
 		return getConfig().getData("allowPrivateChat", true);
+	}
+
+	/**
+	 * If set, message authors appearing on Discord will link to this URL. A 'type' and 'id' parameter will be added with the user's platform (Discord, Minecraft, ...) and ID.
+	 */
+	public ConfigData<String> profileURL() {
+		return getConfig().getData("profileURL", "");
 	}
 
 	@Override

@@ -36,7 +36,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	}
 
 	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel() {
-		return DPUtils.channelData(getConfig(), "logChannel", 239519012529111040L);
+		return DPUtils.channelData(getConfig(), "logChannel");
 	}
 
 	public static void handleRoleEvent(RoleEvent roleEvent) {
