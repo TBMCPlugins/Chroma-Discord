@@ -157,12 +157,27 @@ public final class DPUtils {
 		return false;
 	}
 
+	/**
+	 * Send a response in the form of "@User, message". Use Mono.empty() if you don't have a channel object.
+	 *
+	 * @param original The original message to reply to
+	 * @param channel  The channel to send the message in, defaults to the original
+	 * @param message  The message to send
+	 * @return A mono to send the message
+	 */
 	public static Mono<Message> reply(Message original, @Nullable MessageChannel channel, String message) {
 		Mono<MessageChannel> ch;
 		if (channel == null)
 			ch = original.getChannel();
 		else
 			ch = Mono.just(channel);
+		return reply(original, ch, message);
+	}
+
+	/**
+	 * @see #reply(Message, MessageChannel, String)
+	 */
+	public static Mono<Message> reply(Message original, Mono<MessageChannel> ch, String message) {
 		return ch.flatMap(chan -> chan.createMessage((original.getAuthor().isPresent()
 			? original.getAuthor().get().getMention() + ", " : "") + message));
 	}

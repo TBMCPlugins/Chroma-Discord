@@ -44,7 +44,6 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -196,14 +195,6 @@ public class DiscordPlugin extends ButtonPlugin {
 
 			getConfig().set("serverup", true);
 			saveConfig();
-			if (TBMCCoreAPI.IsTestServer() && !Objects.requireNonNull(dc.getSelf().block()).getUsername().toLowerCase().contains("test")) {
-				TBMCCoreAPI.SendException(
-					"Won't load because we're in testing mode and not using a separate account.",
-					new Exception(
-						"The plugin refuses to load until you change the token to a testing account. (The account needs to have \"test\" in its name.)"
-							+ "\nYou can disable test mode in ChromaCore config."));
-				Bukkit.getPluginManager().disablePlugin(this);
-			}
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
 

@@ -96,7 +96,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		}
 		if (msglowercased.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
 		{
-			DPUtils.reply(message, null, "Stop it. You know the answer.").subscribe();
+			DPUtils.reply(message, Mono.empty(), "stop it. You know the answer.").subscribe();
 			lastlist = 0;
 			lastlistp = (short) Bukkit.getOnlinePlayers().size();
 			return true; //Handled
@@ -108,7 +108,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			if (usableServerReadyStrings.size() == 0)
 				fm.createUsableServerReadyStrings();
 			next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
-			DPUtils.reply(message, null, fm.serverReadyAnswers().get().get(next)).subscribe();
+			DPUtils.reply(message, Mono.empty(), fm.serverReadyAnswers().get().get(next)).subscribe();
 			return false; //Still process it as a command/mcchat if needed
 		}
 		return false;
