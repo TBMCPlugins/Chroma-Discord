@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.ComponentManager;
+import buttondevteam.core.MainPlugin;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCCoreAPI;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
@@ -30,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -81,11 +84,25 @@ public class MCChatUtils {
 		String[] s = topic.split("\\n----\\n");
 		if (s.length < 3)
 			return;
-		s[0] = Bukkit.getOnlinePlayers().size() + " player" + (Bukkit.getOnlinePlayers().size() != 1 ? "s" : "")
-			+ " online";
+		String gid;
+		if (lmd instanceof MCChatCustom.CustomLMD)
+			gid = ((MCChatCustom.CustomLMD) lmd).groupID;
+		else //If we're not using a custom chat then it's either can ("everyone") or can't (null) see at most
+			gid = buttondevteam.core.component.channel.Channel.GROUP_EVERYONE; // (Though it's a public chat then rn)
+		AtomicInteger C = new AtomicInteger();
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
+			.filter(p -> gid.equals(lmd.mcchannel.getGroupID(p))) //If they can see it
+			.filter(MCChatUtils::checkEssentials)
+			.filter(p -> C.incrementAndGet() > 0) //Always true
 			.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
+		s[0] = C + " player" + (C.get() != 1 ? "s" : "") + " online";
 		((TextChannel) lmd.channel).edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
+	}
+
+	private static boolean checkEssentials(Player p) {
+		var ess = MainPlugin.ess;
+		if (ess == null) return true;
+		return !ess.getUser(p).isHidden();
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
