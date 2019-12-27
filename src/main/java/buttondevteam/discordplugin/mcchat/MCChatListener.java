@@ -293,6 +293,8 @@ public class MCChatListener implements Listener {
 			dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
 			dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:"); //Convert to Discord's format so it still shows up
 
+			dmessage = dmessage.replaceAll("<a?:(\\S+):(\\d+)>", ":$1:"); //We don't need info about the custom emojis, just display their text
+
 			Function<String, String> getChatMessage = msg -> //
 				msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()
 					.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.joining("\n"))

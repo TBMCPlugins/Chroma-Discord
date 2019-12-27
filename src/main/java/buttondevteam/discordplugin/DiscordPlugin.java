@@ -100,6 +100,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			getLogger().info("Initializing...");
 			plugin = this;
 			manager = new Command2DC();
+			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			String token;
 			File tokenFile = new File("TBMC", "Token.txt");
 			if (tokenFile.exists()) //Legacy support
@@ -113,8 +114,9 @@ public class DiscordPlugin extends ButtonPlugin {
 					conf.set("token", "Token goes here");
 					conf.save(privateFile);
 
-					getLogger().severe("Token not found! Set it in private.yml");
-					Bukkit.getPluginManager().disablePlugin(this);
+					getLogger().severe("Token not found! Please set it in private.yml then do /discord reset");
+					getLogger().severe("You need to have a bot account to use with your server.");
+					getLogger().severe("If you don't have one, go to https://discordapp.com/developers/applications/ and create an application, then create a bot for it and copy the bot token.");
 					return;
 				}
 			}
@@ -132,8 +134,8 @@ public class DiscordPlugin extends ButtonPlugin {
 			//dc.getEventDispatcher().on(DisconnectEvent.class);
 			dc.login().subscribe();
 		} catch (Exception e) {
-			e.printStackTrace();
-			Bukkit.getPluginManager().disablePlugin(this);
+			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e);
+			getLogger().severe("You may be able to reset the plugin using /discord reset");
 		}
 	}
 
@@ -143,10 +145,10 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			if (mainServer != null) { //This is not the first ready event
 				getLogger().info("Ready event already handled"); //TODO: It should probably handle disconnections
+				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe(); //Update from the initial presence
 				return;
 			}
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
-			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");

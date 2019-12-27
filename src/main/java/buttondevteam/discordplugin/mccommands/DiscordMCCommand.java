@@ -73,6 +73,10 @@ public class DiscordMCCommand extends ICommand2MC {
 	})
 	public void reset(CommandSender sender) {
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+			if (!DiscordPlugin.plugin.tryReloadConfig()) {
+				sender.sendMessage("§cFailed to reload config so not resetting. Check the console.");
+				return;
+			}
 			resetting = true; //Turned off after sending enable message (ReadyEvent)
 			sender.sendMessage("§bDisabling DiscordPlugin...");
 			Bukkit.getPluginManager().disablePlugin(DiscordPlugin.plugin);
