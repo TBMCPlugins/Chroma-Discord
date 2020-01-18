@@ -44,7 +44,7 @@ class MCListener implements Listener {
 			.ifPresent(dcp -> MCChatUtils.callLogoutEvent(dcp, false));
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerJoin(PlayerJoinEvent e) {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return; // Don't show the joined message for the fake player
@@ -67,7 +67,7 @@ class MCListener implements Listener {
 		});
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerLeave(PlayerQuitEvent e) {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return; // Only care about real users

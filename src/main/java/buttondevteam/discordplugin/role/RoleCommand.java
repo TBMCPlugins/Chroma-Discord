@@ -66,12 +66,14 @@ public class RoleCommand extends ICommand2DC {
 		for (String role : (Iterable<String>) grm.GameRoles.stream().sorted()::iterator) {
 			sb.append(role);
 			if (!b)
-				for (int j = 0; j < Math.min(0, 20 - role.length()); j++)
+				for (int j = 0; j < Math.max(1, 20 - role.length()); j++)
 					sb.append(" ");
 			else
 				sb.append("\n");
 			b = !b;
 		}
+		if (sb.charAt(sb.length() - 1) != '\n')
+			sb.append('\n');
 		sender.sendMessage("list of roles:\n```\n" + sb + "```");
 	}
 
