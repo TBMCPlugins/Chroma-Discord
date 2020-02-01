@@ -23,6 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Listens for errors from the Chroma plugins and posts them to Discord, ignoring repeating errors so it's not that spammy.
+ */
 public class ExceptionListenerModule extends Component<DiscordPlugin> implements Listener {
 	private List<Throwable> lastthrown = new ArrayList<>();
 	private List<String> lastsourcemsg = new ArrayList<>();
@@ -84,10 +87,16 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 		return Mono.empty();
 	}
 
+	/**
+	 * The channel to post the errors to.
+	 */
 	private ReadOnlyConfigData<Mono<MessageChannel>> channel() {
 		return DPUtils.channelData(getConfig(), "channel");
 	}
 
+	/**
+	 * The role to ping if an error occurs. Set to empty ('') to disable.
+	 */
 	private ConfigData<Mono<Role>> pingRole(Mono<Guild> guild) {
 		return DPUtils.roleData(getConfig(), "pingRole", "Coder", guild);
 	}

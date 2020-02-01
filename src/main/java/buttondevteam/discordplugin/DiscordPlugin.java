@@ -55,6 +55,9 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Getter
 	private Command2DC manager;
 
+	/**
+	 * The prefix to use with Discord commands like /role. It only works in the bot channel.
+	 */
 	private ConfigData<Character> prefix() {
 		return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
 	}
@@ -64,6 +67,9 @@ public class DiscordPlugin extends ButtonPlugin {
 		return plugin.prefix().get();
 	}
 
+	/**
+	 * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
+	 */
 	private ConfigData<Optional<Guild>> mainServer() {
 		return getIConfig().getDataPrimDef("mainServer", 0L,
 			id -> {
@@ -76,12 +82,16 @@ public class DiscordPlugin extends ButtonPlugin {
 			g -> g.map(gg -> gg.getId().asLong()).orElse(0L));
 	}
 
+	/**
+	 * The (bot) channel to use for Discord commands like /role.
+	 */
 	public ConfigData<Snowflake> commandChannel() {
-		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 239519012529111040L);
+		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 0L);
 	}
 
 	/**
-	 * If the role doesn't exist, then it will only allow for the owner.
+	 * The role that allows using mod-only Discord commands.
+	 * If empty (''), then it will only allow for the owner.
 	 */
 	public ConfigData<Mono<Role>> modRole() {
 		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
@@ -164,7 +174,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			}
 			SafeMode = false;
 			DPUtils.disableIfConfigErrorRes(null, commandChannel(), DPUtils.getMessageChannel(commandChannel()));
-			DPUtils.disableIfConfigError(null, modRole()); //Won't disable, just prints the warning here
+			//Won't disable, just prints the warning here
 
 			Component.registerComponent(this, new GeneralEventBroadcasterModule());
 			Component.registerComponent(this, new MinecraftChatModule());

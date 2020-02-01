@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 public class DiscordMCCommand extends ICommand2MC {
 	@Command2.Subcommand
 	public boolean accept(Player player) {
+		if (checkSafeMode(player)) return true;
 		String did = ConnectCommand.WaitingToConnect.get(player.getName());
 		if (did == null) {
 			player.sendMessage("§cYou don't have a pending connection to Discord.");
@@ -45,6 +46,7 @@ public class DiscordMCCommand extends ICommand2MC {
 
 	@Command2.Subcommand
 	public boolean decline(Player player) {
+		if (checkSafeMode(player)) return true;
 		String did = ConnectCommand.WaitingToConnect.remove(player.getName());
 		if (did == null) {
 			player.sendMessage("§cYou don't have a pending connection to Discord.");
@@ -101,6 +103,7 @@ public class DiscordMCCommand extends ICommand2MC {
 		"Shows an invite link to the server"
 	})
 	public void invite(CommandSender sender) {
+		if (checkSafeMode(sender)) return;
 		String invi = DiscordPlugin.plugin.inviteLink().get();
 		if (invi.length() > 0) {
 			sender.sendMessage("§bInvite link: " + invi);
@@ -131,5 +134,13 @@ public class DiscordMCCommand extends ICommand2MC {
 			default:
 				return super.getHelpText(method, ann);
 		}
+	}
+
+	private boolean checkSafeMode(CommandSender sender) {
+		if (DiscordPlugin.SafeMode) {
+			sender.sendMessage("§cThe plugin isn't initialized. Check console for details.");
+			return true;
+		}
+		return false;
 	}
 }

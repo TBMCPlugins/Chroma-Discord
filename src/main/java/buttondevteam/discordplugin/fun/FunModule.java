@@ -26,23 +26,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
+ * All kinds of random things.
  * The YEEHAW event uses an emoji named :YEEHAW: if available
  */
 public class FunModule extends Component<DiscordPlugin> implements Listener {
-	private static final String[] serverReadyStrings = new String[]{"In one week from now", // Ali
-		"Between now and the heat-death of the universe.", // Ghostise
-		"Soon™", "Ask again this time next month", // Ghostise
-		"In about 3 seconds", // Nicolai
-		"After we finish 8 plugins", // Ali
-		"Tomorrow.", // Ali
-		"After one tiiiny feature", // Ali
-		"Next commit", // Ali
-		"After we finish strangling Towny", // Ali
-		"When we kill every *fucking* bug", // Ali
-		"Once the server stops screaming.", // Ali
-		"After HL3 comes out", // Ali
-		"Next time you ask", // Ali
-		"When will *you* be open?" // Ali
+	private static final String[] serverReadyStrings = new String[]{"in one week from now", // Ali
+		"between now and the heat-death of the universe.", // Ghostise
+		"soon™", "ask again this time next month", // Ghostise
+		"in about 3 seconds", // Nicolai
+		"after we finish 8 plugins", // Ali
+		"tomorrow.", // Ali
+		"after one tiiiny feature", // Ali
+		"next commit", // Ali
+		"after we finish strangling Towny", // Ali
+		"when we kill every *fucking* bug", // Ali
+		"once the server stops screaming.", // Ali
+		"after HL3 comes out", // Ali
+		"next time you ask", // Ali
+		"when will *you* be open?" // Ali
 	};
 
 	/**
@@ -52,14 +53,14 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		return getConfig().getData("serverReady", () -> new String[]{"when will the server be open",
 			"when will the server be ready", "when will the server be done", "when will the server be complete",
 			"when will the server be finished", "when's the server ready", "when's the server open",
-			"Vhen vill ze server be open?"});
+			"vhen vill ze server be open?"});
 	}
 
 	/**
 	 * Answers for a recognized question. Selected randomly.
 	 */
 	private ConfigData<ArrayList<String>> serverReadyAnswers() {
-		return getConfig().getData("serverReadyAnswers", () -> Lists.newArrayList(serverReadyStrings)); //TODO: Test
+		return getConfig().getData("serverReadyAnswers", () -> Lists.newArrayList(serverReadyStrings));
 	}
 
 	private static final Random serverReadyRandom = new Random();
@@ -119,11 +120,17 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		ListC = 0;
 	}
 
+	/**
+	 * If all of the people who have this role are online, the bot will post a full house.
+	 */
 	private ConfigData<Mono<Role>> fullHouseDevRole(Mono<Guild> guild) {
 		return DPUtils.roleData(getConfig(), "fullHouseDevRole", "Developer", guild);
 	}
 
 
+	/**
+	 * The channel to post the full house to.
+	 */
 	private ReadOnlyConfigData<Mono<MessageChannel>> fullHouseChannel() {
 		return DPUtils.channelData(getConfig(), "fullHouseChannel");
 	}

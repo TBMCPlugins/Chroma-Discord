@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.commands;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.lib.chat.Command2Sender;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -29,5 +30,10 @@ public class Command2DCSender implements Command2Sender {
 	@Override
 	public void sendMessage(String[] message) {
 		sendMessage(String.join("\n", message));
+	}
+
+	@Override
+	public String getName() {
+		return message.getAuthor().map(User::getUsername).orElse("Discord");
 	}
 }

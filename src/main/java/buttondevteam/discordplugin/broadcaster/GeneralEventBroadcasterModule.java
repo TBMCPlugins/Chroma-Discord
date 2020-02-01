@@ -6,6 +6,10 @@ import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import lombok.Getter;
 
+/**
+ * Uses a bit of a hacky method of getting all broadcasted messages, including advancements and any other message that's for everyone.
+ * If this component is enabled then these messages will show up on Discord.
+ */
 public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	private static @Getter boolean hooked = false;
 

@@ -28,12 +28,7 @@ import java.util.stream.Collectors;
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
  */
 public class MinecraftChatModule extends Component<DiscordPlugin> {
-	private @Getter
-	MCChatListener listener;
-
-	/*public MCChatListener getListener() { //It doesn't want to generate
-		return listener; - And now ButtonProcessor didn't look beyond this - return instead of continue...
-	}*/
+	private @Getter MCChatListener listener;
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -46,8 +41,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
 	 */
-	public ConfigData<Snowflake> chatChannel() {
-		return DPUtils.snowflakeData(getConfig(), "chatChannel", 239519012529111040L);
+	public ReadOnlyConfigData<Snowflake> chatChannel() {
+		return DPUtils.snowflakeData(getConfig(), "chatChannel", 0L);
 	}
 
 	public Mono<MessageChannel> chatChannelMono() {

@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
+import buttondevteam.lib.architecture.ComponentMetadata;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import buttondevteam.lib.player.ChromaGamerBase;
@@ -15,12 +16,13 @@ import com.google.gson.JsonParser;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
 import lombok.val;
-import org.bukkit.configuration.file.YamlConfiguration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
-
+/**
+ * Posts new posts from Reddit to the specified channel(s). It will pin the regular posts (not the mod posts).
+ */
+@ComponentMetadata(enabledByDefault = false)
 public class AnnouncerModule extends Component<DiscordPlugin> {
 	/**
 	 * Channel to post new posts.
@@ -51,7 +53,13 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		return getConfig().getData("lastSeenTime", 0L);
 	}
 
-	private static final String SubredditURL = "https://www.reddit.com/r/ChromaGamers";
+	/**
+	 * The subreddit to pull the posts from
+	 */
+	private ConfigData<String> subredditURL() {
+		return getConfig().getData("subredditURL", "https://www.reddit.com/r/ChromaGamers");
+	}
+
 	private static boolean stop = false;
 
 	@Override
@@ -62,11 +70,6 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		if (keepPinned == 0) return;
 		Flux<Message> msgs = channel().get().flatMapMany(MessageChannel::getPinnedMessages);
 		msgs.subscribe(Message::unpin);
-		val yc = YamlConfiguration.loadConfiguration(new File("plugins/DiscordPlugin", "config.yml")); //Name change
-		if (lastAnnouncementTime().get() == 0) //Load old data
-			lastAnnouncementTime().set(yc.getLong("lastannouncementtime"));
-		if (lastSeenTime().get() == 0)
-			lastSeenTime().set(yc.getLong("lastseentime"));
 		new Thread(this::AnnouncementGetterThreadMethod).start();
 	}
 
@@ -82,7 +85,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					Thread.sleep(10000);
 					continue;
 				}
-				String body = TBMCCoreAPI.DownloadString(SubredditURL + "/new/.json?limit=10");
+				String body = TBMCCoreAPI.DownloadString(subredditURL().get() + "/new/.json?limit=10");
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 					.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();

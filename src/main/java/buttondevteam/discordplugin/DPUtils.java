@@ -96,13 +96,16 @@ public final class DPUtils {
 	 */
 	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
 		return config.getReadOnlyDataPrimDef(key, defName, name -> {
-			if (!(name instanceof String)) return Mono.empty();
-			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).next();
+			if (!(name instanceof String) || ((String) name).length() == 0) return Mono.empty();
+			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).onErrorResume(e -> {
+				getLogger().warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage());
+				return Mono.empty();
+			}).next();
 		}, r -> defName);
 	}
 
-	public static ConfigData<Snowflake> snowflakeData(IHaveConfig config, String key, long defID) {
-		return config.getDataPrimDef(key, defID, id -> Snowflake.of((long) id), Snowflake::asLong);
+	public static ReadOnlyConfigData<Snowflake> snowflakeData(IHaveConfig config, String key, long defID) {
+		return config.getReadOnlyDataPrimDef(key, defID, id -> Snowflake.of((long) id), Snowflake::asLong);
 	}
 
 	/**

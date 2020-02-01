@@ -102,7 +102,8 @@ public class MCChatListener implements Listener {
 				if (lastmsgdata.message == null
 					|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().map(Embed.Author::getName).orElse(null))
 					|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-					|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+					|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)
+					|| lastmsgdata.content.length() + e.getMessage().length() + 1 > 2048) {
 					lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block();
 					lastmsgdata.time = nanoTime;
 					lastmsgdata.mcchannel = e.getChannel();
