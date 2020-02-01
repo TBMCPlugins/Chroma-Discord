@@ -28,12 +28,7 @@ import java.util.stream.Collectors;
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
  */
 public class MinecraftChatModule extends Component<DiscordPlugin> {
-	private @Getter
-	MCChatListener listener;
-
-	/*public MCChatListener getListener() { //It doesn't want to generate
-		return listener; - And now ButtonProcessor didn't look beyond this - return instead of continue...
-	}*/
+	private @Getter MCChatListener listener;
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -46,8 +41,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
 	 */
-	public ConfigData<Snowflake> chatChannel() {
-		return DPUtils.snowflakeData(getConfig(), "chatChannel", 239519012529111040L);
+	public ReadOnlyConfigData<Snowflake> chatChannel() {
+		return DPUtils.snowflakeData(getConfig(), "chatChannel", 0L);
 	}
 
 	public Mono<MessageChannel> chatChannelMono() {
@@ -58,7 +53,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
 	 */
 	public ReadOnlyConfigData<Mono<MessageChannel>> modlogChannel() {
-		return DPUtils.channelData(getConfig(), "modlogChannel", 283840717275791360L);
+		return DPUtils.channelData(getConfig(), "modlogChannel");
 	}
 
 	/**
@@ -104,13 +99,19 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return getConfig().getData("allowPrivateChat", true);
 	}
 
-	String clientID;
+	/**
+	 * If set, message authors appearing on Discord will link to this URL. A 'type' and 'id' parameter will be added with the user's platform (Discord, Minecraft, ...) and ID.
+	 */
+	public ConfigData<String> profileURL() {
+		return getConfig().getData("profileURL", "");
+	}
 
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
 			return;
-		DiscordPlugin.dc.getApplicationInfo().subscribe(info -> clientID = info.getId().asString());
+		/*clientID = DiscordPlugin.dc.getApplicationInfo().blockOptional().map(info->info.getId().asString())
+			.orElse("Unknown"); //Need to block because otherwise it may not be set in time*/
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled

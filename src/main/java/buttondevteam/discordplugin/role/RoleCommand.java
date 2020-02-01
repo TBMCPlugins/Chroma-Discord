@@ -11,7 +11,6 @@ import lombok.val;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @CommandClass
 public class RoleCommand extends ICommand2DC {
@@ -62,7 +61,20 @@ public class RoleCommand extends ICommand2DC {
 
 	@Command2.Subcommand
 	public void list(Command2DCSender sender) {
-		sender.sendMessage("list of roles:\n" + grm.GameRoles.stream().sorted().collect(Collectors.joining("\n")));
+		var sb = new StringBuilder();
+		boolean b = false;
+		for (String role : (Iterable<String>) grm.GameRoles.stream().sorted()::iterator) {
+			sb.append(role);
+			if (!b)
+				for (int j = 0; j < Math.max(1, 20 - role.length()); j++)
+					sb.append(" ");
+			else
+				sb.append("\n");
+			b = !b;
+		}
+		if (sb.charAt(sb.length() - 1) != '\n')
+			sb.append('\n');
+		sender.sendMessage("list of roles:\n```\n" + sb + "```");
 	}
 
 	private Role checkAndGetRole(Command2DCSender sender, String rolename) {

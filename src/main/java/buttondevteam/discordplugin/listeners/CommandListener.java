@@ -62,7 +62,7 @@ public class CommandListener {
 					try {
 						timings.printElapsed("F");
 						if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
-							return DPUtils.reply(message, channel, "Unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
+							return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
 								.map(m -> false);
 					} catch (Exception e) {
 						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);

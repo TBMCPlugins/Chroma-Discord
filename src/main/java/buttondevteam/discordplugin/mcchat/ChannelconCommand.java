@@ -9,12 +9,17 @@ import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.TBMCPlayer;
+import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Permission;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.Bukkit;
+import reactor.core.publisher.Mono;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,6 +27,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("SimplifyOptionalCallChains") //Java 11
 @CommandClass(helpText = {"Channel connect", //
 	"This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
 	"You need to have access to the MC channel and have manage permissions on the Discord channel.", //
@@ -36,28 +42,29 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChannelconCommand extends ICommand2DC {
 	private final MinecraftChatModule module;
+
 	@Command2.Subcommand
 	public boolean remove(Command2DCSender sender) {
 		val message = sender.getMessage();
-		if (checkPerms(message)) return true;
+		if (checkPerms(message, null)) return true;
 		if (MCChatCustom.removeCustomChat(message.getChannelId()))
-			DPUtils.reply(message, null, "channel connection removed.").subscribe();
+			DPUtils.reply(message, Mono.empty(), "channel connection removed.").subscribe();
 		else
-			DPUtils.reply(message, null, "this channel isn't connected.").subscribe();
+			DPUtils.reply(message, Mono.empty(), "this channel isn't connected.").subscribe();
 		return true;
 	}
 
 	@Command2.Subcommand
 	public boolean toggle(Command2DCSender sender, @Command2.OptionalArg String toggle) {
 		val message = sender.getMessage();
-		if (checkPerms(message)) return true;
+		if (checkPerms(message, null)) return true;
 		val cc = MCChatCustom.getCustomChat(message.getChannelId());
 		if (cc == null)
 			return respond(sender, "this channel isn't connected.");
 		Supplier<String> togglesString = () -> Arrays.stream(ChannelconBroadcast.values()).map(t -> t.toString().toLowerCase() + ": " + ((cc.toggles & t.flag) == 0 ? "disabled" : "enabled")).collect(Collectors.joining("\n"))
 			+ "\n\n" + TBMCSystemChatEvent.BroadcastTarget.stream().map(target -> target.getName() + ": " + (cc.brtoggles.contains(target) ? "enabled" : "disabled")).collect(Collectors.joining("\n"));
 		if (toggle == null) {
-			DPUtils.reply(message, null, "toggles:\n" + togglesString.get()).subscribe();
+			DPUtils.reply(message, Mono.empty(), "toggles:\n" + togglesString.get()).subscribe();
 			return true;
 		}
 		String arg = toggle.toUpperCase();
@@ -65,7 +72,7 @@ public class ChannelconCommand extends ICommand2DC {
 		if (!b.isPresent()) {
 			val bt = TBMCSystemChatEvent.BroadcastTarget.get(arg);
 			if (bt == null) {
-				DPUtils.reply(message, null, "cannot find toggle. Toggles:\n" + togglesString.get()).subscribe();
+				DPUtils.reply(message, Mono.empty(), "cannot find toggle. Toggles:\n" + togglesString.get()).subscribe();
 				return true;
 			}
 			final boolean add;
@@ -83,7 +90,7 @@ public class ChannelconCommand extends ICommand2DC {
 		//1 1 | 0
 		// XOR
 		cc.toggles ^= b.get().flag;
-		DPUtils.reply(message, null, "'" + b.get().toString().toLowerCase() + "' " + ((cc.toggles & b.get().flag) == 0 ? "disabled" : "enabled")).subscribe();
+		DPUtils.reply(message, Mono.empty(), "'" + b.get().toString().toLowerCase() + "' " + ((cc.toggles & b.get().flag) == 0 ? "disabled" : "enabled")).subscribe();
 		return true;
 	}
 
@@ -94,12 +101,13 @@ public class ChannelconCommand extends ICommand2DC {
 			sender.sendMessage("channel connection is not allowed on this Minecraft server.");
 			return true;
 		}
-		if (checkPerms(message)) return true;
+		val channel = message.getChannel().block();
+		if (checkPerms(message, channel)) return true;
 		if (MCChatCustom.hasCustomChat(message.getChannelId()))
 			return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
 		val chan = Channel.getChannels().filter(ch -> ch.ID.equalsIgnoreCase(channelID) || (Arrays.stream(ch.IDs().get()).anyMatch(cid -> cid.equalsIgnoreCase(channelID)))).findAny();
 		if (!chan.isPresent()) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
-			DPUtils.reply(message, null, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe();
+			DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe();
 			return true;
 		}
 		if (!message.getAuthor().isPresent()) return true;
@@ -107,19 +115,18 @@ public class ChannelconCommand extends ICommand2DC {
 		val dp = DiscordPlayer.getUser(author.getId().asString(), DiscordPlayer.class);
 		val chp = dp.getAs(TBMCPlayer.class);
 		if (chp == null) {
-			DPUtils.reply(message, null, "you need to connect your Minecraft account. On our server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>").subscribe();
+			DPUtils.reply(message, channel, "you need to connect your Minecraft account. On the main server in " + DPUtils.botmention() + " do " + DiscordPlugin.getPrefix() + "connect <MCname>").subscribe();
 			return true;
 		}
-		val channel = message.getChannel().block();
 		DiscordConnectedPlayer dcp = DiscordConnectedPlayer.create(message.getAuthor().get(), channel, chp.getUUID(), Bukkit.getOfflinePlayer(chp.getUUID()).getName(), module);
 		//Using a fake player with no login/logout, should be fine for this event
 		String groupid = chan.get().getGroupID(dcp);
 		if (groupid == null && !(chan.get() instanceof ChatRoom)) { //ChatRooms don't allow it unless the user joins, which happens later
-			DPUtils.reply(message, null, "sorry, you cannot use that Minecraft channel.").subscribe();
+			DPUtils.reply(message, channel, "sorry, you cannot use that Minecraft channel.").subscribe();
 			return true;
 		}
 		if (chan.get() instanceof ChatRoom) { //ChatRooms don't work well
-			DPUtils.reply(message, null, "chat rooms are not supported yet.").subscribe();
+			DPUtils.reply(message, channel, "chat rooms are not supported yet.").subscribe();
 			return true;
 		}
         /*if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
@@ -128,16 +135,23 @@ public class ChannelconCommand extends ICommand2DC {
         }*/ //TODO: "Channel admins" that can connect channels?
 		MCChatCustom.addCustomChat(channel, groupid, chan.get(), author, dcp, 0, new HashSet<>());
 		if (chan.get() instanceof ChatRoom)
-			DPUtils.reply(message, null, "alright, connection made to the room!").subscribe();
+			DPUtils.reply(message, channel, "alright, connection made to the room!").subscribe();
 		else
-			DPUtils.reply(message, null, "alright, connection made to group `" + groupid + "`!").subscribe();
+			DPUtils.reply(message, channel, "alright, connection made to group `" + groupid + "`!").subscribe();
 		return true;
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	private boolean checkPerms(Message message) {
-		if (!message.getAuthorAsMember().block().getBasePermissions().block().contains(Permission.MANAGE_CHANNELS)) {
-			DPUtils.reply(message, null, "you need to have manage permissions for this channel!").subscribe();
+	private boolean checkPerms(Message message, @Nullable MessageChannel channel) {
+		if (channel == null)
+			channel = message.getChannel().block();
+		if (!(channel instanceof GuildChannel)) {
+			DPUtils.reply(message, channel, "you can only use this command in a server!").subscribe();
+			return true;
+		}
+		var perms = ((GuildChannel) channel).getEffectivePermissions(message.getAuthor().map(User::getId).get()).block();
+		if (!perms.contains(Permission.ADMINISTRATOR) && !perms.contains(Permission.MANAGE_CHANNELS)) {
+			DPUtils.reply(message, channel, "you need to have manage permissions for this channel!").subscribe();
 			return true;
 		}
 		return false;
@@ -145,17 +159,17 @@ public class ChannelconCommand extends ICommand2DC {
 
 	@Override
 	public String[] getHelpText(Method method, Command2.Subcommand ann) {
-        return new String[]{ //
-	        "Channel connect", //
-                "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
-                "You need to have access to the MC channel and have manage permissions on the Discord channel.", //
-	        "You also need to have your Minecraft account connected. In " + DPUtils.botmention() + " use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
-		        "Call this command from the channel you want to use.", //
+		return new String[]{ //
+			"Channel connect", //
+			"This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).", //
+			"You need to have access to the MC channel and have manage permissions on the Discord channel.", //
+			"You also need to have your Minecraft account connected. In " + DPUtils.botmention() + " use " + DiscordPlugin.getPrefix() + "connect <mcname>.", //
+			"Call this command from the channel you want to use.", //
 			"Usage: " + Objects.requireNonNull(DiscordPlugin.dc.getSelf().block()).getMention() + " channelcon <mcchannel>", //
-		        "Use the ID (command) of the channel, for example `g` for the global chat.", //
-                "To remove a connection use @ChromaBot channelcon remove in the channel.", //
-	        "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //
-	        "Invite link: <https://discordapp.com/oauth2/authorize?client_id=" + module.clientID + "&scope=bot&permissions=268509264>"
-        };
-    }
+			"Use the ID (command) of the channel, for example `g` for the global chat.", //
+			"To remove a connection use @ChromaBot channelcon remove in the channel.", //
+			"Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix() + " prefix only works in " + DPUtils.botmention() + ".", //
+			"Invite link: <https://discordapp.com/oauth2/authorize?client_id=" + DiscordPlugin.dc.getApplicationInfo().map(info -> info.getId().asString()).blockOptional().orElse("Unknown") + "&scope=bot&permissions=268509264>"
+		};
+	}
 }

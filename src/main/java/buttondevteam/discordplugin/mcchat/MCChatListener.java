@@ -84,13 +84,14 @@ public class MCChatListener implements Listener {
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
 				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),
 					color.getGreen(), color.getBlue()));
+				String url = module.profileURL().get();
 				if (e.getSender() instanceof Player)
 					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(),
-						"https://tbmcplugins.github.io/profile.html?type=minecraft&id="
-							+ ((Player) e.getSender()).getUniqueId());
+						url.length() > 0 ? url + "?type=minecraft&id="
+							+ ((Player) e.getSender()).getUniqueId() : null);
 				else if (e.getSender() instanceof DiscordSenderBase)
-					ecs.setAuthor(authorPlayer, "https://tbmcplugins.github.io/profile.html?type=discord&id=" // TODO: Constant/method to get URLs like this
-							+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString(),
+					ecs.setAuthor(authorPlayer, url.length() > 0 ? url + "?type=discord&id="
+							+ ((DiscordSenderBase) e.getSender()).getUser().getId().asString() : null,
 						((DiscordSenderBase) e.getSender()).getUser().getAvatarUrl());
 				else
 					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(), null);
@@ -101,7 +102,8 @@ public class MCChatListener implements Listener {
 				if (lastmsgdata.message == null
 					|| !authorPlayer.equals(lastmsgdata.message.getEmbeds().get(0).getAuthor().map(Embed.Author::getName).orElse(null))
 					|| lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-					|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)) {
+					|| !lastmsgdata.mcchannel.ID.equals(e.getChannel().ID)
+					|| lastmsgdata.content.length() + e.getMessage().length() + 1 > 2048) {
 					lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block();
 					lastmsgdata.time = nanoTime;
 					lastmsgdata.mcchannel = e.getChannel();
@@ -291,6 +293,8 @@ public class MCChatListener implements Listener {
 
 			dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE); //Converts emoji to text- TODO: Add option to disable (resource pack?)
 			dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:"); //Convert to Discord's format so it still shows up
+
+			dmessage = dmessage.replaceAll("<a?:(\\S+):(\\d+)>", ":$1:"); //We don't need info about the custom emojis, just display their text
 
 			Function<String, String> getChatMessage = msg -> //
 				msg + (event.getMessage().getAttachments().size() > 0 ? "\n" + event.getMessage()

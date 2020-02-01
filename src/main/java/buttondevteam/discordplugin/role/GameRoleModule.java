@@ -21,6 +21,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Automatically collects roles with a certain color (the second to last in the upper row - #95a5a6).
+ * Users can add these roles to themselves using the /role Discord command.
+ */
 public class GameRoleModule extends Component<DiscordPlugin> {
 	public List<String> GameRoles;
 
@@ -35,8 +39,11 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 
 	}
 
+	/**
+	 * The channel where the bot logs when it detects a role change that results in a new game role or one being removed.
+	 */
 	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel() {
-		return DPUtils.channelData(getConfig(), "logChannel", 239519012529111040L);
+		return DPUtils.channelData(getConfig(), "logChannel");
 	}
 
 	public static void handleRoleEvent(RoleEvent roleEvent) {
@@ -52,7 +59,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 						return Mono.empty(); //Deleted or not a game role
 					GameRoles.add(role.getName());
 					if (logChannel != null)
-						return logChannel.flatMap(ch -> ch.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the default."));
+						return logChannel.flatMap(ch -> ch.createMessage("Added " + role.getName() + " as game role. If you don't want this, change the role's color from the game role color."));
 					return Mono.empty();
 				}).subscribe();
 			}, 100);
@@ -81,7 +88,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 						if (removed)
 							return logChannel.flatMap(ch -> ch.createMessage("Changed game role from " + or.getName() + " to " + event.getCurrent().getName() + "."));
 						else
-							return logChannel.flatMap(ch -> ch.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the default color."));
+							return logChannel.flatMap(ch -> ch.createMessage("Added " + event.getCurrent().getName() + " as game role because it has the color of one."));
 					}
 				}
 				return Mono.empty();

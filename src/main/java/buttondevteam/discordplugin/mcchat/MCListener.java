@@ -3,7 +3,9 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.discordplugin.*;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.ConfigData;
-import buttondevteam.lib.player.*;
+import buttondevteam.lib.player.TBMCPlayer;
+import buttondevteam.lib.player.TBMCPlayerBase;
+import buttondevteam.lib.player.TBMCYEEHAWEvent;
 import com.earth2me.essentials.CommandSource;
 import discord4j.core.object.entity.Role;
 import discord4j.core.object.util.Snowflake;
@@ -18,9 +20,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerCommandSendEvent;
-import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.TabCompleteEvent;
@@ -44,13 +44,13 @@ class MCListener implements Listener {
 			.ifPresent(dcp -> MCChatUtils.callLogoutEvent(dcp, false));
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerJoin(PlayerJoinEvent e) {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return; // Don't show the joined message for the fake player
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
 			final Player p = e.getPlayer();
-			DiscordPlayer dp = e.GetPlayer().getAs(DiscordPlayer.class);
+			DiscordPlayer dp = TBMCPlayerBase.getPlayer(p.getUniqueId(), TBMCPlayer.class).getAs(DiscordPlayer.class);
 			if (dp != null) {
 				DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).flatMap(user -> user.getPrivateChannel().flatMap(chan -> module.chatChannelMono().flatMap(cc -> {
 					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
@@ -60,14 +60,15 @@ class MCListener implements Listener {
 					return Mono.empty();
 				}))).subscribe();
 			}
-			final String message = e.GetPlayer().PlayerName().get() + " joined the game";
-			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
+			final String message = e.getJoinMessage();
+			if (message != null && message.trim().length() > 0)
+				MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
 			ChromaBot.getInstance().updatePlayerList();
 		});
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onPlayerLeave(TBMCPlayerQuitEvent e) {
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerLeave(PlayerQuitEvent e) {
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return; // Only care about real users
 		MCChatUtils.OnlineSenders.entrySet()
@@ -78,8 +79,9 @@ class MCListener implements Listener {
 				.ifPresent(MCChatUtils::callLoginEvents));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
 			ChromaBot.getInstance()::updatePlayerList, 5);
-		final String message = e.GetPlayer().PlayerName().get() + " left the game";
-		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
+		final String message = e.getQuitMessage();
+		if (message != null && message.trim().length() > 0)
+			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)

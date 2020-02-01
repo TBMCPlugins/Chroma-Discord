@@ -15,10 +15,16 @@ import lombok.val;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class DPUtils {
+
+	public static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
+	public static final Pattern FORMAT_PATTERN = Pattern.compile("[*_~]");
 
 	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String displayname, String playername, String profileUrl) {
 		return ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");
@@ -51,7 +57,24 @@ public final class DPUtils {
 	}
 
 	private static String escape(String message) {
-		return message.replaceAll("([*_~])", Matcher.quoteReplacement("\\") + "$1");
+		//var ts = new TreeSet<>();
+		var ts = new TreeSet<int[]>(Comparator.comparingInt(a -> a[0])); //Compare the start, then check the end
+		var matcher = URL_PATTERN.matcher(message);
+		while (matcher.find())
+			ts.add(new int[]{matcher.start(), matcher.end()});
+		matcher = FORMAT_PATTERN.matcher(message);
+		/*Function<MatchResult, String> aFunctionalInterface = result ->
+			Optional.ofNullable(ts.floor(new int[]{result.start(), 0})).map(a -> a[1]).orElse(0) < result.start()
+				? "\\\\" + result.group() : result.group();
+		return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape*/
+		StringBuffer sb = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(sb, Optional.ofNullable(ts.floor(new int[]{matcher.start(), 0})) //Find a URL start <= our start
+				.map(a -> a[1]).orElse(-1) < matcher.start() //Check if URL end < our start
+				? "\\\\" + matcher.group() : matcher.group());
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
 	}
 
 	public static Logger getLogger() {
@@ -60,8 +83,8 @@ public final class DPUtils {
 		return DiscordPlugin.plugin.getLogger();
 	}
 
-	public static ReadOnlyConfigData<Mono<MessageChannel>> channelData(IHaveConfig config, String key, long defID) {
-		return config.getReadOnlyDataPrimDef(key, defID, id -> getMessageChannel(key, Snowflake.of((Long) id)), ch -> defID); //We can afford to search for the channel in the cache once (instead of using mainServer)
+	public static ReadOnlyConfigData<Mono<MessageChannel>> channelData(IHaveConfig config, String key) {
+		return config.getReadOnlyDataPrimDef(key, 0L, id -> getMessageChannel(key, Snowflake.of((Long) id)), ch -> 0L); //We can afford to search for the channel in the cache once (instead of using mainServer)
 	}
 
 	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName) {
@@ -73,13 +96,16 @@ public final class DPUtils {
 	 */
 	public static ReadOnlyConfigData<Mono<Role>> roleData(IHaveConfig config, String key, String defName, Mono<Guild> guild) {
 		return config.getReadOnlyDataPrimDef(key, defName, name -> {
-			if (!(name instanceof String)) return Mono.empty();
-			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).next();
+			if (!(name instanceof String) || ((String) name).length() == 0) return Mono.empty();
+			return guild.flatMapMany(Guild::getRoles).filter(r -> r.getName().equals(name)).onErrorResume(e -> {
+				getLogger().warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage());
+				return Mono.empty();
+			}).next();
 		}, r -> defName);
 	}
 
-	public static ConfigData<Snowflake> snowflakeData(IHaveConfig config, String key, long defID) {
-		return config.getDataPrimDef(key, defID, id -> Snowflake.of((long) id), Snowflake::asLong);
+	public static ReadOnlyConfigData<Snowflake> snowflakeData(IHaveConfig config, String key, long defID) {
+		return config.getReadOnlyDataPrimDef(key, defID, id -> Snowflake.of((long) id), Snowflake::asLong);
 	}
 
 	/**
@@ -134,12 +160,27 @@ public final class DPUtils {
 		return false;
 	}
 
+	/**
+	 * Send a response in the form of "@User, message". Use Mono.empty() if you don't have a channel object.
+	 *
+	 * @param original The original message to reply to
+	 * @param channel  The channel to send the message in, defaults to the original
+	 * @param message  The message to send
+	 * @return A mono to send the message
+	 */
 	public static Mono<Message> reply(Message original, @Nullable MessageChannel channel, String message) {
 		Mono<MessageChannel> ch;
 		if (channel == null)
 			ch = original.getChannel();
 		else
 			ch = Mono.just(channel);
+		return reply(original, ch, message);
+	}
+
+	/**
+	 * @see #reply(Message, MessageChannel, String)
+	 */
+	public static Mono<Message> reply(Message original, Mono<MessageChannel> ch, String message) {
 		return ch.flatMap(chan -> chan.createMessage((original.getAuthor().isPresent()
 			? original.getAuthor().get().getMention() + ", " : "") + message));
 	}
@@ -152,7 +193,15 @@ public final class DPUtils {
 		return "<#" + channelId.asString() + ">";
 	}
 
+	/**
+	 * Gets a message channel for a config. Returns empty for ID 0.
+	 *
+	 * @param key The config key
+	 * @param id  The channel ID
+	 * @return A message channel
+	 */
 	public static Mono<MessageChannel> getMessageChannel(String key, Snowflake id) {
+		if (id.asLong() == 0L) return Mono.empty();
 		return DiscordPlugin.dc.getChannelById(id).onErrorResume(e -> {
 			getLogger().warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage());
 			return Mono.empty();
