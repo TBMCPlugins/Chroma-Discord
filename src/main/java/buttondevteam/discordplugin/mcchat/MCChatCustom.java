@@ -57,7 +57,6 @@ public class MCChatCustom {
 
 	public static class CustomLMD extends MCChatUtils.LastMsgData {
 		public final String groupID;
-		public final Channel mcchannel;
 		public final DiscordConnectedPlayer dcp;
 		public int toggles;
 		public Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles;
