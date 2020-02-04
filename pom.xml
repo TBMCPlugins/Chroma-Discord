@@ -3,17 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.TBMCPlugins.ButtonCore</groupId>
+        <groupId>com.github.TBMCPlugins.ChromaCore</groupId>
         <artifactId>CorePOM</artifactId>
         <version>master-SNAPSHOT</version>
     </parent>
 
     <groupId>com.github.TBMCPlugins</groupId>
-    <artifactId>DiscordPlugin</artifactId>
+    <artifactId>Chroma-Discord</artifactId>
     <version>master-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>DiscordPlugin</name>
+    <name>Chroma-Discord</name>
     <url>http://maven.apache.org</url>
 
     <build>
@@ -38,7 +38,7 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <finalName>DiscordPlugin</finalName>
+        <finalName>Chroma-Discord</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -53,9 +53,6 @@
                         <configuration>
                             <artifactSet>
                                 <excludes>
-                                    <exclude>org.spigotmc:spigot-api</exclude>
-                                    <exclude>com.github.TBMCPlugins.ButtonCore:ButtonCore</exclude>
-                                    <exclude>net.ess3:Essentials</exclude>
                                 </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
                             </artifactSet>
                             <minimizeJar>true</minimizeJar>
@@ -192,8 +189,8 @@
             <version>1.7.21</version>
         </dependency>
         <dependency>
-            <groupId>com.github.TBMCPlugins.ButtonCore</groupId>
-            <artifactId>ButtonCore</artifactId>
+            <groupId>com.github.TBMCPlugins.ChromaCore</groupId>
+            <artifactId>Chroma-Core</artifactId>
             <version>${branch}-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
