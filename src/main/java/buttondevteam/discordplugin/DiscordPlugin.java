@@ -33,7 +33,6 @@ import discord4j.core.object.util.Snowflake;
 import discord4j.store.jdk.JdkStoreService;
 import lombok.Getter;
 import lombok.val;
-import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -284,20 +283,4 @@ public class DiscordPlugin extends ButtonPlugin {
 	}
 
 	public static final ReactionEmoji DELIVERED_REACTION = ReactionEmoji.unicode("✅");
-
-	public static Permission perms;
-
-	private boolean setupProviders() {
-		try {
-			Class.forName("net.milkbowl.vault.permission.Permission");
-			Class.forName("net.milkbowl.vault.chat.Chat");
-		} catch (ClassNotFoundException e) {
-			return false;
-		}
-
-		RegisteredServiceProvider<Permission> permsProvider = Bukkit.getServer().getServicesManager()
-			.getRegistration(Permission.class);
-		perms = permsProvider.getProvider();
-		return perms != null;
-	}
 }

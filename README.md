@@ -1,11 +1,10 @@
 # DiscordPlugin
-A plugin that controls the ChromaBot Discord bot and provides Minecraft chat functionality and other features. 
+A plugin that provides Minecraft chat functionality and other features.
 
-## Features
-### Announce new posts from /r/ChromaGamers
-If it's a (distinguished) moderator post, it'll be posted to the \#announcements channel, otherwise it'll be posted and pinned to \#general.
+## Setup
+This plugin needs Chroma-Core to work. If you have that and this plugin, start the server, and follow the instructions.
+You'll need a Discord application made, and a bot account created for it.
+You can restart the plugin using /discord reset without having to restart the whole server.
 
-### Announce server restarts
-It announces server starts/stops and restarts, as well as if the server shut down unexpectedly.
-
-**For more, see:** http://chromapedia.wikia.com/wiki/ChromaBot
+## Building
+Maven is used to build this project with all of its dependencies. You will need Spigot 1.12.2 and 1.14.4 built using BuildTools.
