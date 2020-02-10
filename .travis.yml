@@ -12,15 +12,10 @@ jdk:
   - oraclejdk11
 sudo: true
 deploy:
-  # deploy develop to the staging environment
-  - provider: script
-    script: chmod +x deploy.sh && sh deploy.sh staging
+  - provider: releases
+    api_key:
+      secure: "AnGhHbIFAdfFEtxuAv3Bue5n80JJi9FMyXc2rstg1zzBbuvaYqCUWcL7lB34Ffs9E6Mo5wfANnBRyXtdSfXWLLsb0k78vvlAwJyLP2s0V7r9LTvQWJEflslSDX6ySF0YIc3LR+XMYv+qj+e5XnWr6Kj6gRkaQPDzSIYRgvfKZv9fbo4lSqnp2OcOrn4sYyeV6+sLhARLaNTvbDOdLiMRP3JZUrKB4OCt8+XhrVMlwKhglJY8JVKx1uAFxeljfZ3WJ1WnJ6L8coyVR18HAl1/VHwn+a/jeGp9AygTPF2yJL3+TJs37afqG9jjbL0pneSUoyNenKkjD19pM2RgjGmW25kPEvnmGMaWn8UN8bbilB5k8sh27z+/6qNnvYbhJxJi9RJNASpd6JQ1cGZoBziKsvhkLXErRNCJ92wlgGOqE78UWf6dvzmVkQD/vaqXhHlmcVhpoUZUqsXGWw5gOw/Kxh90IUwsV6A2JXf1Q3YRPIfDin/tVpud6eB0hiRW2uLnAqDMUUsH6n8cqd2rzg/02uKD5rF5+amxfdUSf3m/Fh6lqklNlO1188rFULUPpyFRas59UpEIRqT2Ae9OJPg+1QrVln2Gd3l059MHumX2tidQl00GzXx4nB1NkxpKLl9JLf/n6A4MQodY5CkRELUTB8K3zHGhJdj1Dtmis5YwhXk="
+    file: 'target/Chroma-Discord.jar'
     on:
-      branch: dev
-    skip_cleanup: true
-  # deploy master to production
-  - provider: script
-    script: chmod +x deploy.sh && sh deploy.sh production
-    on:
-      branch: master
+      tags: true
     skip_cleanup: true
