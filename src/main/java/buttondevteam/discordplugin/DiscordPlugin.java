@@ -109,7 +109,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			getLogger().info("Initializing...");
 			plugin = this;
 			manager = new Command2DC();
-			getCommand2MC().registerCommand(new DiscordMCCommand()); //Register so that the reset command works
+			registerCommand(new DiscordMCCommand()); //Register so that the reset command works
 			String token;
 			File tokenFile = new File("TBMC", "Token.txt");
 			if (tokenFile.exists()) //Legacy support
@@ -214,7 +214,6 @@ public class DiscordPlugin extends ButtonPlugin {
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
 			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
 				? ((DiscordSenderBase) sender).getChromaUser() : null));
-			setupProviders();
 
 			IHaveConfig.pregenConfig(this, null);
 			if (!TBMCCoreAPI.IsTestServer()) {

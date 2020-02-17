@@ -49,7 +49,8 @@ public class MCChatUtils {
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
 	public static final HashMap<String, HashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
-	static @Nullable LastMsgData lastmsgdata;
+	static @Nullable
+	LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
 	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
@@ -91,7 +92,9 @@ public class MCChatUtils {
 			gid = buttondevteam.core.component.channel.Channel.GROUP_EVERYONE; // (Though it's a public chat then rn)
 		AtomicInteger C = new AtomicInteger();
 		s[s.length - 1] = "Players: " + Bukkit.getOnlinePlayers().stream()
-			.filter(p -> gid.equals(lmd.mcchannel.getGroupID(p))) //If they can see it
+			.filter(p -> (lmd.mcchannel == null
+				? gid.equals(buttondevteam.core.component.channel.Channel.GROUP_EVERYONE) //If null, allow if public (custom chats will have their channel stored anyway)
+				: gid.equals(lmd.mcchannel.getGroupID(p)))) //If they can see it
 			.filter(MCChatUtils::checkEssentials)
 			.filter(p -> C.incrementAndGet() > 0) //Always true
 			.map(p -> DPUtils.sanitizeString(p.getDisplayName())).collect(Collectors.joining(", "));
@@ -106,12 +109,12 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-	                                                        User user, T sender) {
+															User user, T sender) {
 		return addSender(senders, user.getId().asString(), sender);
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-	                                                        String did, T sender) {
+															String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
@@ -121,7 +124,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
-	                                                        Snowflake channel, User user) {
+															Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
@@ -129,7 +132,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
-	                                                           Snowflake channel, User user) {
+															   Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);

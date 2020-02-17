@@ -1,4 +1,4 @@
-# DiscordPlugin
+# Chroma-Discord
 A plugin that provides Minecraft chat functionality and other features.
 
 ## Setup
