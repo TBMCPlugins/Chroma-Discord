@@ -14,6 +14,7 @@ import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import net.ess3.api.events.MuteStatusChangeEvent;
 import net.ess3.api.events.NickChangeEvent;
+import net.ess3.api.events.VanishStatusChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -165,21 +166,23 @@ class MCListener implements Listener {
 	public void onTabComplete(TabCompleteEvent event) {
 		int i = event.getBuffer().lastIndexOf(' ');
 		String t = event.getBuffer().substring(i + 1); //0 if not found
-		//System.out.println("Last token: " + t);
 		if (!t.startsWith("@"))
 			return;
 		String token = t.substring(1);
-		//System.out.println("Token: " + token);
 		val x = DiscordPlugin.mainServer.getMembers()
 			.flatMap(m -> Flux.just(m.getUsername(), m.getNickname().orElse("")))
 			.filter(s -> s.startsWith(token))
 			.map(s -> "@" + s)
 			.doOnNext(event.getCompletions()::add).blockLast();
-		//System.out.println("Finished - last: " + x);
 	}
 
 	@EventHandler
 	public void onCommandSend(PlayerCommandSendEvent event) {
 		event.getCommands().add("g");
+	}
+
+	@EventHandler
+	public void onVanish(VanishStatusChangeEvent event) {
+		MCChatUtils.updatePlayerList();
 	}
 }
