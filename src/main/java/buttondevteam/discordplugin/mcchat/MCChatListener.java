@@ -1,12 +1,7 @@
 package buttondevteam.discordplugin.mcchat;
 
 import buttondevteam.core.ComponentManager;
-import buttondevteam.core.component.channel.Channel;
-import buttondevteam.core.component.channel.ChatRoom;
-import buttondevteam.discordplugin.DPUtils;
-import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.DiscordSender;
-import buttondevteam.discordplugin.DiscordSenderBase;
+import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
@@ -33,8 +28,6 @@ import reactor.core.publisher.Mono;
 import java.awt.*;
 import java.time.Instant;
 import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -308,105 +301,9 @@ public class MCChatListener implements Listener {
 			val sendChannel = event.getMessage().getChannel().block();
 			boolean isPrivate = sendChannel instanceof PrivateChannel;
 			if (dmessage.startsWith("/")) { // Ingame command
-				if (!isPrivate)
-					event.getMessage().delete().subscribe();
-				final String cmd = dmessage.substring(1);
-				final String cmdlowercased = cmd.toLowerCase();
-				if (dsender instanceof DiscordSender && module.whitelistedCommands().get().stream()
-					.noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
-					// Command not whitelisted
-					dsender.sendMessage("Sorry, you can only access these commands:\n"
-						+ module.whitelistedCommands().get().stream().map(uc -> "/" + uc)
-						.collect(Collectors.joining(", "))
-						+ (user.getConnectedID(TBMCPlayer.class) == null
-						? "\nTo access your commands, first please connect your accounts, using /connect in "
-						+ DPUtils.botmention()
-						+ "\nThen y"
-						: "\nY")
-						+ "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
-					return;
-				}
-				val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
-				Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () ->
-					Bukkit.getPluginManager().callEvent(ev));
-				if (ev.isCancelled())
-					return;
-				int spi = cmdlowercased.indexOf(' ');
-				final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
-				Optional<Channel> ch = Channel.getChannels()
-					.filter(c -> c.ID.equalsIgnoreCase(topcmd)
-						|| (c.IDs().get().length > 0
-						&& Arrays.stream(c.IDs().get()).anyMatch(id -> id.equalsIgnoreCase(topcmd)))).findAny();
-				if (!ch.isPresent()) //TODO: What if talking in the public chat while we have it on a different one
-					Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
-						() -> { //TODO: Better handling...
-							val channel = user.channel();
-							val chtmp = channel.get();
-							if (clmd != null) {
-								channel.set(clmd.mcchannel); //Hack to send command in the channel
-							} //TODO: Permcheck isn't implemented for commands
-							try {
-								String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
-								if (mcpackage.contains("1_12"))
-									VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-								else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
-									VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
-								else
-									Bukkit.dispatchCommand(dsender, cmd);
-							} catch (NoClassDefFoundError e) {
-								TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
-							}
-							Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
-							if (clmd != null)
-								channel.set(chtmp);
-						});
-				else {
-					Channel chc = ch.get();
-					if (!chc.isGlobal() && !isPrivate)
-						dsender.sendMessage(
-							"You can only talk in a public chat here. DM `mcchat` to enable private chat to talk in the other channels.");
-					else {
-						if (spi == -1) // Switch channels
-						{
-							val channel = dsender.getChromaUser().channel();
-							val oldch = channel.get();
-							if (oldch instanceof ChatRoom)
-								((ChatRoom) oldch).leaveRoom(dsender);
-							if (!oldch.ID.equals(chc.ID)) {
-								channel.set(chc);
-								if (chc instanceof ChatRoom)
-									((ChatRoom) chc).joinRoom(dsender);
-							} else
-								channel.set(Channel.GlobalChat);
-							dsender.sendMessage("You're now talking in: "
-								+ DPUtils.sanitizeString(channel.get().DisplayName().get()));
-						} else { // Send single message
-							final String msg = cmd.substring(spi + 1);
-							val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(msg)).fromCommand(true);
-							if (clmd == null)
-								TBMCChatAPI.SendChatMessage(cmb.build(), chc);
-							else
-								TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), chc);
-							react = true;
-						}
-					}
-				}
+				if (handleIngameCommand(event, dmessage, dsender, user, clmd, isPrivate)) return;
 			} else {// Not a command
-				if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
-					&& !isPrivate && event.getMessage().getType() == Message.Type.CHANNEL_PINNED_MESSAGE) {
-					val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
-						: dsender.getChromaUser().channel().get().getRTR(dsender);
-					TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
-						(dsender instanceof Player ? ((Player) dsender).getDisplayName()
-							: dsender.getName()) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL);
-				} else {
-					val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);
-					if (clmd != null)
-						TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), clmd.mcchannel);
-					else
-						TBMCChatAPI.SendChatMessage(cmb.build());
-					react = true;
-				}
+				react = handleIngameMessage(event, dmessage, dsender, user, getChatMessage, clmd, isPrivate);
 			}
 			if (react) {
 				try {
@@ -423,6 +320,76 @@ public class MCChatListener implements Listener {
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
 		}
+	}
+
+	private boolean handleIngameMessage(MessageCreateEvent event, String dmessage, DiscordSenderBase dsender, DiscordPlayer user, Function<String, String> getChatMessage, MCChatCustom.CustomLMD clmd, boolean isPrivate) {
+		boolean react = false;
+		if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
+			&& !isPrivate && event.getMessage().getType() == Message.Type.CHANNEL_PINNED_MESSAGE) {
+			val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
+				: dsender.getChromaUser().channel().get().getRTR(dsender);
+			TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
+				(dsender instanceof Player ? ((Player) dsender).getDisplayName()
+					: dsender.getName()) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL);
+		} else {
+			val cmb = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false);
+			if (clmd != null)
+				TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build(), clmd.mcchannel);
+			else
+				TBMCChatAPI.SendChatMessage(cmb.build());
+			react = true;
+		}
+		return react;
+	}
+
+	private boolean handleIngameCommand(MessageCreateEvent event, String dmessage, DiscordSenderBase dsender, DiscordPlayer user, MCChatCustom.CustomLMD clmd, boolean isPrivate) {
+		if (!isPrivate)
+			event.getMessage().delete().subscribe();
+		final String cmd = dmessage.substring(1);
+		final String cmdlowercased = cmd.toLowerCase();
+		if (dsender instanceof DiscordSender && module.whitelistedCommands().get().stream()
+			.noneMatch(s -> cmdlowercased.equals(s) || cmdlowercased.startsWith(s + " "))) {
+			// Command not whitelisted
+			dsender.sendMessage("Sorry, you can only access these commands from here:\n"
+				+ module.whitelistedCommands().get().stream().map(uc -> "/" + uc)
+				.collect(Collectors.joining(", "))
+				+ (user.getConnectedID(TBMCPlayer.class) == null
+				? "\nTo access your commands, first please connect your accounts, using /connect in "
+				+ DPUtils.botmention()
+				+ "\nThen y"
+				: "\nY")
+				+ "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
+			return true;
+		}
+		val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> Bukkit.getPluginManager().callEvent(ev));
+		if (ev.isCancelled())
+			return true;
+		int spi = cmdlowercased.indexOf(' ');
+		final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
+			() -> {
+				val channel = user.channel();
+				val chtmp = channel.get();
+				if (clmd != null) {
+					channel.set(clmd.mcchannel); //Hack to send command in the channel
+				} //TODO: Permcheck isn't implemented for commands
+				try {
+					String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
+					if (mcpackage.contains("1_12"))
+						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
+					else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
+						VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
+					else
+						Bukkit.dispatchCommand(dsender, cmd);
+				} catch (NoClassDefFoundError e) {
+					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
+				}
+				Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
+				if (clmd != null)
+					channel.set(chtmp);
+			});
+		return false;
 	}
 
 	@FunctionalInterface
