@@ -55,9 +55,9 @@ class MCListener implements Listener {
 			if (dp != null) {
 				DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).flatMap(user -> user.getPrivateChannel().flatMap(chan -> module.chatChannelMono().flatMap(cc -> {
 					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						new DiscordPlayerSender(user, chan, p));
+						DiscordPlayerSender.create(user, chan, p));
 					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						new DiscordPlayerSender(user, cc, p)); //Stored per-channel
+						DiscordPlayerSender.create(user, cc, p)); //Stored per-channel
 					return Mono.empty();
 				}))).subscribe();
 			}

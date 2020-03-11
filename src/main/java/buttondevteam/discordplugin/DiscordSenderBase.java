@@ -51,17 +51,18 @@ public abstract class DiscordSenderBase implements CommandSender {
 	public void sendMessage(String message) {
 		try {
 			final boolean broadcast = new Exception().getStackTrace()[2].getMethodName().contains("broadcast");
-			//if (broadcast && DiscordPlugin.hooked) - TODO: What should happen if unhooked
-			if (broadcast)
+			if (broadcast) //We're catching broadcasts using the Bukkit event
 				return;
 			final String sendmsg = DPUtils.sanitizeString(message);
-			msgtosend += "\n" + sendmsg;
-			if (sendtask == null)
-				sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-					channel.createMessage((!broadcast && user != null ? user.getMention() + "\n" : "") + msgtosend.trim()).subscribe();
-					sendtask = null;
-					msgtosend = "";
-				}, 4); // Waits a 0.2 second to gather all/most of the different messages
+			synchronized (this) {
+				msgtosend += "\n" + sendmsg;
+				if (sendtask == null)
+					sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
+						channel.createMessage((user != null ? user.getMention() + "\n":"") + msgtosend.trim()).subscribe();
+						sendtask = null;
+						msgtosend = "";
+					}, 4); // Waits a 0.2 second to gather all/most of the different messages
+			}
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
 		}

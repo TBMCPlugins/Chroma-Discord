@@ -349,7 +349,7 @@ public class MCChatListener implements Listener {
 								String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
 								if (mcpackage.contains("1_12"))
 									VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-								else if (mcpackage.contains("1_14"))
+								else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
 									VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
 								else
 									Bukkit.dispatchCommand(dsender, cmd);

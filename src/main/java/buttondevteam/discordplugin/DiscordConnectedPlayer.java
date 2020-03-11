@@ -253,6 +253,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 					e.printStackTrace();
 					return RETURNS_DEFAULTS.answer(invocation);
 				}
-			});
+			})
+			.stubOnly();
 	}
 }

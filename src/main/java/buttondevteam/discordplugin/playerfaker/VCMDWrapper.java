@@ -31,7 +31,7 @@ public class VCMDWrapper {
 		String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
 		if (mcpackage.contains("1_12"))
 			return bukkitplayer == null ? new VanillaCommandListener<>(player) : new VanillaCommandListener<>(player, bukkitplayer);
-		else if (mcpackage.contains("1_14"))
+		else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
 			return bukkitplayer == null ? new VanillaCommandListener14<>(player) : new VanillaCommandListener14<>(player, bukkitplayer);
 		else
 			return null;

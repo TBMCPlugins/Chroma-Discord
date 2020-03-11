@@ -20,9 +20,8 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 
 	/**
 	 * This constructor will only send raw vanilla messages to the sender in plain text.
-	 * 
-	 * @param player
-	 *            The Discord sender player (the wrapper)
+	 *
+	 * @param player The Discord sender player (the wrapper)
 	 */
 	public VanillaCommandListener(T player) {
 		this.player = player;
@@ -31,11 +30,9 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 
 	/**
 	 * This constructor will send both raw vanilla messages to the sender in plain text and forward the raw message to the provided player.
-	 * 
-	 * @param player
-	 *            The Discord sender player (the wrapper)
-	 * @param bukkitplayer
-	 *            The Bukkit player to send the raw message to
+	 *
+	 * @param player       The Discord sender player (the wrapper)
+	 * @param bukkitplayer The Bukkit player to send the raw message to
 	 */
 	public VanillaCommandListener(T player, Player bukkitplayer) {
 		this.player = player;
@@ -79,7 +76,7 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 
 		if (!(dsender instanceof IMCPlayer))
 			throw new ClassCastException(
-					"dsender needs to implement IMCPlayer to use vanilla commands as it implements Player.");
+				"dsender needs to implement IMCPlayer to use vanilla commands as it implements Player.");
 
 		IMCPlayer<?> sender = (IMCPlayer<?>) dsender; // Don't use val on recursive interfaces :P
 

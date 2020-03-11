@@ -4,6 +4,7 @@ end_of_line = lf
 insert_final_newline = false
 indent_style = space
 indent_size = 4
+ij_any_field_annotation_wrap = off
 
 [*.json]
 indent_style = space
@@ -12,6 +13,8 @@ indent_size = 2
 [*.java]
 indent_style = tab
 tab_width = 4
+ij_java_do_not_wrap_after_single_annotation = true
+ij_java_field_annotation_wrap = off
 
 [{*.yml, *.yaml}]
 indent_style = space
