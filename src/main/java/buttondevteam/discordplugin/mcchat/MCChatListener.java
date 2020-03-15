@@ -361,19 +361,13 @@ public class MCChatListener implements Listener {
 				+ "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
 			return true;
 		}
-		val ev = new TBMCCommandPreprocessEvent(dsender, dmessage);
+		val channel = clmd == null ? user.channel().get() : clmd.mcchannel;
+		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> Bukkit.getPluginManager().callEvent(ev));
 		if (ev.isCancelled())
 			return true;
-		int spi = cmdlowercased.indexOf(' ');
-		final String topcmd = spi == -1 ? cmdlowercased : cmdlowercased.substring(0, spi);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
 			() -> {
-				val channel = user.channel();
-				val chtmp = channel.get();
-				if (clmd != null) {
-					channel.set(clmd.mcchannel); //Hack to send command in the channel
-				} //TODO: Permcheck isn't implemented for commands
 				try {
 					String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
 					if (mcpackage.contains("1_12"))
@@ -386,8 +380,6 @@ public class MCChatListener implements Listener {
 					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
 				}
 				Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
-				if (clmd != null)
-					channel.set(chtmp);
 			});
 		return false;
 	}

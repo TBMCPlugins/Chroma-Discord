@@ -83,7 +83,7 @@ public class PlayerListWatcher {
 				tpt = icbcl.getMethod("getString");
 			}
 			val toPlainText = tpt;
-			mock = Mockito.mock(dplc, new Answer() { // Cannot call super constructor
+			mock = Mockito.mock(dplc, Mockito.withSettings().defaultAnswer(new Answer<>() { // Cannot call super constructor
 				@Override
 				public Object answer(InvocationOnMock invocation) throws Throwable {
 					final Method method = invocation.getMethod();
@@ -140,7 +140,7 @@ public class PlayerListWatcher {
 						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
 					}
 				}
-			});
+			}).stubOnly());
 			plist = currentPL;
 			for (var plc = dplc; plc != null; plc = plc.getSuperclass()) { //Set all fields
 				for (var f : plc.getDeclaredFields()) {
