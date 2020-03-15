@@ -67,13 +67,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		this.module = module;
 		uniqueId = uuid;
 		displayName = mcname;
-		try {
-			vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this));
-			if (vanillaCmdListener.getListener() == null)
-				DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
-		} catch (NoClassDefFoundError e) {
-			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
-		}
+		vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this));
 	}
 
 	/**

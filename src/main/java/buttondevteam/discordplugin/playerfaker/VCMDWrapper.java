@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.playerfaker;
 
+import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.IMCPlayer;
 import lombok.Getter;
@@ -28,12 +29,29 @@ public class VCMDWrapper {
 	 * @param bukkitplayer The Bukkit player to send the raw message to
 	 */
 	public static <T extends DiscordSenderBase & IMCPlayer<T>> Object createListener(T player, Player bukkitplayer) {
-		String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
-		if (mcpackage.contains("1_12"))
-			return bukkitplayer == null ? new VanillaCommandListener<>(player) : new VanillaCommandListener<>(player, bukkitplayer);
-		else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
-			return bukkitplayer == null ? new VanillaCommandListener14<>(player) : new VanillaCommandListener14<>(player, bukkitplayer);
-		else
+		try {
+			Object ret;
+			String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
+			if (mcpackage.contains("1_12"))
+				ret = new VanillaCommandListener<>(player, bukkitplayer);
+			else if (mcpackage.contains("1_14"))
+				ret = new VanillaCommandListener14<>(player, bukkitplayer);
+			else if (mcpackage.contains("1_15"))
+				ret = VanillaCommandListener15.create(player, bukkitplayer); //bukkitplayer may be null but that's fine
+			else
+				ret = null;
+			if (ret == null)
+				compatWarning();
+			return ret;
+		} catch (NoClassDefFoundError | Exception e) {
+			compatWarning();
+			if (!(e instanceof NoClassDefFoundError))
+				e.printStackTrace();
 			return null;
+		}
+	}
+
+	private static void compatWarning() {
+		DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
 	}
 }

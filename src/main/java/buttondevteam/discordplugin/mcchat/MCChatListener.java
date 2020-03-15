@@ -6,6 +6,7 @@ import buttondevteam.discordplugin.listeners.CommandListener;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener14;
+import buttondevteam.discordplugin.playerfaker.VanillaCommandListener15;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.*;
 import buttondevteam.lib.chat.ChatMessage;
@@ -361,27 +362,31 @@ public class MCChatListener implements Listener {
 				+ "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
 			return true;
 		}
+		Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
 		val channel = clmd == null ? user.channel().get() : clmd.mcchannel;
 		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
-		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, () -> Bukkit.getPluginManager().callEvent(ev));
-		if (ev.isCancelled())
-			return true;
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
 			() -> {
+				Bukkit.getPluginManager().callEvent(ev);
+				if (ev.isCancelled())
+					return;
 				try {
 					String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
 					if (mcpackage.contains("1_12"))
 						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
-					else if (mcpackage.contains("1_14") || mcpackage.contains("1_15"))
+					else if (mcpackage.contains("1_14"))
 						VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
+					else if (mcpackage.contains("1_15"))
+						VanillaCommandListener15.runBukkitOrVanillaCommand(dsender, cmd);
 					else
 						Bukkit.dispatchCommand(dsender, cmd);
 				} catch (NoClassDefFoundError e) {
 					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
+				} catch (Exception e) {
+					TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "!", e);
 				}
-				Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
 			});
-		return false;
+		return true;
 	}
 
 	@FunctionalInterface

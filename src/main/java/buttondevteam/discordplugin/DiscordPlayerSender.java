@@ -17,13 +17,7 @@ public abstract class DiscordPlayerSender extends DiscordSenderBase implements I
 	public DiscordPlayerSender(User user, MessageChannel channel, Player player) {
 		super(user, channel);
 		this.player = player;
-		try {
-			vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, player));
-			if (vanillaCmdListener.getListener() == null)
-				DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
-		} catch (NoClassDefFoundError e) {
-			DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
-		}
+		vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, player));
 	}
 
 	@Override
