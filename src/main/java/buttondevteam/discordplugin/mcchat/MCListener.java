@@ -183,6 +183,7 @@ class MCListener implements Listener {
 
 	@EventHandler
 	public void onVanish(VanishStatusChangeEvent event) {
-		MCChatUtils.updatePlayerList();
+		if (event.isCancelled()) return;
+		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, MCChatUtils::updatePlayerList);
 	}
 }
