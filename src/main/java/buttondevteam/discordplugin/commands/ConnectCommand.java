@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 
 @CommandClass(helpText = {
 	"Connect command", //
-	"This command lets you connect your account with a Minecraft account. This allows using the Minecraft chat and other things.", //
+	"This command lets you connect your account with a Minecraft account. This allows using the private Minecraft chat and other things.", //
 })
 public class ConnectCommand extends ICommand2DC {
 

@@ -37,7 +37,7 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 	public VanillaCommandListener(T player, Player bukkitplayer) {
 		this.player = player;
 		this.bukkitplayer = bukkitplayer;
-		if (!(bukkitplayer instanceof CraftPlayer))
+		if (bukkitplayer != null && !(bukkitplayer instanceof CraftPlayer))
 			throw new ClassCastException("bukkitplayer must be a Bukkit player!");
 	}
 
