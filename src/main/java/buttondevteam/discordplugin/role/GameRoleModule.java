@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.awt.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -51,9 +52,12 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		if (grm == null) return;
 		val GameRoles = grm.GameRoles;
 		val logChannel = grm.logChannel().get();
+		Predicate<Role> notMainServer = r -> r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong();
 		if (roleEvent instanceof RoleCreateEvent) {
 			Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-				Role role=((RoleCreateEvent) roleEvent).getRole();
+				Role role = ((RoleCreateEvent) roleEvent).getRole();
+				if (notMainServer.test(role))
+					return;
 				grm.isGameRole(role, false).flatMap(b -> {
 					if (!b)
 						return Mono.empty(); //Deleted or not a game role
@@ -64,21 +68,25 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				}).subscribe();
 			}, 100);
 		} else if (roleEvent instanceof RoleDeleteEvent) {
-			Role role=((RoleDeleteEvent) roleEvent).getRole().orElse(null);
-			if(role==null) return;
+			Role role = ((RoleDeleteEvent) roleEvent).getRole().orElse(null);
+			if (role == null) return;
+			if (notMainServer.test(role))
+				return;
 			if (GameRoles.remove(role.getName()) && logChannel != null)
 				logChannel.flatMap(ch -> ch.createMessage("Removed " + role.getName() + " as a game role.")).subscribe();
 		} else if (roleEvent instanceof RoleUpdateEvent) {
 			val event = (RoleUpdateEvent) roleEvent;
-			if(!event.getOld().isPresent()) {
+			if (!event.getOld().isPresent()) {
 				DPUtils.getLogger().warning("Old role not stored, cannot update game role!");
 				return;
 			}
-			Role or=event.getOld().get();
+			Role or = event.getOld().get();
+			if (notMainServer.test(or))
+				return;
 			grm.isGameRole(event.getCurrent(), true).flatMap(b -> {
 				if (!b) {
 					if (GameRoles.remove(or.getName()) && logChannel != null)
-						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because it's color changed."));
+						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because its color changed."));
 				} else {
 					if (GameRoles.contains(or.getName()) && or.getName().equals(event.getCurrent().getName()))
 						return Mono.empty();
