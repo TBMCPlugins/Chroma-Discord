@@ -180,7 +180,7 @@
         <dependency>
             <groupId>com.discord4j</groupId>
             <artifactId>discord4j-core</artifactId>
-            <version>3.0.13</version>
+            <version>3.0.14</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
         <dependency>
@@ -233,7 +233,7 @@
         <dependency>
             <groupId>com.github.lucko</groupId>
             <artifactId>LuckPerms</artifactId>
-            <version>v4.4</version>
+            <version>master-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

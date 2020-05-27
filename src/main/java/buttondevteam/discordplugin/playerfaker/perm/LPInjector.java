@@ -6,8 +6,8 @@ import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import me.lucko.luckperms.bukkit.LPBukkitBootstrap;
 import me.lucko.luckperms.bukkit.LPBukkitPlugin;
-import me.lucko.luckperms.bukkit.inject.dummy.DummyPermissibleBase;
-import me.lucko.luckperms.bukkit.inject.permissible.LPPermissible;
+import me.lucko.luckperms.bukkit.inject.permissible.DummyPermissibleBase;
+import me.lucko.luckperms.bukkit.inject.permissible.LuckPermsPermissible;
 import me.lucko.luckperms.bukkit.listeners.BukkitConnectionListener;
 import me.lucko.luckperms.common.config.ConfigKeys;
 import me.lucko.luckperms.common.locale.message.Message;
@@ -31,16 +31,16 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class LPInjector implements Listener { //Disable login event for LuckPerms
-	private LPBukkitPlugin plugin;
-	private BukkitConnectionListener connectionListener;
-	private Set<UUID> deniedLogin;
-	private Field detectedCraftBukkitOfflineMode;
-	private Method printCraftBukkitOfflineModeError;
-	private Field PERMISSIBLE_BASE_ATTACHMENTS_FIELD;
-	private Method convertAndAddAttachments;
-	private Method getActive;
-	private Method setOldPermissible;
-	private Method getOldPermissible;
+	private final LPBukkitPlugin plugin;
+	private final BukkitConnectionListener connectionListener;
+	private final Set<UUID> deniedLogin;
+	private final Field detectedCraftBukkitOfflineMode;
+	private final Method printCraftBukkitOfflineModeError;
+	private final Field PERMISSIBLE_BASE_ATTACHMENTS_FIELD;
+	private final Method convertAndAddAttachments;
+	private final Method getActive;
+	private final Method setOldPermissible;
+	private final Method getOldPermissible;
 
 	public LPInjector(MainPlugin mp) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
 		LPBukkitBootstrap bs = (LPBukkitBootstrap) Bukkit.getPluginManager().getPlugin("LuckPerms");
@@ -68,13 +68,13 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		PERMISSIBLE_BASE_ATTACHMENTS_FIELD = PermissibleBase.class.getDeclaredField("attachments");
 		PERMISSIBLE_BASE_ATTACHMENTS_FIELD.setAccessible(true);
 
-		convertAndAddAttachments = LPPermissible.class.getDeclaredMethod("convertAndAddAttachments", Collection.class);
+		convertAndAddAttachments = LuckPermsPermissible.class.getDeclaredMethod("convertAndAddAttachments", Collection.class);
 		convertAndAddAttachments.setAccessible(true);
-		getActive = LPPermissible.class.getDeclaredMethod("getActive");
+		getActive = LuckPermsPermissible.class.getDeclaredMethod("getActive");
 		getActive.setAccessible(true);
-		setOldPermissible = LPPermissible.class.getDeclaredMethod("setOldPermissible", PermissibleBase.class);
+		setOldPermissible = LuckPermsPermissible.class.getDeclaredMethod("setOldPermissible", PermissibleBase.class);
 		setOldPermissible.setAccessible(true);
-		getOldPermissible = LPPermissible.class.getDeclaredMethod("getOldPermissible");
+		getOldPermissible = LuckPermsPermissible.class.getDeclaredMethod("getOldPermissible");
 		getOldPermissible.setAccessible(true);
 
 		TBMCCoreAPI.RegisterEventsForExceptions(this, mp);
@@ -92,9 +92,9 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 
 		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
-		if (plugin.getConfiguration().get(ConfigKeys.DEBUG_LOGINS)) {
+		/*if (plugin.getConfiguration().get(ConfigKeys.DEBUG_LOGINS)) {
 			plugin.getLogger().info("Processing login for " + player.getUniqueId() + " - " + player.getName());
-		}
+		}*/
 
 		final User user = plugin.getUserManager().getIfLoaded(player.getUniqueId());
 
@@ -135,7 +135,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 			PermissibleBase oldPermissible = player.getPerm();
 
 			// Make a new permissible for the user
-			LPPermissible lpPermissible = new LPPermissible(player, user, plugin);
+			LuckPermsPermissible lpPermissible = new LuckPermsPermissible(player, user, plugin);
 
 			// Inject into the player
 			inject(player, lpPermissible, oldPermissible);
@@ -149,7 +149,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 			return;
 		}
 
-		plugin.refreshAutoOp(player, true);
+		//this.plugin.getContextManager().signalContextUpdate(player);
 	}
 
 	// Wait until the last priority to unload, so plugins can still perform permission checks on this event
@@ -183,10 +183,10 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 	}
 
 	//me.lucko.luckperms.bukkit.inject.permissible.PermissibleInjector
-	private void inject(DiscordConnectedPlayer player, LPPermissible newPermissible, PermissibleBase oldPermissible) throws IllegalAccessException, InvocationTargetException {
+	private void inject(DiscordConnectedPlayer player, LuckPermsPermissible newPermissible, PermissibleBase oldPermissible) throws IllegalAccessException, InvocationTargetException {
 
 		// seems we have already injected into this player.
-		if (oldPermissible instanceof LPPermissible) {
+		if (oldPermissible instanceof LuckPermsPermissible) {
 			throw new IllegalStateException("LPPermissible already injected into player " + player.toString());
 		}
 
@@ -213,8 +213,8 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		PermissibleBase permissible = player.getPerm();
 
 		// only uninject if the permissible was a luckperms one.
-		if (permissible instanceof LPPermissible) {
-			LPPermissible lpPermissible = ((LPPermissible) permissible);
+		if (permissible instanceof LuckPermsPermissible) {
+			LuckPermsPermissible lpPermissible = ((LuckPermsPermissible) permissible);
 
 			// clear all permissions
 			lpPermissible.clearPermissions();

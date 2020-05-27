@@ -147,6 +147,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e);
 		} catch (NoClassDefFoundError e) {
 			getPlugin().getLogger().info("No LuckPerms, not injecting");
+			//e.printStackTrace();
 		}
 	}
 

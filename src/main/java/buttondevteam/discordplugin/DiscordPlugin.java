@@ -36,7 +36,6 @@ import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import reactor.core.publisher.Mono;
 
 import java.awt.*;
@@ -129,7 +128,7 @@ public class DiscordPlugin extends ButtonPlugin {
 					return;
 				}
 			}
-			val cb = new DiscordClientBuilder(token);
+			val cb = DiscordClientBuilder.create(token);
 			cb.setInitialPresence(Presence.doNotDisturb(Activity.playing("booting")));
 			cb.setStoreService(new JdkStoreService()); //The default doesn't work for some reason - it's waaay faster now
 			dc = cb.build();
