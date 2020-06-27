@@ -376,14 +376,14 @@ public class MCChatListener implements Listener {
 						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
 					else if (mcpackage.contains("1_14"))
 						VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);
-					else if (mcpackage.contains("1_15"))
+					else if (mcpackage.contains("1_15") || mcpackage.contains("1_16"))
 						VanillaCommandListener15.runBukkitOrVanillaCommand(dsender, cmd);
 					else
 						Bukkit.dispatchCommand(dsender, cmd);
 				} catch (NoClassDefFoundError e) {
 					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
 				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "!", e);
+					TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "! Vanilla commands are only supported in some MC versions.", e);
 				}
 			});
 		return true;

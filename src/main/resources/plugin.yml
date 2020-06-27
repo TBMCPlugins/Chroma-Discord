@@ -8,3 +8,4 @@ softdepend:
 commands:
   discord:
 website: 'https://github.com/TBMCPlugins/Chroma-Discord'
+api-version: '1.13'

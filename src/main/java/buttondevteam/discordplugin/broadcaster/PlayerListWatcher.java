@@ -8,9 +8,11 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.UUID;
 
 public class PlayerListWatcher {
 	private static Object plist;
@@ -65,7 +67,13 @@ public class PlayerListWatcher {
 		val currentPL = server.getClass().getMethod("getPlayerList").invoke(server);
 		if (up) {
 			val icbcl = Class.forName(nms + ".IChatBaseComponent");
-			val sendMessage = server.getClass().getMethod("sendMessage", icbcl);
+			Method sendMessageTemp;
+			try {
+				sendMessageTemp = server.getClass().getMethod("sendMessage", icbcl, UUID.class);
+			} catch (NoSuchMethodException e) {
+				sendMessageTemp = server.getClass().getMethod("sendMessage", icbcl);
+			}
+			val sendMessage = sendMessageTemp;
 			val cmtcl = Class.forName(nms + ".ChatMessageType");
 			val systemType = cmtcl.getDeclaredField("SYSTEM").get(null);
 			val chatType = cmtcl.getDeclaredField("CHAT").get(null);
@@ -74,7 +82,13 @@ public class PlayerListWatcher {
 			val ccmcl = Class.forName(obc + ".util.CraftChatMessage");
 			val fixComponent = ccmcl.getMethod("fixComponent", icbcl);
 			val ppoc = Class.forName(nms + ".PacketPlayOutChat");
-			val ppocC = Class.forName(nms + ".PacketPlayOutChat").getConstructor(icbcl, cmtcl);
+			Constructor<?> ppocCTemp;
+			try {
+				ppocCTemp = ppoc.getConstructor(icbcl, cmtcl, UUID.class);
+			} catch (Exception e) {
+				ppocCTemp = ppoc.getConstructor(icbcl, cmtcl);
+			}
+			val ppocC = ppocCTemp;
 			val sendAll = dplc.getMethod("sendAll", Class.forName(nms + ".Packet"));
 			Method tpt;
 			try {
@@ -83,6 +97,7 @@ public class PlayerListWatcher {
 				tpt = icbcl.getMethod("getString");
 			}
 			val toPlainText = tpt;
+			val sysb = Class.forName(nms + ".SystemUtils").getField("b");
 			mock = Mockito.mock(dplc, Mockito.withSettings().defaultAnswer(new Answer<>() { // Cannot call super constructor
 				@Override
 				public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -117,11 +132,20 @@ public class PlayerListWatcher {
 
 				private void sendMessage(Object chatComponent, boolean system) {
 					try { //Converted to use reflection
-						sendMessage.invoke(server, chatComponent);
+						if (sendMessage.getParameterCount() == 2)
+							sendMessage.invoke(server, chatComponent, sysb.get(null));
+						else
+							sendMessage.invoke(server, chatComponent);
 						Object chatmessagetype = system ? systemType : chatType;
 
 						// CraftBukkit start - we run this through our processor first so we can get web links etc
-						this.sendAll(ppocC.newInstance(fixComponent.invoke(null, chatComponent), chatmessagetype));
+						var comp = fixComponent.invoke(null, chatComponent);
+						var packet = ppocC.getParameterCount() == 3
+							? ppocC.newInstance(comp, chatmessagetype, sysb.get(null))
+
+
+							: ppocC.newInstance(comp, chatmessagetype);
+						this.sendAll(packet);
 						// CraftBukkit end
 					} catch (Exception e) {
 						TBMCCoreAPI.SendException("An error occurred while passing a vanilla message through the player list", e);

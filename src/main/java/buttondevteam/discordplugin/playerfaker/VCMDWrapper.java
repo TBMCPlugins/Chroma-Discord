@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.playerfaker;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.IMCPlayer;
+import buttondevteam.lib.TBMCCoreAPI;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
@@ -36,7 +37,7 @@ public class VCMDWrapper {
 				ret = new VanillaCommandListener<>(player, bukkitplayer);
 			else if (mcpackage.contains("1_14"))
 				ret = new VanillaCommandListener14<>(player, bukkitplayer);
-			else if (mcpackage.contains("1_15"))
+			else if (mcpackage.contains("1_15") || mcpackage.contains("1.16"))
 				ret = VanillaCommandListener15.create(player, bukkitplayer); //bukkitplayer may be null but that's fine
 			else
 				ret = null;
@@ -45,8 +46,7 @@ public class VCMDWrapper {
 			return ret;
 		} catch (NoClassDefFoundError | Exception e) {
 			compatWarning();
-			if (!(e instanceof NoClassDefFoundError))
-				e.printStackTrace();
+			TBMCCoreAPI.SendException("Failed to create vanilla command listener", e);
 			return null;
 		}
 	}
