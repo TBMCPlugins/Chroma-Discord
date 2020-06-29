@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 public class MCChatListener implements Listener {
 	private BukkitTask sendtask;
-	private LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
 	private Runnable sendrunnable;
 	private static Thread sendthread;
 	private final MinecraftChatModule module;
@@ -362,7 +362,7 @@ public class MCChatListener implements Listener {
 				+ "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!");
 			return true;
 		}
-		Bukkit.getLogger().info(dsender.getName() + " issued command from Discord: /" + cmd);
+		module.log(dsender.getName() + " ran from DC: /" + cmd);
 		val channel = clmd == null ? user.channel().get() : clmd.mcchannel;
 		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
@@ -372,7 +372,9 @@ public class MCChatListener implements Listener {
 					return;
 				try {
 					String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
-					if (mcpackage.contains("1_12"))
+					if (!module.enableVanillaCommands().get())
+						Bukkit.dispatchCommand(dsender, cmd);
+					else if (mcpackage.contains("1_12"))
 						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);
 					else if (mcpackage.contains("1_14"))
 						VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd);

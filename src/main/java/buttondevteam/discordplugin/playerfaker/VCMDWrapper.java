@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.IMCPlayer;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,8 @@ public class VCMDWrapper {
 	 *
 	 * @param player The Discord sender player (the wrapper)
 	 */
-	public static <T extends DiscordSenderBase & IMCPlayer<T>> Object createListener(T player) {
-		return createListener(player, null);
+	public static <T extends DiscordSenderBase & IMCPlayer<T>> Object createListener(T player, MinecraftChatModule module) {
+		return createListener(player, null, module);
 	}
 
 	/**
@@ -28,8 +28,9 @@ public class VCMDWrapper {
 	 *
 	 * @param player       The Discord sender player (the wrapper)
 	 * @param bukkitplayer The Bukkit player to send the raw message to
+	 * @param module       The Minecraft chat module
 	 */
-	public static <T extends DiscordSenderBase & IMCPlayer<T>> Object createListener(T player, Player bukkitplayer) {
+	public static <T extends DiscordSenderBase & IMCPlayer<T>> Object createListener(T player, Player bukkitplayer, MinecraftChatModule module) {
 		try {
 			Object ret;
 			String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
@@ -42,16 +43,16 @@ public class VCMDWrapper {
 			else
 				ret = null;
 			if (ret == null)
-				compatWarning();
+				compatWarning(module);
 			return ret;
 		} catch (NoClassDefFoundError | Exception e) {
-			compatWarning();
+			compatWarning(module);
 			TBMCCoreAPI.SendException("Failed to create vanilla command listener", e);
 			return null;
 		}
 	}
 
-	private static void compatWarning() {
-		DPUtils.getLogger().warning("Vanilla commands won't be available from Discord due to a compatibility error.");
+	private static void compatWarning(MinecraftChatModule module) {
+		module.logWarn("Vanilla commands won't be available from Discord due to a compatibility error. Disable vanilla command support to remove this message.");
 	}
 }

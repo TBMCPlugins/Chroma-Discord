@@ -67,7 +67,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		this.module = module;
 		uniqueId = uuid;
 		displayName = mcname;
-		vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this));
+		vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, module));
 	}
 
 	/**

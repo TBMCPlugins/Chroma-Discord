@@ -55,9 +55,9 @@ class MCListener implements Listener {
 			if (dp != null) {
 				DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID())).flatMap(user -> user.getPrivateChannel().flatMap(chan -> module.chatChannelMono().flatMap(cc -> {
 					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						DiscordPlayerSender.create(user, chan, p));
+						DiscordPlayerSender.create(user, chan, p, module));
 					MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID(),
-						DiscordPlayerSender.create(user, cc, p)); //Stored per-channel
+						DiscordPlayerSender.create(user, cc, p, module)); //Stored per-channel
 					return Mono.empty();
 				}))).subscribe();
 			}
@@ -130,7 +130,7 @@ class MCListener implements Listener {
 					user.removeRole(r.getId());
 				val modlog = module.modlogChannel().get();
 				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getUsername() + "#" + user.getDiscriminator();
-				DPUtils.getLogger().info(msg);
+				module.log(msg);
 				if (modlog != null)
 					return modlog.flatMap(ch -> ch.createMessage(msg));
 				return Mono.empty();

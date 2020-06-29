@@ -109,12 +109,12 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															User user, T sender) {
+	                                                        User user, T sender) {
 		return addSender(senders, user.getId().asString(), sender);
 	}
 
 	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															String did, T sender) {
+	                                                        String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
 			map = new HashMap<>();
@@ -124,7 +124,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															Snowflake channel, User user) {
+	                                                        Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.get(channel);
@@ -132,7 +132,7 @@ public class MCChatUtils {
 	}
 
 	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
-															   Snowflake channel, User user) {
+	                                                           Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
 			return map.remove(channel);
@@ -355,7 +355,8 @@ public class MCChatUtils {
 			}
 			callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
 			dcp.setLoggedIn(true);
-			DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged in from Discord");
+			if (module != null)
+				module.log(dcp.getName() + " (" + dcp.getUniqueId() + ") logged in from Discord");
 		});
 	}
 
@@ -371,7 +372,8 @@ public class MCChatUtils {
 		if (needsSync) callEventSync(event);
 		else callEventExcludingSome(event);
 		dcp.setLoggedIn(false);
-		DPUtils.getLogger().info(dcp.getName() + " (" + dcp.getUniqueId() + ") logged out from Discord");
+		if (module != null)
+			module.log(dcp.getName() + " (" + dcp.getUniqueId() + ") logged out from Discord");
 	}
 
 	static void callEventSync(Event event) {

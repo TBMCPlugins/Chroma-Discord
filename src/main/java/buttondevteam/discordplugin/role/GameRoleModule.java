@@ -77,7 +77,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		} else if (roleEvent instanceof RoleUpdateEvent) {
 			val event = (RoleUpdateEvent) roleEvent;
 			if (!event.getOld().isPresent()) {
-				DPUtils.getLogger().warning("Old role not stored, cannot update game role!");
+				grm.logWarn("Old role not stored, cannot update game role!");
 				return;
 			}
 			Role or = event.getOld().get();

@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.broadcaster;
 
-import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
@@ -17,12 +16,12 @@ public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 	protected void enable() {
 		try {
 			PlayerListWatcher.hookUpDown(true);
-			DPUtils.getLogger().info("Finished hooking into the player list");
+			log("Finished hooking into the player list");
 			hooked = true;
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list! Disable this module if you're on an incompatible version.", e);
 		} catch (NoClassDefFoundError e) {
-			DPUtils.getLogger().warning("Error while hacking the player list! Disable this module if you're on an incompatible version.");
+			logWarn("Error while hacking the player list! Disable this module if you're on an incompatible version.");
 		}
 
 	}
@@ -32,9 +31,9 @@ public class GeneralEventBroadcasterModule extends Component<DiscordPlugin> {
 		try {
 			if (!hooked) return;
 			if (PlayerListWatcher.hookUpDown(false))
-				DPUtils.getLogger().info("Finished unhooking the player list!");
+				log("Finished unhooking the player list!");
 			else
-				DPUtils.getLogger().info("Didn't have the player list hooked.");
+				log("Didn't have the player list hooked.");
 			hooked = false;
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Error while hacking the player list!", e);

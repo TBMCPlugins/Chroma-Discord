@@ -106,6 +106,13 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return getConfig().getData("profileURL", "");
 	}
 
+	/**
+	 * Enables support for running vanilla commands through Discord, if you ever need it.
+	 */
+	public ConfigData<Boolean> enableVanillaCommands() {
+		return getConfig().getData("enableVanillaCommands", true);
+	}
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
@@ -146,7 +153,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e);
 		} catch (NoClassDefFoundError e) {
-			getPlugin().getLogger().info("No LuckPerms, not injecting");
+			log("No LuckPerms, not injecting");
 			//e.printStackTrace();
 		}
 	}
