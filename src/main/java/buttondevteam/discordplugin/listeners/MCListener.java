@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.lib.TBMCCommandPreprocessEvent;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.player.TBMCPlayerJoinEvent;
 import discord4j.core.object.entity.Member;
@@ -52,7 +53,7 @@ public class MCListener implements Listener {
 	}
 
 	@EventHandler
-	public void onServerCommand(ServerCommandEvent e) {
-		DiscordPlugin.Restart = !e.getCommand().equalsIgnoreCase("stop"); // The variable is always true except if stopped
+	public void onCommandPreprocess(TBMCCommandPreprocessEvent e){
+		DiscordPlugin.Restart = !e.getMessage().equalsIgnoreCase("/stop"); // The variable is always true except if stopped
 	}
 }

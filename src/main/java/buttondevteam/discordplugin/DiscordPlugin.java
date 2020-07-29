@@ -248,7 +248,7 @@ public class DiscordPlugin extends ButtonPlugin {
 							.sanitizeString(Bukkit.getOnlinePlayers().stream()
 								.map(Player::getDisplayName).collect(Collectors.joining(", ")))
 							+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-							+ "kicked the hell out.") //TODO: Make configurable
+							+ "thrown out") //TODO: Make configurable
 							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
 		})).subscribe(), ChannelconBroadcast.RESTART, false);
 		timings.printElapsed("Updating player list");

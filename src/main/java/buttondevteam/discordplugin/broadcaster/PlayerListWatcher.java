@@ -3,15 +3,23 @@ package buttondevteam.discordplugin.broadcaster;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.File;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerListWatcher {
@@ -98,6 +106,18 @@ public class PlayerListWatcher {
 			}
 			val toPlainText = tpt;
 			val sysb = Class.forName(nms + ".SystemUtils").getField("b");
+
+			//TODO: 1.16 only
+			//String cbs = nms.replace("net.minecraft.server", "org.bukkit.craftbukkit");
+			val epcl = Class.forName(nms + ".EntityPlayer");
+			/*val getUUID = epcl.getMethod("getUniqueID");
+			val getPlayer = Class.forName(cbs + ".CraftPlayer").getConstructors()[0];
+			val getDataFixer = server.getClass().getMethod("getDataFixer");
+			val getAdvancementData = server.getClass().getMethod("getAdvancementData");
+			val adpcl = Class.forName(nms + ".AdvancementDataPlayer").getConstructors()[0];
+			val setEPlayer = getAdvancementData.getReturnType().getMethod("a", epcl);*/
+			val adpcl = Class.forName(nms + ".AdvancementDataPlayer");
+			//Find the original method without overrides
 			mock = Mockito.mock(dplc, Mockito.withSettings().defaultAnswer(new Answer<>() { // Cannot call super constructor
 				@Override
 				public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -107,10 +127,25 @@ public class PlayerListWatcher {
 							sendAll(invocation.getArgument(0));
 							return null;
 						}
+						//In 1.16 it passes a reference to the player list to advancement data for each player
+						if (method.getName().equals("f") && method.getParameterCount() > 0 && method.getParameterTypes()[0].getSimpleName().equals("EntityPlayer")) {
+							//val fHandle = MethodHandles.lookup().findSpecial(dplc, "f", MethodType.methodType(adpcl, epcl), mock.getClass());
+							System.out.println("Declaring class: " + method.getDeclaringClass());
+							method.setAccessible(true);
+							//new ByteBuddy().subclass(dplc).method(ElementMatchers.named("f"))
+							var lookupConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
+							lookupConstructor.setAccessible(true); //Create lookup with a given class instead of caller
+							var lookup = lookupConstructor.newInstance(mock.getClass());
+							val fHandle = lookup.unreflectSpecial(method, mock.getClass()); //Special: super.method()
+							return fHandle.invoke(mock, invocation.getArgument(0)); //Invoke with our instance, so it passes that to advancement data, we have the fields as well
+						}
 						return method.invoke(plist, invocation.getArguments());
 					}
 					val args = invocation.getArguments();
 					val params = method.getParameterTypes();
+					System.out.println("Method: " + method.getName());
+					System.out.println("args: " + Arrays.toString(args));
+					System.out.println("params: " + Arrays.toString(params));
 					if (params.length == 0) {
 						TBMCCoreAPI.SendException("Found a strange method",
 							new Exception("Found a sendMessage() method without arguments."));
@@ -142,8 +177,6 @@ public class PlayerListWatcher {
 						var comp = fixComponent.invoke(null, chatComponent);
 						var packet = ppocC.getParameterCount() == 3
 							? ppocC.newInstance(comp, chatmessagetype, sysb.get(null))
-
-
 							: ppocC.newInstance(comp, chatmessagetype);
 						this.sendAll(packet);
 						// CraftBukkit end
@@ -155,7 +188,14 @@ public class PlayerListWatcher {
 				private void sendAll(Object packet) {
 					try { // Some messages get sent by directly constructing a packet
 						sendAll.invoke(plist, packet);
+						/*if(packet.getClass().getName().contains("Chat"))
+							System.out.println("Chat packet: "+packet);
+						if(packet.getClass().getName().contains("Advancement"))
+							System.out.println("Advancement packet: "+packet);*/
+						if (!packet.getClass().getName().contains("KeepAlive"))
+							System.out.println("Packet: " + packet);
 						if (packet.getClass() == ppoc) {
+							//System.out.println("Indeed a chat packet");
 							Field msgf = ppoc.getDeclaredField("a");
 							msgf.setAccessible(true);
 							MCChatUtils.forAllMCChat(MCChatUtils.send((String) toPlainText.invoke(msgf.get(packet))));
@@ -164,6 +204,31 @@ public class PlayerListWatcher {
 						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
 					}
 				}
+
+				/*public Object f(Object entityplayer) { //Returns advancement data
+					try {
+						UUID uuid = (UUID) getUUID.invoke(entityplayer);
+						@SuppressWarnings("unchecked") Map<UUID, Object> map = (Map<UUID, Object>) dplc.getField("p").get(plist);
+						var advancementdataplayer = map.get(uuid);
+
+						if (advancementdataplayer == null) {
+							var player = (Player) getPlayer.newInstance(Bukkit.getServer(), entityplayer);
+							var file = new File(player.getWorld().getWorldFolder(), "advancements");
+							File file1 = new File(file, uuid + ".json");
+
+							var dataFixer = getDataFixer.invoke(server);
+							var advData = getAdvancementData.invoke(server);
+							advancementdataplayer = adpcl.newInstance(dataFixer, this, advData, file1, entityplayer);
+							//advancementdataplayer = new AdvancementDataPlayer(this.server.getDataFixer(), this, this.server.getAdvancementData(), file1, entityplayer);
+							map.put(uuid, advancementdataplayer);
+						}
+
+						setEPlayer.invoke(advancementdataplayer, entityplayer);
+						return advancementdataplayer;
+					} catch (Exception e) {
+						TBMCCoreAPI.SendException("An error occurred while getting advancement data!", e);
+					}
+				}*/
 			}).stubOnly());
 			plist = currentPL;
 			for (var plc = dplc; plc != null; plc = plc.getSuperclass()) { //Set all fields
