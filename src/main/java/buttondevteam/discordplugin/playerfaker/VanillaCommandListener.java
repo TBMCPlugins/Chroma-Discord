@@ -85,6 +85,8 @@ public class VanillaCommandListener<T extends DiscordSenderBase & IMCPlayer<T>> 
 			return true;
 
 		ICommandListener icommandlistener = (ICommandListener) sender.getVanillaCmdListener().getListener();
+		if (icommandlistener == null)
+			return VCMDWrapper.compatResponse(dsender);
 		String[] args = cmdstr.split(" ");
 		args = Arrays.copyOfRange(args, 1, args.length);
 		try {

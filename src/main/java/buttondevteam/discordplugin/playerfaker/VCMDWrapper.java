@@ -9,9 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import javax.annotation.Nullable;
+
 @RequiredArgsConstructor
 public class VCMDWrapper {
 	@Getter //Needed to mock the player
+	@Nullable
 	private final Object listener;
 
 	/**
@@ -38,7 +41,7 @@ public class VCMDWrapper {
 				ret = new VanillaCommandListener<>(player, bukkitplayer);
 			else if (mcpackage.contains("1_14"))
 				ret = new VanillaCommandListener14<>(player, bukkitplayer);
-			else if (mcpackage.contains("1_15") || mcpackage.contains("1.16"))
+			else if (mcpackage.contains("1_15") || mcpackage.contains("1_16"))
 				ret = VanillaCommandListener15.create(player, bukkitplayer); //bukkitplayer may be null but that's fine
 			else
 				ret = null;
@@ -54,5 +57,10 @@ public class VCMDWrapper {
 
 	private static void compatWarning(MinecraftChatModule module) {
 		module.logWarn("Vanilla commands won't be available from Discord due to a compatibility error. Disable vanilla command support to remove this message.");
+	}
+
+	static boolean compatResponse(DiscordSenderBase dsender) {
+		dsender.sendMessage("Vanilla commands are not supported on this Minecraft version.");
+		return true;
 	}
 }

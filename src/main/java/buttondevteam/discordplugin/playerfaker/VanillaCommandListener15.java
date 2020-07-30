@@ -79,7 +79,7 @@ public class VanillaCommandListener15<T extends DiscordSenderBase & IMCPlayer<T>
 		var server = Bukkit.getServer();
 		var cmap = (SimpleCommandMap) server.getClass().getMethod("getCommandMap").invoke(server);
 		val cmd = cmap.getCommand(cmdstr.split(" ")[0].toLowerCase());
-		if (!(dsender instanceof Player) || !vcwcl.isAssignableFrom(dsender.getClass()))
+		if (!(dsender instanceof Player) || !vcwcl.isAssignableFrom(cmd.getClass()))
 			return Bukkit.dispatchCommand(dsender, cmdstr); // Unconnected users are treated well in vanilla cmds
 
 		if (!(dsender instanceof IMCPlayer))
@@ -94,7 +94,8 @@ public class VanillaCommandListener15<T extends DiscordSenderBase & IMCPlayer<T>
 		var cworld = Bukkit.getWorlds().get(0);
 		val world = cworld.getClass().getMethod("getHandle").invoke(cworld);
 		var icommandlistener = sender.getVanillaCmdListener().getListener();
-		var nms = icommandlistener.getClass().getPackage().getName();
+		if (icommandlistener == null)
+			return VCMDWrapper.compatResponse(dsender);
 		var clwcl = Class.forName(nms + ".CommandListenerWrapper");
 		var v3dcl = Class.forName(nms + ".Vec3D");
 		var v2fcl = Class.forName(nms + ".Vec2F");
@@ -102,7 +103,8 @@ public class VanillaCommandListener15<T extends DiscordSenderBase & IMCPlayer<T>
 		var mcscl = Class.forName(nms + ".MinecraftServer");
 		var ecl = Class.forName(nms + ".Entity");
 		var cctcl = Class.forName(nms + ".ChatComponentText");
-		Object wrapper = clwcl.getConstructor(icommandlistener.getClass(), v3dcl, v2fcl, world.getClass(), int.class, String.class, icbcl, mcscl, ecl)
+		var iclcl = Class.forName(nms + ".ICommandListener");
+		Object wrapper = clwcl.getConstructor(iclcl, v3dcl, v2fcl, world.getClass(), int.class, String.class, icbcl, mcscl, ecl)
 			.newInstance(icommandlistener,
 				v3dcl.getConstructor(double.class, double.class, double.class).newInstance(0, 0, 0),
 				v2fcl.getConstructor(float.class, float.class).newInstance(0, 0),
@@ -112,7 +114,7 @@ public class VanillaCommandListener15<T extends DiscordSenderBase & IMCPlayer<T>
 			new Vec2F(0, 0), world, 0, sender.getName(),
 			new ChatComponentText(sender.getName()), world.getMinecraftServer(), null);*/
 		var pncscl = Class.forName(vcwcl.getPackage().getName() + ".ProxiedNativeCommandSender");
-		Object pncs = pncscl.getConstructor(clwcl, sender.getClass(), sender.getClass())
+		Object pncs = pncscl.getConstructor(clwcl, CommandSender.class, CommandSender.class)
 			.newInstance(wrapper, sender, sender);
 		String[] args = cmdstr.split(" ");
 		args = Arrays.copyOfRange(args, 1, args.length);

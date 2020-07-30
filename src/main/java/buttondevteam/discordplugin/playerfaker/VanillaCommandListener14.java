@@ -87,6 +87,8 @@ public class VanillaCommandListener14<T extends DiscordSenderBase & IMCPlayer<T>
 
 		val world = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
 		ICommandListener icommandlistener = (ICommandListener) sender.getVanillaCmdListener().getListener();
+		if (icommandlistener == null)
+			return VCMDWrapper.compatResponse(dsender);
 		val wrapper = new CommandListenerWrapper(icommandlistener, new Vec3D(0, 0, 0),
 			new Vec2F(0, 0), world, 0, sender.getName(),
 			new ChatComponentText(sender.getName()), world.getMinecraftServer(), null);

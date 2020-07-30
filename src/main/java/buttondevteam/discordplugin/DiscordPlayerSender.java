@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
 public abstract class DiscordPlayerSender extends DiscordSenderBase implements IMCPlayer<DiscordPlayerSender> {
 
 	protected Player player;
-	private @Getter VCMDWrapper vanillaCmdListener;
+	private @Getter final VCMDWrapper vanillaCmdListener;
 
 	public DiscordPlayerSender(User user, MessageChannel channel, Player player, MinecraftChatModule module) {
 		super(user, channel);
