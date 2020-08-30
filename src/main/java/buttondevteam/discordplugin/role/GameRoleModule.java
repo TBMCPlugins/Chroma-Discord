@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Automatically collects roles with a certain color (the second to last in the upper row - #95a5a6).
+ * Automatically collects roles with a certain color.
  * Users can add these roles to themselves using the /role Discord command.
  */
 public class GameRoleModule extends Component<DiscordPlugin> {
@@ -32,7 +32,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	@Override
 	protected void enable() {
 		getPlugin().getManager().registerCommand(new RoleCommand(this));
-		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(r -> isGameRole(r, false)).map(Role::getName).collect(Collectors.toList()).block();
+		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
 	}
 
 	@Override
@@ -47,6 +47,15 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		return DPUtils.channelData(getConfig(), "logChannel");
 	}
 
+	/**
+	 * The role color that is used by game roles.
+	 * Defaults to the second to last in the upper row - #95a5a6.
+	 */
+	private final ReadOnlyConfigData<Color> roleColor = getConfig().<Color>getConfig("roleColor")
+		.def(new Color(149, 165, 166, 0))
+		.getter(rgb -> new Color(Integer.parseInt(((String) rgb).substring(1))))
+		.setter(color -> "#" + Integer.toHexString(color.getRGB())).buildReadOnly();
+
 	public static void handleRoleEvent(RoleEvent roleEvent) {
 		val grm = ComponentManager.getIfEnabled(GameRoleModule.class);
 		if (grm == null) return;
@@ -58,7 +67,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 				Role role = ((RoleCreateEvent) roleEvent).getRole();
 				if (notMainServer.test(role))
 					return;
-				grm.isGameRole(role, false).flatMap(b -> {
+				grm.isGameRole(role).flatMap(b -> {
 					if (!b)
 						return Mono.empty(); //Deleted or not a game role
 					GameRoles.add(role.getName());
@@ -83,7 +92,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 			Role or = event.getOld().get();
 			if (notMainServer.test(or))
 				return;
-			grm.isGameRole(event.getCurrent(), true).flatMap(b -> {
+			grm.isGameRole(event.getCurrent()).flatMap(b -> {
 				if (!b) {
 					if (GameRoles.remove(or.getName()) && logChannel != null)
 						return logChannel.flatMap(ch -> ch.createMessage("Removed " + or.getName() + " as a game role because its color changed."));
@@ -104,25 +113,14 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		}
 	}
 
-	private Mono<Boolean> isGameRole(Role r, boolean debugMC) {
-		boolean debug = debugMC && r.getName().equalsIgnoreCase("Minecraft");
-		if (debug) TBMCCoreAPI.sendDebugMessage("Checking if Minecraft is a game role...");
-		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong()) {
-			if (debug) TBMCCoreAPI.sendDebugMessage("Not in the main server: " + r.getGuildId().asString());
+	private Mono<Boolean> isGameRole(Role r) {
+		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
 			return Mono.just(false); //Only allow on the main server
-		}
-		val rc = new Color(149, 165, 166, 0);
-		if (debug) TBMCCoreAPI.sendDebugMessage("Game role color: " + rc + " - MC color: " + r.getColor());
-		return Mono.just(r.getColor().equals(rc))
-			.doAfterSuccessOrError((b, e) -> {
-				if (debug) TBMCCoreAPI.sendDebugMessage("1. b: " + b + " - e: " + e);
-			}).filter(b -> b).flatMap(b ->
-				DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
-					.doAfterSuccessOrError((m, e) -> {
-						if (debug) TBMCCoreAPI.sendDebugMessage("2. m: " + m.getDisplayName() + " e: " + e);
-					}).flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
-			.doAfterSuccessOrError((b, e) -> {
-				if (debug) TBMCCoreAPI.sendDebugMessage("3. b: " + b + " - e: " + e);
-			}).defaultIfEmpty(false);
+		val rc = roleColor.get();
+		System.out.println("Needed role color: " + rc);
+		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
+			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
+				.flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
+			.defaultIfEmpty(false);
 	}
 }

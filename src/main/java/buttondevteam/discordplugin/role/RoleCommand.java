@@ -72,7 +72,7 @@ public class RoleCommand extends ICommand2DC {
 				sb.append("\n");
 			b = !b;
 		}
-		if (sb.charAt(sb.length() - 1) != '\n')
+		if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\n')
 			sb.append('\n');
 		sender.sendMessage("list of roles:\n```\n" + sb + "```");
 	}
