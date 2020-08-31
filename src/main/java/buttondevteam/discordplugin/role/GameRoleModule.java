@@ -53,8 +53,8 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	 */
 	private final ReadOnlyConfigData<Color> roleColor = getConfig().<Color>getConfig("roleColor")
 		.def(new Color(149, 165, 166, 0))
-		.getter(rgb -> new Color(Integer.parseInt(((String) rgb).substring(1))))
-		.setter(color -> "#" + Integer.toHexString(color.getRGB())).buildReadOnly();
+		.getter(rgb -> new Color(Integer.parseInt(((String) rgb).substring(1), 16), true))
+		.setter(color -> String.format("#%08x", color.getRGB())).buildReadOnly();
 
 	public static void handleRoleEvent(RoleEvent roleEvent) {
 		val grm = ComponentManager.getIfEnabled(GameRoleModule.class);
@@ -117,7 +117,6 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		if (r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong())
 			return Mono.just(false); //Only allow on the main server
 		val rc = roleColor.get();
-		System.out.println("Needed role color: " + rc);
 		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
 			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
 				.flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
