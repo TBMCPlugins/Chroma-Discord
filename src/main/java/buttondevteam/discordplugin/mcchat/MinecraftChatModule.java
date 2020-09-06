@@ -75,7 +75,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * If this is on, each chat channel will have a player list in their description.
 	 * It only gets added if there's no description yet or there are (at least) two lines of "----" following each other.
-	 * Note that it will replace <b>everything</b> between the first and last "----" but it will only detect exactly four dashes.
+	 * Note that it will replace <b>everything</b> above the first and below the last "----" but it will only detect exactly four dashes.
 	 * So if you want to use dashes for something else in the description, make sure it's either less or more dashes in one line.
 	 */
 	public ConfigData<Boolean> showPlayerListOnDC() {

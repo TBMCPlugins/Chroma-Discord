@@ -225,6 +225,7 @@ public class MCChatListener implements Listener {
 		timings.printElapsed("Chat event");
 		val author = ev.getMessage().getAuthor();
 		final boolean hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage().getChannelId());
+		var prefix = DiscordPlugin.getPrefix();
 		return ev.getMessage().getChannel().filter(channel -> {
 			timings.printElapsed("Filter 1");
 			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
@@ -236,7 +237,7 @@ public class MCChatListener implements Listener {
 			return !(channel instanceof PrivateChannel //Only in private chat
 				&& ev.getMessage().getContent().isPresent()
 				&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
-				&& ev.getMessage().getContent().get().replace("/", "")
+				&& ev.getMessage().getContent().get().replace(prefix + "", "")
 				.equalsIgnoreCase("mcchat")); //Either mcchat or /mcchat
 			//Allow disabling the chat if needed
 		}).filterWhen(channel -> CommandListener.runCommand(ev.getMessage(), channel, true))

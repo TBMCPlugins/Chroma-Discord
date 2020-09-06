@@ -180,7 +180,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
 			Component.registerComponent(this, new AnnouncerModule());
 			Component.registerComponent(this, new FunModule());
-			new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCCHatModule is tested to be enabled
+			new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCChatModule is tested to be enabled
 
 			getManager().registerCommand(new VersionCommand());
 			getManager().registerCommand(new UserinfoCommand());

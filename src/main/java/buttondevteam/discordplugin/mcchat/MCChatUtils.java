@@ -53,7 +53,7 @@ public class MCChatUtils {
 	LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
-	private static HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
+	private static final HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
 
 	public static void updatePlayerList() {
 		val mod = getModule();
