@@ -28,11 +28,13 @@ public class MCChatPrivate {
 			if (start) {
 				val sender = DiscordConnectedPlayer.create(user, channel, mcp.getUUID(), op.getName(), mcm);
 				MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender);
-				if (p == null)// Player is offline - If the player is online, that takes precedence
+				MCChatUtils.LoggedInPlayers.put(mcp.getUUID(), sender);
+				if (p == null) // Player is offline - If the player is online, that takes precedence
 					MCChatUtils.callLoginEvents(sender);
 			} else {
 				val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel.getId(), user);
 				assert sender != null;
+				MCChatUtils.LoggedInPlayers.remove(sender.getUniqueId());
 				if (p == null // Player is offline - If the player is online, that takes precedence
 					&& sender.isLoggedIn()) //Don't call the quit event if login failed
 					MCChatUtils.callLogoutEvent(sender, true);

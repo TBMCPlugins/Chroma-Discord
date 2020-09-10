@@ -3,69 +3,23 @@ package buttondevteam.discordplugin.broadcaster;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.matcher.ElementMatchers;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.io.File;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.UUID;
 
 public class PlayerListWatcher {
 	private static Object plist;
 	private static Object mock;
 	private static MethodHandle fHandle; //Handle for PlayerList.f(EntityPlayer) - Only needed for 1.16
-
-	/*public PlayerListWatcher(DedicatedServer minecraftserver) {
-		super(minecraftserver); // <-- Does some init stuff and calls Bukkit.setServer() so we have to use Objenesis
-	}
-
-	public void sendAll(Packet<?> packet) {
-		plist.sendAll(packet);
-		try { // Some messages get sent by directly constructing a packet
-			if (packet instanceof PacketPlayOutChat) {
-				Field msgf = PacketPlayOutChat.class.getDeclaredField("a");
-				msgf.setAccessible(true);
-				MCChatUtils.forAllMCChat(MCChatUtils.send(((IChatBaseComponent) msgf.get(packet)).toPlainText()));
-			}
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
-		}
-	}
-
-	@Override
-	public void sendMessage(IChatBaseComponent ichatbasecomponent, boolean flag) { // Needed so it calls the overridden method
-		plist.getServer().sendMessage(ichatbasecomponent);
-		ChatMessageType chatmessagetype = flag ? ChatMessageType.SYSTEM : ChatMessageType.CHAT;
-
-		// CraftBukkit start - we run this through our processor first so we can get web links etc
-		this.sendAll(new PacketPlayOutChat(CraftChatMessage.fixComponent(ichatbasecomponent), chatmessagetype));
-		// CraftBukkit end
-	}
-
-	@Override
-	public void sendMessage(IChatBaseComponent ichatbasecomponent) { // Needed so it calls the overriden method
-		this.sendMessage(ichatbasecomponent, true);
-	}
-
-	@Override
-	public void sendMessage(IChatBaseComponent[] iChatBaseComponents) { // Needed so it calls the overridden method
-		for (IChatBaseComponent component : iChatBaseComponents) {
-			sendMessage(component, true);
-		}
-	}*/
 
 	static boolean hookUpDown(boolean up) throws Exception {
 		val csc = Bukkit.getServer().getClass();

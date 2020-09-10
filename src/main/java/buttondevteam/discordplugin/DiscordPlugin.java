@@ -7,7 +7,6 @@ import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
-import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand;
@@ -260,7 +259,6 @@ public class DiscordPlugin extends ButtonPlugin {
 	public void pluginDisable() {
 		Timings timings = new Timings();
 		timings.printElapsed("Actual disable start (logout)");
-		MCChatPrivate.logoutAll();
 		timings.printElapsed("Config setup");
 		getConfig().set("serverup", false);
 		if (ChromaBot.getInstance() == null) return; //Failed to load

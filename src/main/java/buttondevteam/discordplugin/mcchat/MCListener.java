@@ -40,9 +40,9 @@ class MCListener implements Listener {
 			return;
 		if (e.getPlayer() instanceof DiscordConnectedPlayer)
 			return;
-		MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream()) //Only private mcchat should be in ConnectedSenders
-			.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-			.ifPresent(dcp -> MCChatUtils.callLogoutEvent(dcp, false));
+		var dcp = MCChatUtils.LoggedInPlayers.get(e.getPlayer().getUniqueId());
+		if (dcp != null)
+			MCChatUtils.callLogoutEvent(dcp, false);
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -75,9 +75,7 @@ class MCListener implements Listener {
 		MCChatUtils.OnlineSenders.entrySet()
 			.removeIf(entry -> entry.getValue().entrySet().stream().anyMatch(p -> p.getValue().getUniqueId().equals(e.getPlayer().getUniqueId())));
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin,
-			() -> MCChatUtils.ConnectedSenders.values().stream().flatMap(v -> v.values().stream())
-				.filter(s -> s.getUniqueId().equals(e.getPlayer().getUniqueId())).findAny()
-				.ifPresent(MCChatUtils::callLoginEvents));
+			() -> Optional.ofNullable(MCChatUtils.LoggedInPlayers.get(e.getPlayer().getUniqueId())).ifPresent(MCChatUtils::callLoginEvents));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
 			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.getQuitMessage();

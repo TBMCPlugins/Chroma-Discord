@@ -5,6 +5,7 @@ import buttondevteam.core.component.channel.Channel;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
+import buttondevteam.discordplugin.playerfaker.ServerWatcher;
 import buttondevteam.discordplugin.playerfaker.perm.LPInjector;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
  */
 public class MinecraftChatModule extends Component<DiscordPlugin> {
 	private @Getter MCChatListener listener;
+	private ServerWatcher serverWatcher;
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -113,6 +115,11 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		return getConfig().getData("enableVanillaCommands", true);
 	}
 
+	/**
+	 * Whether players logged on from Discord should be recognised by other plugins. Some plugins might break if it's turned off.
+	 */
+	public final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
@@ -156,10 +163,22 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			log("No LuckPerms, not injecting");
 			//e.printStackTrace();
 		}
+
+		try { //TODO: Config ^^
+			serverWatcher = new ServerWatcher();
+			serverWatcher.enableDisable(true);
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Failed to hack the server (object)!", e);
+		}
 	}
 
 	@Override
 	protected void disable() {
+		try {
+			serverWatcher.enableDisable(false);
+		} catch (Exception e) {
+			TBMCCoreAPI.SendException("Failed to restore the server object!", e);
+		}
 		val chcons = MCChatCustom.getCustomChats();
 		val chconsc = getConfig().getConfig().createSection("chcons");
 		for (val chcon : chcons) {

@@ -22,20 +22,7 @@
         <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
-                <directory>src</directory>
-                <excludes>
-                    <exclude>**/*.java</exclude>
-                </excludes>
-            </resource>
-            <resource>
                 <directory>src/main/resources</directory>
-                <includes>
-                    <include>*.properties</include>
-                    <include>*.yml</include>
-                    <include>*.csv</include>
-                    <include>*.txt</include>
-                </includes>
-                <filtering>true</filtering>
             </resource>
         </resources>
         <finalName>Chroma-Discord</finalName>
@@ -64,28 +51,6 @@
                                     </excludes>
                                 </relocation>
                             </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>target</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>resources</directory>
-                                </resource>
-                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -240,6 +205,11 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>3.5.10</version>
         </dependency>
     </dependencies>
 

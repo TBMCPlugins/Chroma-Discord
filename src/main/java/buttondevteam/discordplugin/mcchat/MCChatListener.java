@@ -186,6 +186,7 @@ public class MCChatListener implements Listener {
 	 * @param wait Wait 5 seconds for the threads to stop
 	 */
 	public static void stop(boolean wait) {
+		MCChatPrivate.logoutAll();
 		if (sendthread != null) sendthread.interrupt();
 		if (recthread != null) recthread.interrupt();
 		try {
@@ -203,7 +204,6 @@ public class MCChatListener implements Listener {
 			MCChatPrivate.lastmsgPerUser.clear();
 			MCChatCustom.lastmsgCustom.clear();
 			MCChatUtils.lastmsgfromd.clear();
-			MCChatUtils.ConnectedSenders.clear();
 			MCChatUtils.UnconnectedSenders.clear();
 			recthread = sendthread = null;
 		} catch (InterruptedException e) {

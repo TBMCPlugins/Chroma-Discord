@@ -28,10 +28,7 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
 import java.net.InetAddress;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -49,8 +46,8 @@ public class MCChatUtils {
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
 	public static final HashMap<String, HashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
-	static @Nullable
-	LastMsgData lastmsgdata;
+	public static final HashMap<UUID, DiscordConnectedPlayer> LoggedInPlayers = new HashMap<>();
+	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
 	private static final HashMap<Class<? extends Event>, HashSet<String>> staticExcludedPlugins = new HashMap<>();
@@ -283,7 +280,6 @@ public class MCChatUtils {
 	 * @param only    Flips the operation and <b>includes</b> the listed plugins
 	 * @param plugins The plugins to exclude. Not case sensitive.
 	 */
-	@SuppressWarnings("WeakerAccess")
 	public static void callEventExcluding(Event event, boolean only, String... plugins) { // Copied from Spigot-API and modified a bit
 		if (event.isAsynchronous()) {
 			if (Thread.holdsLock(Bukkit.getPluginManager())) {
