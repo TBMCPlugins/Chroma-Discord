@@ -231,6 +231,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			} else {
 				dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe();
 			}
+			getLogger().info("Loaded!");
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e);
 		}

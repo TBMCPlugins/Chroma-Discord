@@ -117,6 +117,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 
 	/**
 	 * Whether players logged on from Discord should be recognised by other plugins. Some plugins might break if it's turned off.
+	 * But it's really hacky.
 	 */
 	public final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
 
@@ -164,18 +165,21 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			//e.printStackTrace();
 		}
 
-		try { //TODO: Config ^^
-			serverWatcher = new ServerWatcher();
-			serverWatcher.enableDisable(true);
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to hack the server (object)!", e);
+		if (addFakePlayersToBukkit.get()) {
+			try {
+				serverWatcher = new ServerWatcher();
+				serverWatcher.enableDisable(true);
+			} catch (Exception e) {
+				TBMCCoreAPI.SendException("Failed to hack the server (object)!", e);
+			}
 		}
 	}
 
 	@Override
 	protected void disable() {
-		try {
-			serverWatcher.enableDisable(false);
+		try { //If it's not enabled it won't do anything
+			if (serverWatcher != null)
+				serverWatcher.enableDisable(false);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to restore the server object!", e);
 		}
