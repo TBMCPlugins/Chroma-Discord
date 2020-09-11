@@ -1,12 +1,14 @@
 package buttondevteam.discordplugin.playerfaker;
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class ServerWatcher {
@@ -19,8 +21,17 @@ public class ServerWatcher {
 		serverField.setAccessible(true);
 		if (enable) {
 			var serverClass = Bukkit.getServer().getClass();
-			var mock = Mockito.mock(serverClass, Mockito.withSettings()
-				.stubOnly().defaultAnswer(invocation -> {
+			//var mockMaker = new InlineByteBuddyMockMaker();
+			//System.setProperty("net.bytebuddy.experimental", "true");
+			/*try {
+				var resources = cl.getResources("mockito-extensions/" + MockMaker.class.getName());
+				System.out.println("Found resources: " + resources);
+				Iterables.toIterable(resources).forEach(resource -> System.out.println("Resource: " + resource));
+			} catch (IOException e) {
+				throw new IllegalStateException("Failed to load " + MockMaker.class, e);
+			}*/
+			var settings = Mockito.withSettings().stubOnly()
+				.defaultAnswer(invocation -> {
 					var method = invocation.getMethod();
 					int pc = method.getParameterCount();
 					Player player = null;
@@ -38,18 +49,34 @@ public class ServerWatcher {
 							break;
 						case "getOnlinePlayers":
 							if (playerList == null) {
-								@SuppressWarnings("unchecked") var list = (List<Player>) invocation.callRealMethod();
+								@SuppressWarnings("unchecked") var list = (List<Player>) method.invoke(origServer, invocation.getArguments());
 								playerList = new AppendListView<>(list, fakePlayers);
 							}
 							return playerList;
+						case "createProfile": //Paper's method, casts the player to a CraftPlayer
+							if (pc == 2) {
+								UUID uuid = invocation.getArgument(0);
+								String name = invocation.getArgument(1);
+								player = uuid != null ? MCChatUtils.LoggedInPlayers.get(uuid) : null;
+								if (player == null && name != null)
+									player = MCChatUtils.LoggedInPlayers.values().stream()
+										.filter(dcp -> dcp.getName().equalsIgnoreCase(name)).findAny().orElse(null);
+								if (player != null)
+									return new CraftPlayerProfile(player.getUniqueId(), player.getName());
+							}
+							break;
 					}
 					if (player != null)
 						return player;
-					return invocation.callRealMethod();
-				}));
+					return method.invoke(origServer, invocation.getArguments());
+				});
+			//var mock = mockMaker.createMock(settings, MockHandlerFactory.createMockHandler(settings));
+			//thread.setContextClassLoader(cl);
+			var mock = Mockito.mock(serverClass, settings);
 			var originalServer = serverField.get(null);
 			for (var field : serverClass.getFields()) //Copy public fields, private fields aren't accessible directly anyways
-				field.set(mock, field.get(originalServer));
+				if (!Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()))
+					field.set(mock, field.get(originalServer));
 			serverField.set(null, mock);
 			origServer = (Server) originalServer;
 		} else if (origServer != null)

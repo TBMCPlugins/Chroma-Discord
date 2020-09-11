@@ -79,7 +79,7 @@ public class VanillaCommandListener15<T extends DiscordSenderBase & IMCPlayer<T>
 		var server = Bukkit.getServer();
 		var cmap = (SimpleCommandMap) server.getClass().getMethod("getCommandMap").invoke(server);
 		val cmd = cmap.getCommand(cmdstr.split(" ")[0].toLowerCase());
-		if (!(dsender instanceof Player) || !vcwcl.isAssignableFrom(cmd.getClass()))
+		if (!(dsender instanceof Player) || cmd == null || !vcwcl.isAssignableFrom(cmd.getClass()))
 			return Bukkit.dispatchCommand(dsender, cmdstr); // Unconnected users are treated well in vanilla cmds
 
 		if (!(dsender instanceof IMCPlayer))

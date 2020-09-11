@@ -114,6 +114,10 @@
             <id>Reactor-Tools</id>
             <url>https://repo.spring.io/milestone</url>
         </repository> -->
+        <repository>
+            <id>papermc</id>
+            <url>https://papermc.io/repo/repository/maven-public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -139,6 +143,12 @@
             <groupId>org.spigotmc.</groupId>
             <artifactId>spigot</artifactId>
             <version>1.14.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency> <!-- From patched_1.16.3.jar -->
+            <groupId>com.destroystokyo.paper</groupId>
+            <artifactId>paper</artifactId>
+            <version>1.16.3-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.discord4j/Discord4J -->
@@ -201,10 +211,11 @@
             <version>master-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>3.0.0</version>
+            <version>3.5.10</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

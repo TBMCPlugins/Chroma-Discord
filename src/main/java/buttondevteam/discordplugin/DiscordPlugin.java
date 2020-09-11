@@ -35,6 +35,7 @@ import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.mockito.internal.util.MockUtil;
 import reactor.core.publisher.Mono;
 
 import java.awt.*;
@@ -99,6 +100,17 @@ public class DiscordPlugin extends ButtonPlugin {
 	 */
 	public ConfigData<String> inviteLink() {
 		return getIConfig().getData("inviteLink", "");
+	}
+
+	@Override
+	public void onLoad() { //Needed by ServerWatcher
+		var thread = Thread.currentThread();
+		getLogger().info("Setting context class loader for " + thread);
+		var cl = thread.getContextClassLoader();
+		thread.setContextClassLoader(getClassLoader());
+		MockUtil.isMock(null); //Load MockUtil to load Mockito plugins
+		getLogger().info("Restoring context class loader");
+		thread.setContextClassLoader(cl);
 	}
 
 	@Override
