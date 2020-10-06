@@ -21,7 +21,7 @@ public class PlayerListWatcher {
 	private static Object mock;
 	private static MethodHandle fHandle; //Handle for PlayerList.f(EntityPlayer) - Only needed for 1.16
 
-	static boolean hookUpDown(boolean up) throws Exception {
+	static boolean hookUpDown(boolean up, GeneralEventBroadcasterModule module) throws Exception {
 		val csc = Bukkit.getServer().getClass();
 		Field conf = csc.getDeclaredField("console");
 		conf.setAccessible(true);
@@ -30,6 +30,10 @@ public class PlayerListWatcher {
 		val dplc = Class.forName(nms + ".DedicatedPlayerList");
 		val currentPL = server.getClass().getMethod("getPlayerList").invoke(server);
 		if (up) {
+			if (currentPL == mock) {
+				module.logWarn("Player list already mocked!");
+				return false;
+			}
 			val icbcl = Class.forName(nms + ".IChatBaseComponent");
 			Method sendMessageTemp;
 			try {
@@ -84,7 +88,11 @@ public class PlayerListWatcher {
 							if (fHandle == null) {
 								assert lookupConstructor != null;
 								var lookup = lookupConstructor.newInstance(mock.getClass());
+								//var mcl = method.getDeclaringClass();
 								fHandle = lookup.unreflectSpecial(method, mock.getClass()); //Special: super.method()
+								/*if (mcl.getSimpleName().contains("Mock")) //inline mock
+									lookup.findSpecial(mcl, method.getName(), )
+								fHandle.type()*/
 							}
 							return fHandle.invoke(mock, invocation.getArgument(0)); //Invoke with our instance, so it passes that to advancement data, we have the fields as well
 						}
