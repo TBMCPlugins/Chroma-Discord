@@ -74,7 +74,7 @@ public class DiscordMCCommand extends ICommand2MC {
 		"This command disables and then enables the plugin." //
 	})
 	public void reset(CommandSender sender) {
-		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, () -> {
+		Runnable task = () -> {
 			if (!DiscordPlugin.plugin.tryReloadConfig()) {
 				sender.sendMessage("§cFailed to reload config so not resetting. Check the console.");
 				return;
@@ -87,7 +87,12 @@ public class DiscordMCCommand extends ICommand2MC {
 			Bukkit.getPluginManager().enablePlugin(DiscordPlugin.plugin);
 			if (!(sender instanceof DiscordSenderBase)) //Sending to Discord errors
 				sender.sendMessage("§bReset finished!");
-		});
+		};
+		if (!Bukkit.getName().equals("Paper")) {
+			getPlugin().getLogger().warning("Async plugin events are not supported by the server, running on main thread");
+			Bukkit.getScheduler().runTask(DiscordPlugin.plugin, task);
+		} else
+			Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, task);
 	}
 
 	@Command2.Subcommand(helpText = {

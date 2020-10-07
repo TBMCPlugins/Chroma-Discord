@@ -100,7 +100,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 			ListC = 0;
 			lastlist = 0;
 		}
-		if (msglowercased.equals("list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
+		if (msglowercased.equals("/list") && Bukkit.getOnlinePlayers().size() == lastlistp && ListC++ > 2) // Lowered already
 		{
 			DPUtils.reply(message, Mono.empty(), "stop it. You know the answer.").subscribe();
 			lastlist = 0;

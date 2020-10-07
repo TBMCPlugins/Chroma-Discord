@@ -131,17 +131,19 @@ public class MCChatListener implements Listener {
 					doit.accept(data);
 			}
 
-			val iterator = MCChatCustom.lastmsgCustom.iterator();
-			while (iterator.hasNext()) {
-				val lmd = iterator.next();
-				if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel.getId())) //Test if msg is from Discord
-					&& e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
-					&& e.getGroupID().equals(lmd.groupID)) { //Check if this is the group we want to test - #58
-					if (e.shouldSendTo(lmd.dcp)) //Check original user's permissions
-						doit.accept(lmd);
-					else {
-						iterator.remove(); //If the user no longer has permission, remove the connection
-						lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe();
+			synchronized (MCChatCustom.lastmsgCustom) {
+				val iterator = MCChatCustom.lastmsgCustom.iterator();
+				while (iterator.hasNext()) {
+					val lmd = iterator.next();
+					if ((e.isFromCommand() || isdifferentchannel.test(lmd.channel.getId())) //Test if msg is from Discord
+						&& e.getChannel().ID.equals(lmd.mcchannel.ID) //If it's from a command, the command msg has been deleted, so we need to send it
+						&& e.getGroupID().equals(lmd.groupID)) { //Check if this is the group we want to test - #58
+						if (e.shouldSendTo(lmd.dcp)) //Check original user's permissions
+							doit.accept(lmd);
+						else {
+							iterator.remove(); //If the user no longer has permission, remove the connection
+							lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe();
+						}
 					}
 				}
 			}
@@ -217,7 +219,7 @@ public class MCChatListener implements Listener {
 	}
 
 	private BukkitTask rectask;
-	private LinkedBlockingQueue<MessageCreateEvent> recevents = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<MessageCreateEvent> recevents = new LinkedBlockingQueue<>();
 	private Runnable recrun;
 	private static Thread recthread;
 
@@ -368,6 +370,7 @@ public class MCChatListener implements Listener {
 			return true;
 		}
 		module.log(dsender.getName() + " ran from DC: /" + cmd);
+		if (runCustomCommand(dsender, cmdlowercased)) return true;
 		val channel = clmd == null ? user.channel().get() : clmd.mcchannel;
 		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
@@ -394,6 +397,17 @@ public class MCChatListener implements Listener {
 				}
 			});
 		return true;
+	}
+
+	private boolean runCustomCommand(DiscordSenderBase dsender, String cmdlowercased) {
+		if (cmdlowercased.startsWith("list")) {
+			var players = Bukkit.getOnlinePlayers();
+			dsender.sendMessage("There are " + players.size() + " out of " + Bukkit.getMaxPlayers() + " players online.");
+			dsender.sendMessage("Players: " + players.stream().filter(MCChatUtils::checkEssentials)
+				.map(Player::getDisplayName).collect(Collectors.joining(", ")));
+			return true;
+		}
+		return false;
 	}
 
 	@FunctionalInterface

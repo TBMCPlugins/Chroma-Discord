@@ -34,6 +34,7 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -45,13 +46,13 @@ public class MCChatUtils {
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<Snowflake, DiscordSender>> UnconnectedSenders = new HashMap<>();
-	public static final HashMap<String, HashMap<Snowflake, DiscordConnectedPlayer>> ConnectedSenders = new HashMap<>();
+	public static final ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, DiscordSender>> UnconnectedSenders = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, DiscordConnectedPlayer>> ConnectedSenders = new ConcurrentHashMap<>();
 	/**
 	 * May contain P&lt;DiscordID&gt; as key for public chat
 	 */
-	public static final HashMap<String, HashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new HashMap<>();
-	public static final HashMap<UUID, DiscordConnectedPlayer> LoggedInPlayers = new HashMap<>();
+	public static final ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, DiscordPlayerSender>> OnlineSenders = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<UUID, DiscordConnectedPlayer> LoggedInPlayers = new ConcurrentHashMap<>();
 	static @Nullable LastMsgData lastmsgdata;
 	static LongObjectHashMap<Message> lastmsgfromd = new LongObjectHashMap<>(); // Last message sent by a Discord user, used for clearing checkmarks
 	private static MinecraftChatModule module;
@@ -104,28 +105,28 @@ public class MCChatUtils {
 		((TextChannel) lmd.channel).edit(tce -> tce.setTopic(String.join("\n----\n", s)).setReason("Player list update")).subscribe(); //Don't wait
 	}
 
-	private static boolean checkEssentials(Player p) {
+	static boolean checkEssentials(Player p) {
 		var ess = MainPlugin.ess;
 		if (ess == null) return true;
 		return !ess.getUser(p).isHidden();
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, T>> senders,
 	                                                        User user, T sender) {
 		return addSender(senders, user.getId().asString(), sender);
 	}
 
-	public static <T extends DiscordSenderBase> T addSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	public static <T extends DiscordSenderBase> T addSender(ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, T>> senders,
 	                                                        String did, T sender) {
 		var map = senders.get(did);
 		if (map == null)
-			map = new HashMap<>();
+			map = new ConcurrentHashMap<>();
 		map.put(sender.getChannel().getId(), sender);
 		senders.put(did, map);
 		return sender;
 	}
 
-	public static <T extends DiscordSenderBase> T getSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	public static <T extends DiscordSenderBase> T getSender(ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, T>> senders,
 	                                                        Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)
@@ -133,7 +134,7 @@ public class MCChatUtils {
 		return null;
 	}
 
-	public static <T extends DiscordSenderBase> T removeSender(HashMap<String, HashMap<Snowflake, T>> senders,
+	public static <T extends DiscordSenderBase> T removeSender(ConcurrentHashMap<String, ConcurrentHashMap<Snowflake, T>> senders,
 	                                                           Snowflake channel, User user) {
 		var map = senders.get(user.getId().asString());
 		if (map != null)

@@ -20,15 +20,17 @@ public class MCChatCustom {
 	/**
 	 * Used for town or nation chats or anything else
 	 */
-	static ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
+	static final ArrayList<CustomLMD> lastmsgCustom = new ArrayList<>();
 
 	public static void addCustomChat(MessageChannel channel, String groupid, Channel mcchannel, User user, DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
-		if (mcchannel instanceof ChatRoom) {
-			((ChatRoom) mcchannel).joinRoom(dcp);
-			if (groupid == null) groupid = mcchannel.getGroupID(dcp);
+		synchronized (lastmsgCustom) {
+			if (mcchannel instanceof ChatRoom) {
+				((ChatRoom) mcchannel).joinRoom(dcp);
+				if (groupid == null) groupid = mcchannel.getGroupID(dcp);
+			}
+			val lmd = new CustomLMD(channel, user, groupid, mcchannel, dcp, toggles, brtoggles);
+			lastmsgCustom.add(lmd);
 		}
-		val lmd = new CustomLMD(channel, user, groupid, mcchannel, dcp, toggles, brtoggles);
-		lastmsgCustom.add(lmd);
 	}
 
 	public static boolean hasCustomChat(Snowflake channel) {
@@ -41,14 +43,16 @@ public class MCChatCustom {
 	}
 
 	public static boolean removeCustomChat(Snowflake channel) {
-		MCChatUtils.lastmsgfromd.remove(channel.asLong());
-		return lastmsgCustom.removeIf(lmd -> {
-			if (lmd.channel.getId().asLong() != channel.asLong())
-				return false;
-			if (lmd.mcchannel instanceof ChatRoom)
-				((ChatRoom) lmd.mcchannel).leaveRoom(lmd.dcp);
-			return true;
-		});
+		synchronized (lastmsgCustom) {
+			MCChatUtils.lastmsgfromd.remove(channel.asLong());
+			return lastmsgCustom.removeIf(lmd -> {
+				if (lmd.channel.getId().asLong() != channel.asLong())
+					return false;
+				if (lmd.mcchannel instanceof ChatRoom)
+					((ChatRoom) lmd.mcchannel).leaveRoom(lmd.dcp);
+				return true;
+			});
+		}
 	}
 
 	public static List<CustomLMD> getCustomChats() {
