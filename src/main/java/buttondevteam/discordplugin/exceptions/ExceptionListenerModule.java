@@ -9,9 +9,9 @@ import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.GuildChannel;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
  * Listens for errors from the Chroma plugins and posts them to Discord, ignoring repeating errors so it's not that spammy.
  */
 public class ExceptionListenerModule extends Component<DiscordPlugin> implements Listener {
-	private List<Throwable> lastthrown = new ArrayList<>();
-	private List<String> lastsourcemsg = new ArrayList<>();
+	private final List<Throwable> lastthrown = new ArrayList<>();
+	private final List<String> lastsourcemsg = new ArrayList<>();
 
 	@EventHandler
 	public void onException(TBMCExceptionEvent e) {

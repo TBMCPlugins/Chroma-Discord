@@ -113,6 +113,7 @@ public class DiscordInventory implements Inventory {
 	}
 
 	@Override
+	@Deprecated
 	public HashMap<Integer, ? extends ItemStack> all(int materialId) {
 		return new HashMap<>();
 	}
@@ -128,6 +129,7 @@ public class DiscordInventory implements Inventory {
 	}
 
 	@Override
+	@Deprecated
 	public int first(int materialId) {
 		return -1;
 	}
@@ -148,6 +150,7 @@ public class DiscordInventory implements Inventory {
 	}
 
 	@Override
+	@Deprecated
 	public void remove(int materialId) {
 	}
 

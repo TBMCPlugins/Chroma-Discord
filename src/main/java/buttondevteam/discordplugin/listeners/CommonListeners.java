@@ -14,7 +14,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
-import discord4j.core.object.entity.PrivateChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import lombok.val;
 import reactor.core.publisher.Mono;
 
@@ -47,7 +47,7 @@ public class CommonListeners {
 			return commandCh.filterWhen(ch -> event.getMessage().getChannel().map(mch ->
 				(commandChannel != null && mch.getId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 					|| mch instanceof PrivateChannel
-					|| event.getMessage().getContent().orElse("").contains("channelcon")) //Only 'channelcon' is allowed in other channels
+					|| event.getMessage().getContent().contains("channelcon")) //Only 'channelcon' is allowed in other channels
 				.flatMap(shouldRun -> { //Only continue if this doesn't handle the event
 					if (!shouldRun)
 						return Mono.just(true); //The condition is only for the first command execution, not mcchat

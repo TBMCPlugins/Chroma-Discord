@@ -8,7 +8,7 @@ import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
-import discord4j.core.object.entity.PrivateChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 

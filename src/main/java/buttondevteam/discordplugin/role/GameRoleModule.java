@@ -3,20 +3,19 @@ package buttondevteam.discordplugin.role;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
 import discord4j.core.event.domain.role.RoleEvent;
 import discord4j.core.event.domain.role.RoleUpdateEvent;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.rest.util.Color;
 import lombok.val;
 import org.bukkit.Bukkit;
 import reactor.core.publisher.Mono;
 
-import java.awt.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -52,8 +51,8 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	 * Defaults to the second to last in the upper row - #95a5a6.
 	 */
 	private final ReadOnlyConfigData<Color> roleColor = getConfig().<Color>getConfig("roleColor")
-		.def(new Color(149, 165, 166, 0))
-		.getter(rgb -> new Color(Integer.parseInt(((String) rgb).substring(1), 16), true))
+		.def(Color.of(149, 165, 166))
+		.getter(rgb -> Color.of(Integer.parseInt(((String) rgb).substring(1), 16)))
 		.setter(color -> String.format("#%08x", color.getRGB())).buildReadOnly();
 
 	public static void handleRoleEvent(RoleEvent roleEvent) {
@@ -119,7 +118,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		val rc = roleColor.get();
 		return Mono.just(r.getColor().equals(rc)).filter(b -> b).flatMap(b ->
 			DiscordPlugin.dc.getSelf().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId()))
-				.flatMap(m -> m.hasHigherRoles(Collections.singleton(r)))) //Below one of our roles
+				.flatMap(m -> m.hasHigherRoles(Collections.singleton(r.getId())))) //Below one of our roles
 			.defaultIfEmpty(false);
 	}
 }

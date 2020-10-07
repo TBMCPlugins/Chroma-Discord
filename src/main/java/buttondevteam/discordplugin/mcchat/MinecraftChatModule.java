@@ -13,8 +13,8 @@ import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import com.google.common.collect.Lists;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.util.Snowflake;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -116,17 +116,15 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	}
 
 	/**
-	 * Whether players logged on from Discord should be recognised by other plugins. Some plugins might break if it's turned off.
+	 * Whether players logged on from Discord (mcchat command) should be recognised by other plugins. Some plugins might break if it's turned off.
 	 * But it's really hacky.
 	 */
-	public final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
+	private final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
 
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
 			return;
-		/*clientID = DiscordPlugin.dc.getApplicationInfo().blockOptional().map(info->info.getId().asString())
-			.orElse("Unknown"); //Need to block because otherwise it may not be set in time*/
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled

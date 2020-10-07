@@ -3,7 +3,7 @@ package buttondevteam.discordplugin.exceptions;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCDebugMessageEvent;
-import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import reactor.core.publisher.Mono;

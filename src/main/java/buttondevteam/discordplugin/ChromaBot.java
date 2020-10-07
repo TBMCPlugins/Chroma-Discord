@@ -2,7 +2,7 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.Getter;
 import org.bukkit.scheduler.BukkitScheduler;
 import reactor.core.publisher.Mono;
@@ -19,9 +19,8 @@ public class ChromaBot {
 
 	/**
 	 * This will set the instance field.
-	 * 
-	 * @param dp
-	 *            The Discord plugin
+	 *
+	 * @param dp The Discord plugin
 	 */
 	ChromaBot(DiscordPlugin dp) {
 		instance = this;
@@ -34,23 +33,22 @@ public class ChromaBot {
 
 	/**
 	 * Send a message to the chat channels and private chats.
-     *
-	 * @param message
-	 *            The message to send, duh (use {@link MessageChannel#createMessage(String)})
+	 *
+	 * @param message The message to send, duh (use {@link MessageChannel#createMessage(String)})
 	 */
 	public void sendMessage(Function<Mono<MessageChannel>, Mono<Message>> message) {
 		MCChatUtils.forAllMCChat(ch -> message.apply(ch).subscribe());
 	}
 
-    /**
-     * Send a message to the chat channels, private chats and custom chats.
-     *
-     * @param message The message to send, duh
-     * @param toggle The toggle type for channelcon
-     */
+	/**
+	 * Send a message to the chat channels, private chats and custom chats.
+	 *
+	 * @param message The message to send, duh
+	 * @param toggle  The toggle type for channelcon
+	 */
 	public void sendMessageCustomAsWell(Function<Mono<MessageChannel>, Mono<Message>> message, @Nullable ChannelconBroadcast toggle) {
 		MCChatUtils.forCustomAndAllMCChat(ch -> message.apply(ch).subscribe(), toggle, false);
-    }
+	}
 
 	public void updatePlayerList() {
 		MCChatUtils.updatePlayerList();

@@ -28,8 +28,8 @@ public class UserinfoCommand extends ICommand2DC {
 		if (user == null || user.length() == 0)
 			target = message.getAuthor().orElse(null);
 		else {
-			@SuppressWarnings("OptionalGetWithoutIsPresent") final User firstmention = message.getUserMentions()
-				.filter(m -> !m.getId().asString().equals(DiscordPlugin.dc.getSelfId().get().asString())).blockFirst();
+			final User firstmention = message.getUserMentions()
+				.filter(m -> !m.getId().asString().equals(DiscordPlugin.dc.getSelfId().asString())).blockFirst();
 			if (firstmention != null)
 				target = firstmention;
 			else if (user.contains("#")) {

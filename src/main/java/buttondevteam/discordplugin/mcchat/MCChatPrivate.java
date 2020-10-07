@@ -4,9 +4,9 @@ import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.lib.player.TBMCPlayer;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.entity.PrivateChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import lombok.val;
 import org.bukkit.Bukkit;
 

@@ -9,7 +9,12 @@ import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import com.google.common.collect.Lists;
 import discord4j.core.event.domain.PresenceUpdateEvent;
-import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Status;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -89,7 +94,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	public static boolean executeMemes(Message message) {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return false;
-		String msglowercased = message.getContent().orElse("").toLowerCase();
+		String msglowercased = message.getContent().toLowerCase();
 		lastlist++;
 		if (lastlist > 5) {
 			ListC = 0;

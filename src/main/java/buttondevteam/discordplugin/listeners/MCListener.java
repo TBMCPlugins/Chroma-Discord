@@ -6,13 +6,12 @@ import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.lib.TBMCCommandPreprocessEvent;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.player.TBMCPlayerJoinEvent;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Snowflake;
 import lombok.val;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.server.ServerCommandEvent;
 import reactor.core.publisher.Mono;
 
 public class MCListener implements Listener {
@@ -53,7 +52,7 @@ public class MCListener implements Listener {
 	}
 
 	@EventHandler
-	public void onCommandPreprocess(TBMCCommandPreprocessEvent e){
+	public void onCommandPreprocess(TBMCCommandPreprocessEvent e) {
 		DiscordPlugin.Restart = !e.getMessage().equalsIgnoreCase("/stop"); // The variable is always true except if stopped
 	}
 }

@@ -91,11 +91,7 @@ public class PlayerListWatcher {
 							if (fHandle == null) {
 								assert lookupConstructor != null;
 								var lookup = lookupConstructor.newInstance(mock.getClass());
-								//var mcl = method.getDeclaringClass();
 								fHandle = lookup.unreflectSpecial(method, mock.getClass()); //Special: super.method()
-								/*if (mcl.getSimpleName().contains("Mock")) //inline mock
-									lookup.findSpecial(mcl, method.getName(), )
-								fHandle.type()*/
 							}
 							return fHandle.invoke(mock, invocation.getArgument(0)); //Invoke with our instance, so it passes that to advancement data, we have the fields as well
 						}

@@ -17,8 +17,6 @@ public class ServerWatcher {
 	private List<Player> playerList;
 	private final List<Player> fakePlayers = new ArrayList<>();
 	private Server origServer;
-	//private ByteBuddy byteBuddy;
-	//private AsmVisitorWrapper mockTransformer;
 
 	@IgnoreForBinding
 	public void enableDisable(boolean enable) throws Exception {
@@ -27,17 +25,6 @@ public class ServerWatcher {
 		if (enable) {
 			var serverClass = Bukkit.getServer().getClass();
 			var originalServer = serverField.get(null);
-			//var impl = MethodDelegation.to(this);
-			//var names = Arrays.stream(ServerWatcher.class.getMethods()).map(Method::getName).toArray(String[]::new);
-			/*if (byteBuddy == null) {
-				byteBuddy = new ByteBuddy()
-					.with(TypeValidation.DISABLED)
-					.with(Implementation.Context.Disabled.Factory.INSTANCE)
-					.with(MethodGraph.Compiler.ForDeclaredMethods.INSTANCE)
-					.ignore(isSynthetic().and(not(isConstructor())).or(isDefaultFinalizer()));
-
-				mockTransformer=new InlineByteBuddyMockMaker().createMock()
-			}*/
 			DelegatingMockMaker.getInstance().setMockMaker(new InlineByteBuddyMockMaker());
 			var settings = Mockito.withSettings().stubOnly()
 				.defaultAnswer(invocation -> {
@@ -90,26 +77,6 @@ public class ServerWatcher {
 		} else if (origServer != null)
 			serverField.set(null, origServer);
 	}
-
-	/*@Override
-	public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-		if (classBeingRedefined == null)
-			return null;
-		try {
-			return byteBuddy
-				.redefine(
-					classBeingRedefined,
-					ClassFileLocator.Simple.of(classBeingRedefined.getName(), classfileBuffer)
-				)
-				//.visit(new InlineBytecodeGenerator.ParameterWritingVisitorWrapper(classBeingRedefined))
-				.visit(mockTransformer)
-				.make()
-				.getBytes();
-		} catch (Throwable throwable) {
-			TBMCCoreAPI.SendException("Failed to transform class!", throwable);
-			return null;
-		}
-	}*/
 
 	@RequiredArgsConstructor
 	public static class AppendListView<T> extends AbstractSequentialList<T> {

@@ -19,8 +19,9 @@ import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
 import buttondevteam.lib.player.ChromaGamerBase;
 import com.google.common.io.Files;
-import discord4j.core.DiscordClient;
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClientBuilder;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.entity.Guild;
@@ -28,7 +29,7 @@ import discord4j.core.object.entity.Role;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.object.util.Snowflake;
+import discord4j.rest.util.Color;
 import discord4j.store.jdk.JdkStoreService;
 import lombok.Getter;
 import lombok.val;
@@ -38,7 +39,6 @@ import org.bukkit.entity.Player;
 import org.mockito.internal.util.MockUtil;
 import reactor.core.publisher.Mono;
 
-import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 @ButtonPlugin.ConfigOpts(disableConfigGen = true)
 public class DiscordPlugin extends ButtonPlugin {
-	public static DiscordClient dc;
+	public static GatewayDiscordClient dc;
 	public static DiscordPlugin plugin;
 	public static boolean SafeMode = true;
 	@Getter
@@ -138,19 +138,18 @@ public class DiscordPlugin extends ButtonPlugin {
 					return;
 				}
 			}
-			val cb = DiscordClientBuilder.create(token);
-			cb.setInitialPresence(Presence.doNotDisturb(Activity.playing("booting")));
+			val cb = DiscordClientBuilder.create(token).build().gateway();
+			cb.setInitialStatus(si -> Presence.doNotDisturb(Activity.playing("booting")));
 			cb.setStoreService(new JdkStoreService()); //The default doesn't work for some reason - it's waaay faster now
-			dc = cb.build();
-			dc.getEventDispatcher().on(ReadyEvent.class) // Listen for ReadyEvent(s)
-				.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
-				.flatMap(size -> dc.getEventDispatcher()
-					.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
-					.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
-					.collectList()) // Take all received GuildCreateEvents and make it a List
-				.subscribe(this::handleReady); /* All guilds have been received, client is fully connected */
-			//dc.getEventDispatcher().on(DisconnectEvent.class);
-			dc.login().subscribe();
+			cb.login().subscribe(dc -> {
+				DiscordPlugin.dc = dc; //Set to gateway client
+				dc.on(ReadyEvent.class) // Listen for ReadyEvent(s)
+					.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
+					.flatMap(size -> dc
+						.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
+						.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
+						.collectList()).subscribe(this::handleReady); // Take all received GuildCreateEvents and make it a List
+			}); /* All guilds have been received, client is fully connected */
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e);
 			getLogger().severe("You may be able to reset the plugin using /discord reset");
@@ -170,9 +169,8 @@ public class DiscordPlugin extends ButtonPlugin {
 			if (mainServer == null) {
 				if (event.size() == 0) {
 					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
-					dc.getApplicationInfo().subscribe(info -> {
-						getLogger().severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId().asString() + "&scope=bot&permissions=268509264");
-					});
+					dc.getApplicationInfo().subscribe(info ->
+						getLogger().severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId().asString() + "&scope=bot&permissions=268509264"));
 					saveConfig(); //Put default there
 					return; //We should have all guilds by now, no need to retry
 				}

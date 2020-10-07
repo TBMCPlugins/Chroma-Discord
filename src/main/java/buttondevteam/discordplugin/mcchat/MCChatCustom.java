@@ -4,9 +4,9 @@ import buttondevteam.core.component.channel.Channel;
 import buttondevteam.core.component.channel.ChatRoom;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.lib.TBMCSystemChatEvent;
-import discord4j.core.object.entity.MessageChannel;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.NonNull;
 import lombok.val;
 
@@ -62,7 +62,7 @@ public class MCChatCustom {
 		public Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles;
 
 		private CustomLMD(@NonNull MessageChannel channel, @NonNull User user,
-						  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
+		                  @NonNull String groupid, @NonNull Channel mcchannel, @NonNull DiscordConnectedPlayer dcp, int toggles, Set<TBMCSystemChatEvent.BroadcastTarget> brtoggles) {
 			super(channel, user);
 			groupID = groupid;
 			this.mcchannel = mcchannel;

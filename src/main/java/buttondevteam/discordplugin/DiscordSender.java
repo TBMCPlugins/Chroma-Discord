@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin;
 
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;

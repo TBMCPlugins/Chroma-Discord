@@ -9,11 +9,11 @@ import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.TBMCPlayer;
-import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Permission;
+import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.rest.util.Permission;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.bukkit.Bukkit;
@@ -149,6 +149,7 @@ public class ChannelconCommand extends ICommand2DC {
 			DPUtils.reply(message, channel, "you can only use this command in a server!").subscribe();
 			return true;
 		}
+		//noinspection OptionalGetWithoutIsPresent
 		var perms = ((GuildChannel) channel).getEffectivePermissions(message.getAuthor().map(User::getId).get()).block();
 		if (!perms.contains(Permission.ADMINISTRATOR) && !perms.contains(Permission.MANAGE_CHANNELS)) {
 			DPUtils.reply(message, channel, "you need to have manage permissions for this channel!").subscribe();

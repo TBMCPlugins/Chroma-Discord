@@ -14,7 +14,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.val;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -34,14 +34,14 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 	/**
 	 * Channel where distinguished (moderator) posts go.
 	 */
-	public ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
+	private ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
 		return DPUtils.channelData(getConfig(), "modChannel");
 	}
 
 	/**
 	 * Automatically unpins all messages except the last few. Set to 0 or >50 to disable
 	 */
-	public ConfigData<Short> keepPinned() {
+	private ConfigData<Short> keepPinned() {
 		return getConfig().getData("keepPinned", (short) 40);
 	}
 

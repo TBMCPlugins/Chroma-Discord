@@ -2,8 +2,8 @@ package buttondevteam.discordplugin;
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.mockito.Mockito;

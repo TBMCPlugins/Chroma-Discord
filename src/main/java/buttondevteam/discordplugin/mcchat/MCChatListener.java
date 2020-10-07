@@ -13,11 +13,17 @@ import buttondevteam.lib.chat.ChatMessage;
 import buttondevteam.lib.chat.TBMCChatAPI;
 import buttondevteam.lib.player.TBMCPlayer;
 import com.vdurmont.emoji.EmojiParser;
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.Embed;
-import discord4j.core.object.entity.*;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.Attachment;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.rest.util.Color;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -26,7 +32,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitTask;
 import reactor.core.publisher.Mono;
 
-import java.awt.*;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -72,11 +77,11 @@ public class MCChatListener implements Listener {
 			time = se.getValue();
 
 			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
-				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().substring(0, 1) + "]") //
+				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().charAt(0) + "]") //
 				+ (DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender())));
 			val color = e.getChannel().Color().get();
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
-				ecs.setDescription(e.getMessage()).setColor(new Color(color.getRed(),
+				ecs.setDescription(e.getMessage()).setColor(Color.of(color.getRed(),
 					color.getGreen(), color.getBlue()));
 				String url = module.profileURL().get();
 				if (e.getSender() instanceof Player)
@@ -235,9 +240,8 @@ public class MCChatListener implements Listener {
 		}).filter(channel -> {
 			timings.printElapsed("Filter 2");
 			return !(channel instanceof PrivateChannel //Only in private chat
-				&& ev.getMessage().getContent().isPresent()
-				&& ev.getMessage().getContent().get().length() < "/mcchat<>".length()
-				&& ev.getMessage().getContent().get().replace(prefix + "", "")
+				&& ev.getMessage().getContent().length() < "/mcchat<>".length()
+				&& ev.getMessage().getContent().replace(prefix + "", "")
 				.equalsIgnoreCase("mcchat")); //Either mcchat or /mcchat
 			//Allow disabling the chat if needed
 		}).filterWhen(channel -> CommandListener.runCommand(ev.getMessage(), channel, true))
@@ -268,7 +272,7 @@ public class MCChatListener implements Listener {
 			return;
 		}
 		val sender = event.getMessage().getAuthor().orElse(null);
-		String dmessage = event.getMessage().getContent().orElse("");
+		String dmessage = event.getMessage().getContent();
 		try {
 			final DiscordSenderBase dsender = MCChatUtils.getSender(event.getMessage().getChannelId(), sender);
 			val user = dsender.getChromaUser();

@@ -5,11 +5,11 @@ import buttondevteam.lib.architecture.Component;
 import buttondevteam.lib.architecture.ConfigData;
 import buttondevteam.lib.architecture.IHaveConfig;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.Role;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import lombok.val;
 import reactor.core.publisher.Mono;
@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 
 public final class DPUtils {
 
-	public static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
-	public static final Pattern FORMAT_PATTERN = Pattern.compile("[*_~]");
+	private static final Pattern URL_PATTERN = Pattern.compile("https?://\\S*");
+	private static final Pattern FORMAT_PATTERN = Pattern.compile("[*_~]");
 
 	public static EmbedCreateSpec embedWithHead(EmbedCreateSpec ecs, String displayname, String playername, String profileUrl) {
 		return ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png");

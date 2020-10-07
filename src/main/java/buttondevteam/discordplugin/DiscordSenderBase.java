@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin;
 
 import buttondevteam.lib.TBMCCoreAPI;
-import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitTask;
@@ -24,7 +24,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 
 	/**
 	 * Returns the user. May be null.
-	 * 
+	 *
 	 * @return The user or null.
 	 */
 	public User getUser() {
@@ -58,7 +58,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 				msgtosend += "\n" + sendmsg;
 				if (sendtask == null)
 					sendtask = Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-						channel.createMessage((user != null ? user.getMention() + "\n":"") + msgtosend.trim()).subscribe();
+						channel.createMessage((user != null ? user.getMention() + "\n" : "") + msgtosend.trim()).subscribe();
 						sendtask = null;
 						msgtosend = "";
 					}, 4); // Waits a 0.2 second to gather all/most of the different messages

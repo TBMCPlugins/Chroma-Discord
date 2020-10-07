@@ -6,9 +6,9 @@ import buttondevteam.discordplugin.commands.Command2DCSender;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.entity.PrivateChannel;
 import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import lombok.val;
 import reactor.core.publisher.Mono;
 
@@ -25,9 +25,9 @@ public class CommandListener {
 	public static Mono<Boolean> runCommand(Message message, MessageChannel commandChannel, boolean mentionedonly) {
 		Timings timings = CommonListeners.timings;
 		Mono<Boolean> ret = Mono.just(true);
-		if (!message.getContent().isPresent())
+		if (message.getContent().length() == 0)
 			return ret; //Pin messages and such, let the mcchat listener deal with it
-		val content = message.getContent().get();
+		val content = message.getContent();
 		timings.printElapsed("A");
 		return message.getChannel().flatMap(channel -> {
 			Mono<?> tmp = ret;
@@ -74,7 +74,7 @@ public class CommandListener {
 
 	private static boolean checkanddeletemention(StringBuilder cmdwithargs, String mention, Message message) {
 		final char prefix = DiscordPlugin.getPrefix();
-		if (message.getContent().orElse("").startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
+		if (message.getContent().startsWith(mention)) // TODO: Resolve mentions: Compound arguments, either a mention or text
 			if (cmdwithargs.length() > mention.length() + 1) {
 				int i = cmdwithargs.indexOf(" ", mention.length());
 				if (i == -1)
@@ -89,7 +89,7 @@ public class CommandListener {
 				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
 		else {
 			if (cmdwithargs.length() == 0)
-				cmdwithargs.replace(0, cmdwithargs.length(), prefix + "help");
+				cmdwithargs.replace(0, 0, prefix + "help");
 			else if (cmdwithargs.charAt(0) != prefix)
 				cmdwithargs.insert(0, prefix);
 			return false; //Don't treat / as mention, mentions can be used in public mcchat
