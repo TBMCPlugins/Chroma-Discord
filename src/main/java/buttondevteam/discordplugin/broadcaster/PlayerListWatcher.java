@@ -1,10 +1,12 @@
 package buttondevteam.discordplugin.broadcaster;
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
+import buttondevteam.discordplugin.playerfaker.DelegatingMockMaker;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.val;
 import org.bukkit.Bukkit;
 import org.mockito.Mockito;
+import org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -34,6 +36,7 @@ public class PlayerListWatcher {
 				module.logWarn("Player list already mocked!");
 				return false;
 			}
+			DelegatingMockMaker.getInstance().setMockMaker(new SubclassByteBuddyMockMaker());
 			val icbcl = Class.forName(nms + ".IChatBaseComponent");
 			Method sendMessageTemp;
 			try {
