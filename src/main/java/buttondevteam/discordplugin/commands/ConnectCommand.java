@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
@@ -48,7 +49,7 @@ public class ConnectCommand extends ICommand2DC {
 				return true;
 			}
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e);
+			TBMCCoreAPI.SendException("An error occured while connecting a Discord account!", e, DiscordPlugin.plugin);
 			channel.createMessage("An internal error occured!\n" + e).subscribe();
 		}
 		WaitingToConnect.put(p.getName(), author.getId().asString());

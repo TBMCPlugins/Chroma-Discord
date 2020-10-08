@@ -65,7 +65,7 @@ public class CommandListener {
 							return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
 								.map(m -> false);
 					} catch (Exception e) {
-						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e);
+						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e, DiscordPlugin.plugin);
 					}
 					return Mono.just(false); //If the command succeeded or there was an error, return false
 				}).defaultIfEmpty(true);

@@ -34,7 +34,7 @@ public class RoleCommand extends ICommand2DC {
 				.flatMap(m -> m.addRole(role.getId()).switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("added role."))))
 				.subscribe();
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while adding role!", e);
+			TBMCCoreAPI.SendException("Error while adding role!", e, grm);
 			sender.sendMessage("an error occured while adding the role.");
 		}
 		return true;
@@ -53,7 +53,7 @@ public class RoleCommand extends ICommand2DC {
 				.flatMap(m -> m.removeRole(role.getId()).switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("removed role."))))
 				.subscribe();
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while removing role!", e);
+			TBMCCoreAPI.SendException("Error while removing role!", e, grm);
 			sender.sendMessage("an error occured while removing the role.");
 		}
 		return true;

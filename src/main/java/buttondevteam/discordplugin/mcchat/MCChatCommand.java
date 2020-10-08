@@ -43,7 +43,7 @@ public class MCChatCommand extends ICommand2DC {
 				? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
 				: "disabled.")).subscribe();
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while setting mcchat for user " + author.getUsername() + "#" + author.getDiscriminator(), e);
+			TBMCCoreAPI.SendException("Error while setting mcchat for user " + author.getUsername() + "#" + author.getDiscriminator(), e, module);
 		}
 		return true;
 	} // TODO: Pin channel switching to indicate the current channel

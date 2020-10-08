@@ -101,7 +101,7 @@ public class PlayerListWatcher {
 					val params = method.getParameterTypes();
 					if (params.length == 0) {
 						TBMCCoreAPI.SendException("Found a strange method",
-							new Exception("Found a sendMessage() method without arguments."));
+							new Exception("Found a sendMessage() method without arguments."), module);
 						return null;
 					}
 					if (params[0].getSimpleName().equals("IChatBaseComponent[]"))
@@ -114,7 +114,7 @@ public class PlayerListWatcher {
 							sendMessage(args[0], true);
 					else
 						TBMCCoreAPI.SendException("Found a method with interesting params",
-							new Exception("Found a sendMessage(" + params[0].getSimpleName() + ") method"));
+							new Exception("Found a sendMessage(" + params[0].getSimpleName() + ") method"), module);
 					return null;
 				}
 
@@ -134,7 +134,7 @@ public class PlayerListWatcher {
 						this.sendAll(packet);
 						// CraftBukkit end
 					} catch (Exception e) {
-						TBMCCoreAPI.SendException("An error occurred while passing a vanilla message through the player list", e);
+						TBMCCoreAPI.SendException("An error occurred while passing a vanilla message through the player list", e, module);
 					}
 				}
 
@@ -147,7 +147,7 @@ public class PlayerListWatcher {
 							MCChatUtils.forAllMCChat(MCChatUtils.send((String) toPlainText.invoke(msgf.get(packet))));
 						}
 					} catch (Exception e) {
-						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e);
+						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e, module);
 					}
 				}
 			}).stubOnly());

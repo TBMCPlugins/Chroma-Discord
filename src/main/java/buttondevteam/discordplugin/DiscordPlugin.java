@@ -151,7 +151,7 @@ public class DiscordPlugin extends ButtonPlugin {
 						.collectList()).subscribe(this::handleReady); // Take all received GuildCreateEvents and make it a List
 			}); /* All guilds have been received, client is fully connected */
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e);
+			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e, this);
 			getLogger().severe("You may be able to reset the plugin using /discord reset");
 		}
 	}
@@ -204,7 +204,7 @@ public class DiscordPlugin extends ButtonPlugin {
 				val thr = new Throwable(
 					"The server shut down unexpectedly. See the log of the previous run for more details.");
 				thr.setStackTrace(new StackTraceElement[0]);
-				TBMCCoreAPI.SendException("The server crashed!", thr);
+				TBMCCoreAPI.SendException("The server crashed!", thr, this);
 			} else
 				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
 					.setTitle("Server started - chat connected."))), ChannelconBroadcast.RESTART);
@@ -230,7 +230,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			}
 			getLogger().info("Loaded!");
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e);
+			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e, this);
 		}
 	}
 
@@ -284,7 +284,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			mainServer = null; //Allow ReadyEvent again
 			//Configs are emptied so channels and servers are fetched again
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e);
+			TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e, this);
 		}
 	}
 

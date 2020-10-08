@@ -79,7 +79,7 @@ public class MCChatUtils {
 	private static void updatePL(LastMsgData lmd) {
 		if (!(lmd.channel instanceof TextChannel)) {
 			TBMCCoreAPI.SendException("Failed to update player list for channel " + lmd.channel.getId(),
-				new Exception("The channel isn't a (guild) text channel."));
+				new Exception("The channel isn't a (guild) text channel."), getModule());
 			return;
 		}
 		String topic = ((TextChannel) lmd.channel).getTopic().orElse("");

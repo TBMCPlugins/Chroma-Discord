@@ -73,7 +73,7 @@ public class UserinfoCommand extends ICommand2DC {
 			channel.createMessage(uinfo.toString()).subscribe();
 		} catch (Exception e) {
 			channel.createMessage("An error occured while getting the user!").subscribe();
-			TBMCCoreAPI.SendException("Error while getting info about " + target.getUsername() + "!", e);
+			TBMCCoreAPI.SendException("Error while getting info about " + target.getUsername() + "!", e, DiscordPlugin.plugin);
 		}
 		return true;
 	}

@@ -151,7 +151,7 @@ public class MCChatListener implements Listener {
 			sendtask.cancel();
 			sendtask = null;
 		} catch (Exception ex) {
-			TBMCCoreAPI.SendException("Error while sending message to Discord!", ex);
+			TBMCCoreAPI.SendException("Error while sending message to Discord!", ex, module);
 		}
 	}
 
@@ -320,13 +320,13 @@ public class MCChatListener implements Listener {
 						lmfd.removeSelfReaction(DiscordPlugin.DELIVERED_REACTION).subscribe(); // Remove it no matter what, we know it's there 99.99% of the time
 					}
 				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e);
+					TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e, module);
 				}
 				MCChatUtils.lastmsgfromd.put(event.getMessage().getChannelId().asLong(), event.getMessage());
 				event.getMessage().addReaction(DiscordPlugin.DELIVERED_REACTION).subscribe();
 			}
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e);
+			TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e, module);
 		}
 	}
 
@@ -391,9 +391,9 @@ public class MCChatListener implements Listener {
 					else
 						Bukkit.dispatchCommand(dsender, cmd);
 				} catch (NoClassDefFoundError e) {
-					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e);
+					TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e, module);
 				} catch (Exception e) {
-					TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "! Vanilla commands are only supported in some MC versions.", e);
+					TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "! Vanilla commands are only supported in some MC versions.", e, module);
 				}
 			});
 		return true;

@@ -63,7 +63,7 @@ public class CommonListeners {
 				timings.printElapsed("Run command 2");
 				return CommandListener.runCommand(event.getMessage(), ch, false);
 			});
-		}).onErrorContinue((err, obj) -> TBMCCoreAPI.SendException("An error occured while handling a message!", err))
+		}).onErrorContinue((err, obj) -> TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin))
 			.subscribe();
 		dispatcher.on(PresenceUpdateEvent.class).subscribe(event -> {
 			if (DiscordPlugin.SafeMode)

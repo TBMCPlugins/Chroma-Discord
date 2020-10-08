@@ -151,7 +151,10 @@ public final class DPUtils {
 					Component.setComponentEnabled(component, false);
 				path = config.getPath();
 			} catch (Exception e) {
-				TBMCCoreAPI.SendException("Failed to disable component after config error!", e);
+				if (component != null)
+					TBMCCoreAPI.SendException("Failed to disable component after config error!", e, component);
+				else
+					TBMCCoreAPI.SendException("Failed to disable component after config error!", e, DiscordPlugin.plugin);
 			}
 			getLogger().warning("The config value " + path + " isn't set correctly " + (component == null ? "in global settings!" : "for component " + component.getClass().getSimpleName() + "!"));
 			getLogger().warning("Set the correct ID in the config" + (component == null ? "" : " or disable this component") + " to remove this message.");

@@ -64,7 +64,7 @@ public abstract class DiscordSenderBase implements CommandSender {
 					}, 4); // Waits a 0.2 second to gather all/most of the different messages
 			}
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e);
+			TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e, DiscordPlugin.plugin);
 		}
 	}
 

@@ -18,6 +18,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class MinecraftChatModule extends Component<DiscordPlugin> {
 	private @Getter MCChatListener listener;
 	private ServerWatcher serverWatcher;
+	private LPInjector lpInjector;
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -155,9 +157,10 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		}
 
 		try {
-			new LPInjector(MainPlugin.Instance);
+			if (lpInjector == null)
+				lpInjector = new LPInjector(MainPlugin.Instance);
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e);
+			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e, this);
 		} catch (NoClassDefFoundError e) {
 			log("No LuckPerms, not injecting");
 			//e.printStackTrace();
@@ -168,7 +171,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 				serverWatcher = new ServerWatcher();
 				serverWatcher.enableDisable(true);
 			} catch (Exception e) {
-				TBMCCoreAPI.SendException("Failed to hack the server (object)!", e);
+				TBMCCoreAPI.SendException("Failed to hack the server (object)!", e, this);
 			}
 		}
 	}
@@ -179,7 +182,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			if (serverWatcher != null)
 				serverWatcher.enableDisable(false);
 		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Failed to restore the server object!", e);
+			TBMCCoreAPI.SendException("Failed to restore the server object!", e, this);
 		}
 		val chcons = MCChatCustom.getCustomChats();
 		val chconsc = getConfig().getConfig().createSection("chcons");
@@ -195,5 +198,10 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			chconc.set("brtoggles", chcon.brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.toList()));
 		}
 		MCChatListener.stop(true);
+	}
+
+	@Override
+	protected void unregister(JavaPlugin plugin) {
+		lpInjector = null; //Plugin restart, events need to be registered again
 	}
 }

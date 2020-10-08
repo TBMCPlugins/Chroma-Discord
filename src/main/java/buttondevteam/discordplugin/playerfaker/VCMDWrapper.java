@@ -50,7 +50,7 @@ public class VCMDWrapper {
 			return ret;
 		} catch (NoClassDefFoundError | Exception e) {
 			compatWarning(module);
-			TBMCCoreAPI.SendException("Failed to create vanilla command listener", e);
+			TBMCCoreAPI.SendException("Failed to create vanilla command listener", e, module);
 			return null;
 		}
 	}
