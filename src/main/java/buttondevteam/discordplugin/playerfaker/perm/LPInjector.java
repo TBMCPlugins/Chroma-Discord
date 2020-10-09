@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.playerfaker.perm;
 
-import buttondevteam.core.MainPlugin;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
+import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.lib.TBMCCoreAPI;
 import me.lucko.luckperms.bukkit.LPBukkitBootstrap;
@@ -42,7 +42,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 	private final Method setOldPermissible;
 	private final Method getOldPermissible;
 
-	public LPInjector(MainPlugin mp) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
+	public LPInjector(DiscordPlugin dp) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
 		LPBukkitBootstrap bs = (LPBukkitBootstrap) Bukkit.getPluginManager().getPlugin("LuckPerms");
 		Field field = LPBukkitBootstrap.class.getDeclaredField("plugin");
 		field.setAccessible(true);
@@ -77,7 +77,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		getOldPermissible = LuckPermsPermissible.class.getDeclaredMethod("getOldPermissible");
 		getOldPermissible.setAccessible(true);
 
-		TBMCCoreAPI.RegisterEventsForExceptions(this, mp);
+		TBMCCoreAPI.RegisterEventsForExceptions(this, dp);
 	}
 
 
@@ -146,7 +146,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 			t.printStackTrace();
 
 			e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.LOADING_SETUP_ERROR.asString(plugin.getLocaleManager()));
-			return;
+			//return;
 		}
 
 		//this.plugin.getContextManager().signalContextUpdate(player);
@@ -167,7 +167,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		this.plugin.getBootstrap().getServer().getScheduler().runTaskLaterAsynchronously(this.plugin.getBootstrap(), () -> {
 			// Remove the custom permissible
 			try {
-				uninject(player, true);
+				uninject(player);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -207,7 +207,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		player.setPerm(newPermissible);
 	}
 
-	private void uninject(DiscordConnectedPlayer player, boolean dummy) throws Exception {
+	private void uninject(DiscordConnectedPlayer player) throws Exception {
 
 		// gets the players current permissible.
 		PermissibleBase permissible = player.getPerm();
@@ -223,18 +223,9 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 			((AtomicBoolean) getActive.invoke(lpPermissible)).set(false);
 
 			// handle the replacement permissible.
-			if (dummy) {
-				// just inject a dummy class. this is used when we know the player is about to quit the server.
-				player.setPerm(DummyPermissibleBase.INSTANCE);
+			// just inject a dummy class. this is used when we know the player is about to quit the server.
+			player.setPerm(DummyPermissibleBase.INSTANCE);
 
-			} else {
-				PermissibleBase newPb = (PermissibleBase) getOldPermissible.invoke(lpPermissible);
-				if (newPb == null) {
-					newPb = new PermissibleBase(player);
-				}
-
-				player.setPerm(newPb);
-			}
 		}
 	}
 }

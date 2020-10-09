@@ -45,8 +45,9 @@ public class MCChatListener implements Listener {
 	private BukkitTask sendtask;
 	private final LinkedBlockingQueue<AbstractMap.SimpleEntry<TBMCChatEvent, Instant>> sendevents = new LinkedBlockingQueue<>();
 	private Runnable sendrunnable;
-	private static Thread sendthread;
+	private Thread sendthread;
 	private final MinecraftChatModule module;
+	private boolean stop = false; //A new instance will be created on enable
 
 	public MCChatListener(MinecraftChatModule minecraftChatModule) {
 		module = minecraftChatModule;
@@ -62,7 +63,7 @@ public class MCChatListener implements Listener {
 		sendrunnable = () -> {
 			sendthread = Thread.currentThread();
 			processMCToDiscord();
-			if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
+			if (DiscordPlugin.plugin.isEnabled() && !stop) //Don't run again if shutting down
 				sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
 		};
 		sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable);
@@ -188,12 +189,14 @@ public class MCChatListener implements Listener {
 	// The maps may not contain the senders for UnconnectedSenders
 
 	/**
-	 * Stop the listener. Any calls to onMCChat will restart it as long as we're not in safe mode.
+	 * Stop the listener permanently. Enabling the module will create a new instance.
 	 *
 	 * @param wait Wait 5 seconds for the threads to stop
 	 */
-	public static void stop(boolean wait) {
+	public void stop(boolean wait) {
+		stop = true;
 		MCChatPrivate.logoutAll();
+		MCChatUtils.LoggedInPlayers.clear();
 		if (sendthread != null) sendthread.interrupt();
 		if (recthread != null) recthread.interrupt();
 		try {
@@ -221,7 +224,7 @@ public class MCChatListener implements Listener {
 	private BukkitTask rectask;
 	private final LinkedBlockingQueue<MessageCreateEvent> recevents = new LinkedBlockingQueue<>();
 	private Runnable recrun;
-	private static Thread recthread;
+	private Thread recthread;
 
 	// Discord
 	public Mono<Boolean> handleDiscord(MessageCreateEvent ev) {
@@ -257,7 +260,7 @@ public class MCChatListener implements Listener {
 				recrun = () -> { //Don't return in a while loop next time
 					recthread = Thread.currentThread();
 					processDiscordToMC();
-					if (DiscordPlugin.plugin.isEnabled()) //Don't run again if shutting down
+					if (DiscordPlugin.plugin.isEnabled() && !stop) //Don't run again if shutting down
 						rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Continue message processing
 				};
 				rectask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin, recrun); //Start message processing

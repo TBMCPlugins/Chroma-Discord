@@ -82,6 +82,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 		while (!stop) {
 			try {
 				if (!isEnabled()) {
+					//noinspection BusyWait
 					Thread.sleep(10000);
 					continue;
 				}
@@ -135,6 +136,7 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 				e.printStackTrace();
 			}
 			try {
+				//noinspection BusyWait
 				Thread.sleep(10000);
 			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();

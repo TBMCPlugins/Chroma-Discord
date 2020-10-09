@@ -15,16 +15,12 @@ public class ChromaBot {
 	 * May be null if it's not initialized. Initialization happens after the server is done loading (using {@link BukkitScheduler#runTaskAsynchronously(org.bukkit.plugin.Plugin, Runnable)})
 	 */
 	private static @Getter ChromaBot instance;
-	private DiscordPlugin dp;
 
 	/**
 	 * This will set the instance field.
-	 *
-	 * @param dp The Discord plugin
 	 */
-	ChromaBot(DiscordPlugin dp) {
+	ChromaBot() {
 		instance = this;
-		this.dp = dp;
 	}
 
 	static void delete() {
@@ -37,7 +33,7 @@ public class ChromaBot {
 	 * @param message The message to send, duh (use {@link MessageChannel#createMessage(String)})
 	 */
 	public void sendMessage(Function<Mono<MessageChannel>, Mono<Message>> message) {
-		MCChatUtils.forAllMCChat(ch -> message.apply(ch).subscribe());
+		MCChatUtils.forPublicPrivateChat(message::apply).subscribe();
 	}
 
 	/**
@@ -47,7 +43,7 @@ public class ChromaBot {
 	 * @param toggle  The toggle type for channelcon
 	 */
 	public void sendMessageCustomAsWell(Function<Mono<MessageChannel>, Mono<Message>> message, @Nullable ChannelconBroadcast toggle) {
-		MCChatUtils.forCustomAndAllMCChat(ch -> message.apply(ch).subscribe(), toggle, false);
+		MCChatUtils.forCustomAndAllMCChat(message::apply, toggle, false).subscribe();
 	}
 
 	public void updatePlayerList() {

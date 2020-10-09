@@ -144,7 +144,7 @@ public class PlayerListWatcher {
 						if (packet.getClass() == ppoc) {
 							Field msgf = ppoc.getDeclaredField("a");
 							msgf.setAccessible(true);
-							MCChatUtils.forAllMCChat(MCChatUtils.send((String) toPlainText.invoke(msgf.get(packet))));
+							MCChatUtils.forPublicPrivateChat(MCChatUtils.send((String) toPlainText.invoke(msgf.get(packet)))).subscribe();
 						}
 					} catch (Exception e) {
 						TBMCCoreAPI.SendException("Failed to broadcast message sent to all players - hacking failed.", e, module);

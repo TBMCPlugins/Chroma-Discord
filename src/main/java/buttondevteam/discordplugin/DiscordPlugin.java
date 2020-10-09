@@ -7,10 +7,10 @@ import buttondevteam.discordplugin.exceptions.ExceptionListenerModule;
 import buttondevteam.discordplugin.fun.FunModule;
 import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.listeners.MCListener;
-import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand;
 import buttondevteam.discordplugin.role.GameRoleModule;
+import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.architecture.ButtonPlugin;
@@ -29,13 +29,10 @@ import discord4j.core.object.entity.Role;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.rest.util.Color;
 import discord4j.store.jdk.JdkStoreService;
 import lombok.Getter;
 import lombok.val;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.mockito.internal.util.MockUtil;
 import reactor.core.publisher.Mono;
 
@@ -43,7 +40,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @ButtonPlugin.ConfigOpts(disableConfigGen = true)
 public class DiscordPlugin extends ButtonPlugin {
@@ -118,7 +114,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			getLogger().info("Initializing...");
 			plugin = this;
 			manager = new Command2DC();
-			registerCommand(new DiscordMCCommand()); //Register so that the reset command works
+			registerCommand(new DiscordMCCommand()); //Register so that the restart command works
 			String token;
 			File tokenFile = new File("TBMC", "Token.txt");
 			if (tokenFile.exists()) //Legacy support
@@ -132,7 +128,7 @@ public class DiscordPlugin extends ButtonPlugin {
 					conf.set("token", "Token goes here");
 					conf.save(privateFile);
 
-					getLogger().severe("Token not found! Please set it in private.yml then do /discord reset");
+					getLogger().severe("Token not found! Please set it in private.yml then do /discord restart");
 					getLogger().severe("You need to have a bot account to use with your server.");
 					getLogger().severe("If you don't have one, go to https://discordapp.com/developers/applications/ and create an application, then create a bot for it and copy the bot token.");
 					return;
@@ -152,7 +148,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			}); /* All guilds have been received, client is fully connected */
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e, this);
-			getLogger().severe("You may be able to reset the plugin using /discord reset");
+			getLogger().severe("You may be able to restart the plugin using /discord restart");
 		}
 	}
 
@@ -168,7 +164,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			mainServer = mainServer().get().orElse(null); //Shouldn't change afterwards
 			if (mainServer == null) {
 				if (event.size() == 0) {
-					getLogger().severe("Main server not found! Invite the bot and do /discord reset");
+					getLogger().severe("Main server not found! Invite the bot and do /discord restart");
 					dc.getApplicationInfo().subscribe(info ->
 						getLogger().severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId().asString() + "&scope=bot&permissions=268509264"));
 					saveConfig(); //Put default there
@@ -182,40 +178,6 @@ public class DiscordPlugin extends ButtonPlugin {
 			DPUtils.disableIfConfigErrorRes(null, commandChannel(), DPUtils.getMessageChannel(commandChannel()));
 			//Won't disable, just prints the warning here
 
-			Component.registerComponent(this, new GeneralEventBroadcasterModule());
-			Component.registerComponent(this, new MinecraftChatModule());
-			Component.registerComponent(this, new ExceptionListenerModule());
-			Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
-			Component.registerComponent(this, new AnnouncerModule());
-			Component.registerComponent(this, new FunModule());
-			new ChromaBot(this).updatePlayerList(); //Initialize ChromaBot - The MCChatModule is tested to be enabled
-
-			getManager().registerCommand(new VersionCommand());
-			getManager().registerCommand(new UserinfoCommand());
-			getManager().registerCommand(new HelpCommand());
-			getManager().registerCommand(new DebugCommand());
-			getManager().registerCommand(new ConnectCommand());
-			if (DiscordMCCommand.resetting) //These will only execute if the chat is enabled
-				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.CYAN)
-					.setTitle("Discord plugin restarted - chat connected."))), ChannelconBroadcast.RESTART); //Really important to note the chat, hmm
-			else if (getConfig().getBoolean("serverup", false)) {
-				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.YELLOW)
-					.setTitle("Server recovered from a crash - chat connected."))), ChannelconBroadcast.RESTART);
-				val thr = new Throwable(
-					"The server shut down unexpectedly. See the log of the previous run for more details.");
-				thr.setStackTrace(new StackTraceElement[0]);
-				TBMCCoreAPI.SendException("The server crashed!", thr, this);
-			} else
-				ChromaBot.getInstance().sendMessageCustomAsWell(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(Color.GREEN)
-					.setTitle("Server started - chat connected."))), ChannelconBroadcast.RESTART);
-
-			DiscordMCCommand.resetting = false; //This is the last event handling this flag
-
-			getConfig().set("serverup", true);
-			saveConfig();
-			TBMCCoreAPI.SendUnsentExceptions();
-			TBMCCoreAPI.SendUnsentDebugMessages();
-
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
@@ -223,6 +185,25 @@ public class DiscordPlugin extends ButtonPlugin {
 				? ((DiscordSenderBase) sender).getChromaUser() : null));
 
 			IHaveConfig.pregenConfig(this, null);
+
+			var cb = new ChromaBot(); //Initialize ChromaBot
+			Component.registerComponent(this, new GeneralEventBroadcasterModule());
+			Component.registerComponent(this, new MinecraftChatModule());
+			Component.registerComponent(this, new ExceptionListenerModule());
+			Component.registerComponent(this, new GameRoleModule()); //Needs the mainServer to be set
+			Component.registerComponent(this, new AnnouncerModule());
+			Component.registerComponent(this, new FunModule());
+			cb.updatePlayerList(); //The MCChatModule is tested to be enabled
+
+			getManager().registerCommand(new VersionCommand());
+			getManager().registerCommand(new UserinfoCommand());
+			getManager().registerCommand(new HelpCommand());
+			getManager().registerCommand(new DebugCommand());
+			getManager().registerCommand(new ConnectCommand());
+
+			TBMCCoreAPI.SendUnsentExceptions();
+			TBMCCoreAPI.SendUnsentDebugMessages();
+
 			if (!TBMCCoreAPI.IsTestServer()) {
 				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
 			} else {
@@ -234,46 +215,24 @@ public class DiscordPlugin extends ButtonPlugin {
 		}
 	}
 
-	/**
-	 * Always true, except when running "stop" from console
-	 */
-	public static boolean Restart;
-
 	@Override
 	public void pluginPreDisable() {
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 		Timings timings = new Timings();
 		timings.printElapsed("Disable start");
-		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> {
-			timings.printElapsed("Sending message to " + ch.getMention());
-			if (DiscordMCCommand.resetting)
-				ecs.setColor(Color.ORANGE).setTitle("Discord plugin restarting");
-			else
-				ecs.setColor(Restart ? Color.ORANGE : Color.RED)
-					.setTitle(Restart ? "Server restarting" : "Server stopping")
-					.setDescription(
-						Bukkit.getOnlinePlayers().size() > 0
-							? (DPUtils
-							.sanitizeString(Bukkit.getOnlinePlayers().stream()
-								.map(Player::getDisplayName).collect(Collectors.joining(", ")))
-							+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
-							+ "thrown out") //TODO: Make configurable
-							: ""); //If 'restart' is disabled then this isn't shown even if joinleave is enabled
-		})).subscribe(), ChannelconBroadcast.RESTART, false);
 		timings.printElapsed("Updating player list");
 		ChromaBot.getInstance().updatePlayerList();
 		timings.printElapsed("Done");
+		if (MinecraftChatModule.state == DPState.RUNNING)
+			MinecraftChatModule.state = DPState.STOPPING_SERVER;
 	}
 
 	@Override
 	public void pluginDisable() {
 		Timings timings = new Timings();
 		timings.printElapsed("Actual disable start (logout)");
-		timings.printElapsed("Config setup");
-		getConfig().set("serverup", false);
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 
-		saveConfig();
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();

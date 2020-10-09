@@ -29,6 +29,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
@@ -37,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -67,7 +69,7 @@ public class MCChatUtils {
 	}
 
 	private static boolean notEnabled() {
-		return getModule() == null;
+		return (module == null) || (!module.disabling && (getModule() == null)); //Allow using things while disabling the module
 	}
 
 	private static MinecraftChatModule getModule() {
@@ -142,30 +144,34 @@ public class MCChatUtils {
 		return null;
 	}
 
-	public static void forAllMCChat(Consumer<Mono<MessageChannel>> action) {
-		if (notEnabled()) return;
-		action.accept(module.chatChannelMono());
+	public static Mono<?> forPublicPrivateChat(Function<Mono<MessageChannel>, Mono<?>> action) {
+		if (notEnabled()) return Mono.empty();
+		var list = new ArrayList<Mono<?>>();
+		list.add(action.apply(module.chatChannelMono()));
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
-			action.accept(Mono.just(data.channel));
+			list.add(action.apply(Mono.just(data.channel)));
 		// lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
+		return Mono.whenDelayError(list);
 	}
 
 	/**
 	 * For custom and all MC chat
 	 *
-	 * @param action  The action to act
+	 * @param action  The action to act (cannot complete empty)
 	 * @param toggle  The toggle to check
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forCustomAndAllMCChat(Consumer<Mono<MessageChannel>> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-		if (notEnabled()) return;
+	public static Mono<?> forCustomAndAllMCChat(Function<Mono<MessageChannel>, Mono<?>> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+		if (notEnabled()) return Mono.empty();
+		var list = new ArrayList<Publisher<?>>();
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
-			forAllMCChat(action);
-		final Consumer<MCChatCustom.CustomLMD> customLMDConsumer = cc -> action.accept(Mono.just(cc.channel));
+			list.add(forPublicPrivateChat(action));
+		final Function<MCChatCustom.CustomLMD, Publisher<?>> customLMDFunction = cc -> action.apply(Mono.just(cc.channel));
 		if (toggle == null)
-			MCChatCustom.lastmsgCustom.forEach(customLMDConsumer);
+			MCChatCustom.lastmsgCustom.stream().map(customLMDFunction).forEach(list::add);
 		else
-			MCChatCustom.lastmsgCustom.stream().filter(cc -> (cc.toggles & toggle.flag) != 0).forEach(customLMDConsumer);
+			MCChatCustom.lastmsgCustom.stream().filter(cc -> (cc.toggles & toggle.flag) != 0).map(customLMDFunction).forEach(list::add);
+		return Mono.whenDelayError(list);
 	}
 
 	/**
@@ -175,16 +181,17 @@ public class MCChatUtils {
 	 * @param sender The sender to check perms of or null to send to all that has it toggled
 	 * @param toggle The toggle to check or null to send to all allowed
 	 */
-	public static void forAllowedCustomMCChat(Consumer<Mono<MessageChannel>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
-		if (notEnabled()) return;
-		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
+	public static Mono<?> forAllowedCustomMCChat(Function<Mono<MessageChannel>, Mono<?>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle) {
+		if (notEnabled()) return Mono.empty();
+		Stream<Publisher<?>> st = MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			//new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
 			if (toggle != null && (clmd.toggles & toggle.flag) == 0)
 				return false; //If null then allow
 			if (sender == null)
 				return true;
 			return clmd.groupID.equals(clmd.mcchannel.getGroupID(sender));
-		}).forEach(cc -> action.accept(Mono.just(cc.channel))); //TODO: Send error messages on channel connect
+		}).map(cc -> action.apply(Mono.just(cc.channel))); //TODO: Send error messages on channel connect
+		return Mono.whenDelayError(st::iterator); //Can't convert as an iterator or inside the stream, but I can convert it as a stream
 	}
 
 	/**
@@ -195,32 +202,35 @@ public class MCChatUtils {
 	 * @param toggle  The toggle to check or null to send to all allowed
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
-	public static void forAllowedCustomAndAllMCChat(Consumer<Mono<MessageChannel>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-		if (notEnabled()) return;
+	public static Mono<?> forAllowedCustomAndAllMCChat(Function<Mono<MessageChannel>, Mono<?>> action, @Nullable CommandSender sender, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+		if (notEnabled()) return Mono.empty();
+		var cc = forAllowedCustomMCChat(action, sender, toggle);
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
-			forAllMCChat(action);
-		forAllowedCustomMCChat(action, sender, toggle);
+			return Mono.whenDelayError(forPublicPrivateChat(action), cc);
+		return Mono.whenDelayError(cc);
 	}
 
-	public static Consumer<Mono<MessageChannel>> send(String message) {
+	public static Function<Mono<MessageChannel>, Mono<?>> send(String message) {
 		return ch -> ch.flatMap(mc -> {
 			resetLastMessage(mc);
 			return mc.createMessage(DPUtils.sanitizeString(message));
-		}).subscribe();
+		});
 	}
 
-	public static void forAllowedMCChat(Consumer<Mono<MessageChannel>> action, TBMCSystemChatEvent event) {
-		if (notEnabled()) return;
+	public static Mono<?> forAllowedMCChat(Function<Mono<MessageChannel>, Mono<?>> action, TBMCSystemChatEvent event) {
+		if (notEnabled()) return Mono.empty();
+		var list = new ArrayList<Mono<?>>();
 		if (event.getChannel().isGlobal())
-			action.accept(module.chatChannelMono());
+			list.add(action.apply(module.chatChannelMono()));
 		for (LastMsgData data : MCChatPrivate.lastmsgPerUser)
 			if (event.shouldSendTo(getSender(data.channel.getId(), data.user)))
-				action.accept(Mono.just(data.channel)); //TODO: Only store ID?
+				list.add(action.apply(Mono.just(data.channel))); //TODO: Only store ID?
 		MCChatCustom.lastmsgCustom.stream().filter(clmd -> {
 			if (!clmd.brtoggles.contains(event.getTarget()))
 				return false;
 			return event.shouldSendTo(clmd.dcp);
-		}).map(clmd -> Mono.just(clmd.channel)).forEach(action);
+		}).map(clmd -> action.apply(Mono.just(clmd.channel))).forEach(list::add);
+		return Mono.whenDelayError(list);
 	}
 
 	/**
@@ -357,8 +367,11 @@ public class MCChatUtils {
 			}
 			callEventExcludingSome(new PlayerJoinEvent(dcp, ""));
 			dcp.setLoggedIn(true);
-			if (module != null)
+			if (module != null) {
+				if (module.serverWatcher != null)
+					module.serverWatcher.fakePlayers.add(dcp);
 				module.log(dcp.getName() + " (" + dcp.getUniqueId() + ") logged in from Discord");
+			}
 		});
 	}
 
@@ -374,8 +387,11 @@ public class MCChatUtils {
 		if (needsSync) callEventSync(event);
 		else callEventExcludingSome(event);
 		dcp.setLoggedIn(false);
-		if (module != null)
+		if (module != null) {
 			module.log(dcp.getName() + " (" + dcp.getUniqueId() + ") logged out from Discord");
+			if (module.serverWatcher != null)
+				module.serverWatcher.fakePlayers.remove(dcp);
+		}
 	}
 
 	static void callEventSync(Event event) {

@@ -7,6 +7,8 @@ import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.chat.ICommand2MC;
@@ -58,7 +60,7 @@ public class DiscordMCCommand extends ICommand2MC {
 
 	@Command2.Subcommand(permGroup = Command2.Subcommand.MOD_GROUP, helpText = {
 		"Reload Discord plugin",
-		"Reloads the config. To apply some changes, you may need to also run /discord reset."
+		"Reloads the config. To apply some changes, you may need to also run /discord restart."
 	})
 	public void reload(CommandSender sender) {
 		if (DiscordPlugin.plugin.tryReloadConfig())
@@ -67,26 +69,24 @@ public class DiscordMCCommand extends ICommand2MC {
 			sender.sendMessage("§cFailed to reload config.");
 	}
 
-	public static boolean resetting = false;
-
 	@Command2.Subcommand(permGroup = Command2.Subcommand.MOD_GROUP, helpText = {
-		"Reset ChromaBot", //
+		"Restart the plugin", //
 		"This command disables and then enables the plugin." //
 	})
-	public void reset(CommandSender sender) {
+	public void restart(CommandSender sender) {
 		Runnable task = () -> {
 			if (!DiscordPlugin.plugin.tryReloadConfig()) {
-				sender.sendMessage("§cFailed to reload config so not resetting. Check the console.");
+				sender.sendMessage("§cFailed to reload config so not restarting. Check the console.");
 				return;
 			}
-			resetting = true; //Turned off after sending enable message (ReadyEvent)
+			MinecraftChatModule.state = DPState.RESTARTING_PLUGIN; //Reset in MinecraftChatModule
 			sender.sendMessage("§bDisabling DiscordPlugin...");
 			Bukkit.getPluginManager().disablePlugin(DiscordPlugin.plugin);
 			if (!(sender instanceof DiscordSenderBase)) //Sending to Discord errors
 				sender.sendMessage("§bEnabling DiscordPlugin...");
 			Bukkit.getPluginManager().enablePlugin(DiscordPlugin.plugin);
 			if (!(sender instanceof DiscordSenderBase)) //Sending to Discord errors
-				sender.sendMessage("§bReset finished!");
+				sender.sendMessage("§bRestart finished!");
 		};
 		if (!Bukkit.getName().equals("Paper")) {
 			getPlugin().getLogger().warning("Async plugin events are not supported by the server, running on main thread");
@@ -116,9 +116,8 @@ public class DiscordMCCommand extends ICommand2MC {
 		}
 		DiscordPlugin.mainServer.getInvites().limitRequest(1)
 			.switchIfEmpty(Mono.fromRunnable(() -> sender.sendMessage("§cNo invites found for the server.")))
-			.subscribe(inv -> {
-				sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode());
-			}, e -> sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it."));
+			.subscribe(inv -> sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode()),
+				e -> sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it."));
 	}
 
 	@Override

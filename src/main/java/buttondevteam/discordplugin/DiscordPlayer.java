@@ -3,6 +3,8 @@ package buttondevteam.discordplugin;
 import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.UserClass;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 
 @UserClass(foldername = "discord")
 public class DiscordPlayer extends ChromaGamerBase {
@@ -20,7 +22,7 @@ public class DiscordPlayer extends ChromaGamerBase {
 
 	/**
 	 * Returns true if player has the private Minecraft chat enabled. For setting the value, see
-	 * {@link MCChatPrivate#privateMCChat(sx.blah.discord.handle.obj.MessageChannel, boolean, sx.blah.discord.handle.obj.User, DiscordPlayer)}
+	 * {@link MCChatPrivate#privateMCChat(MessageChannel, boolean, User, DiscordPlayer)}
 	 */
 	public boolean isMinecraftChatEnabled() {
 		return MCChatPrivate.isMinecraftChatEnabled(this);

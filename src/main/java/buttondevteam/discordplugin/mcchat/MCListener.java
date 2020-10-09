@@ -63,7 +63,7 @@ class MCListener implements Listener {
 			}
 			final String message = e.getJoinMessage();
 			if (message != null && message.trim().length() > 0)
-				MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
+				MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true).subscribe();
 			ChromaBot.getInstance().updatePlayerList();
 		});
 	}
@@ -80,7 +80,7 @@ class MCListener implements Listener {
 			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.getQuitMessage();
 		if (message != null && message.trim().length() > 0)
-			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true);
+			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true).subscribe();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -92,7 +92,7 @@ class MCListener implements Listener {
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerDeath(PlayerDeathEvent e) {
-		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH, true);
+		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage()), e.getEntity(), ChannelconBroadcast.DEATH, true).subscribe();
 	}
 
 	@EventHandler
@@ -102,7 +102,7 @@ class MCListener implements Listener {
 			return;
 		final String msg = base.getDisplayName()
 			+ " is " + (e.getValue() ? "now" : "no longer") + " AFK.";
-		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false);
+		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false).subscribe();
 	}
 
 	private ConfigData<Mono<Role>> muteRole() {
@@ -137,12 +137,12 @@ class MCListener implements Listener {
 
 	@EventHandler
 	public void onChatSystemMessage(TBMCSystemChatEvent event) {
-		MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage()), event);
+		MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage()), event).subscribe();
 	}
 
 	@EventHandler
 	public void onBroadcastMessage(BroadcastMessageEvent event) {
-		MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false);
+		MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false).subscribe();
 	}
 
 	@EventHandler
@@ -151,8 +151,8 @@ class MCListener implements Listener {
 			: event.getSender().getName();
 		//Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
 		DiscordPlugin.mainServer.getEmojis().filter(e -> "YEEHAW".equals(e.getName()))
-			.take(1).singleOrEmpty().map(Optional::of).defaultIfEmpty(Optional.empty()).subscribe(yeehaw ->
-			MCChatUtils.forAllMCChat(MCChatUtils.send(name + (yeehaw.map(guildEmoji -> " <:YEEHAW:" + guildEmoji.getId().asString() + ">s").orElse(" YEEHAWs")))));
+			.take(1).singleOrEmpty().map(Optional::of).defaultIfEmpty(Optional.empty()).flatMap(yeehaw ->
+			MCChatUtils.forPublicPrivateChat(MCChatUtils.send(name + (yeehaw.map(guildEmoji -> " <:YEEHAW:" + guildEmoji.getId().asString() + ">s").orElse(" YEEHAWs"))))).subscribe();
 	}
 
 	@EventHandler

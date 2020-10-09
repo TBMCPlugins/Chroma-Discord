@@ -1,12 +1,13 @@
 package buttondevteam.discordplugin.mcchat;
 
-import buttondevteam.core.MainPlugin;
 import buttondevteam.core.component.channel.Channel;
+import buttondevteam.discordplugin.ChannelconBroadcast;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.playerfaker.ServerWatcher;
 import buttondevteam.discordplugin.playerfaker.perm.LPInjector;
+import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.architecture.Component;
@@ -15,10 +16,11 @@ import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import com.google.common.collect.Lists;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.rest.util.Color;
 import lombok.Getter;
 import lombok.val;
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.entity.Player;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -30,9 +32,11 @@ import java.util.stream.Collectors;
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
  */
 public class MinecraftChatModule extends Component<DiscordPlugin> {
+	public static DPState state = DPState.RUNNING;
 	private @Getter MCChatListener listener;
-	private ServerWatcher serverWatcher;
+	ServerWatcher serverWatcher;
 	private LPInjector lpInjector;
+	boolean disabling = false;
 
 	/**
 	 * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
@@ -123,6 +127,11 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 */
 	private final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
 
+	/**
+	 * Set by the component to report crashes.
+	 */
+	private final ConfigData<Boolean> serverUp = getConfig().getData("serverUp", false);
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
@@ -158,7 +167,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 
 		try {
 			if (lpInjector == null)
-				lpInjector = new LPInjector(MainPlugin.Instance);
+				lpInjector = new LPInjector(DiscordPlugin.plugin);
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e, this);
 		} catch (NoClassDefFoundError e) {
@@ -170,23 +179,68 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			try {
 				serverWatcher = new ServerWatcher();
 				serverWatcher.enableDisable(true);
+				log("Finished hooking into the server");
 			} catch (Exception e) {
 				TBMCCoreAPI.SendException("Failed to hack the server (object)!", e, this);
 			}
 		}
+
+		if (state == DPState.RESTARTING_PLUGIN) { //These will only execute if the chat is enabled
+			sendStateMessage(Color.CYAN, "Discord plugin restarted - chat connected."); //Really important to note the chat, hmm
+			state = DPState.RUNNING;
+		} else if (state == DPState.DISABLED_MCCHAT) {
+			sendStateMessage(Color.CYAN, "Minecraft chat enabled - chat connected.");
+			state = DPState.RUNNING;
+		} else if (serverUp.get()) {
+			sendStateMessage(Color.YELLOW, "Server started after a crash - chat connected.");
+			val thr = new Throwable("The server shut down unexpectedly. See the log of the previous run for more details.");
+			thr.setStackTrace(new StackTraceElement[0]);
+			TBMCCoreAPI.SendException("The server crashed!", thr, this);
+		} else
+			sendStateMessage(Color.GREEN, "Server started - chat connected.");
+		serverUp.set(true);
 	}
 
 	@Override
 	protected void disable() {
+		disabling = true;
+		if (state == DPState.RESTARTING_PLUGIN) //These will only execute if the chat is enabled
+			sendStateMessage(Color.ORANGE, "Discord plugin restarting");
+		else if (state == DPState.RUNNING) {
+			sendStateMessage(Color.ORANGE, "Minecraft chat disabled");
+			state = DPState.DISABLED_MCCHAT;
+		} else {
+			String kickmsg = Bukkit.getOnlinePlayers().size() > 0
+				? (DPUtils
+				.sanitizeString(Bukkit.getOnlinePlayers().stream()
+					.map(Player::getDisplayName).collect(Collectors.joining(", ")))
+				+ (Bukkit.getOnlinePlayers().size() == 1 ? " was " : " were ")
+				+ "thrown out") //TODO: Make configurable
+				: "";
+			if (state == DPState.RESTARTING_SERVER)
+				sendStateMessage(Color.ORANGE, "Server restarting", kickmsg);
+			else if (state == DPState.STOPPING_SERVER)
+				sendStateMessage(Color.RED, "Server stopping", kickmsg);
+			else
+				sendStateMessage(Color.GRAY, "Unknown state, please report.");
+		} //If 'restart' is disabled then this isn't shown even if joinleave is enabled
+
+		serverUp.set(false); //Disable even if just the component is disabled because that way it won't falsely report crashes
+
 		try { //If it's not enabled it won't do anything
-			if (serverWatcher != null)
+			if (serverWatcher != null) {
 				serverWatcher.enableDisable(false);
-		} catch (Exception e) {
+				log("Finished unhooking the server");
+			}
+		} catch (
+			Exception e) {
 			TBMCCoreAPI.SendException("Failed to restore the server object!", e, this);
 		}
+
 		val chcons = MCChatCustom.getCustomChats();
 		val chconsc = getConfig().getConfig().createSection("chcons");
-		for (val chcon : chcons) {
+		for (
+			val chcon : chcons) {
 			val chconc = chconsc.createSection(chcon.channel.getId().asString());
 			chconc.set("mcchid", chcon.mcchannel.ID);
 			chconc.set("chid", chcon.channel.getId().asLong());
@@ -197,11 +251,23 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			chconc.set("toggles", chcon.toggles);
 			chconc.set("brtoggles", chcon.brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.toList()));
 		}
-		MCChatListener.stop(true);
+		listener.stop(true);
+		disabling = false;
 	}
 
-	@Override
-	protected void unregister(JavaPlugin plugin) {
-		lpInjector = null; //Plugin restart, events need to be registered again
+	/**
+	 * It will block to make sure all messages are sent
+	 */
+	private void sendStateMessage(Color color, String message) {
+		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(color)
+			.setTitle(message))), ChannelconBroadcast.RESTART, false).block();
+	}
+
+	/**
+	 * It will block to make sure all messages are sent
+	 */
+	private void sendStateMessage(Color color, String message, String extra) {
+		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(color)
+			.setTitle(message).setDescription(extra))), ChannelconBroadcast.RESTART, false).block();
 	}
 }

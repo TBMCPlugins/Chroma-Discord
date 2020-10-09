@@ -15,7 +15,7 @@ import java.util.*;
 
 public class ServerWatcher {
 	private List<Player> playerList;
-	private final List<Player> fakePlayers = new ArrayList<>();
+	public final List<Player> fakePlayers = new ArrayList<>();
 	private Server origServer;
 
 	@IgnoreForBinding
@@ -43,12 +43,12 @@ public class ServerWatcher {
 									.filter(dcp -> dcp.getName().equalsIgnoreCase(argument)).findAny().orElse(null);
 							}
 							break;
-						case "getOnlinePlayers":
+						/*case "getOnlinePlayers":
 							if (playerList == null) {
 								@SuppressWarnings("unchecked") var list = (List<Player>) method.invoke(origServer, invocation.getArguments());
 								playerList = new AppendListView<>(list, fakePlayers);
-							}
-							return playerList;
+							} - Your scientists were so preoccupied with whether or not they could, they didn’t stop to think if they should.
+							return playerList;*/
 						case "createProfile": //Paper's method, casts the player to a CraftPlayer
 							if (pc == 2) {
 								UUID uuid = invocation.getArgument(0);

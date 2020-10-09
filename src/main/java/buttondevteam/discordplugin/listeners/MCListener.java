@@ -3,6 +3,8 @@ package buttondevteam.discordplugin.listeners;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
+import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.lib.TBMCCommandPreprocessEvent;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
 import buttondevteam.lib.player.TBMCPlayerJoinEvent;
@@ -53,6 +55,9 @@ public class MCListener implements Listener {
 
 	@EventHandler
 	public void onCommandPreprocess(TBMCCommandPreprocessEvent e) {
-		DiscordPlugin.Restart = !e.getMessage().equalsIgnoreCase("/stop"); // The variable is always true except if stopped
+		if (e.getMessage().equalsIgnoreCase("/stop"))
+			MinecraftChatModule.state = DPState.STOPPING_SERVER;
+		else
+			MinecraftChatModule.state = DPState.RESTARTING_SERVER;
 	}
 }

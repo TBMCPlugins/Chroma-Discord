@@ -8,6 +8,8 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Delegate;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -24,10 +26,8 @@ import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.UUID;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 import static org.mockito.Answers.RETURNS_DEFAULTS;
 
@@ -161,6 +161,11 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	}
 
 	@Override
+	public Location getEyeLocation() {
+		return getLocation();
+	}
+
+	@Override
 	@Deprecated
 	public double getMaxHealth() {
 		return 20;
@@ -220,6 +225,71 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 	@Override
 	public GameMode getGameMode() {
 		return GameMode.SPECTATOR;
+	}
+
+	private final Player.Spigot spigot = new Player.Spigot() {
+		@Override
+		public InetSocketAddress getRawAddress() {
+			return null;
+		}
+
+		@Override
+		public void playEffect(Location location, Effect effect, int id, int data, float offsetX, float offsetY, float offsetZ, float speed, int particleCount, int radius) {
+		}
+
+		@Override
+		public boolean getCollidesWithEntities() {
+			return false;
+		}
+
+		@Override
+		public void setCollidesWithEntities(boolean collides) {
+		}
+
+		@Override
+		public void respawn() {
+		}
+
+		@Override
+		public String getLocale() {
+			return "en_us";
+		}
+
+		@Override
+		public Set<Player> getHiddenPlayers() {
+			return Collections.emptySet();
+		}
+
+		@Override
+		public void sendMessage(BaseComponent component) {
+			DiscordConnectedPlayer.super.sendMessage(component.toPlainText());
+		}
+
+		@Override
+		public void sendMessage(BaseComponent... components) {
+			for (var component : components)
+				sendMessage(component);
+		}
+
+		@Override
+		public void sendMessage(ChatMessageType position, BaseComponent component) {
+			sendMessage(component); //Ignore position
+		}
+
+		@Override
+		public void sendMessage(ChatMessageType position, BaseComponent... components) {
+			sendMessage(components); //Ignore position
+		}
+
+		@Override
+		public boolean isInvulnerable() {
+			return true;
+		}
+	};
+
+	@Override
+	public Player.Spigot spigot() {
+		return spigot;
 	}
 
 	public static DiscordConnectedPlayer create(User user, MessageChannel channel, UUID uuid, String mcname,
