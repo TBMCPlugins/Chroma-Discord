@@ -2,7 +2,6 @@ package buttondevteam.discordplugin.commands;
 
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import buttondevteam.lib.player.ChromaGamerBase;
@@ -67,14 +66,10 @@ public class UserinfoCommand extends ICommand2DC {
 			sender.sendMessage("An error occurred.");
 			return true;
 		}
-		try (DiscordPlayer dp = ChromaGamerBase.getUser(target.getId().asString(), DiscordPlayer.class)) {
-			StringBuilder uinfo = new StringBuilder("User info for ").append(target.getUsername()).append(":\n");
-			uinfo.append(dp.getInfo(InfoTarget.Discord));
-			channel.createMessage(uinfo.toString()).subscribe();
-		} catch (Exception e) {
-			channel.createMessage("An error occured while getting the user!").subscribe();
-			TBMCCoreAPI.SendException("Error while getting info about " + target.getUsername() + "!", e, DiscordPlugin.plugin);
-		}
+		DiscordPlayer dp = ChromaGamerBase.getUser(target.getId().asString(), DiscordPlayer.class);
+		StringBuilder uinfo = new StringBuilder("User info for ").append(target.getUsername()).append(":\n");
+		uinfo.append(dp.getInfo(InfoTarget.Discord));
+		channel.createMessage(uinfo.toString()).subscribe();
 		return true;
 	}
 

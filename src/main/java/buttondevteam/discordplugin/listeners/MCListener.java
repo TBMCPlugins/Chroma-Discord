@@ -7,21 +7,21 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.lib.TBMCCommandPreprocessEvent;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
-import buttondevteam.lib.player.TBMCPlayerJoinEvent;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import lombok.val;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import reactor.core.publisher.Mono;
 
 public class MCListener implements Listener {
 	@EventHandler
-	public void onPlayerJoin(TBMCPlayerJoinEvent e) {
-		if (ConnectCommand.WaitingToConnect.containsKey(e.GetPlayer().PlayerName().get())) {
+	public void onPlayerJoin(PlayerJoinEvent e) {
+		if (ConnectCommand.WaitingToConnect.containsKey(e.getPlayer().getName())) {
 			@SuppressWarnings("ConstantConditions") User user = DiscordPlugin.dc
-				.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect.get(e.GetPlayer().PlayerName().get()))).block();
+				.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect.get(e.getPlayer().getName()))).block();
 			if (user == null) return;
 			e.getPlayer().sendMessage("§bTo connect with the Discord account @" + user.getUsername() + "#" + user.getDiscriminator()
 				+ " do /discord accept");

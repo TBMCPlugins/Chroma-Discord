@@ -338,8 +338,8 @@ public class MCChatListener implements Listener {
 		if (dmessage.length() == 0 && event.getMessage().getAttachments().size() == 0
 			&& !isPrivate && event.getMessage().getType() == Message.Type.CHANNEL_PINNED_MESSAGE) {
 			val rtr = clmd != null ? clmd.mcchannel.getRTR(clmd.dcp)
-				: dsender.getChromaUser().channel().get().getRTR(dsender);
-			TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel().get(), rtr,
+				: dsender.getChromaUser().channel.get().getRTR(dsender);
+			TBMCChatAPI.SendSystemMessage(clmd != null ? clmd.mcchannel : dsender.getChromaUser().channel.get(), rtr,
 				(dsender instanceof Player ? ((Player) dsender).getDisplayName()
 					: dsender.getName()) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL);
 		} else {
@@ -374,7 +374,7 @@ public class MCChatListener implements Listener {
 		}
 		module.log(dsender.getName() + " ran from DC: /" + cmd);
 		if (runCustomCommand(dsender, cmdlowercased)) return true;
-		val channel = clmd == null ? user.channel().get() : clmd.mcchannel;
+		val channel = clmd == null ? user.channel.get() : clmd.mcchannel;
 		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync
 			() -> {

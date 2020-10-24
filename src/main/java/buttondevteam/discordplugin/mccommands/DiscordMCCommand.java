@@ -38,8 +38,6 @@ public class DiscordMCCommand extends ICommand2MC {
 		DiscordPlayer dp = ChromaGamerBase.getUser(did, DiscordPlayer.class);
 		TBMCPlayer mcp = TBMCPlayerBase.getPlayer(player.getUniqueId(), TBMCPlayer.class);
 		dp.connectWith(mcp);
-		dp.save();
-		mcp.save();
 		ConnectCommand.WaitingToConnect.remove(player.getName());
 		MCChatUtils.UnconnectedSenders.remove(did); //Remove all unconnected, will be recreated where needed
 		player.sendMessage("§bAccounts connected.");

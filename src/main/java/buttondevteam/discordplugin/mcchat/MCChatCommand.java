@@ -5,7 +5,6 @@ import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
 import buttondevteam.discordplugin.commands.ICommand2DC;
-import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import discord4j.core.object.entity.channel.PrivateChannel;
@@ -36,15 +35,12 @@ public class MCChatCommand extends ICommand2DC {
 			DPUtils.reply(message, channel, "this command can only be issued in a direct message with the bot.").subscribe();
 			return true;
 		}
-		try (final DiscordPlayer user = DiscordPlayer.getUser(author.getId().asString(), DiscordPlayer.class)) {
-			boolean mcchat = !user.isMinecraftChatEnabled();
-			MCChatPrivate.privateMCChat(channel, mcchat, author, user);
-			DPUtils.reply(message, channel, "Minecraft chat " + (mcchat //
-				? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
-				: "disabled.")).subscribe();
-		} catch (Exception e) {
-			TBMCCoreAPI.SendException("Error while setting mcchat for user " + author.getUsername() + "#" + author.getDiscriminator(), e, module);
-		}
+		final DiscordPlayer user = DiscordPlayer.getUser(author.getId().asString(), DiscordPlayer.class);
+		boolean mcchat = !user.isMinecraftChatEnabled();
+		MCChatPrivate.privateMCChat(channel, mcchat, author, user);
+		DPUtils.reply(message, channel, "Minecraft chat " + (mcchat //
+			? "enabled. Use '" + DiscordPlugin.getPrefix() + "mcchat' again to turn it off." //
+			: "disabled.")).subscribe();
 		return true;
 	} // TODO: Pin channel switching to indicate the current channel
 

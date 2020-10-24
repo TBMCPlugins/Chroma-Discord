@@ -10,8 +10,10 @@ import me.lucko.luckperms.bukkit.inject.permissible.DummyPermissibleBase;
 import me.lucko.luckperms.bukkit.inject.permissible.LuckPermsPermissible;
 import me.lucko.luckperms.bukkit.listeners.BukkitConnectionListener;
 import me.lucko.luckperms.common.config.ConfigKeys;
-import me.lucko.luckperms.common.locale.message.Message;
+import me.lucko.luckperms.common.locale.Message;
+import me.lucko.luckperms.common.locale.TranslationManager;
 import me.lucko.luckperms.common.model.User;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -92,9 +94,9 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 
 		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
-		/*if (plugin.getConfiguration().get(ConfigKeys.DEBUG_LOGINS)) {
+		if (plugin.getConfiguration().get(ConfigKeys.DEBUG_LOGINS)) {
 			plugin.getLogger().info("Processing login for " + player.getUniqueId() + " - " + player.getName());
-		}*/
+		}
 
 		final User user = plugin.getUserManager().getIfLoaded(player.getUniqueId());
 
@@ -102,7 +104,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		if (user == null) {
 			deniedLogin.add(player.getUniqueId());
 
-			if (!connectionListener.getUniqueConnections().contains(player.getUniqueId())) {
+			if (!plugin.getConnectionListener().getUniqueConnections().contains(player.getUniqueId())) {
 
 				plugin.getLogger().warn("User " + player.getUniqueId() + " - " + player.getName() +
 					" doesn't have data pre-loaded, they have never been processed during pre-login in this session." +
@@ -111,7 +113,9 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 				try {
 					if ((Boolean) detectedCraftBukkitOfflineMode.get(connectionListener)) {
 						printCraftBukkitOfflineModeError.invoke(connectionListener);
-						e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.LOADING_STATE_ERROR_CB_OFFLINE_MODE.asString(plugin.getLocaleManager()));
+
+						Component reason = TranslationManager.render(Message.LOADING_STATE_ERROR_CB_OFFLINE_MODE.build(), player.getLocale());
+						e.disallow(PlayerLoginEvent.Result.KICK_OTHER, LegacyComponentSerializer.legacySection().serialize(reason));
 						return;
 					}
 				} catch (IllegalAccessException | InvocationTargetException ex) {
@@ -124,32 +128,31 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 					" - denying login.");
 			}
 
-			e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.LOADING_STATE_ERROR.asString(plugin.getLocaleManager()));
+			Component reason = TranslationManager.render(Message.LOADING_STATE_ERROR.build(), player.getLocale());
+			e.disallow(PlayerLoginEvent.Result.KICK_OTHER, LegacyComponentSerializer.legacySection().serialize(reason));
 			return;
 		}
 
 		// User instance is there, now we can inject our custom Permissible into the player.
 		// Care should be taken at this stage to ensure that async tasks which manipulate bukkit data check that the player is still online.
 		try {
-			// get the existing PermissibleBase held by the player
-			PermissibleBase oldPermissible = player.getPerm();
-
 			// Make a new permissible for the user
-			LuckPermsPermissible lpPermissible = new LuckPermsPermissible(player, user, plugin);
+			LuckPermsPermissible lpPermissible = new LuckPermsPermissible(player, user, this.plugin);
 
 			// Inject into the player
-			inject(player, lpPermissible, oldPermissible);
+			inject(player, lpPermissible);
 
 		} catch (Throwable t) {
 			plugin.getLogger().warn("Exception thrown when setting up permissions for " +
 				player.getUniqueId() + " - " + player.getName() + " - denying login.");
 			t.printStackTrace();
 
-			e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Message.LOADING_SETUP_ERROR.asString(plugin.getLocaleManager()));
-			//return;
+			Component reason = TranslationManager.render(Message.LOADING_SETUP_ERROR.build(), player.getLocale());
+			e.disallow(PlayerLoginEvent.Result.KICK_OTHER, LegacyComponentSerializer.legacySection().serialize(reason));
+			return;
 		}
 
-		//this.plugin.getContextManager().signalContextUpdate(player);
+		this.plugin.getContextManager().signalContextUpdate(player);
 	}
 
 	// Wait until the last priority to unload, so plugins can still perform permission checks on this event
@@ -160,14 +163,14 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 
 		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
-		connectionListener.handleDisconnect(player.getUniqueId());
+		handleDisconnect(player.getUniqueId());
 
 		// perform unhooking from bukkit objects 1 tick later.
 		// this allows plugins listening after us on MONITOR to still have intact permissions data
-		this.plugin.getBootstrap().getServer().getScheduler().runTaskLaterAsynchronously(this.plugin.getBootstrap(), () -> {
+		this.plugin.getBootstrap().getServer().getScheduler().runTaskLater(this.plugin.getBootstrap(), () -> {
 			// Remove the custom permissible
 			try {
-				uninject(player);
+				uninject(player, true);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

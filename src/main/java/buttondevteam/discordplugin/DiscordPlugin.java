@@ -180,7 +180,7 @@ public class DiscordPlugin extends ButtonPlugin {
 
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
-			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class);
+			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class, DiscordPlayer::new);
 			ChromaGamerBase.addConverter(sender -> Optional.ofNullable(sender instanceof DiscordSenderBase
 				? ((DiscordSenderBase) sender).getChromaUser() : null));
 
