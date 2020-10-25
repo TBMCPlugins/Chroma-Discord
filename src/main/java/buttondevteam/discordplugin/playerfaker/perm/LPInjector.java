@@ -13,6 +13,7 @@ import me.lucko.luckperms.common.config.ConfigKeys;
 import me.lucko.luckperms.common.locale.Message;
 import me.lucko.luckperms.common.locale.TranslationManager;
 import me.lucko.luckperms.common.model.User;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -136,11 +137,14 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		// User instance is there, now we can inject our custom Permissible into the player.
 		// Care should be taken at this stage to ensure that async tasks which manipulate bukkit data check that the player is still online.
 		try {
+			// get the existing PermissibleBase held by the player
+			PermissibleBase oldPermissible = player.getPerm();
+
 			// Make a new permissible for the user
 			LuckPermsPermissible lpPermissible = new LuckPermsPermissible(player, user, this.plugin);
 
 			// Inject into the player
-			inject(player, lpPermissible);
+			inject(player, lpPermissible, oldPermissible);
 
 		} catch (Throwable t) {
 			plugin.getLogger().warn("Exception thrown when setting up permissions for " +
@@ -163,14 +167,14 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 
 		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
 
-		handleDisconnect(player.getUniqueId());
+		connectionListener.handleDisconnect(player.getUniqueId());
 
 		// perform unhooking from bukkit objects 1 tick later.
 		// this allows plugins listening after us on MONITOR to still have intact permissions data
 		this.plugin.getBootstrap().getServer().getScheduler().runTaskLater(this.plugin.getBootstrap(), () -> {
 			// Remove the custom permissible
 			try {
-				uninject(player, true);
+				uninject(player);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

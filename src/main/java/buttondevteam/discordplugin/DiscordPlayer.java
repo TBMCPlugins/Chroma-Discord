@@ -16,7 +16,7 @@ public class DiscordPlayer extends ChromaGamerBase {
 
 	public String getDiscordID() {
 		if (did == null)
-			did = plugindata.getString(getFolder() + "_id");
+			did = getFileName();
 		return did;
 	}
 

@@ -206,8 +206,8 @@
             <version>1.0.0.M3</version>
         </dependency> -->
         <dependency>
-            <groupId>com.github.lucko</groupId>
-            <artifactId>LuckPerms</artifactId>
+            <groupId>com.github.lucko.LuckPerms</groupId>
+            <artifactId>bukkit</artifactId>
             <version>master-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
