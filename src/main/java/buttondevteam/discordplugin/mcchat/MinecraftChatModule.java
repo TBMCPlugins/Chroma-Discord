@@ -163,7 +163,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 				serverWatcher.enableDisable(true);
 				log("Finished hooking into the server");
 			} catch (Exception e) {
-				TBMCCoreAPI.SendException("Failed to hack the server (object)!", e, this);
+				TBMCCoreAPI.SendException("Failed to hack the server (object)! Disable addFakePlayersToBukkit in the config.", e, this);
 			}
 		}
 
@@ -241,6 +241,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * It will block to make sure all messages are sent
 	 */
 	private void sendStateMessage(Color color, String message) {
+		System.out.println("Sending message: " + message);
 		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(color)
 			.setTitle(message))), ChannelconBroadcast.RESTART, false).block();
 	}

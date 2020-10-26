@@ -69,12 +69,16 @@ public class MCChatUtils {
 	}
 
 	private static boolean notEnabled() {
-		return (module == null) || (!module.disabling && (getModule() == null)); //Allow using things while disabling the module
+		/*System.out.println("module: " + module);
+		if (module != null)
+			System.out.println("Disabling: " + module.disabling);*/
+		//new Exception().printStackTrace();
+		return (module == null || !module.disabling) && getModule() == null; //Allow using things while disabling the module
 	}
 
 	private static MinecraftChatModule getModule() {
-		if (module == null) module = ComponentManager.getIfEnabled(MinecraftChatModule.class);
-		else if (!module.isEnabled()) module = null; //Reset if disabled
+		if (module == null || !module.isEnabled()) module = ComponentManager.getIfEnabled(MinecraftChatModule.class);
+		//If disabled, it will try to get it again because another instance may be enabled - useful for /discord restart
 		return module;
 	}
 
@@ -162,6 +166,7 @@ public class MCChatUtils {
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
 	public static Mono<?> forCustomAndAllMCChat(Function<Mono<MessageChannel>, Mono<?>> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
+		System.out.println("Not enabled: " + notEnabled());
 		if (notEnabled()) return Mono.empty();
 		var list = new ArrayList<Publisher<?>>();
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)
