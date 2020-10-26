@@ -48,6 +48,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	public static boolean SafeMode = true;
 	@Getter
 	private Command2DC manager;
+	private boolean starting;
 
 	/**
 	 * The prefix to use with Discord commands like /role. It only works in the bot channel.
@@ -130,21 +131,30 @@ public class DiscordPlugin extends ButtonPlugin {
 					return;
 				}
 			}
+			starting = true;
 			val cb = DiscordClientBuilder.create(token).build().gateway();
 			cb.setInitialStatus(si -> Presence.doNotDisturb(Activity.playing("booting")));
 			cb.setStoreService(new JdkStoreService()); //The default doesn't work for some reason - it's waaay faster now
-			cb.login().subscribe(dc -> {
+			cb.login().doOnError(t -> stopStarting()).subscribe(dc -> {
 				DiscordPlugin.dc = dc; //Set to gateway client
 				dc.on(ReadyEvent.class) // Listen for ReadyEvent(s)
 					.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
 					.flatMap(size -> dc
 						.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
 						.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
-						.collectList()).subscribe(this::handleReady); // Take all received GuildCreateEvents and make it a List
+						.collectList()).doOnError(t -> stopStarting()).subscribe(this::handleReady); // Take all received GuildCreateEvents and make it a List
 			}); /* All guilds have been received, client is fully connected */
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e, this);
 			getLogger().severe("You may be able to restart the plugin using /discord restart");
+			stopStarting();
+		}
+	}
+
+	private void stopStarting() {
+		synchronized (this) {
+			starting = false;
+			notifyAll();
 		}
 	}
 
@@ -175,6 +185,10 @@ public class DiscordPlugin extends ButtonPlugin {
 			DPUtils.disableIfConfigErrorRes(null, commandChannel, DPUtils.getMessageChannel(commandChannel));
 			//Won't disable, just prints the warning here
 
+			if (MinecraftChatModule.state == DPState.STOPPING_SERVER) {
+				stopStarting();
+				return; //Reusing that field to check if stopping while still initializing
+			}
 			CommonListeners.register(dc.getEventDispatcher());
 			TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(), this);
 			TBMCCoreAPI.RegisterUserClass(DiscordPlayer.class, DiscordPlayer::new);
@@ -210,18 +224,28 @@ public class DiscordPlugin extends ButtonPlugin {
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e, this);
 		}
+		stopStarting();
 	}
 
 	@Override
 	public void pluginPreDisable() {
+		if (MinecraftChatModule.state == DPState.RUNNING)
+			MinecraftChatModule.state = DPState.STOPPING_SERVER;
+		synchronized (this) {
+			if (starting) {
+				try {
+					wait(10000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		if (ChromaBot.getInstance() == null) return; //Failed to load
 		Timings timings = new Timings();
 		timings.printElapsed("Disable start");
 		timings.printElapsed("Updating player list");
 		ChromaBot.getInstance().updatePlayerList();
 		timings.printElapsed("Done");
-		if (MinecraftChatModule.state == DPState.RUNNING)
-			MinecraftChatModule.state = DPState.STOPPING_SERVER;
 	}
 
 	@Override

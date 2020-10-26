@@ -405,7 +405,7 @@ public class MCChatListener implements Listener {
 	private boolean runCustomCommand(DiscordSenderBase dsender, String cmdlowercased) {
 		if (cmdlowercased.startsWith("list")) {
 			var players = Bukkit.getOnlinePlayers();
-			dsender.sendMessage("There are " + players.size() + " out of " + Bukkit.getMaxPlayers() + " players online.");
+			dsender.sendMessage("There are " + players.stream().filter(MCChatUtils::checkEssentials).count() + " out of " + Bukkit.getMaxPlayers() + " players online.");
 			dsender.sendMessage("Players: " + players.stream().filter(MCChatUtils::checkEssentials)
 				.map(Player::getDisplayName).collect(Collectors.joining(", ")));
 			return true;
