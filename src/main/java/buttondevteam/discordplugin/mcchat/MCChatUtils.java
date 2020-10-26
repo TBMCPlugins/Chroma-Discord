@@ -69,10 +69,6 @@ public class MCChatUtils {
 	}
 
 	private static boolean notEnabled() {
-		/*System.out.println("module: " + module);
-		if (module != null)
-			System.out.println("Disabling: " + module.disabling);*/
-		//new Exception().printStackTrace();
 		return (module == null || !module.disabling) && getModule() == null; //Allow using things while disabling the module
 	}
 
@@ -166,7 +162,6 @@ public class MCChatUtils {
 	 * @param hookmsg Whether the message is also sent from the hook
 	 */
 	public static Mono<?> forCustomAndAllMCChat(Function<Mono<MessageChannel>, Mono<?>> action, @Nullable ChannelconBroadcast toggle, boolean hookmsg) {
-		System.out.println("Not enabled: " + notEnabled());
 		if (notEnabled()) return Mono.empty();
 		var list = new ArrayList<Publisher<?>>();
 		if (!GeneralEventBroadcasterModule.isHooked() || !hookmsg)

@@ -241,7 +241,6 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * It will block to make sure all messages are sent
 	 */
 	private void sendStateMessage(Color color, String message) {
-		System.out.println("Sending message: " + message);
 		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(color)
 			.setTitle(message))), ChannelconBroadcast.RESTART, false).block();
 	}
