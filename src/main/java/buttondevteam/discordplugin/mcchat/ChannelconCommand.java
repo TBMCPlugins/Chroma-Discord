@@ -97,7 +97,7 @@ public class ChannelconCommand extends ICommand2DC {
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender, String channelID) {
 		val message = sender.getMessage();
-		if (!module.allowCustomChat().get()) {
+		if (!module.allowCustomChat.get()) {
 			sender.sendMessage("channel connection is not allowed on this Minecraft server.");
 			return true;
 		}
@@ -105,7 +105,7 @@ public class ChannelconCommand extends ICommand2DC {
 		if (checkPerms(message, channel)) return true;
 		if (MCChatCustom.hasCustomChat(message.getChannelId()))
 			return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.");
-		val chan = Channel.getChannels().filter(ch -> ch.ID.equalsIgnoreCase(channelID) || (Arrays.stream(ch.IDs().get()).anyMatch(cid -> cid.equalsIgnoreCase(channelID)))).findAny();
+		val chan = Channel.getChannels().filter(ch -> ch.ID.equalsIgnoreCase(channelID) || (Arrays.stream(ch.IDs.get()).anyMatch(cid -> cid.equalsIgnoreCase(channelID)))).findAny();
 		if (!chan.isPresent()) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
 			DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe();
 			return true;

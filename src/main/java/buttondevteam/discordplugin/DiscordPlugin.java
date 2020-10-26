@@ -52,13 +52,11 @@ public class DiscordPlugin extends ButtonPlugin {
 	/**
 	 * The prefix to use with Discord commands like /role. It only works in the bot channel.
 	 */
-	private ConfigData<Character> prefix() {
-		return getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
-	}
+	private final ConfigData<Character> prefix = getIConfig().getData("prefix", '/', str -> ((String) str).charAt(0), Object::toString);
 
 	public static char getPrefix() {
 		if (plugin == null) return '/';
-		return plugin.prefix().get();
+		return plugin.prefix.get();
 	}
 
 	/**
@@ -79,23 +77,21 @@ public class DiscordPlugin extends ButtonPlugin {
 	/**
 	 * The (bot) channel to use for Discord commands like /role.
 	 */
-	public ConfigData<Snowflake> commandChannel() {
-		return DPUtils.snowflakeData(getIConfig(), "commandChannel", 0L);
-	}
+	public ConfigData<Snowflake> commandChannel = DPUtils.snowflakeData(getIConfig(), "commandChannel", 0L);
 
 	/**
 	 * The role that allows using mod-only Discord commands.
 	 * If empty (''), then it will only allow for the owner.
 	 */
-	public ConfigData<Mono<Role>> modRole() {
-		return DPUtils.roleData(getIConfig(), "modRole", "Moderator");
-	}
+	public ConfigData<Mono<Role>> modRole;
 
 	/**
 	 * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
 	 */
-	public ConfigData<String> inviteLink() {
-		return getIConfig().getData("inviteLink", "");
+	public ConfigData<String> inviteLink = getIConfig().getData("inviteLink", "");
+
+	private void setupConfig() {
+		modRole = DPUtils.roleData(getIConfig(), "modRole", "Moderator");
 	}
 
 	@Override
@@ -175,7 +171,8 @@ public class DiscordPlugin extends ButtonPlugin {
 				mainServer().set(Optional.of(mainServer)); //Save in config
 			}
 			SafeMode = false;
-			DPUtils.disableIfConfigErrorRes(null, commandChannel(), DPUtils.getMessageChannel(commandChannel()));
+			setupConfig();
+			DPUtils.disableIfConfigErrorRes(null, commandChannel, DPUtils.getMessageChannel(commandChannel));
 			//Won't disable, just prints the warning here
 
 			CommonListeners.register(dc.getEventDispatcher());

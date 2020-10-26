@@ -77,14 +77,14 @@ public class MCChatListener implements Listener {
 			e = se.getKey();
 			time = se.getValue();
 
-			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName().get()) + "] " //
+			final String authorPlayer = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel().DisplayName.get()) + "] " //
 				+ ("Minecraft".equals(e.getOrigin()) ? "" : "[" + e.getOrigin().charAt(0) + "]") //
 				+ (DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender())));
-			val color = e.getChannel().Color().get();
+			val color = e.getChannel().Color.get();
 			final Consumer<EmbedCreateSpec> embed = ecs -> {
 				ecs.setDescription(e.getMessage()).setColor(Color.of(color.getRed(),
 					color.getGreen(), color.getBlue()));
-				String url = module.profileURL().get();
+				String url = module.profileURL.get();
 				if (e.getSender() instanceof Player)
 					DPUtils.embedWithHead(ecs, authorPlayer, e.getSender().getName(),
 						url.length() > 0 ? url + "?type=minecraft&id="
@@ -121,7 +121,7 @@ public class MCChatListener implements Listener {
 				|| ((DiscordSenderBase) e.getSender()).getChannel().getId().asLong() != id.asLong();
 
 			if (e.getChannel().isGlobal()
-				&& (e.isFromCommand() || isdifferentchannel.test(module.chatChannel().get())))
+				&& (e.isFromCommand() || isdifferentchannel.test(module.chatChannel.get())))
 				doit.accept(MCChatUtils.lastmsgdata == null
 					? MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono().block(), null)
 					: MCChatUtils.lastmsgdata);
@@ -238,7 +238,7 @@ public class MCChatListener implements Listener {
 		var prefix = DiscordPlugin.getPrefix();
 		return ev.getMessage().getChannel().filter(channel -> {
 			timings.printElapsed("Filter 1");
-			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel().get().asLong()
+			return !(ev.getMessage().getChannelId().asLong() != module.chatChannel.get().asLong()
 				&& !(channel instanceof PrivateChannel
 				&& author.map(u -> MCChatPrivate.isMinecraftChatEnabled(u.getId().asString())).orElse(false))
 				&& !hasCustomChat); //Chat isn't enabled on this channel
@@ -383,7 +383,7 @@ public class MCChatListener implements Listener {
 					return;
 				try {
 					String mcpackage = Bukkit.getServer().getClass().getPackage().getName();
-					if (!module.enableVanillaCommands().get())
+					if (!module.enableVanillaCommands.get())
 						Bukkit.dispatchCommand(dsender, cmd);
 					else if (mcpackage.contains("1_12"))
 						VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd);

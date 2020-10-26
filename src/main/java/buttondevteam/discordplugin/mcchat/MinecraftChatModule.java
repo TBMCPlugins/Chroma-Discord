@@ -49,36 +49,28 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel to use as the public Minecraft chat - everything public gets broadcasted here
 	 */
-	public ReadOnlyConfigData<Snowflake> chatChannel() {
-		return DPUtils.snowflakeData(getConfig(), "chatChannel", 0L);
-	}
+	public ReadOnlyConfigData<Snowflake> chatChannel = DPUtils.snowflakeData(getConfig(), "chatChannel", 0L);
 
 	public Mono<MessageChannel> chatChannelMono() {
-		return DPUtils.getMessageChannel(chatChannel().getPath(), chatChannel().get());
+		return DPUtils.getMessageChannel(chatChannel.getPath(), chatChannel.get());
 	}
 
 	/**
 	 * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
 	 */
-	public ReadOnlyConfigData<Mono<MessageChannel>> modlogChannel() {
-		return DPUtils.channelData(getConfig(), "modlogChannel");
-	}
+	public ReadOnlyConfigData<Mono<MessageChannel>> modlogChannel = DPUtils.channelData(getConfig(), "modlogChannel");
 
 	/**
 	 * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
 	 */
-	public ConfigData<String[]> excludedPlugins() {
-		return getConfig().getData("excludedPlugins", new String[]{"ProtocolLib", "LibsDisguises", "JourneyMapServer"});
-	}
+	public ConfigData<String[]> excludedPlugins = getConfig().getData("excludedPlugins", new String[]{"ProtocolLib", "LibsDisguises", "JourneyMapServer"});
 
 	/**
 	 * If this setting is on then players logged in through the 'mcchat' command will be able to teleport using plugin commands.
 	 * They can then use commands like /tpahere to teleport others to that place.<br />
 	 * If this is off, then teleporting will have no effect.
 	 */
-	public ConfigData<Boolean> allowFakePlayerTeleports() {
-		return getConfig().getData("allowFakePlayerTeleports", false);
-	}
+	public ConfigData<Boolean> allowFakePlayerTeleports = getConfig().getData("allowFakePlayerTeleports", false);
 
 	/**
 	 * If this is on, each chat channel will have a player list in their description.
@@ -86,40 +78,30 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * Note that it will replace <b>everything</b> above the first and below the last "----" but it will only detect exactly four dashes.
 	 * So if you want to use dashes for something else in the description, make sure it's either less or more dashes in one line.
 	 */
-	public ConfigData<Boolean> showPlayerListOnDC() {
-		return getConfig().getData("showPlayerListOnDC", true);
-	}
+	public ConfigData<Boolean> showPlayerListOnDC = getConfig().getData("showPlayerListOnDC", true);
 
 	/**
 	 * This setting controls whether custom chat connections can be <i>created</i> (existing connections will always work).
 	 * Custom chat connections can be created using the channelcon command and they allow players to display town chat in a Discord channel for example.
 	 * See the channelcon command for more details.
 	 */
-	public ConfigData<Boolean> allowCustomChat() {
-		return getConfig().getData("allowCustomChat", true);
-	}
+	public ConfigData<Boolean> allowCustomChat = getConfig().getData("allowCustomChat", true);
 
 	/**
 	 * This setting allows you to control if players can DM the bot to log on the server from Discord.
 	 * This allows them to both chat and perform any command they can in-game.
 	 */
-	public ConfigData<Boolean> allowPrivateChat() {
-		return getConfig().getData("allowPrivateChat", true);
-	}
+	public ConfigData<Boolean> allowPrivateChat = getConfig().getData("allowPrivateChat", true);
 
 	/**
 	 * If set, message authors appearing on Discord will link to this URL. A 'type' and 'id' parameter will be added with the user's platform (Discord, Minecraft, ...) and ID.
 	 */
-	public ConfigData<String> profileURL() {
-		return getConfig().getData("profileURL", "");
-	}
+	public ConfigData<String> profileURL = getConfig().getData("profileURL", "");
 
 	/**
 	 * Enables support for running vanilla commands through Discord, if you ever need it.
 	 */
-	public ConfigData<Boolean> enableVanillaCommands() {
-		return getConfig().getData("enableVanillaCommands", true);
-	}
+	public ConfigData<Boolean> enableVanillaCommands = getConfig().getData("enableVanillaCommands", true);
 
 	/**
 	 * Whether players logged on from Discord (mcchat command) should be recognised by other plugins. Some plugins might break if it's turned off.
@@ -134,7 +116,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 
 	@Override
 	protected void enable() {
-		if (DPUtils.disableIfConfigErrorRes(this, chatChannel(), chatChannelMono()))
+		if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono()))
 			return;
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
@@ -268,6 +250,6 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 */
 	private void sendStateMessage(Color color, String message, String extra) {
 		MCChatUtils.forCustomAndAllMCChat(chan -> chan.flatMap(ch -> ch.createEmbed(ecs -> ecs.setColor(color)
-			.setTitle(message).setDescription(extra))), ChannelconBroadcast.RESTART, false).block();
+			.setTitle(message).setDescription(extra)).onErrorResume(t -> Mono.empty())), ChannelconBroadcast.RESTART, false).block();
 	}
 }

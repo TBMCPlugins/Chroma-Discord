@@ -16,7 +16,7 @@ public class DebugCommand extends ICommand2DC {
 			.switchIfEmpty(sender.getMessage().getAuthor() //Support DMs
 				.map(u -> u.asMember(DiscordPlugin.mainServer.getId()))
 				.orElse(Mono.empty()))
-			.flatMap(m -> DiscordPlugin.plugin.modRole().get()
+			.flatMap(m -> DiscordPlugin.plugin.modRole.get()
 				.map(mr -> m.getRoleIds().stream().anyMatch(r -> r.equals(mr.getId())))
 				.switchIfEmpty(Mono.fromSupplier(() -> DiscordPlugin.mainServer.getOwnerId().asLong() == m.getId().asLong()))) //Role not found
 			.onErrorReturn(false).subscribe(success -> {

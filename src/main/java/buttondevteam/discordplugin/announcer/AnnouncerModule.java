@@ -27,48 +27,36 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 	/**
 	 * Channel to post new posts.
 	 */
-	public ReadOnlyConfigData<Mono<MessageChannel>> channel() {
-		return DPUtils.channelData(getConfig(), "channel");
-	}
+	public final ReadOnlyConfigData<Mono<MessageChannel>> channel = DPUtils.channelData(getConfig(), "channel");
 
 	/**
 	 * Channel where distinguished (moderator) posts go.
 	 */
-	private ReadOnlyConfigData<Mono<MessageChannel>> modChannel() {
-		return DPUtils.channelData(getConfig(), "modChannel");
-	}
+	private final ReadOnlyConfigData<Mono<MessageChannel>> modChannel = DPUtils.channelData(getConfig(), "modChannel");
 
 	/**
 	 * Automatically unpins all messages except the last few. Set to 0 or >50 to disable
 	 */
-	private ConfigData<Short> keepPinned() {
-		return getConfig().getData("keepPinned", (short) 40);
-	}
+	private final ConfigData<Short> keepPinned = getConfig().getData("keepPinned", (short) 40);
 
-	private ConfigData<Long> lastAnnouncementTime() {
-		return getConfig().getData("lastAnnouncementTime", 0L);
-	}
+	private final ConfigData<Long> lastAnnouncementTime = getConfig().getData("lastAnnouncementTime", 0L);
 
-	private ConfigData<Long> lastSeenTime() {
-		return getConfig().getData("lastSeenTime", 0L);
-	}
+	private final ConfigData<Long> lastSeenTime = getConfig().getData("lastSeenTime", 0L);
 
 	/**
 	 * The subreddit to pull the posts from
 	 */
-	private ConfigData<String> subredditURL() {
-		return getConfig().getData("subredditURL", "https://www.reddit.com/r/ChromaGamers");
-	}
+	private final ConfigData<String> subredditURL = getConfig().getData("subredditURL", "https://www.reddit.com/r/ChromaGamers");
 
 	private static boolean stop = false;
 
 	@Override
 	protected void enable() {
-		if (DPUtils.disableIfConfigError(this, channel(), modChannel())) return;
+		if (DPUtils.disableIfConfigError(this, channel, modChannel)) return;
 		stop = false; //If not the first time
-		val keepPinned = keepPinned().get();
-		if (keepPinned == 0) return;
-		Flux<Message> msgs = channel().get().flatMapMany(MessageChannel::getPinnedMessages);
+		val kp = keepPinned.get();
+		if (kp == 0) return;
+		Flux<Message> msgs = channel.get().flatMapMany(MessageChannel::getPinnedMessages).takeLast(kp);
 		msgs.subscribe(Message::unpin);
 		new Thread(this::AnnouncementGetterThreadMethod).start();
 	}
@@ -86,12 +74,12 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					Thread.sleep(10000);
 					continue;
 				}
-				String body = TBMCCoreAPI.DownloadString(subredditURL().get() + "/new/.json?limit=10");
+				String body = TBMCCoreAPI.DownloadString(subredditURL.get() + "/new/.json?limit=10");
 				JsonArray json = new JsonParser().parse(body).getAsJsonObject().get("data").getAsJsonObject()
 					.get("children").getAsJsonArray();
 				StringBuilder msgsb = new StringBuilder();
 				StringBuilder modmsgsb = new StringBuilder();
-				long lastanntime = lastAnnouncementTime().get();
+				long lastanntime = lastAnnouncementTime.get();
 				for (int i = json.size() - 1; i >= 0; i--) {
 					JsonObject item = json.get(i).getAsJsonObject();
 					final JsonObject data = item.get("data").getAsJsonObject();
@@ -104,9 +92,10 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 						distinguished = distinguishedjson.getAsString();
 					String permalink = "https://www.reddit.com" + data.get("permalink").getAsString();
 					long date = data.get("created_utc").getAsLong();
-					if (date > lastSeenTime().get())
-						lastSeenTime().set(date);
-					else if (date > lastAnnouncementTime().get()) {
+					if (date > lastSeenTime.get())
+						lastSeenTime.set(date);
+					else if (date > lastAnnouncementTime.get()) {
+						//noinspection ConstantConditions
 						do {
 							val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit");
 							if (reddituserclass == null)
@@ -125,13 +114,13 @@ public class AnnouncerModule extends Component<DiscordPlugin> {
 					}
 				}
 				if (msgsb.length() > 0)
-					channel().get().flatMap(ch -> ch.createMessage(msgsb.toString()))
+					channel.get().flatMap(ch -> ch.createMessage(msgsb.toString()))
 						.flatMap(Message::pin).subscribe();
 				if (modmsgsb.length() > 0)
-					modChannel().get().flatMap(ch -> ch.createMessage(modmsgsb.toString()))
+					modChannel.get().flatMap(ch -> ch.createMessage(modmsgsb.toString()))
 						.flatMap(Message::pin).subscribe();
-				if (lastAnnouncementTime().get() != lastanntime)
-					lastAnnouncementTime().set(lastanntime); // If sending succeeded
+				if (lastAnnouncementTime.get() != lastanntime)
+					lastAnnouncementTime.set(lastanntime); // If sending succeeded
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

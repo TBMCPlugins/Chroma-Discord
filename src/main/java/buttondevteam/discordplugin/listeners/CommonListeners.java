@@ -42,8 +42,8 @@ public class CommonListeners {
 				return def;
 			if (FunModule.executeMemes(event.getMessage()))
 				return def;
-			val commandChannel = DiscordPlugin.plugin.commandChannel().get();
-			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.commandChannel());
+			val commandChannel = DiscordPlugin.plugin.commandChannel.get();
+			val commandCh = DPUtils.getMessageChannel(DiscordPlugin.plugin.commandChannel);
 			return commandCh.filterWhen(ch -> event.getMessage().getChannel().map(mch ->
 				(commandChannel != null && mch.getId().asLong() == commandChannel.asLong()) //If mentioned, that's higher than chat
 					|| mch instanceof PrivateChannel

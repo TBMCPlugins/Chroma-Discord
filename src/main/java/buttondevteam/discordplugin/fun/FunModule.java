@@ -54,25 +54,21 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	/**
 	 * Questions that the bot will choose a random answer to give to.
 	 */
-	private ConfigData<String[]> serverReady() {
-		return getConfig().getData("serverReady", () -> new String[]{"when will the server be open",
-			"when will the server be ready", "when will the server be done", "when will the server be complete",
-			"when will the server be finished", "when's the server ready", "when's the server open",
-			"vhen vill ze server be open?"});
-	}
+	private final ConfigData<String[]> serverReady = getConfig().getData("serverReady", () -> new String[]{
+		"when will the server be open", "when will the server be ready", "when will the server be done",
+		"when will the server be complete", "when will the server be finished", "when's the server ready",
+		"when's the server open", "vhen vill ze server be open?"});
 
 	/**
 	 * Answers for a recognized question. Selected randomly.
 	 */
-	private ConfigData<ArrayList<String>> serverReadyAnswers() {
-		return getConfig().getData("serverReadyAnswers", () -> Lists.newArrayList(serverReadyStrings));
-	}
+	private final ConfigData<ArrayList<String>> serverReadyAnswers = getConfig().getData("serverReadyAnswers", () -> Lists.newArrayList(serverReadyStrings));
 
 	private static final Random serverReadyRandom = new Random();
 	private static final ArrayList<Short> usableServerReadyStrings = new ArrayList<>(0);
 
 	private void createUsableServerReadyStrings() {
-		IntStream.range(0, serverReadyAnswers().get().size())
+		IntStream.range(0, serverReadyAnswers.get().size())
 			.forEach(i -> FunModule.usableServerReadyStrings.add((short) i));
 	}
 
@@ -109,12 +105,12 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		}
 		lastlistp = (short) Bukkit.getOnlinePlayers().size(); //Didn't handle
 		if (!TBMCCoreAPI.IsTestServer()
-			&& Arrays.stream(fm.serverReady().get()).anyMatch(msglowercased::contains)) {
+			&& Arrays.stream(fm.serverReady.get()).anyMatch(msglowercased::contains)) {
 			int next;
 			if (usableServerReadyStrings.size() == 0)
 				fm.createUsableServerReadyStrings();
 			next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size()));
-			DPUtils.reply(message, Mono.empty(), fm.serverReadyAnswers().get().get(next)).subscribe();
+			DPUtils.reply(message, Mono.empty(), fm.serverReadyAnswers.get().get(next)).subscribe();
 			return false; //Still process it as a command/mcchat if needed
 		}
 		return false;
@@ -136,9 +132,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 	/**
 	 * The channel to post the full house to.
 	 */
-	private ReadOnlyConfigData<Mono<MessageChannel>> fullHouseChannel() {
-		return DPUtils.channelData(getConfig(), "fullHouseChannel");
-	}
+	private final ReadOnlyConfigData<Mono<MessageChannel>> fullHouseChannel = DPUtils.channelData(getConfig(), "fullHouseChannel");
 
 	private static long lasttime = 0;
 
@@ -146,7 +140,7 @@ public class FunModule extends Component<DiscordPlugin> implements Listener {
 		val fm = ComponentManager.getIfEnabled(FunModule.class);
 		if (fm == null) return;
 		if (Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % 5 != 0) return;
-		fm.fullHouseChannel().get()
+		fm.fullHouseChannel.get()
 			.filter(ch -> ch instanceof GuildChannel)
 			.flatMap(channel -> fm.fullHouseDevRole(((GuildChannel) channel).getGuild()).get()
 				.filter(role -> event.getOld().map(p -> p.getStatus().equals(Status.OFFLINE)).orElse(false))

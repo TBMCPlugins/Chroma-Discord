@@ -24,7 +24,7 @@ public class MCChatCommand extends ICommand2DC {
 
 	@Command2.Subcommand
 	public boolean def(Command2DCSender sender) {
-		if (!module.allowPrivateChat().get()) {
+		if (!module.allowPrivateChat.get()) {
 			sender.sendMessage("using the private chat is not allowed on this Minecraft server.");
 			return true;
 		}

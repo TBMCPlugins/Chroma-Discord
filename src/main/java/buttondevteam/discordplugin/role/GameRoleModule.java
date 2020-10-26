@@ -42,9 +42,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel where the bot logs when it detects a role change that results in a new game role or one being removed.
 	 */
-	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel() {
-		return DPUtils.channelData(getConfig(), "logChannel");
-	}
+	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel = DPUtils.channelData(getConfig(), "logChannel");
 
 	/**
 	 * The role color that is used by game roles.
@@ -59,7 +57,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 		val grm = ComponentManager.getIfEnabled(GameRoleModule.class);
 		if (grm == null) return;
 		val GameRoles = grm.GameRoles;
-		val logChannel = grm.logChannel().get();
+		val logChannel = grm.logChannel.get();
 		Predicate<Role> notMainServer = r -> r.getGuildId().asLong() != DiscordPlugin.mainServer.getId().asLong();
 		if (roleEvent instanceof RoleCreateEvent) {
 			Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {

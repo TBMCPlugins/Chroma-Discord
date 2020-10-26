@@ -83,16 +83,14 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 	private static ExceptionListenerModule instance;
 
 	public static Mono<MessageChannel> getChannel() {
-		if (instance != null) return instance.channel().get();
+		if (instance != null) return instance.channel.get();
 		return Mono.empty();
 	}
 
 	/**
 	 * The channel to post the errors to.
 	 */
-	private ReadOnlyConfigData<Mono<MessageChannel>> channel() {
-		return DPUtils.channelData(getConfig(), "channel");
-	}
+	private final ReadOnlyConfigData<Mono<MessageChannel>> channel = DPUtils.channelData(getConfig(), "channel");
 
 	/**
 	 * The role to ping if an error occurs. Set to empty ('') to disable.
@@ -103,7 +101,7 @@ public class ExceptionListenerModule extends Component<DiscordPlugin> implements
 
 	@Override
 	protected void enable() {
-		if (DPUtils.disableIfConfigError(this, channel())) return;
+		if (DPUtils.disableIfConfigError(this, channel)) return;
 		instance = this;
 		Bukkit.getPluginManager().registerEvents(new ExceptionListenerModule(), getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new DebugMessageListener(), getPlugin());

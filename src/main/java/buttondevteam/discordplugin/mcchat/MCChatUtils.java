@@ -62,7 +62,7 @@ public class MCChatUtils {
 
 	public static void updatePlayerList() {
 		val mod = getModule();
-		if (mod == null || !mod.showPlayerListOnDC().get()) return;
+		if (mod == null || !mod.showPlayerListOnDC.get()) return;
 		if (lastmsgdata != null)
 			updatePL(lastmsgdata);
 		MCChatCustom.lastmsgCustom.forEach(MCChatUtils::updatePL);
@@ -254,7 +254,7 @@ public class MCChatUtils {
 	 */
 	public static void resetLastMessage(Channel channel) {
 		if (notEnabled()) return;
-		if (channel.getId().asLong() == module.chatChannel().get().asLong()) {
+		if (channel.getId().asLong() == module.chatChannel.get().asLong()) {
 			(lastmsgdata == null ? lastmsgdata = new LastMsgData(module.chatChannelMono().block(), null)
 				: lastmsgdata).message = null;
 			return;
@@ -277,7 +277,7 @@ public class MCChatUtils {
 	public static void callEventExcludingSome(Event event) {
 		if (notEnabled()) return;
 		val second = staticExcludedPlugins.get(event.getClass());
-		String[] first = module.excludedPlugins().get();
+		String[] first = module.excludedPlugins.get();
 		String[] both = second == null ? first
 			: Arrays.copyOf(first, first.length + second.size());
 		int i = first.length;

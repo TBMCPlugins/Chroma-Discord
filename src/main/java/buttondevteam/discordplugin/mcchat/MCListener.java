@@ -9,7 +9,6 @@ import buttondevteam.lib.player.TBMCYEEHAWEvent;
 import com.earth2me.essentials.CommandSource;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Role;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import net.ess3.api.events.MuteStatusChangeEvent;
@@ -30,9 +29,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-@RequiredArgsConstructor
 class MCListener implements Listener {
 	private final MinecraftChatModule module;
+	private final ConfigData<Mono<Role>> muteRole;
+
+	public MCListener(MinecraftChatModule module) {
+		this.module = module;
+		muteRole = DPUtils.roleData(module.getConfig(), "muteRole", "Muted");
+	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerLogin(PlayerLoginEvent e) {
@@ -105,13 +109,9 @@ class MCListener implements Listener {
 		MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, false).subscribe();
 	}
 
-	private ConfigData<Mono<Role>> muteRole() {
-		return DPUtils.roleData(module.getConfig(), "muteRole", "Muted");
-	}
-
 	@EventHandler
 	public void onPlayerMute(MuteStatusChangeEvent e) {
-		final Mono<Role> role = muteRole().get();
+		final Mono<Role> role = muteRole.get();
 		if (role == null) return;
 		final CommandSource source = e.getAffected().getSource();
 		if (!source.isPlayer())
@@ -126,7 +126,7 @@ class MCListener implements Listener {
 					user.addRole(r.getId());
 				else
 					user.removeRole(r.getId());
-				val modlog = module.modlogChannel().get();
+				val modlog = module.modlogChannel.get();
 				String msg = (e.getValue() ? "M" : "Unm") + "uted user: " + user.getUsername() + "#" + user.getDiscriminator();
 				module.log(msg);
 				if (modlog != null)

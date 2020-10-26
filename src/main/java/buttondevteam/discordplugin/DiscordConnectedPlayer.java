@@ -88,28 +88,28 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 
 	@Override
 	public boolean teleport(Location location) {
-		if (module.allowFakePlayerTeleports().get())
+		if (module.allowFakePlayerTeleports.get())
 			this.location = location;
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-		if (module.allowFakePlayerTeleports().get())
+		if (module.allowFakePlayerTeleports.get())
 			this.location = location;
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Entity destination) {
-		if (module.allowFakePlayerTeleports().get())
+		if (module.allowFakePlayerTeleports.get())
 			this.location = destination.getLocation();
 		return true;
 	}
 
 	@Override
 	public boolean teleport(Entity destination, PlayerTeleportEvent.TeleportCause cause) {
-		if (module.allowFakePlayerTeleports().get())
+		if (module.allowFakePlayerTeleports.get())
 			this.location = destination.getLocation();
 		return true;
 	}
@@ -227,6 +227,7 @@ public abstract class DiscordConnectedPlayer extends DiscordSenderBase implement
 		return GameMode.SPECTATOR;
 	}
 
+	@SuppressWarnings("deprecation")
 	private final Player.Spigot spigot = new Player.Spigot() {
 		@Override
 		public InetSocketAddress getRawAddress() {

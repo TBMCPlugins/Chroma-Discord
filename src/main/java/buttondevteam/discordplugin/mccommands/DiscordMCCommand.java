@@ -107,7 +107,7 @@ public class DiscordMCCommand extends ICommand2MC {
 	})
 	public void invite(CommandSender sender) {
 		if (checkSafeMode(sender)) return;
-		String invi = DiscordPlugin.plugin.inviteLink().get();
+		String invi = DiscordPlugin.plugin.inviteLink.get();
 		if (invi.length() > 0) {
 			sender.sendMessage("§bInvite link: " + invi);
 			return;
