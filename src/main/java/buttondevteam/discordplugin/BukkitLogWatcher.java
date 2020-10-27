@@ -8,7 +8,6 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.filter.LevelRangeFilter;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.bukkit.Bukkit;
 
 public class BukkitLogWatcher extends AbstractAppender {
 	protected BukkitLogWatcher() {
@@ -19,7 +18,6 @@ public class BukkitLogWatcher extends AbstractAppender {
 
 	@Override
 	public void append(LogEvent logEvent) {
-		Bukkit.getLogger().warning("Message: " + logEvent.getMessage().getFormattedMessage());
 		if (logEvent.getMessage().getFormattedMessage().contains("Attempting to restart with "))
 			MinecraftChatModule.state = DPState.RESTARTING_SERVER;
 	}

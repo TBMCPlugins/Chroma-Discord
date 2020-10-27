@@ -10,7 +10,7 @@
 
     <groupId>com.github.TBMCPlugins</groupId>
     <artifactId>Chroma-Discord</artifactId>
-    <version>master-SNAPSHOT</version>
+    <version>v${noprefix.version}-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Chroma-Discord</name>
@@ -55,14 +55,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- <plugin> <groupId>org.projectlombok</groupId> <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.16.16.0</version> <executions> <execution> <id>delombok</id> <phase>generate-sources</phase>
-                <goals> <goal>delombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory>
-                <sourceDirectory>src/main/java</sourceDirectory> <verbose>true</verbose>
-                </configuration> </execution> <execution> <id>test-delombok</id> <phase>generate-test-sources</phase>
-                <goals> <goal>testDelombok</goal> </goals> <configuration> <addOutputDirectory>false</addOutputDirectory>
-                <sourceDirectory>src/test/java</sourceDirectory> </configuration> </execution>
-                </executions> </plugin> -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.4.2</version>
@@ -76,9 +68,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <branch>
-            master
-        </branch> <!-- Should be master if building ButtonCore locally - the CI will overwrite it (see below) -->
+        <noprefix.version>1.0.0</noprefix.version>
     </properties>
 
     <repositories>
@@ -166,7 +156,7 @@
         <dependency>
             <groupId>com.github.TBMCPlugins.ChromaCore</groupId>
             <artifactId>Chroma-Core</artifactId>
-            <version>${branch}-SNAPSHOT</version>
+            <version>v1.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -218,19 +208,4 @@
             <version>3.5.13</version>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>ci</id>
-            <activation>
-                <property>
-                    <name>env.TRAVIS_BRANCH</name>
-                </property>
-            </activation>
-            <properties>
-                <!-- Override only if necessary -->
-                <branch>${env.TRAVIS_BRANCH}</branch>
-            </properties>
-        </profile>
-    </profiles>
 </project>
