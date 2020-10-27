@@ -5,7 +5,7 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.ConnectCommand;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.util.DPState;
-import buttondevteam.lib.TBMCCommandPreprocessEvent;
+import buttondevteam.lib.ScheduledServerRestartEvent;
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
@@ -53,11 +53,16 @@ public class MCListener implements Listener {
 		}
 	}
 
-	@EventHandler
+	/*@EventHandler
 	public void onCommandPreprocess(TBMCCommandPreprocessEvent e) {
 		if (e.getMessage().equalsIgnoreCase("/stop"))
 			MinecraftChatModule.state = DPState.STOPPING_SERVER;
-		else
+		else if (e.getMessage().equalsIgnoreCase("/restart"))
 			MinecraftChatModule.state = DPState.RESTARTING_SERVER;
+	}*/
+
+	@EventHandler //We don't really need this with the logger stuff but hey
+	public void onScheduledRestart(ScheduledServerRestartEvent e) {
+		MinecraftChatModule.state = DPState.RESTARTING_SERVER;
 	}
 }

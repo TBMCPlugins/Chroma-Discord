@@ -32,6 +32,8 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.store.jdk.JdkStoreService;
 import lombok.Getter;
 import lombok.val;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.mockito.internal.util.MockUtil;
 import reactor.core.publisher.Mono;
@@ -49,6 +51,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	@Getter
 	private Command2DC manager;
 	private boolean starting;
+	private BukkitLogWatcher logWatcher;
 
 	/**
 	 * The prefix to use with Discord commands like /role. It only works in the bot channel.
@@ -215,6 +218,20 @@ public class DiscordPlugin extends ButtonPlugin {
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
 
+			//Bukkit.getLogger().addHandler(new BukkitLogWatcher());
+			/*val lc = (LoggerContext) LogManager.getContext(false);
+			var blw = new BukkitLogWatcher();
+			blw.start();
+			lc.getConfiguration().addAppender(blw);
+			Logger logger = lc.getRootLogger();
+			logger.addAppender(lc.getConfiguration().getAppender(blw.getName()));
+			logger.get().addAppender(blw, Level.INFO, blw.getFilter());
+			lc.updateLoggers();*/
+			var blw = new BukkitLogWatcher();
+			blw.start();
+			((Logger) LogManager.getRootLogger()).addAppender(blw);
+			logWatcher = blw;
+
 			if (!TBMCCoreAPI.IsTestServer()) {
 				dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe();
 			} else {
@@ -259,6 +276,7 @@ public class DiscordPlugin extends ButtonPlugin {
 			ChromaBot.delete();
 			//timings.printElapsed("Updating presence...");
 			//dc.updatePresence(Presence.idle(Activity.playing("logging out"))).block(); //No longer using the same account for testing
+			((Logger) LogManager.getRootLogger()).removeAppender(logWatcher);
 			timings.printElapsed("Logging out...");
 			dc.logout().block();
 			mainServer = null; //Allow ReadyEvent again
