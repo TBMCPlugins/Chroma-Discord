@@ -107,7 +107,7 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 * Whether players logged on from Discord (mcchat command) should be recognised by other plugins. Some plugins might break if it's turned off.
 	 * But it's really hacky.
 	 */
-	private final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", true);
+	private final ConfigData<Boolean> addFakePlayersToBukkit = getConfig().getData("addFakePlayersToBukkit", false);
 
 	/**
 	 * Set by the component to report crashes.

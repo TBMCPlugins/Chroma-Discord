@@ -4,6 +4,7 @@ import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.lib.architecture.Component;
+import buttondevteam.lib.architecture.ComponentMetadata;
 import buttondevteam.lib.architecture.ReadOnlyConfigData;
 import discord4j.core.event.domain.role.RoleCreateEvent;
 import discord4j.core.event.domain.role.RoleDeleteEvent;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
  * Automatically collects roles with a certain color.
  * Users can add these roles to themselves using the /role Discord command.
  */
+@ComponentMetadata(enabledByDefault = false)
 public class GameRoleModule extends Component<DiscordPlugin> {
 	public List<String> GameRoles;
 
@@ -42,7 +44,7 @@ public class GameRoleModule extends Component<DiscordPlugin> {
 	/**
 	 * The channel where the bot logs when it detects a role change that results in a new game role or one being removed.
 	 */
-	private ReadOnlyConfigData<Mono<MessageChannel>> logChannel = DPUtils.channelData(getConfig(), "logChannel");
+	private final ReadOnlyConfigData<Mono<MessageChannel>> logChannel = DPUtils.channelData(getConfig(), "logChannel");
 
 	/**
 	 * The role color that is used by game roles.

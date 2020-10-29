@@ -1,11 +1,12 @@
 name: Chroma-Discord
 main: buttondevteam.discordplugin.DiscordPlugin
-version: '1.0'
+version: '${noprefix.version}'
 author: NorbiPeti
-depend: [ChromaCore]
+depend: [ Chroma-Core ]
 softdepend:
   - Essentials
 commands:
   discord:
+    description: 'Main command for Chroma-Discord'
 website: 'https://github.com/TBMCPlugins/Chroma-Discord'
 api-version: '1.13'

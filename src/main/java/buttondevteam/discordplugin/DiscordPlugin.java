@@ -218,15 +218,6 @@ public class DiscordPlugin extends ButtonPlugin {
 			TBMCCoreAPI.SendUnsentExceptions();
 			TBMCCoreAPI.SendUnsentDebugMessages();
 
-			//Bukkit.getLogger().addHandler(new BukkitLogWatcher());
-			/*val lc = (LoggerContext) LogManager.getContext(false);
-			var blw = new BukkitLogWatcher();
-			blw.start();
-			lc.getConfiguration().addAppender(blw);
-			Logger logger = lc.getRootLogger();
-			logger.addAppender(lc.getConfiguration().getAppender(blw.getName()));
-			logger.get().addAppender(blw, Level.INFO, blw.getFilter());
-			lc.updateLoggers();*/
 			var blw = new BukkitLogWatcher();
 			blw.start();
 			((Logger) LogManager.getRootLogger()).addAppender(blw);
@@ -274,8 +265,6 @@ public class DiscordPlugin extends ButtonPlugin {
 		try {
 			SafeMode = true; // Stop interacting with Discord
 			ChromaBot.delete();
-			//timings.printElapsed("Updating presence...");
-			//dc.updatePresence(Presence.idle(Activity.playing("logging out"))).block(); //No longer using the same account for testing
 			((Logger) LogManager.getRootLogger()).removeAppender(logWatcher);
 			timings.printElapsed("Logging out...");
 			dc.logout().block();

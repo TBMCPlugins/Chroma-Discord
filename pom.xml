@@ -23,6 +23,7 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
             </resource>
         </resources>
         <finalName>Chroma-Discord</finalName>
@@ -39,8 +40,10 @@
                         </goals>
                         <configuration>
                             <artifactSet>
-                                <excludes>
-                                </excludes> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
+                                <!-- <includes>
+                                    <include>com.discord4j:discord4j*</include>
+                                    <include>com.vdurmont:emoji-java</include>
+                                </includes> --> <!-- http://stackoverflow.com/questions/28458058/maven-shade-plugin-exclude-a-dependency-and-all-its-transitive-dependencies -->
                             </artifactSet>
                             <!-- <minimizeJar>true</minimizeJar> Tried using filters but we need pretty much all of that 12 MB -->
                             <relocations>
@@ -148,11 +151,11 @@
             <version>3.1.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
-        <dependency>
+        <!-- <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
             <version>1.7.21</version>
-        </dependency>
+        </dependency> -->
         <dependency>
             <groupId>com.github.TBMCPlugins.ChromaCore</groupId>
             <artifactId>Chroma-Core</artifactId>
