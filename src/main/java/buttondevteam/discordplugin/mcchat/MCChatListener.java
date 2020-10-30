@@ -228,9 +228,6 @@ public class MCChatListener implements Listener {
 
 	// Discord
 	public Mono<Boolean> handleDiscord(MessageCreateEvent ev) {
-		val ret = Mono.just(true);
-		if (!ComponentManager.isEnabled(MinecraftChatModule.class))
-			return ret;
 		Timings timings = CommonListeners.timings;
 		timings.printElapsed("Chat event");
 		val author = ev.getMessage().getAuthor();
@@ -249,7 +246,7 @@ public class MCChatListener implements Listener {
 				&& ev.getMessage().getContent().replace(prefix + "", "")
 				.equalsIgnoreCase("mcchat")); //Either mcchat or /mcchat
 			//Allow disabling the chat if needed
-		}).filterWhen(channel -> CommandListener.runCommand(ev.getMessage(), channel, true))
+		}).filterWhen(channel -> CommandListener.runCommand(ev.getMessage(), DiscordPlugin.plugin.commandChannel.get(), true))
 			//Allow running commands in chat channels
 			.filter(channel -> {
 				MCChatUtils.resetLastMessage(channel);
@@ -373,7 +370,7 @@ public class MCChatListener implements Listener {
 			return true;
 		}
 		module.log(dsender.getName() + " ran from DC: /" + cmd);
-		if (runCustomCommand(dsender, cmdlowercased)) return true;
+		if (dsender instanceof DiscordSender && runCustomCommand(dsender, cmdlowercased)) return true;
 		val channel = clmd == null ? user.channel.get() : clmd.mcchannel;
 		val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, clmd == null ? dsender : clmd.dcp);
 		Bukkit.getScheduler().runTask(DiscordPlugin.plugin, //Commands need to be run sync

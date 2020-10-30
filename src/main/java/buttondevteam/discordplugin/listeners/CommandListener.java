@@ -5,9 +5,9 @@ import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.commands.Command2DCSender;
 import buttondevteam.discordplugin.util.Timings;
 import buttondevteam.lib.TBMCCoreAPI;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import lombok.val;
 import reactor.core.publisher.Mono;
@@ -22,7 +22,7 @@ public class CommandListener {
 	 * @param mentionedonly Only run the command if ChromaBot is mentioned at the start of the message
 	 * @return Whether it <b>did not run</b> the command
 	 */
-	public static Mono<Boolean> runCommand(Message message, MessageChannel commandChannel, boolean mentionedonly) {
+	public static Mono<Boolean> runCommand(Message message, Snowflake commandChannelID, boolean mentionedonly) {
 		Timings timings = CommonListeners.timings;
 		Mono<Boolean> ret = Mono.just(true);
 		if (message.getContent().length() == 0)
@@ -35,7 +35,7 @@ public class CommandListener {
 				timings.printElapsed("B");
 				if (!(channel instanceof PrivateChannel)
 					&& !(content.charAt(0) == DiscordPlugin.getPrefix()
-					&& channel.getId().asLong() == commandChannel.getId().asLong())) //
+					&& channel.getId().asLong() == commandChannelID.asLong())) //
 					return ret;
 				timings.printElapsed("C");
 				tmp = ret.then(channel.type()).thenReturn(true); // Fun (this true is ignored - x)
@@ -62,7 +62,7 @@ public class CommandListener {
 					try {
 						timings.printElapsed("F");
 						if (!DiscordPlugin.plugin.getManager().handleCommand(new Command2DCSender(message), cmdwithargsString))
-							return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.\n" + cmdwithargsString)
+							return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix() + "help for help.")
 								.map(m -> false);
 					} catch (Exception e) {
 						TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e, DiscordPlugin.plugin);

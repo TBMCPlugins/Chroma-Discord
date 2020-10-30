@@ -114,6 +114,9 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	 */
 	private final ConfigData<Boolean> serverUp = getConfig().getData("serverUp", false);
 
+	private final MCChatCommand mcChatCommand = new MCChatCommand(this);
+	private final ChannelconCommand channelconCommand = new ChannelconCommand(this);
+
 	@Override
 	protected void enable() {
 		if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono()))
@@ -121,8 +124,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		listener = new MCChatListener(this);
 		TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin());
 		TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin());//These get undone if restarting/resetting - it will ignore events if disabled
-		getPlugin().getManager().registerCommand(new MCChatCommand(this));
-		getPlugin().getManager().registerCommand(new ChannelconCommand(this));
+		getPlugin().getManager().registerCommand(mcChatCommand);
+		getPlugin().getManager().registerCommand(channelconCommand);
 
 		val chcons = getConfig().getConfig().getConfigurationSection("chcons");
 		if (chcons == null) //Fallback to old place
@@ -234,6 +237,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			chconc.set("brtoggles", chcon.brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.toList()));
 		}
 		listener.stop(true);
+		getPlugin().getManager().unregisterCommand(mcChatCommand);
+		getPlugin().getManager().unregisterCommand(channelconCommand);
 		disabling = false;
 	}
 

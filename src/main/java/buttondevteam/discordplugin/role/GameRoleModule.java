@@ -30,15 +30,17 @@ import java.util.stream.Collectors;
 public class GameRoleModule extends Component<DiscordPlugin> {
 	public List<String> GameRoles;
 
+	private final RoleCommand command = new RoleCommand(this);
+
 	@Override
 	protected void enable() {
-		getPlugin().getManager().registerCommand(new RoleCommand(this));
+		getPlugin().getManager().registerCommand(command);
 		GameRoles = DiscordPlugin.mainServer.getRoles().filterWhen(this::isGameRole).map(Role::getName).collect(Collectors.toList()).block();
 	}
 
 	@Override
 	protected void disable() {
-
+		getPlugin().getManager().unregisterCommand(command);
 	}
 
 	/**
