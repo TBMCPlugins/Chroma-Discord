@@ -2,17 +2,17 @@ cache:
   directories:
   - $HOME/.m2/repository/org/
 before_install: | # Wget BuildTools and run if cached folder not found
-  jdk_switcher use oraclejdk8
+  export JAVA_HOME=$HOME/oraclejdk8
+  $TRAVIS_BUILD_DIR/install-jdk.sh --install oraclejdk8 --target $JAVA_HOME
   if [ ! -d "$HOME/.m2/repository/org/spigotmc/spigot/1.12.2-R0.1-SNAPSHOT" ]; then
   wget -O BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
   # grep so that download counts don't appear in log files
   java -jar BuildTools.jar --rev 1.12.2 | grep -vE "[^/ ]*/[^/ ]*\s*KB\s*$" | grep -v "^\s*$"
   fi
-  export JAVA_HOME=$HOME/openjdk11
-  $TRAVIS_BUILD_DIR/install-jdk.sh --install openjdk11 --target $JAVA_HOME
+  export JAVA_HOME=$HOME/oraclejdk11
+  $TRAVIS_BUILD_DIR/install-jdk.sh --install oraclejdk11 --target $JAVA_HOME
 language: java
 jdk:
-  - oraclejdk8
   - oraclejdk11
 sudo: true
 deploy:
