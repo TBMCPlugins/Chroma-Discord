@@ -236,7 +236,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 			chconc.set("toggles", chcon.toggles);
 			chconc.set("brtoggles", chcon.brtoggles.stream().map(TBMCSystemChatEvent.BroadcastTarget::getName).collect(Collectors.toList()));
 		}
-		listener.stop(true);
+		if (listener != null) //Can be null if disabled because of a config error
+			listener.stop(true);
 		getPlugin().getManager().unregisterCommand(mcChatCommand);
 		getPlugin().getManager().unregisterCommand(channelconCommand);
 		disabling = false;
