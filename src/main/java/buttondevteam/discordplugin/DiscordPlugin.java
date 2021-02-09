@@ -135,16 +135,28 @@ public class DiscordPlugin extends ButtonPlugin {
 				}
 			}
 			starting = true;
+			//System.out.println("This line should show up for sure");
 			val cb = DiscordClientBuilder.create(token).build().gateway();
+			//System.out.println("Got gateway bootstrap");
 			cb.setInitialStatus(si -> Presence.doNotDisturb(Activity.playing("booting")));
 			cb.setStoreService(new JdkStoreService()); //The default doesn't work for some reason - it's waaay faster now
-			cb.login().doOnError(t -> stopStarting()).subscribe(dc -> {
+			//System.out.println("Initial status and store service set");
+			cb.login().doOnError(t -> {
+				stopStarting();
+				//System.out.println("Got this error: " + t); t.printStackTrace();
+			}).subscribe(dc -> {
+				//System.out.println("Login successful, got dc: " + dc);
 				DiscordPlugin.dc = dc; //Set to gateway client
 				dc.on(ReadyEvent.class) // Listen for ReadyEvent(s)
 					.map(event -> event.getGuilds().size()) // Get how many guilds the bot is in
 					.flatMap(size -> dc
 						.on(GuildCreateEvent.class) // Listen for GuildCreateEvent(s)
 						.take(size) // Take only the first `size` GuildCreateEvent(s) to be received
+						.doOnError(t -> {
+							stopStarting();
+							//System.out.println("Got error: " + t);
+							t.printStackTrace();
+						})
 						.collectList()).doOnError(t -> stopStarting()).subscribe(this::handleReady); // Take all received GuildCreateEvents and make it a List
 			}); /* All guilds have been received, client is fully connected */
 		} catch (Exception e) {
@@ -164,6 +176,7 @@ public class DiscordPlugin extends ButtonPlugin {
 	public static Guild mainServer;
 
 	private void handleReady(List<GuildCreateEvent> event) {
+		//System.out.println("Got ready event");
 		try {
 			if (mainServer != null) { //This is not the first ready event
 				getLogger().info("Ready event already handled"); //TODO: It should probably handle disconnections
