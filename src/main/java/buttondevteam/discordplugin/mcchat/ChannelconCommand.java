@@ -3,8 +3,6 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.core.component.channel.Channel;
 import buttondevteam.core.component.channel.ChatRoom;
 import buttondevteam.discordplugin.*;
-import buttondevteam.discordplugin.commands.Command2DCSender;
-import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;

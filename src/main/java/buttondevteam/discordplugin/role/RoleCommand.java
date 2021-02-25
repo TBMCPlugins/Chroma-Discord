@@ -1,8 +1,6 @@
 package buttondevteam.discordplugin.role;
 
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.commands.Command2DCSender;
-import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;

@@ -3,7 +3,6 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.discordplugin.*;
 import buttondevteam.discordplugin.listeners.CommandListener;
-import buttondevteam.discordplugin.listeners.CommonListeners;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener14;
 import buttondevteam.discordplugin.playerfaker.VanillaCommandListener15;

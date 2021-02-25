@@ -1,12 +1,12 @@
 package buttondevteam.discordplugin.listeners
 
-import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.discordplugin.commands.Command2DCSender
+import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import discord4j.core.`object`.entity.{Member, Message, Role, User}
-import reactor.core.publisher.Mono
+import reactor.core.publisher.{Flux, Mono}
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -39,7 +39,7 @@ object CommandListener {
                 val gotmention = new AtomicBoolean
                 timings.printElapsed("Before self")
                 tmp.flatMapMany((x: Boolean) => DiscordPlugin.dc.getSelf.flatMap((self: User) => self.asMember(DiscordPlugin.mainServer.getId)).flatMapMany((self: Member) => {
-                    def foo(self: Member) = {
+                    def foo(self: Member): Flux[String] = {
                         timings.printElapsed("D")
                         gotmention.set(checkanddeletemention(cmdwithargs, self.getMention, message))
                         gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention, message) || gotmention.get)
@@ -49,14 +49,14 @@ object CommandListener {
 
                     foo(self)
                 }).map((mentionRole: String) => {
-                    def foo(mentionRole: String) = {
+                    def foo(mentionRole: String): Boolean = {
                         timings.printElapsed("E")
                         gotmention.set(checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention.get) // Delete all mentions
                         !mentionedonly || gotmention.get //Stops here if false
                     }
 
                     foo(mentionRole)
-                }).switchIfEmpty(Mono.fromSupplier(() => !mentionedonly || gotmention.get))).filter((b: Boolean) => b).last(false).filter((b: Boolean) => b).doOnNext((b: Boolean) => channel.`type`.subscribe).flatMap((b: Boolean) => {
+                }: Boolean)[Mono[Boolean]].switchIfEmpty(Mono.fromSupplier[Boolean](() => !mentionedonly || gotmention.get)))[Mono[Boolean]].filter((b: Boolean) => b).last(false).filter((b: Boolean) => b).doOnNext((b: Boolean) => channel.`type`.subscribe).flatMap((b: Boolean) => {
                     def foo(): Mono[Boolean] = {
                         val cmdwithargsString = cmdwithargs.toString
                         try {

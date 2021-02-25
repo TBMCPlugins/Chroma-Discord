@@ -3,8 +3,6 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.commands.Command2DCSender;
-import buttondevteam.discordplugin.commands.ICommand2DC;
 import buttondevteam.lib.chat.Command2;
 import buttondevteam.lib.chat.CommandClass;
 import discord4j.core.object.entity.channel.PrivateChannel;

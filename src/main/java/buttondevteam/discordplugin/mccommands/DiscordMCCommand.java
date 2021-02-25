@@ -4,8 +4,6 @@ import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.DiscordSenderBase;
-import buttondevteam.discordplugin.commands.ConnectCommand;
-import buttondevteam.discordplugin.commands.VersionCommand;
 import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.util.DPState;

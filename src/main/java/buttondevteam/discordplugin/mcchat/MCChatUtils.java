@@ -3,7 +3,6 @@ package buttondevteam.discordplugin.mcchat;
 import buttondevteam.core.ComponentManager;
 import buttondevteam.core.MainPlugin;
 import buttondevteam.discordplugin.*;
-import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
 import com.google.common.collect.Sets;
