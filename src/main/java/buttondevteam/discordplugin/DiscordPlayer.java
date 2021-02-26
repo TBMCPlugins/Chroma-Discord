@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.discordplugin.mcchat.MCChatPrivate;
 import buttondevteam.lib.player.ChromaGamerBase;
 import buttondevteam.lib.player.UserClass;
 import discord4j.core.object.entity.User;

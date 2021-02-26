@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.playerfaker.VCMDWrapper;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;

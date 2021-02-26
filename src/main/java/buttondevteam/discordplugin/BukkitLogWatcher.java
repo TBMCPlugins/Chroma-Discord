@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin;
 
-import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.discordplugin.util.DPState;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;

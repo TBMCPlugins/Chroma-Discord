@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import buttondevteam.discordplugin.mcchat.MCChatUtils;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import lombok.RequiredArgsConstructor;
 import net.bytebuddy.implementation.bind.annotation.IgnoreForBinding;
