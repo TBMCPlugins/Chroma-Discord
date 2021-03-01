@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.{ComponentManager, MainPlugin, component}
+import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
 import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
@@ -105,14 +106,14 @@ object MCChatUtils {
 
     def getSender[T <: DiscordSenderBase](senders: ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
         val map = senders.get(user.getId.asString)
-        if (map != null) return map.get(channel)
-        null
+        if (map != null) map.get(channel)
+        else null.asInstanceOf
     }
 
     def removeSender[T <: DiscordSenderBase](senders: ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
         val map = senders.get(user.getId.asString)
-        if (map != null) return map.remove(channel)
-        null
+        if (map != null) map.remove(channel)
+        else null.asInstanceOf
     }
 
     def forPublicPrivateChat(action: Mono[MessageChannel] => Mono[_]): Mono[_] = {
@@ -154,7 +155,7 @@ object MCChatUtils {
         if (notEnabled) return Mono.empty
         val st = MCChatCustom.lastmsgCustom.stream.filter((clmd) => {
             def foo(clmd: CustomLMD): Boolean = { //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
-                if (toggle != null && ((clmd.toggles & toggle.flag) eq 0)) return false //If null then allow
+                if (toggle != null && ((clmd.toggles & (1 << toggle.id)) eq 0)) return false //If null then allow
                 if (sender == null) return true
                 clmd.groupID.equals(clmd.mcchannel.getGroupID(sender))
             }

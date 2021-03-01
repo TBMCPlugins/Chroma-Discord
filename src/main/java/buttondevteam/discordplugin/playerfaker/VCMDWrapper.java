@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.playerfaker;
 
 import buttondevteam.discordplugin.DiscordSenderBase;
 import buttondevteam.discordplugin.IMCPlayer;
+import buttondevteam.discordplugin.mcchat.MinecraftChatModule;
 import buttondevteam.lib.TBMCCoreAPI;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
