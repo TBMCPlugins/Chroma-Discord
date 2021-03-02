@@ -12,7 +12,6 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.PresenceUpdateEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.event.domain.role.{RoleCreateEvent, RoleDeleteEvent, RoleUpdateEvent}
-import reactor.core.publisher.Mono
 import reactor.core.scala.publisher.SMono
 
 object CommonListeners {
@@ -29,9 +28,9 @@ object CommonListeners {
       */
     def register(dispatcher: EventDispatcher) = {
         dispatcher.on(classOf[MessageCreateEvent]).flatMap((event: MessageCreateEvent) => {
-            def foo(event: MessageCreateEvent) = {
+            def foo(event: MessageCreateEvent): SMono[Boolean] = {
                 timings.printElapsed("Message received")
-                val `def` = Mono.empty
+                val `def` = SMono.empty
                 if (DiscordPlugin.SafeMode) return `def`
                 val author = event.getMessage.getAuthor
                 if (!author.isPresent || author.get.isBot) return `def`
@@ -42,30 +41,18 @@ object CommonListeners {
                     (shouldRun: Boolean) => { //Only 'channelcon' is allowed in other channels
                         def foo(shouldRun: Boolean): SMono[Boolean] = { //Only continue if this doesn't handle the event
                             if (!shouldRun) return SMono.just(true) //The condition is only for the first command execution, not mcchat
-                            timings.printElapsed("Run command 1")
                             CommandListener.runCommand(event.getMessage, commandChannel, mentionedonly = true) //#bot is handled here
                         }
 
                         foo(shouldRun)
-                    }).filterWhen((ch: Any) => {
-                    def foo() = {
-                        timings.printElapsed("mcchat")
-                        val mcchat = Component.getComponents.get(classOf[MinecraftChatModule])
-                        if (mcchat != null && mcchat.isEnabled) { //ComponentManager.isEnabled() searches the component again
-                            return mcchat.asInstanceOf[MinecraftChatModule].getListener.handleDiscord(event) //Also runs Discord commands in chat channels
-                        }
-                        SMono.just(true) //Wasn't handled, continue
+                    }).filterWhen(_ => {
+                    timings.printElapsed("mcchat")
+                    val mcchat = Component.getComponents.get(classOf[MinecraftChatModule])
+                    if (mcchat != null && mcchat.isEnabled) { //ComponentManager.isEnabled() searches the component again
+                        return mcchat.asInstanceOf[MinecraftChatModule].getListener.handleDiscord(event) //Also runs Discord commands in chat channels
                     }
-
-                    foo()
-                }).filterWhen((ch: Any) => {
-                    def foo(ch: Any) = {
-                        timings.printElapsed("Run command 2")
-                        CommandListener.runCommand(event.getMessage, commandChannel, mentionedonly = false)
-                    }
-
-                    foo(ch)
-                })
+                    SMono.just(true) //Wasn't handled, continue
+                }).filterWhen(_ => CommandListener.runCommand(event.getMessage, commandChannel, mentionedonly = false))
             }
 
             foo(event)

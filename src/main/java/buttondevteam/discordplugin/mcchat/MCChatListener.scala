@@ -3,9 +3,8 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.ComponentManager
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin._
-import buttondevteam.discordplugin.listeners.{CommandListener, CommonListeners}
+import buttondevteam.discordplugin.listeners.CommandListener
 import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
-import buttondevteam.discordplugin.util.Timings
 import buttondevteam.lib._
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
 import buttondevteam.lib.player.TBMCPlayer
@@ -246,32 +245,16 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
 
     // Discord
     def handleDiscord(ev: MessageCreateEvent): SMono[Boolean] = {
-        val timings: Timings = CommonListeners.timings
-        timings.printElapsed("Chat event")
         val author = Option(ev.getMessage.getAuthor.orElse(null))
         val hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage.getChannelId)
         val prefix = DiscordPlugin.getPrefix
-        SMono(ev.getMessage.getChannel).filter(channel => {
-            def hasPrivateChat = channel.isInstanceOf[PrivateChannel] &&
-                author.exists((u: User) => MCChatPrivate.isMinecraftChatEnabled(u.getId.asString))
-
-            def hasPublicChat = ev.getMessage.getChannelId.asLong == module.chatChannel.get.asLong
-
-            timings.printElapsed("Filter 1")
-            val chatEnabled = hasPublicChat || hasPrivateChat || hasCustomChat
-            chatEnabled
-        }).filter(channel => {
-            timings.printElapsed("Filter 2")
-            !(channel.isInstanceOf[PrivateChannel] //Only in private chat
-                && ev.getMessage.getContent.length < "/mcchat<>".length
-                && ev.getMessage.getContent.replace(prefix + "", "").equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
-            //Allow disabling the chat if needed
-        }).filterWhen(_ =>
-            CommandListener.runCommand(ev.getMessage, DiscordPlugin.plugin.commandChannel.get, mentionedonly = true)) //Allow running commands in chat channels
+        SMono(ev.getMessage.getChannel)
+            .filter(channel => isChatEnabled(channel, author, hasCustomChat))
+            .filter(channel => !isRunningMCChatCommand(channel, ev.getMessage.getContent, prefix))
+            .filterWhen(_ => CommandListener.runCommand(ev.getMessage, DiscordPlugin.plugin.commandChannel.get, mentionedonly = true)) //Allow running commands in chat channels
             .filter(channel => {
                 MCChatUtils.resetLastMessage(channel)
                 recevents.add(ev)
-                timings.printElapsed("Message event added")
                 if (rectask != null) {
                     return true
                 }
@@ -287,11 +270,27 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             }).map(_ => false).defaultIfEmpty(true)
     }
 
+    private def isChatEnabled(channel: MessageChannel, author: Option[User], hasCustomChat: Boolean) = {
+        def hasPrivateChat = channel.isInstanceOf[PrivateChannel] &&
+            author.exists((u: User) => MCChatPrivate.isMinecraftChatEnabled(u.getId.asString))
+
+        def hasPublicChat = channel.getId.asLong == module.chatChannel.get.asLong
+
+        hasPublicChat || hasPrivateChat || hasCustomChat
+    }
+
+    private def isRunningMCChatCommand(channel: MessageChannel, content: String, prefix: Char) = {
+        (channel.isInstanceOf[PrivateChannel] //Only in private chat
+            && content.length < "/mcchat<>".length
+            && content.replace(prefix + "", "").equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
+        //Allow disabling the chat if needed
+    }
+
     private def processDiscordToMC(): Unit = {
         var event: MessageCreateEvent = null
         try event = recevents.take
         catch {
-            case e1: InterruptedException =>
+            case _: InterruptedException =>
                 rectask.cancel()
                 return
         }
