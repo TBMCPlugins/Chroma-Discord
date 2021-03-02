@@ -21,6 +21,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitTask
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.time.Instant
 import java.util
@@ -244,30 +245,30 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
     private var recthread: Thread = null
 
     // Discord
-    def handleDiscord(ev: MessageCreateEvent): Mono[Boolean] = {
+    def handleDiscord(ev: MessageCreateEvent): SMono[Boolean] = {
         val timings: Timings = CommonListeners.timings
         timings.printElapsed("Chat event")
-        val author: Optional[User] = ev.getMessage.getAuthor
-        val hasCustomChat: Boolean = MCChatCustom.hasCustomChat(ev.getMessage.getChannelId)
-        val prefix: Char = DiscordPlugin.getPrefix
-        return ev.getMessage.getChannel.filter((channel: MessageChannel) => {
-            def foo(channel: MessageChannel) = {
-                timings.printElapsed("Filter 1")
-                return !((ev.getMessage.getChannelId.asLong != module.chatChannel.get.asLong && !((channel.isInstanceOf[PrivateChannel] && author.map((u: User) => MCChatPrivate.isMinecraftChatEnabled(u.getId.asString)).orElse(false))) && !(hasCustomChat))) //Chat isn't enabled on this channel
-            }
+        val author = Option(ev.getMessage.getAuthor.orElse(null))
+        val hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage.getChannelId)
+        val prefix = DiscordPlugin.getPrefix
+        SMono(ev.getMessage.getChannel).filter(channel => {
+            def hasPrivateChat = channel.isInstanceOf[PrivateChannel] &&
+                author.exists((u: User) => MCChatPrivate.isMinecraftChatEnabled(u.getId.asString))
 
-            foo(channel)
-        }).filter((channel: MessageChannel) => {
-            def foo(channel: MessageChannel) = {
-                timings.printElapsed("Filter 2")
-                return !((channel.isInstanceOf[PrivateChannel] //Only in private chat && ev.getMessage.getContent.length < "/mcchat<>".length && ev.getMessage.getContent.replace(prefix + "", "").equalsIgnoreCase("mcchat")))//Either mcchat or /mcchat
-                //Allow disabling the chat if needed
-            }
+            def hasPublicChat = ev.getMessage.getChannelId.asLong == module.chatChannel.get.asLong
 
-            foo(channel)
-        }).filterWhen((channel: MessageChannel) => CommandListener.runCommand(ev.getMessage, DiscordPlugin.plugin.commandChannel.get, true)).filter //Allow running commands in chat channels
-        ((channel: MessageChannel) => {
-            def foo(channel: MessageChannel) = {
+            timings.printElapsed("Filter 1")
+            val chatEnabled = hasPublicChat || hasPrivateChat || hasCustomChat
+            chatEnabled
+        }).filter(channel => {
+            timings.printElapsed("Filter 2")
+            !(channel.isInstanceOf[PrivateChannel] //Only in private chat
+                && ev.getMessage.getContent.length < "/mcchat<>".length
+                && ev.getMessage.getContent.replace(prefix + "", "").equalsIgnoreCase("mcchat")) //Either mcchat or /mcchat
+            //Allow disabling the chat if needed
+        }).filterWhen(_ =>
+            CommandListener.runCommand(ev.getMessage, DiscordPlugin.plugin.commandChannel.get, mentionedonly = true)) //Allow running commands in chat channels
+            .filter(channel => {
                 MCChatUtils.resetLastMessage(channel)
                 recevents.add(ev)
                 timings.printElapsed("Message event added")
@@ -275,22 +276,15 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                     return true
                 }
                 recrun = () => {
-                    def foo() = { //Don't return in a while loop next time
-                        recthread = Thread.currentThread
-                        processDiscordToMC()
-                        if (DiscordPlugin.plugin.isEnabled && !(stop)) {
-                            rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Continue message processing
-                        }
+                    recthread = Thread.currentThread
+                    processDiscordToMC()
+                    if (DiscordPlugin.plugin.isEnabled && !(stop)) {
+                        rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Continue message processing
                     }
-
-                    foo()
                 }
                 rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Start message processing
                 return true
-            }
-
-            foo(channel)
-        }).map((b: MessageChannel) => false).defaultIfEmpty(true)
+            }).map(_ => false).defaultIfEmpty(true)
     }
 
     private def processDiscordToMC(): Unit = {
@@ -307,7 +301,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val dsender: DiscordSenderBase = MCChatUtils.getSender(event.getMessage.getChannelId, sender)
             val user: DiscordPlayer = dsender.getChromaUser
 
-            for (u <- event.getMessage.getUserMentions.toIterable) { //TODO: Role mentions
+            for (u <- SFlux(event.getMessage.getUserMentions).toIterable()) { //TODO: Role mentions
                 dmessage = dmessage.replace(u.getMention, "@" + u.getUsername) // TODO: IG Formatting
                 val m: Optional[Member] = u.asMember(DiscordPlugin.mainServer.getId).onErrorResume((t: Throwable) => Mono.empty).blockOptional
                 if (m.isPresent) {
@@ -317,7 +311,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 }
             }
 
-            for (ch <- event.getGuild.flux.flatMap(_.getChannels).toIterable) {
+            for (ch <- SFlux(event.getGuild.flux).flatMap(_.getChannels).toIterable()) {
                 dmessage = dmessage.replace(ch.getMention, "#" + ch.getName)
             }
             dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE) //Converts emoji to text- TODO: Add option to disable (resource pack?)
@@ -388,7 +382,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             }
             react = true
         }
-        return react
+        react
     }
 
     private def handleIngameCommand(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer, clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {

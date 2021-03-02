@@ -6,10 +6,10 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.{Guild, Message, Role}
 import discord4j.core.spec.EmbedCreateSpec
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.util
-import java.util.{Comparator, Optional}
+import java.util.Comparator
 import java.util.logging.Logger
 import java.util.regex.Pattern
 import javax.annotation.Nullable
@@ -62,8 +62,8 @@ object DPUtils {
             return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape*/ val sb = new StringBuffer
         while ( {
             matcher.find
-        }) matcher.appendReplacement(sb, if (Optional.ofNullable(ts.floor(Array[Int](matcher.start, 0))).map( //Find a URL start <= our start
-            (a: Array[Int]) => a(1)).orElse(-1) < matcher.start //Check if URL end < our start
+        }) matcher.appendReplacement(sb, if (Option(ts.floor(Array[Int](matcher.start, 0))).map( //Find a URL start <= our start
+            (a: Array[Int]) => a(1)).getOrElse(-1) < matcher.start //Check if URL end < our start
         ) "\\\\" + matcher.group else matcher.group)
         matcher.appendTail(sb)
         sb.toString
@@ -74,22 +74,22 @@ object DPUtils {
         DiscordPlugin.plugin.getLogger
     }
 
-    def channelData(config: IHaveConfig, key: String): ReadOnlyConfigData[Mono[MessageChannel]] =
+    def channelData(config: IHaveConfig, key: String): ReadOnlyConfigData[SMono[MessageChannel]] =
         config.getReadOnlyDataPrimDef(key, 0L, (id: Any) =>
-            getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])), (_: Mono[MessageChannel]) => 0L) //We can afford to search for the channel in the cache once (instead of using mainServer)
-    def roleData(config: IHaveConfig, key: String, defName: String): ReadOnlyConfigData[Mono[Role]] =
-        roleData(config, key, defName, Mono.just(DiscordPlugin.mainServer))
+            getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])), (_: SMono[MessageChannel]) => 0L) //We can afford to search for the channel in the cache once (instead of using mainServer)
+    def roleData(config: IHaveConfig, key: String, defName: String): ReadOnlyConfigData[SMono[Role]] =
+        roleData(config, key, defName, SMono.just(DiscordPlugin.mainServer))
 
     /**
      * Needs to be a {@link ConfigData} for checking if it's set
      */
-    def roleData(config: IHaveConfig, key: String, defName: String, guild: Mono[Guild]): ReadOnlyConfigData[Mono[Role]] = config.getReadOnlyDataPrimDef(key, defName, (name: Any) => {
-        def foo(name: Any): Mono[Role] = {
-            if (!name.isInstanceOf[String] || name.asInstanceOf[String].isEmpty) return Mono.empty[Role]
+    def roleData(config: IHaveConfig, key: String, defName: String, guild: SMono[Guild]): ReadOnlyConfigData[SMono[Role]] = config.getReadOnlyDataPrimDef(key, defName, (name: Any) => {
+        def foo(name: Any): SMono[Role] = {
+            if (!name.isInstanceOf[String] || name.asInstanceOf[String].isEmpty) return SMono.empty[Role]
             guild.flatMapMany(_.getRoles).filter((r: Role) => r.getName == name).onErrorResume((e: Throwable) => {
-                def foo(e: Throwable): Mono[Role] = {
+                def foo(e: Throwable): SMono[Role] = {
                     getLogger.warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage)
-                    Mono.empty[Role]
+                    SMono.empty[Role]
                 }
 
                 foo(e)
@@ -97,7 +97,7 @@ object DPUtils {
         }
 
         foo(name)
-    }, (_: Mono[Role]) => defName)
+    }, (_: SMono[Role]) => defName)
 
     def snowflakeData(config: IHaveConfig, key: String, defID: Long): ReadOnlyConfigData[Snowflake] =
         config.getReadOnlyDataPrimDef(key, defID, (id: Any) => Snowflake.of(id.asInstanceOf[Long]), _.asLong)
@@ -137,7 +137,7 @@ object DPUtils {
      */
     def disableIfConfigErrorRes(@Nullable component: Component[DiscordPlugin], config: ConfigData[_], result: Any): Boolean = {
         //noinspection ConstantConditions
-        if (result == null || (result.isInstanceOf[Mono[_]] && !result.asInstanceOf[Mono[_]].hasElement.block)) {
+        if (result == null || (result.isInstanceOf[SMono[_]] && !result.asInstanceOf[SMono[_]].hasElement.block())) {
             var path: String = null
             try {
                 if (component != null) Component.setComponentEnabled(component, false)
@@ -157,26 +157,26 @@ object DPUtils {
     }
 
     /**
-     * Send a response in the form of "@User, message". Use Mono.empty() if you don't have a channel object.
+     * Send a response in the form of "@User, message". Use SMono.empty() if you don't have a channel object.
      *
      * @param original The original message to reply to
      * @param channel  The channel to send the message in, defaults to the original
      * @param message  The message to send
      * @return A mono to send the message
      */
-    def reply(original: Message, @Nullable channel: MessageChannel, message: String): Mono[Message] = {
-        val ch = if (channel == null) original.getChannel
-        else Mono.just(channel)
+    def reply(original: Message, @Nullable channel: MessageChannel, message: String): SMono[Message] = {
+        val ch = if (channel == null) SMono(original.getChannel)
+        else SMono.just(channel)
         reply(original, ch, message)
     }
 
     /**
      * @see #reply(Message, MessageChannel, String)
      */
-    def reply(original: Message, ch: Mono[MessageChannel], message: String): Mono[Message] =
-        ch.flatMap(_.createMessage((if (original.getAuthor.isPresent)
+    def reply(original: Message, ch: SMono[MessageChannel], message: String): SMono[Message] =
+        ch.flatMap(channel => SMono(channel.createMessage((if (original.getAuthor.isPresent)
             original.getAuthor.get.getMention + ", "
-        else "") + message))
+        else "") + message)))
 
     def nickMention(userId: Snowflake): String = "<@!" + userId.asString + ">"
 
@@ -189,21 +189,21 @@ object DPUtils {
      * @param id  The channel ID
      * @return A message channel
      */
-    def getMessageChannel(key: String, id: Snowflake): Mono[MessageChannel] = {
-        if (id.asLong == 0L) return Mono.empty[MessageChannel]
+    def getMessageChannel(key: String, id: Snowflake): SMono[MessageChannel] = {
+        if (id.asLong == 0L) return SMono.empty[MessageChannel]
 
-        DiscordPlugin.dc.getChannelById(id).onErrorResume(e => {
+        SMono(DiscordPlugin.dc.getChannelById(id)).onErrorResume(e => {
             def foo(e: Throwable) = {
                 getLogger.warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage)
-                Mono.empty
+                SMono.empty
             }
 
             foo(e)
-        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast(classOf[MessageChannel])
+        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast[MessageChannel]
     }
 
-    def getMessageChannel(config: ConfigData[Snowflake]): Mono[MessageChannel] =
+    def getMessageChannel(config: ConfigData[Snowflake]): SMono[MessageChannel] =
         getMessageChannel(config.getPath, config.get)
 
-    def ignoreError[T](mono: Mono[T]): Mono[T] = mono.onErrorResume((_: Throwable) => Mono.empty)
+    def ignoreError[T](mono: SMono[T]): SMono[T] = mono.onErrorResume((_: Throwable) => SMono.empty)
 }

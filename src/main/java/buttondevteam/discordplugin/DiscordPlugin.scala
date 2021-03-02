@@ -15,12 +15,12 @@ import buttondevteam.lib.architecture._
 import buttondevteam.lib.player.ChromaGamerBase
 import com.google.common.io.Files
 import discord4j.common.util.Snowflake
-import discord4j.core.{DiscordClientBuilder, GatewayDiscordClient}
 import discord4j.core.`object`.entity.{ApplicationInfo, Guild, Role}
 import discord4j.core.`object`.presence.{Activity, Presence}
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.{DiscordClientBuilder, GatewayDiscordClient}
 import discord4j.gateway.ShardInfo
 import discord4j.store.jdk.JdkStoreService
 import org.apache.logging.log4j.LogManager
@@ -29,7 +29,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
 import org.mockito.internal.util.MockUtil
 import reactor.core.Disposable
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -65,13 +65,16 @@ import java.util.Optional
      * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
      */
     private def mainServer = getIConfig.getDataPrimDef("mainServer", 0L, (id: Any) => {
-        def foo(id: Any) = { //It attempts to get the default as well
-            if (id.asInstanceOf[Long] == 0L) Optional.empty //Hack?
-            else DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long])).onErrorResume((t: Throwable) => Mono.fromRunnable(() => getLogger.warning("Failed to get guild: " + t.getMessage))).blockOptional
+        def foo(id: Any): Option[Guild] = { //It attempts to get the default as well
+            if (id.asInstanceOf[Long] == 0L) Option.empty
+            else SMono.fromPublisher(DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long])))
+                .onErrorResume((t: Throwable) => {
+                    getLogger.warning("Failed to get guild: " + t.getMessage); SMono.empty
+                }).blockOption()
         }
 
         foo(id)
-    }, (g: Optional[Guild]) => (g.map((gg: Guild) => gg.getId.asLong): Optional[Long]).orElse(0L))
+    }, (g: Option[Guild]) => (g.map(_.getId.asLong): Option[Long]).getOrElse(0L))
 
     /**
      * The (bot) channel to use for Discord commands like /role.
@@ -81,7 +84,7 @@ import java.util.Optional
      * The role that allows using mod-only Discord commands.
      * If empty (''), then it will only allow for the owner.
      */
-    var modRole: ReadOnlyConfigData[Mono[Role]] = null
+    var modRole: ReadOnlyConfigData[SMono[Role]] = null
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
@@ -153,7 +156,9 @@ import java.util.Optional
     }
 
     private def stopStarting(): Unit = {
-        this synchronized (starting = false)
+        this synchronized {
+            starting = false
+        }
         notifyAll()
     }
 
@@ -164,7 +169,7 @@ import java.util.Optional
                 DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe //Update from the initial presence
                 return
             }
-            DiscordPlugin.mainServer = mainServer.get.orElse(null) //Shouldn't change afterwards
+            DiscordPlugin.mainServer = mainServer.get.orNull //Shouldn't change afterwards
             if (DiscordPlugin.mainServer == null) {
                 if (event.size == 0) {
                     getLogger.severe("Main server not found! Invite the bot and do /discord restart")
@@ -174,7 +179,7 @@ import java.util.Optional
                 }
                 DiscordPlugin.mainServer = event.get(0).getGuild
                 getLogger.warning("Main server set to first one: " + DiscordPlugin.mainServer.getName)
-                mainServer.set(Optional.of(DiscordPlugin.mainServer)) //Save in config
+                mainServer.set(Option(DiscordPlugin.mainServer)) //Save in config
             }
             DiscordPlugin.SafeMode = false
             setupConfig()

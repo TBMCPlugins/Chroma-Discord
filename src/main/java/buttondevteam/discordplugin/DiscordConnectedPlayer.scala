@@ -15,8 +15,8 @@ import org.bukkit.inventory.{Inventory, PlayerInventory}
 import org.bukkit.permissions.{PermissibleBase, Permission, PermissionAttachment, PermissionAttachmentInfo}
 import org.bukkit.plugin.Plugin
 import org.mockito.Answers.RETURNS_DEFAULTS
-import org.mockito.{MockSettings, Mockito}
 import org.mockito.invocation.InvocationOnMock
+import org.mockito.{MockSettings, Mockito}
 
 import java.lang.reflect.Modifier
 import java.net.InetSocketAddress
@@ -52,7 +52,24 @@ object DiscordConnectedPlayer {
     }).stubOnly
 }
 
-abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] {
+/**
+ * @constructor The parameters must match with {@link #create ( User, MessageChannel, UUID, String, MinecraftChatModule)}
+ * @param user     May be null.
+ * @param channel  May not be null.
+ * @param uniqueId The UUID of the player.
+ * @param name     The Minecraft name of the player.
+ * @param module   The MinecraftChatModule or null if testing.
+ */
+abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val uniqueId: UUID, val name: String, val module: MinecraftChatModule) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] {
+    private var loggedIn = false
+    private var displayName: String = name
+
+    private var location: Location = if (module == null) null else Bukkit.getWorlds.get(0).getSpawnLocation
+    private val basePlayer: OfflinePlayer = if (module == null) null else Bukkit.getOfflinePlayer(uniqueId)
+    private var perm: PermissibleBase = if (module == null) null else new PermissibleBase(basePlayer)
+    private val origPerm: PermissibleBase = perm
+    private val vanillaCmdListener: VCMDWrapper = if (module == null) null else new VCMDWrapper(VCMDWrapper.createListener(this, module))
+
     override def isPermissionSet(name: String): Boolean = this.origPerm.isPermissionSet(name)
 
     override def isPermissionSet(perm: Permission): Boolean = this.origPerm.isPermissionSet(perm)
@@ -98,40 +115,11 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel) exten
 
     override def getDisplayName: String = this.displayName
 
-    private var vanillaCmdListener: VCMDWrapper = null
-    private var loggedIn = false
-    private var origPerm: PermissibleBase = null
-    private var name: String = null
-    private var basePlayer: OfflinePlayer = null
-    private var perm: PermissibleBase = null
-    private var location: Location = null
-    final private var module: MinecraftChatModule = null
-    final private var uniqueId: UUID = null
-    final private var displayName: String = null
-
-    /**
-     * The parameters must match with {@link #create ( User, MessageChannel, UUID, String, MinecraftChatModule)}
-     */
-    def this(user: User, channel: MessageChannel, uuid: UUID, mcname: String, module: MinecraftChatModule) {
-        this(user, channel)
-        location = Bukkit.getWorlds.get(0).getSpawnLocation
-        perm = new PermissibleBase(basePlayer = Bukkit.getOfflinePlayer(uuid))
-        origPerm = perm
-        name = mcname
-        this.module = module
-        uniqueId = uuid
-        displayName = mcname
-        vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, module))
-    }
-
     /**
      * For testing
      */
-    def this(user: User, channel: MessageChannel) {
-        this(user, channel)
-        module = null
-        uniqueId = UUID.randomUUID
-    }
+    def this(user: User, channel: MessageChannel) =
+        this(user, channel, UUID.randomUUID(), "Test", null)
 
     override def setOp(value: Boolean): Unit = { //CraftPlayer-compatible implementation
         this.origPerm.setOp(value)
@@ -214,7 +202,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel) exten
     override def getGameMode = GameMode.SPECTATOR
 
     //noinspection ScalaDeprecation
-    @SuppressWarnings(Array("deprecation")) final private val spigot: Spigot = new Spigot() {
+    @SuppressWarnings(Array("deprecation")) override def spigot: Spigot = new Spigot() {
         override def getRawAddress: InetSocketAddress = null
 
         override def playEffect(location: Location, effect: Effect, id: Int, data: Int, offsetX: Float, offsetY: Float, offsetZ: Float, speed: Float, particleCount: Int, radius: Int): Unit = {
@@ -241,11 +229,9 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel) exten
 
         override def sendMessage(position: ChatMessageType, component: BaseComponent): Unit =
             sendMessage(component) //Ignore position
-        override def sendMessage(position: ChatMessageType, components: BaseComponent*) =
-            sendMessage(components)
+        override def sendMessage(position: ChatMessageType, components: BaseComponent*): Unit =
+            sendMessage(components: _*)
 
         override def isInvulnerable = true
     }
-
-    override def spigot: Spigot = spigot
 }

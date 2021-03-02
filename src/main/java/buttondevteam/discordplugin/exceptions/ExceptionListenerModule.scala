@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.exceptions
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin.exceptions.ExceptionListenerModule.SendException
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.{TBMCCoreAPI, TBMCExceptionEvent}
@@ -12,6 +11,7 @@ import org.bukkit.Bukkit
 import org.bukkit.event.{EventHandler, Listener}
 import reactor.core.publisher.Mono
 
+import java.util
 import java.util.stream.Collectors
 
 /**
@@ -65,7 +65,10 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     @EventHandler def onException(e: TBMCExceptionEvent): Unit = {
         if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(getClass)) return
         if (lastthrown.stream.anyMatch((ex: Throwable) => util.Arrays.equals(e.getException.getStackTrace, ex.getStackTrace) && (if (e.getException.getMessage == null) ex.getMessage == null
-        else e.getException.getMessage == ex.getMessage)) // e.Exception.Message==ex.Message && lastsourcemsg.contains(e.getSourceMessage))  { return }
+        else e.getException.getMessage == ex.getMessage)) // e.Exception.Message==ex.Message
+            && lastsourcemsg.contains(e.getSourceMessage)) {
+            return
+        }
             ExceptionListenerModule
         .SendException(e.getException, e.getSourceMessage)
         if (lastthrown.size >= 10) lastthrown.remove(0)

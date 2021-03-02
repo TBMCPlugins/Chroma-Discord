@@ -30,15 +30,16 @@ import java.util.function.Supplier
 import java.util.logging.Level
 import java.util.stream.{Collectors, Stream}
 import javax.annotation.Nullable
+import scala.jdk.javaapi.CollectionConverters.asScala
 
 object MCChatUtils {
     /**
      * May contain P&lt;DiscordID&gt; as key for public chat
      */
-    val UnconnectedSenders = new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordSender]]
-    val ConnectedSenders = new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordConnectedPlayer]]
-    val OnlineSenders = new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordPlayerSender]]
-    val LoggedInPlayers = new ConcurrentHashMap[UUID, DiscordConnectedPlayer]
+    val UnconnectedSenders = asScala(new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordSender]])
+    val ConnectedSenders = asScala(new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordConnectedPlayer]])
+    val OnlineSenders = asScala(new ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, DiscordPlayerSender]])
+    val LoggedInPlayers = asScala(new ConcurrentHashMap[UUID, DiscordConnectedPlayer])
     @Nullable private[mcchat] var lastmsgdata: MCChatUtils.LastMsgData = null
     private[mcchat] val lastmsgfromd = new LongObjectHashMap[Message] // Last message sent by a Discord user, used for clearing checkmarks
     private var module: MinecraftChatModule = null
@@ -361,10 +362,15 @@ object MCChatUtils {
     private[mcchat] def callEventSync(event: Event) = Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => callEventExcludingSome(event))
 
     class LastMsgData(val channel: MessageChannel, val user: User) {
-        var message: String = null
+        var message: Message = null
         var time = 0L
         var content: String = null
         var mcchannel: component.channel.Channel = null
+
+        protected def this(channel: MessageChannel, user: User, mcchannel: component.channel.Channel) = {
+            this(channel, user)
+            this.mcchannel = mcchannel
+        }
     }
 
 }

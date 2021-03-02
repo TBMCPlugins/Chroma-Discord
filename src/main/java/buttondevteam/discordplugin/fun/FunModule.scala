@@ -59,7 +59,7 @@ object FunModule {
             return true //Handled
         }
         lastlistp = Bukkit.getOnlinePlayers.size.toShort //Didn't handle
-        if (!TBMCCoreAPI.IsTestServer && util.Arrays.stream(fm.serverReady.get.anyMatch(msglowercased.contains)) {
+        if (!TBMCCoreAPI.IsTestServer && util.Arrays.stream(fm.serverReady).get.anyMatch(msglowercased.contains _)) {
             var next = 0
             if (usableServerReadyStrings.size == 0) fm.createUsableServerReadyStrings()
             next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size))

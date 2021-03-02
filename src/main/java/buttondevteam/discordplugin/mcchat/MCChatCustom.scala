@@ -18,7 +18,7 @@ object MCChatCustom {
      */
     private[mcchat] val lastmsgCustom = new util.ArrayList[MCChatCustom.CustomLMD]
 
-    def addCustomChat(channel: MessageChannel, groupid: String, mcchannel: Channel, user: User, dcp: DiscordConnectedPlayer, toggles: Int, brtoggles: util.Set[TBMCSystemChatEvent.BroadcastTarget]): Boolean = {
+    def addCustomChat(channel: MessageChannel, groupid: String, mcchannel: Channel, user: User, dcp: DiscordConnectedPlayer, toggles: Int, brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]): Boolean = {
         lastmsgCustom synchronized {
             var gid: String = null
             mcchannel match {
@@ -58,9 +58,9 @@ object MCChatCustom {
 
     def getCustomChats: util.List[CustomLMD] = Collections.unmodifiableList(lastmsgCustom)
 
-    class CustomLMD private(@NonNull channel: MessageChannel, @NonNull user: User, val groupID: String,
-                            @NonNull val mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
-                            var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, user) {
+    class CustomLMD private[mcchat](@NonNull channel: MessageChannel, @NonNull user: User, val groupID: String,
+                                    @NonNull mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
+                                    var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, user, mcchannel) {
     }
 
 }

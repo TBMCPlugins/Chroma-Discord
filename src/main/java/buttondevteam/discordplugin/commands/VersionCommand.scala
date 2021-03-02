@@ -7,8 +7,7 @@ import buttondevteam.lib.chat.{Command2, CommandClass}
 object VersionCommand {
     def getVersion: Array[String] = {
         val desc = DiscordPlugin.plugin.getDescription
-        Array[String]( //
-            desc.getFullName, desc.getWebsite //)
+        Array[String](desc.getFullName, desc.getWebsite)
     }
 }
 

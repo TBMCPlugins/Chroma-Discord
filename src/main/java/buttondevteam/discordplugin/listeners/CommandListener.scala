@@ -6,7 +6,7 @@ import buttondevteam.lib.TBMCCoreAPI
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import discord4j.core.`object`.entity.{Member, Message, Role, User}
-import reactor.core.publisher.{Flux, Mono}
+import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -18,14 +18,14 @@ object CommandListener {
      * @param mentionedonly Only run the command if ChromaBot is mentioned at the start of the message
      * @return Whether it <b>did not run</b> the command
      */
-    def runCommand(message: Message, commandChannelID: Snowflake, mentionedonly: Boolean): Mono[Boolean] = {
+    def runCommand(message: Message, commandChannelID: Snowflake, mentionedonly: Boolean): SMono[Boolean] = {
         val timings = CommonListeners.timings
-        val ret = Mono.just(true)
+        val ret = SMono.just(true)
         if (message.getContent.isEmpty) return ret //Pin messages and such, let the mcchat listener deal with it
         val content = message.getContent
         timings.printElapsed("A")
-        message.getChannel.flatMap((channel: MessageChannel) => {
-            def foo(channel: MessageChannel): Mono[Boolean] = {
+        SMono(message.getChannel).flatMap((channel: MessageChannel) => {
+            def foo(channel: MessageChannel): SMono[Boolean] = {
                 var tmp = ret
                 if (!mentionedonly) { //mentionedonly conditions are in CommonListeners
                     timings.printElapsed("B")
@@ -33,22 +33,24 @@ object CommandListener {
                         return ret
                     }
                     timings.printElapsed("C")
-                    tmp = ret.`then`(channel.`type`).thenReturn(true) // Fun (this true is ignored - x)
+                    tmp = ret.`then`(SMono(channel.`type`)).`then`(ret) // Fun (this true is ignored - x)
                 }
                 val cmdwithargs = new StringBuilder(content)
                 val gotmention = new AtomicBoolean
                 timings.printElapsed("Before self")
-                tmp.flatMapMany((x: Boolean) => DiscordPlugin.dc.getSelf.flatMap((self: User) => self.asMember(DiscordPlugin.mainServer.getId)).flatMapMany((self: Member) => {
-                    def foo(self: Member): Flux[String] = {
-                        timings.printElapsed("D")
-                        gotmention.set(checkanddeletemention(cmdwithargs, self.getMention, message))
-                        gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention, message) || gotmention.get)
-                        val mentions = message.getRoleMentions
-                        self.getRoles.filterWhen((r: Role) => mentions.any((rr: Role) => rr.getName == r.getName)).map(_.getMention)
-                    }
+                tmp.flatMapMany((_: Boolean) => SMono(DiscordPlugin.dc.getSelf)
+                    .flatMap((self: User) => SMono(self.asMember(DiscordPlugin.mainServer.getId)))
+                    .flatMapMany((self: Member) => {
+                        def foo(self: Member) = {
+                            timings.printElapsed("D")
+                            gotmention.set(checkanddeletemention(cmdwithargs, self.getMention, message))
+                            gotmention.set(checkanddeletemention(cmdwithargs, self.getNicknameMention, message) || gotmention.get)
+                            val mentions = SFlux(message.getRoleMentions)
+                            SFlux(self.getRoles).filterWhen((r: Role) => mentions.any((rr: Role) => rr.getName == r.getName)).map(_.getMention)
+                        }
 
-                    foo(self)
-                }).map((mentionRole: String) => {
+                        foo(self)
+                    }).map((mentionRole: String) => {
                     def foo(mentionRole: String): Boolean = {
                         timings.printElapsed("E")
                         gotmention.set(checkanddeletemention(cmdwithargs, mentionRole, message) || gotmention.get) // Delete all mentions
@@ -56,17 +58,20 @@ object CommandListener {
                     }
 
                     foo(mentionRole)
-                }: Boolean)[Mono[Boolean]].switchIfEmpty(Mono.fromSupplier[Boolean](() => !mentionedonly || gotmention.get)))[Mono[Boolean]].filter((b: Boolean) => b).last(false).filter((b: Boolean) => b).doOnNext((b: Boolean) => channel.`type`.subscribe).flatMap((b: Boolean) => {
-                    def foo(): Mono[Boolean] = {
+                }).switchIfEmpty(SMono.fromCallable(() => !mentionedonly || gotmention.get))).filter(b => b)
+                    .last(Option(false)).filter(b => b)
+                    .doOnNext(_ => channel.`type`.subscribe).flatMap(_ => {
+                    def foo(): SMono[Boolean] = {
                         val cmdwithargsString = cmdwithargs.toString
                         try {
                             timings.printElapsed("F")
-                            if (!DiscordPlugin.plugin.manager.handleCommand(new Command2DCSender(message), cmdwithargsString)) return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix + "help for help.").map((_: Message) => false)
+                            if (!DiscordPlugin.plugin.manager.handleCommand(new Command2DCSender(message), cmdwithargsString))
+                                return DPUtils.reply(message, channel, "unknown command. Do " + DiscordPlugin.getPrefix + "help for help.").map(_ => false)
                         } catch {
                             case e: Exception =>
                                 TBMCCoreAPI.SendException("Failed to process Discord command: " + cmdwithargsString, e, DiscordPlugin.plugin)
                         }
-                        Mono.just(false) //If the command succeeded or there was an error, return false
+                        SMono.just(false) //If the command succeeded or there was an error, return false
                     }
 
                     foo()

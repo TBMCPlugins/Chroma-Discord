@@ -90,7 +90,8 @@ import reactor.core.publisher.Flux
             }
             if (msgsb.length > 0) channel.get.flatMap((ch: MessageChannel) => ch.createMessage(msgsb.toString)).flatMap(Message.pin).subscribe
             if (modmsgsb.length > 0) modChannel.get.flatMap((ch: MessageChannel) => ch.createMessage(modmsgsb.toString)).flatMap(Message.pin).subscribe
-            if (lastAnnouncementTime.get ne lastanntime) lastAnnouncementTime.set(lastanntime) // If sending succeeded} catch {
+            if (lastAnnouncementTime.get ne lastanntime) lastAnnouncementTime.set(lastanntime) // If sending succeeded
+        } catch {
             case e: Exception =>
                 e.printStackTrace()
         }
