@@ -21,7 +21,7 @@ import java.util.{Objects, Optional}
 import javax.annotation.Nullable
 
 @SuppressWarnings(Array("SimplifyOptionalCallChains")) //Java 11
-@CommandClass(helpText = Array(Array("Channel connect", //
+@CommandClass(helpText = Array("Channel connect", //
     "This command allows you to connect a Minecraft channel to a Discord channel (just like how the global chat is connected to #minecraft-chat).",
     "You need to have access to the MC channel and have manage permissions on the Discord channel.",
     "You also need to have your Minecraft account connected. In #bot use /connect <mcname>.",
@@ -30,7 +30,7 @@ import javax.annotation.Nullable
     "To remove a connection use @ChromaBot channelcon remove in the channel.",
     "Mentioning the bot is needed in this case because the / prefix only works in #bot.",
     "Invite link: <Unknown>" //
-)))
+))
 class ChannelconCommand(private val module: MinecraftChatModule) extends ICommand2DC {
     @Command2.Subcommand def remove(sender: Command2DCSender): Boolean = {
         val message = sender.getMessage

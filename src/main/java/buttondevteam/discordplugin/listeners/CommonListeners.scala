@@ -12,7 +12,7 @@ import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.PresenceUpdateEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.event.domain.role.{RoleCreateEvent, RoleDeleteEvent, RoleUpdateEvent}
-import reactor.core.scala.publisher.SMono
+import reactor.core.scala.publisher.{SFlux, SMono}
 
 object CommonListeners {
     val timings = new Timings
@@ -56,25 +56,19 @@ object CommonListeners {
             }
 
             foo(event)
-        }).onErrorContinue((err: Throwable, obj: Any) => TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin)).subscribe
+        }).onErrorContinue((err: Throwable, _) => TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin)).subscribe
         dispatcher.on(classOf[PresenceUpdateEvent]).subscribe((event: PresenceUpdateEvent) => {
-            def foo(event: PresenceUpdateEvent) = {
-                if (DiscordPlugin.SafeMode) return
+            if (!DiscordPlugin.SafeMode)
                 FunModule.handleFullHouse(event)
-            }
-
-            foo(event)
         })
-        dispatcher.on(classOf[RoleCreateEvent]).subscribe(GameRoleModule.handleRoleEvent _)
-        dispatcher.on(classOf[RoleDeleteEvent]).subscribe(GameRoleModule.handleRoleEvent _)
-        dispatcher.on(classOf[RoleUpdateEvent]).subscribe(GameRoleModule.handleRoleEvent _)
+        SFlux(dispatcher.on(classOf[RoleCreateEvent])).subscribe(GameRoleModule.handleRoleEvent _)
+        SFlux(dispatcher.on(classOf[RoleDeleteEvent])).subscribe(GameRoleModule.handleRoleEvent _)
+        SFlux(dispatcher.on(classOf[RoleUpdateEvent])).subscribe(GameRoleModule.handleRoleEvent _)
     }
 
-    private var debug = false
+    var debug = false
 
     def debug(debug: String): Unit = if (CommonListeners.debug) { //Debug
         DPUtils.getLogger.info(debug)
     }
-
-    def debug(): Unit = debug = !debug
 }

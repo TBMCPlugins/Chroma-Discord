@@ -8,15 +8,14 @@ import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import lombok.NonNull
 
-import java.util
-import java.util.Collections
 import javax.annotation.Nullable
+import scala.collection.mutable.ListBuffer
 
 object MCChatCustom {
     /**
      * Used for town or nation chats or anything else
      */
-    private[mcchat] val lastmsgCustom = new util.ArrayList[MCChatCustom.CustomLMD]
+    private[mcchat] val lastmsgCustom = new ListBuffer[MCChatCustom.CustomLMD]
 
     def addCustomChat(channel: MessageChannel, groupid: String, mcchannel: Channel, user: User, dcp: DiscordConnectedPlayer, toggles: Int, brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]): Boolean = {
         lastmsgCustom synchronized {
@@ -29,34 +28,32 @@ object MCChatCustom {
                     gid = groupid
             }
             val lmd = new MCChatCustom.CustomLMD(channel, user, gid, mcchannel, dcp, toggles, brtoggles)
-            lastmsgCustom.add(lmd)
+            lastmsgCustom += lmd
         }
         true
     }
 
     def hasCustomChat(channel: Snowflake): Boolean =
-        lastmsgCustom.stream.anyMatch((lmd: MCChatCustom.CustomLMD) => lmd.channel.getId.asLong == channel.asLong)
+        lastmsgCustom.exists(_.channel.getId.asLong == channel.asLong)
 
     @Nullable def getCustomChat(channel: Snowflake): CustomLMD =
-        lastmsgCustom.stream.filter((lmd: MCChatCustom.CustomLMD) => lmd.channel.getId.asLong == channel.asLong).findAny.orElse(null)
+        lastmsgCustom.find(_.channel.getId.asLong == channel.asLong).orNull
 
-    def removeCustomChat(channel: Snowflake): Boolean = {
-        lastmsgCustom synchronized MCChatUtils.lastmsgfromd.remove(channel.asLong)
-        lastmsgCustom.removeIf((lmd: MCChatCustom.CustomLMD) => {
-            def foo(lmd: MCChatCustom.CustomLMD): Boolean = {
-                if (lmd.channel.getId.asLong != channel.asLong) return false
+    def removeCustomChat(channel: Snowflake): Unit = {
+        lastmsgCustom synchronized {
+            MCChatUtils.lastmsgfromd.remove(channel.asLong)
+            lastmsgCustom.filterInPlace(lmd => {
+                if (lmd.channel.getId.asLong != channel.asLong) return true
                 lmd.mcchannel match {
                     case room: ChatRoom => room.leaveRoom(lmd.dcp)
                     case _ =>
                 }
-                true
-            }
-
-            foo(lmd)
-        })
+                false
+            })
+        }
     }
 
-    def getCustomChats: util.List[CustomLMD] = Collections.unmodifiableList(lastmsgCustom)
+    def getCustomChats: List[CustomLMD] = lastmsgCustom.toList
 
     class CustomLMD private[mcchat](@NonNull channel: MessageChannel, @NonNull user: User, val groupID: String,
                                     @NonNull mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,

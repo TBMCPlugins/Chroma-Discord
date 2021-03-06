@@ -44,21 +44,23 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
             return
         }
         val sendmsg = DPUtils.sanitizeString(message)
-        this synchronized msgtosend += "\n" + sendmsg
-        if (sendtask == null) sendtask = Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () => {
-            def foo(): Unit = {
-                channel.createMessage((if (user != null) user.getMention + "\n"
-                else "") + msgtosend.trim).subscribe
-                sendtask = null
-                msgtosend = ""
-            }
+        this synchronized {
+            msgtosend += "\n" + sendmsg
+            if (sendtask == null) sendtask = Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () => {
+                def foo(): Unit = {
+                    channel.createMessage((if (user != null) user.getMention + "\n"
+                    else "") + msgtosend.trim).subscribe
+                    sendtask = null
+                    msgtosend = ""
+                }
 
-            foo()
-        }, 4) // Waits a 0.2 second to gather all/most of the different messages
+                foo()
+            }, 4) // Waits a 0.2 second to gather all/most of the different messages
+        }
     } catch {
         case e: Exception =>
             TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e, DiscordPlugin.plugin)
     }
 
-    override def sendMessage(messages: Array[String]): Unit = sendMessage(String.join("\n", messages))
+    override def sendMessage(messages: Array[String]): Unit = sendMessage(String.join("\n", messages: _*))
 }

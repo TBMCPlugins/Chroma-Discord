@@ -2,8 +2,8 @@ package buttondevteam.discordplugin.commands
 
 import buttondevteam.lib.chat.{Command2, CommandClass}
 
-@CommandClass(helpText = Array(Array("Help command", //
-    "Shows some info about a command or lists the available commands.")))
+@CommandClass(helpText = Array("Help command", //
+    "Shows some info about a command or lists the available commands."))
 class HelpCommand extends ICommand2DC {
     @Command2.Subcommand
     def `def`(sender: Command2DCSender, @Command2.TextArg @Command2.OptionalArg args: String): Boolean = {

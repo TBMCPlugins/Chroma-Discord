@@ -28,6 +28,7 @@ import java.util.Optional
 import java.util.concurrent.{LinkedBlockingQueue, TimeoutException}
 import java.util.function.{Consumer, Function, Predicate}
 import java.util.stream.Collectors
+import scala.jdk.OptionConverters.RichOptional
 
 object MCChatListener {
 
@@ -111,21 +112,21 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 foo(ecs)
             }
             val nanoTime: Long = System.nanoTime
-            val doit: MCChatListener.InterruptibleConsumer[MCChatUtils.LastMsgData] = (lastmsgdata: MCChatUtils.LastMsgData) => {
-                def foo(lastmsgdata: MCChatUtils.LastMsgData): Unit = {
-                    if (lastmsgdata.message == null || !(authorPlayer == lastmsgdata.message.getEmbeds.get(0).getAuthor.map(_.getName).orElse(null)) || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120 || !(lastmsgdata.mcchannel.ID == e.getChannel.ID) || lastmsgdata.content.length + e.getMessage.length + 1 > 2048) {
-                        lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block
-                        lastmsgdata.time = nanoTime
-                        lastmsgdata.mcchannel = e.getChannel
-                        lastmsgdata.content = e.getMessage
-                    }
-                    else {
-                        lastmsgdata.content = lastmsgdata.content + "\n" + e.getMessage // The message object doesn't get updated
-                        lastmsgdata.message.edit((mes: MessageEditSpec) => mes.setEmbed(embed.andThen((ecs: EmbedCreateSpec) => ecs.setDescription(lastmsgdata.content)))).block
-                    }
+            val doit = (lastmsgdata: MCChatUtils.LastMsgData) => {
+                if (lastmsgdata.message == null
+                    || authorPlayer != lastmsgdata.message.getEmbeds.get(0).getAuthor.toScala.map(_.getName).orNull
+                    || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
+                    || !(lastmsgdata.mcchannel.ID == e.getChannel.ID)
+                    || lastmsgdata.content.length + e.getMessage.length + 1 > 2048) {
+                    lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block
+                    lastmsgdata.time = nanoTime
+                    lastmsgdata.mcchannel = e.getChannel
+                    lastmsgdata.content = e.getMessage
                 }
-
-                foo(lastmsgdata)
+                else {
+                    lastmsgdata.content = lastmsgdata.content + "\n" + e.getMessage // The message object doesn't get updated
+                    lastmsgdata.message.edit((mes: MessageEditSpec) => mes.setEmbed(embed.andThen((ecs: EmbedCreateSpec) => ecs.setDescription(lastmsgdata.content)))).block
+                }
             }
             // Checks if the given channel is different than where the message was sent from
             // Or if it was from MC
@@ -133,31 +134,29 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             if (e.getChannel.isGlobal && (e.isFromCommand || isdifferentchannel.test(module.chatChannel.get))) {
                 if (MCChatUtils.lastmsgdata == null)
                     MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono.block, null)
-                doit.accept(MCChatUtils.lastmsgdata)
+                doit(MCChatUtils.lastmsgdata)
             }
 
             for (data <- MCChatPrivate.lastmsgPerUser) {
                 if ((e.isFromCommand || isdifferentchannel.test(data.channel.getId)) && e.shouldSendTo(MCChatUtils.getSender(data.channel.getId, data.user))) {
-                    doit.accept(data)
+                    doit(data)
                 }
             }
-            MCChatCustom.lastmsgCustom synchronized
-            val iterator = MCChatCustom.lastmsgCustom.iterator
-            while ( {
-                iterator.hasNext
-            }) {
-                val lmd = iterator.next
-                if ((e.isFromCommand || isdifferentchannel.test(lmd.channel.getId)) //Test if msg is from Discord
-                    && e.getChannel.ID == lmd.mcchannel.ID //If it's from a command, the command msg has been deleted, so we need to send it
-                    && e.getGroupID == lmd.groupID) { //Check if this is the group we want to test - #58
-                    if (e.shouldSendTo(lmd.dcp)) { //Check original user's permissions
-                        doit.accept(lmd)
+            MCChatCustom.lastmsgCustom synchronized {
+                MCChatCustom.lastmsgCustom.filterInPlace(lmd => {
+                    if ((e.isFromCommand || isdifferentchannel.test(lmd.channel.getId)) //Test if msg is from Discord
+                        && e.getChannel.ID == lmd.mcchannel.ID //If it's from a command, the command msg has been deleted, so we need to send it
+                        && e.getGroupID == lmd.groupID) { //Check if this is the group we want to test - #58
+                        if (e.shouldSendTo(lmd.dcp)) { //Check original user's permissions
+                            doit(lmd)
+                        }
+                        else {
+                            lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe
+                            return false //If the user no longer has permission, remove the connection
+                        }
                     }
-                    else {
-                        iterator.remove() //If the user no longer has permission, remove the connection
-                        lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe
-                    }
-                }
+                    true
+                })
             }
         } catch {
             case ex: InterruptedException =>

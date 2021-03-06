@@ -1,22 +1,23 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
-import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordConnectedPlayer, DiscordPlugin}
 import buttondevteam.discordplugin.playerfaker.ServerWatcher
 import buttondevteam.discordplugin.playerfaker.perm.LPInjector
 import buttondevteam.discordplugin.util.DPState
-import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
+import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordConnectedPlayer, DiscordPlugin}
 import buttondevteam.lib.architecture.{Component, ConfigData, ReadOnlyConfigData}
+import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.util
-import java.util.{Objects, UUID}
 import java.util.stream.Collectors
+import java.util.{Objects, UUID}
 
 /**
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
@@ -45,7 +46,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      */
     val chatChannel: ReadOnlyConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
 
-    def chatChannelMono: Mono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
+    def chatChannelMono: SMono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute

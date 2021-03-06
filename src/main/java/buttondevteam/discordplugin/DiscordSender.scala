@@ -13,7 +13,7 @@ import java.util
 class DiscordSender(user: User, channel: MessageChannel, pname: String) extends DiscordSenderBase(user, channel) with CommandSender {
     private val perm = new PermissibleBase(this)
     private val name: String = Option(pname)
-        .orElse(Option(user).map(u => SMono(u.asMember(DiscordPlugin.mainServer.getId))
+        .orElse(Option(user).flatMap(u => SMono(u.asMember(DiscordPlugin.mainServer.getId))
             .onErrorResume(_ => SMono.empty).blockOption()
             .map(u => u.getDisplayName)))
         .getOrElse("Discord user")

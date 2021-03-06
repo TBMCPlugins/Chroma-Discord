@@ -7,8 +7,9 @@ import com.google.common.collect.HashBiMap
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 
-@CommandClass(helpText = Array(Array("Connect command", //
-    "This command lets you connect your account with a Minecraft account. This allows using the private Minecraft chat and other things."))) object ConnectCommand {
+@CommandClass(helpText = Array("Connect command", //
+    "This command lets you connect your account with a Minecraft account." +
+        " This allows using the private Minecraft chat and other things.")) object ConnectCommand {
     /**
      * Key: Minecraft name<br>
      * Value: Discord ID

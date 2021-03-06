@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor
         this.message.getChannel.flatMap((ch: MessageChannel) => ch.createMessage(this.message.getAuthor.map((u: User) => DPUtils.nickMention(u.getId) + ", ").orElse("") + msg)).subscribe
     }
 
-    override def sendMessage(message: Array[String]): Unit = sendMessage(String.join("\n", message))
+    override def sendMessage(message: Array[String]): Unit = sendMessage(String.join("\n", message: _*))
 
-    override def getName = message.getAuthor.map(_.getUsername).orElse("Discord")
+    override def getName: String = Option(message.getAuthor.orElse(null)).map(_.getUsername).getOrElse("Discord")
 }

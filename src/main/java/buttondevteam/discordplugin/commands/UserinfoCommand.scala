@@ -4,13 +4,12 @@ import buttondevteam.discordplugin.{DiscordPlayer, DiscordPlugin}
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget
-import discord4j.core.`object`.entity.{Member, Message, User}
+import discord4j.core.`object`.entity.{Message, User}
+import reactor.core.scala.publisher.SFlux
 
-import java.util
-
-@CommandClass(helpText = Array(Array("User information", //
+@CommandClass(helpText = Array("User information", //
     "Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.",
-    "If used without args, shows your info.")))
+    "If used without args, shows your info."))
 class UserinfoCommand extends ICommand2DC {
     @Command2.Subcommand
     def `def`(sender: Command2DCSender, @Command2.OptionalArg @Command2.TextArg user: String): Boolean = {
@@ -25,16 +24,11 @@ class UserinfoCommand extends ICommand2DC {
             else if (user.contains("#")) {
                 val targettag = user.split("#")
                 val targets = getUsers(message, targettag(0))
-                if (targets.size == 0) {
+                if (targets.isEmpty) {
                     channel.createMessage("The user cannot be found (by name): " + user).subscribe
                     return true
                 }
-                for (ptarget <- targets) {
-                    if (ptarget.getDiscriminator.equalsIgnoreCase(targettag(1))) {
-                        target = ptarget
-                        break //todo: break is not supported
-                    }
-                }
+                targets.collectFirst(_.getDiscriminator.equalsIgnoreCase(targettag(1)))
                 if (target == null) {
                     channel.createMessage("The user cannot be found (by discriminator): " + user + "(Found " + targets.size + " users with the name.)").subscribe
                     return true
@@ -42,7 +36,7 @@ class UserinfoCommand extends ICommand2DC {
             }
             else {
                 val targets = getUsers(message, user)
-                if (targets.size == 0) {
+                if (targets.isEmpty) {
                     channel.createMessage("The user cannot be found on Discord: " + user).subscribe
                     return true
                 }
@@ -50,7 +44,7 @@ class UserinfoCommand extends ICommand2DC {
                     channel.createMessage("Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.").subscribe
                     return true
                 }
-                target = targets.get(0)
+                target = targets.head
             }
         }
         if (target == null) {
@@ -65,12 +59,11 @@ class UserinfoCommand extends ICommand2DC {
     }
 
     private def getUsers(message: Message, args: String) = {
-        var targets: util.List[User]
         val guild = message.getGuild.block
         if (guild == null) { //Private channel
-            targets = DiscordPlugin.dc.getUsers.filter((u) => u.getUsername.equalsIgnoreCase(args)).collectList.block
+            SFlux(DiscordPlugin.dc.getUsers).filter(u => u.getUsername.equalsIgnoreCase(args)).collectSeq().block()
         }
-        else targets = guild.getMembers.filter((m: Member) => m.getUsername.equalsIgnoreCase(args)).map((m: Member) => m.asInstanceOf[User]).collectList.block
-        targets
+        else
+            SFlux(guild.getMembers).filter(_.getUsername.equalsIgnoreCase(args)).map(_.asInstanceOf[User]).collectSeq().block()
     }
 }
