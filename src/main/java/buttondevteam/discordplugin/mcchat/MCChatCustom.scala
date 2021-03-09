@@ -44,12 +44,14 @@ object MCChatCustom {
             MCChatUtils.lastmsgfromd.remove(channel.asLong)
             val count = lastmsgCustom.size
             lastmsgCustom.filterInPlace(lmd => {
-                if (lmd.channel.getId.asLong != channel.asLong) return true
-                lmd.mcchannel match {
-                    case room: ChatRoom => room.leaveRoom(lmd.dcp)
-                    case _ =>
+                if (lmd.channel.getId.asLong != channel.asLong) true
+                else {
+                    lmd.mcchannel match {
+                        case room: ChatRoom => room.leaveRoom(lmd.dcp)
+                        case _ =>
+                    }
+                    false
                 }
-                false
             })
             lastmsgCustom.size < count
         }

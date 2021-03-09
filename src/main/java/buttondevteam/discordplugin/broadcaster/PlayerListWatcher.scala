@@ -72,7 +72,7 @@ object PlayerListWatcher {
             else lookupConstructor = null
             mock = Mockito.mock(dplc, Mockito.withSettings.defaultAnswer(new Answer[AnyRef]() { // Cannot call super constructor
                 @throws[Throwable]
-                override def answer(invocation: InvocationOnMock): Any = {
+                override def answer(invocation: InvocationOnMock): AnyRef = {
                     val method = invocation.getMethod
                     if (!(method.getName == "sendMessage")) {
                         if (method.getName == "sendAll") {

@@ -24,7 +24,7 @@ object DiscordPlayerSender {
         }).useConstructor(user, channel, player, module))
 }
 
-abstract class DiscordPlayerSender(val user: User, val channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] {
+abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] {
     val vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, player, module))
 
     override def getVanillaCmdListener: VCMDWrapper = this.vanillaCmdListener

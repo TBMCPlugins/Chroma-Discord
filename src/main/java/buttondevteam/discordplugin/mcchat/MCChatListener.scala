@@ -148,13 +148,14 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                         && e.getGroupID() == lmd.groupID) { //Check if this is the group we want to test - #58
                         if (e.shouldSendTo(lmd.dcp)) { //Check original user's permissions
                             doit(lmd)
+                            true
                         }
                         else {
                             lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe
-                            return false //If the user no longer has permission, remove the connection
+                            false //If the user no longer has permission, remove the connection
                         }
                     }
-                    true
+                    else true
                 })
             }
         } catch {
@@ -382,7 +383,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             false
         }
         else {
-            val cmb = ChatMessage.builder(dsender, user, dmessage + getAttachmentText()).fromCommand(false)
+            val cmb = ChatMessage.builder(dsender, user, dmessage + getAttachmentText).fromCommand(false)
             if (clmd != null)
                 TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build, clmd.mcchannel)
             else
@@ -415,7 +416,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         val cmd = dmessage.substring(1)
         val cmdlowercased = cmd.toLowerCase
         if (dsender.isInstanceOf[DiscordSender] && notWhitelisted(cmdlowercased)) { // Command not whitelisted
-            dsender.sendMessage("Sorry, you can only access these commands from here:\n" + whitelistedCommands() +
+            dsender.sendMessage("Sorry, you can only access these commands from here:\n" + whitelistedCommands +
                 (if (user.getConnectedID(classOf[TBMCPlayer]) == null)
                     "\nTo access your commands, first please connect your accounts, using /connect in " + DPUtils.botmention
                         + "\nThen y" else "\nY") + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!")

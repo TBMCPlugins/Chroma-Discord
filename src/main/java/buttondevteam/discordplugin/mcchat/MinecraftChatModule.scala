@@ -129,6 +129,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
                             UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this)
                         MCChatCustom.addCustomChat(ch.asInstanceOf[MessageChannel], groupid, mcch.get, user, dcp, toggles,
                             brtoggles.asScala.map(TBMCSystemChatEvent.BroadcastTarget.get).filter(Objects.nonNull).toSet)
+                        ()
                     })
                 }
             }

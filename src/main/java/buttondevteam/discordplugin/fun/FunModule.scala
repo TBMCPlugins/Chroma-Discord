@@ -107,7 +107,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
      * Answers for a recognized question. Selected randomly.
      */
     final private val serverReadyAnswers: ConfigData[util.ArrayList[String]] =
-        getConfig.getData("serverReadyAnswers", () => Lists.newArrayList(FunModule.serverReadyStrings): _*)
+        getConfig.getData("serverReadyAnswers", () => Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
     private def createUsableServerReadyStrings(): Unit =
         IntStream.range(0, serverReadyAnswers.get.size).forEach((i: Int) => FunModule.usableServerReadyStrings.add(i.toShort))

@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.mcchat
 
-import buttondevteam.discordplugin.DPUtils.FluxExtensions
+import buttondevteam.discordplugin.DPUtils.{FluxExtensions, MonoExtensions}
 import buttondevteam.discordplugin._
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
@@ -15,8 +15,7 @@ import org.bukkit.event.player.PlayerLoginEvent.Result
 import org.bukkit.event.player._
 import org.bukkit.event.server.{BroadcastMessageEvent, TabCompleteEvent}
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
-import reactor.core.publisher.Flux
-import reactor.core.scala.publisher.SMono
+import reactor.core.scala.publisher.{SFlux, SMono}
 
 class MCListener(val module: MinecraftChatModule) extends Listener {
     final private val muteRole = DPUtils.roleData(module.getConfig, "muteRole", "Muted")
@@ -35,8 +34,8 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
                 val p = e.getPlayer
                 val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
                 if (dp != null)
-                    DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).flatMap(user =>
-                        user.getPrivateChannel.flatMap(chan => module.chatChannelMono.flatMap(cc => {
+                    DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).^^().flatMap(user =>
+                        user.getPrivateChannel.^^().flatMap(chan => module.chatChannelMono.flatMap(cc => {
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, chan, p, module))
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, cc, p, module)) //Stored per-channel
                             SMono.empty
@@ -130,8 +129,8 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         val t = event.getBuffer.substring(i + 1) //0 if not found
         if (!t.startsWith("@")) return
         val token = t.substring(1)
-        val x = DiscordPlugin.mainServer.getMembers.flatMap((m) => Flux.just(m.getUsername, m.getNickname.orElse("")))
-            .filter((s) => s.startsWith(token)).map((s) => "@" + s).doOnNext(event.getCompletions.add(_)).blockLast
+        val x = DiscordPlugin.mainServer.getMembers.^^().flatMap(m => SFlux.just(m.getUsername, m.getNickname.orElse("")))
+            .filter(_.startsWith(token)).map("@" + _).doOnNext(event.getCompletions.add(_)).blockLast()
     }
 
     @EventHandler def onCommandSend(event: PlayerCommandSendEvent): Boolean = event.getCommands.add("g")

@@ -22,7 +22,7 @@ import reactor.core.scala.publisher.SMono
 
 import java.net.InetAddress
 import java.util
-import java.util._
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
@@ -137,12 +137,11 @@ object MCChatUtils {
      */
     def forCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
         if (notEnabled) return SMono.empty
-        val list =
-            List(if (!GeneralEventBroadcasterModule.isHooked || !hookmsg)
-                forPublicPrivateChat(action) else SMono.empty) ++
-                (if (toggle == null) MCChatCustom.lastmsgCustom
-                else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
-                    .map(_.channel).map(SMono.just).map(action)
+        val list = List(if (!GeneralEventBroadcasterModule.isHooked || !hookmsg)
+            forPublicPrivateChat(action) else SMono.empty) ++
+            (if (toggle == null) MCChatCustom.lastmsgCustom
+            else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
+                .map(_.channel).map(SMono.just).map(action)
         SMono.whenDelayError(list)
     }
 
