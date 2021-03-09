@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
+import buttondevteam.discordplugin.DPUtils.{MonoExtensions, SpecExtensions}
 import buttondevteam.discordplugin.playerfaker.ServerWatcher
 import buttondevteam.discordplugin.playerfaker.perm.LPInjector
 import buttondevteam.discordplugin.util.DPState
@@ -12,12 +13,12 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
-import reactor.core.publisher.Mono
 import reactor.core.scala.publisher.SMono
 
 import java.util
 import java.util.stream.Collectors
 import java.util.{Objects, UUID}
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
@@ -51,7 +52,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    val modlogChannel: ReadOnlyConfigData[Mono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
+    val modlogChannel: ReadOnlyConfigData[SMono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
      */
@@ -113,7 +114,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
         }
         if (chcons != null) {
             val chconkeys = chcons.getKeys(false)
-            for (chconkey <- chconkeys) {
+            for (chconkey <- chconkeys.asScala) {
                 val chcon = chcons.getConfigurationSection(chconkey)
                 val mcch = Channel.getChannels.filter((ch: Channel) => ch.ID == chcon.getString("mcchid")).findAny
                 val ch = DiscordPlugin.dc.getChannelById(Snowflake.of(chcon.getLong("chid"))).block
@@ -122,15 +123,14 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
                 val groupid = chcon.getString("groupid")
                 val toggles = chcon.getInt("toggles")
                 val brtoggles = chcon.getStringList("brtoggles")
-                if (!mcch.isPresent || ch == null || user == null || groupid == null) continue //todo: continue is not supported
-                Bukkit.getScheduler.runTask(getPlugin, () => {
-                    def foo() = { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
-                        val dcp = DiscordConnectedPlayer.create(user, ch.asInstanceOf[MessageChannel], UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this)
-                        MCChatCustom.addCustomChat(ch.asInstanceOf[MessageChannel], groupid, mcch.get, user, dcp, toggles, brtoggles.stream.map(TBMCSystemChatEvent.BroadcastTarget.get).filter(Objects.nonNull).collect(Collectors.toSet))
-                    }
-
-                    foo()
-                })
+                if (mcch.isPresent && ch != null && user != null && groupid != null) {
+                    Bukkit.getScheduler.runTask(getPlugin, () => { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
+                        val dcp = DiscordConnectedPlayer.create(user, ch.asInstanceOf[MessageChannel],
+                            UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this)
+                        MCChatCustom.addCustomChat(ch.asInstanceOf[MessageChannel], groupid, mcch.get, user, dcp, toggles,
+                            brtoggles.asScala.map(TBMCSystemChatEvent.BroadcastTarget.get).filter(Objects.nonNull).toSet)
+                    })
+                }
             }
         }
         try if (lpInjector == null) lpInjector = new LPInjector(DiscordPlugin.plugin)
@@ -205,7 +205,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
             chconc.set("mcname", chcon.dcp.getName)
             chconc.set("groupid", chcon.groupID)
             chconc.set("toggles", chcon.toggles)
-            chconc.set("brtoggles", chcon.brtoggles.stream.map(_.getName).collect(Collectors.toList))
+            chconc.set("brtoggles", chcon.brtoggles.map(_.getName).toList)
         }
         if (listener != null) { //Can be null if disabled because of a config error
             listener.stop(true)
@@ -219,10 +219,10 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      * It will block to make sure all messages are sent
      */
     private def sendStateMessage(color: Color, message: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(_.setColor(color).setTitle(message))),
-            ChannelconBroadcast.RESTART, hookmsg = false).block
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(spec => spec.setColor(color).setTitle(message)).^^()),
+            ChannelconBroadcast.RESTART, hookmsg = false).block()
 
     private def sendStateMessage(color: Color, message: String, extra: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(_.setColor(color).setTitle(message).setDescription(extra))
-            .onErrorResume((_: Throwable) => Mono.empty)), ChannelconBroadcast.RESTART, hookmsg = false).block
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(_.setColor(color).setTitle(message).setDescription(extra).^^()).^^()
+            .onErrorResume(_ => SMono.empty)), ChannelconBroadcast.RESTART, hookmsg = false).block()
 }

@@ -8,10 +8,10 @@ import discord4j.core.`object`.entity.Role
 import reactor.core.publisher.Mono
 
 @CommandClass class RoleCommand private[role](var grm: GameRoleModule) extends ICommand2DC {
-    @Command2.Subcommand(helpText = Array(Array(
+    @Command2.Subcommand(helpText = Array(
         "Add role",
         "This command adds a role to your account."
-    ))) def add(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
+    )) def add(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
         val role = checkAndGetRole(sender, rolename)
         if (role == null) return true
         try sender.getMessage.getAuthorAsMember.flatMap(m => m.addRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("added role.")))).subscribe
@@ -23,10 +23,10 @@ import reactor.core.publisher.Mono
         true
     }
 
-    @Command2.Subcommand(helpText = Array(Array(
+    @Command2.Subcommand(helpText = Array(
         "Remove role",
         "This command removes a role from your account."
-    ))) def remove(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
+    )) def remove(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
         val role = checkAndGetRole(sender, rolename)
         if (role == null) return true
         try sender.getMessage.getAuthorAsMember.flatMap(m => m.removeRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("removed role.")))).subscribe

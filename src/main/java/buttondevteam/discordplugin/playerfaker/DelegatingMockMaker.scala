@@ -36,8 +36,10 @@ class DelegatingMockMaker() extends MockMaker {
     override def createStaticMock[T](`type`: Class[T], settings: MockCreationSettings[T], handler: MockHandler[_]): MockMaker.StaticMockControl[T] =
         this.mockMaker.createStaticMock(`type`, settings, handler)
 
-    override def createConstructionMock[T](`type`: Class[T], settingsFactory: Function[MockedConstruction.Context, MockCreationSettings[T]], handlerFactory: Function[MockedConstruction.Context, MockHandler[T]], mockInitializer: MockedConstruction.MockInitializer[T]): MockMaker.ConstructionMockControl[T] =
-        this.mockMaker.createConstructionMock[T](`type`, settingsFactory: Function[MockedConstruction.Context, MockCreationSettings[T]], handlerFactory, mockInitializer)
+    override def createConstructionMock[T](`type`: Class[T], settingsFactory: java.util.function.Function[MockedConstruction.Context,
+        MockCreationSettings[T]], handlerFactory: java.util.function.Function[MockedConstruction.Context,
+        MockHandler[T]], mockInitializer: MockedConstruction.MockInitializer[T]): MockMaker.ConstructionMockControl[T] =
+        this.mockMaker.createConstructionMock[T](`type`, settingsFactory, handlerFactory, mockInitializer)
 
     def setMockMaker(mockMaker: MockMaker): Unit = {
         this.mockMaker = mockMaker

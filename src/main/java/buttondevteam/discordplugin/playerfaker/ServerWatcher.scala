@@ -4,8 +4,8 @@ import buttondevteam.discordplugin.DiscordConnectedPlayer
 import buttondevteam.discordplugin.mcchat.MCChatUtils
 import com.destroystokyo.paper.profile.CraftPlayerProfile
 import net.bytebuddy.implementation.bind.annotation.IgnoreForBinding
-import org.bukkit.{Bukkit, Server}
 import org.bukkit.entity.Player
+import org.bukkit.{Bukkit, Server}
 import org.mockito.Mockito
 import org.mockito.internal.creation.bytebuddy.InlineByteBuddyMockMaker
 import org.mockito.invocation.InvocationOnMock
@@ -46,14 +46,15 @@ class ServerWatcher {
                 def foo(invocation: InvocationOnMock): AnyRef = {
                     val method = invocation.getMethod
                     val pc = method.getParameterCount
-                    var player: DiscordConnectedPlayer = null
+                    var player = Option.empty[DiscordConnectedPlayer]
                     method.getName match {
                         case "getPlayer" =>
-                            if (pc == 1 && (method.getParameterTypes()(0) eq classOf[UUID])) player = MCChatUtils.LoggedInPlayers.get(invocation.getArgument[UUID](0))
+                            if (pc == 1 && (method.getParameterTypes()(0) == classOf[UUID]))
+                                player = MCChatUtils.LoggedInPlayers.get(invocation.getArgument[UUID](0))
                         case "getPlayerExact" =>
                             if (pc == 1) {
                                 val argument = invocation.getArgument(0)
-                                player = MCChatUtils.LoggedInPlayers.values.stream.filter((dcp) => dcp.getName.equalsIgnoreCase(argument)).findAny.orElse(null)
+                                player = MCChatUtils.LoggedInPlayers.values.find(_.getName.equalsIgnoreCase(argument))
                             }
 
                         /*case "getOnlinePlayers":
@@ -65,13 +66,14 @@ class ServerWatcher {
                             if (pc == 2) {
                                 val uuid = invocation.getArgument(0)
                                 val name = invocation.getArgument(1)
-                                player = if (uuid != null) MCChatUtils.LoggedInPlayers.get(uuid)
-                                else null
-                                if (player == null && name != null) player = MCChatUtils.LoggedInPlayers.values.stream.filter((dcp) => dcp.getName.equalsIgnoreCase(name)).findAny.orElse(null)
-                                if (player != null) return new CraftPlayerProfile(player.getUniqueId, player.getName)
+                                player = if (uuid != null) MCChatUtils.LoggedInPlayers.get(uuid) else Option.empty
+                                if (player.isEmpty && name != null)
+                                    player = MCChatUtils.LoggedInPlayers.values.find(_.getName.equalsIgnoreCase(name))
+                                if (player.nonEmpty)
+                                    return new CraftPlayerProfile(player.get.getUniqueId, player.get.getName)
                             }
                     }
-                    if (player != null) return player
+                    if (player.nonEmpty) return player.get
                     method.invoke(origServer, invocation.getArguments)
                 }
 

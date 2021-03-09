@@ -5,8 +5,9 @@ import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig, ReadO
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.{Guild, Message, Role}
-import discord4j.core.spec.EmbedCreateSpec
-import reactor.core.scala.publisher.SMono
+import discord4j.core.spec.{EmbedCreateSpec, Spec}
+import reactor.core.publisher.{Flux, Mono}
+import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.util
 import java.util.Comparator
@@ -206,4 +207,17 @@ object DPUtils {
         getMessageChannel(config.getPath, config.get)
 
     def ignoreError[T](mono: SMono[T]): SMono[T] = mono.onErrorResume((_: Throwable) => SMono.empty)
+
+    implicit class MonoExtensions[T](mono: Mono[T]) {
+        def ^^(): SMono[T] = SMono(mono)
+    }
+
+    implicit class FluxExtensions[T](flux: Flux[T]) {
+        def ^^(): SFlux[T] = SFlux(flux)
+    }
+
+    implicit class SpecExtensions[T <: Spec[_]](spec: T) {
+        def ^^(): Unit = ()
+    }
+
 }

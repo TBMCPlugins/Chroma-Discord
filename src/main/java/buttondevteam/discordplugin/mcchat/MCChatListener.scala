@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.listeners.CommandListener
 import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
@@ -24,10 +23,10 @@ import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.time.Instant
 import java.util
-import java.util.Optional
 import java.util.concurrent.{LinkedBlockingQueue, TimeoutException}
-import java.util.function.{Consumer, Function, Predicate}
+import java.util.function.{Consumer, Predicate}
 import java.util.stream.Collectors
+import scala.jdk.CollectionConverters.SetHasAsScala
 import scala.jdk.OptionConverters.RichOptional
 
 object MCChatListener {
@@ -133,7 +132,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val isdifferentchannel: Predicate[Snowflake] = (id: Snowflake) => !((e.getSender.isInstanceOf[DiscordSenderBase])) || (e.getSender.asInstanceOf[DiscordSenderBase]).getChannel.getId.asLong != id.asLong
             if (e.getChannel.isGlobal && (e.isFromCommand || isdifferentchannel.test(module.chatChannel.get))) {
                 if (MCChatUtils.lastmsgdata == null)
-                    MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono.block, null)
+                    MCChatUtils.lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono.block(), null)
                 doit(MCChatUtils.lastmsgdata)
             }
 
@@ -146,7 +145,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 MCChatCustom.lastmsgCustom.filterInPlace(lmd => {
                     if ((e.isFromCommand || isdifferentchannel.test(lmd.channel.getId)) //Test if msg is from Discord
                         && e.getChannel.ID == lmd.mcchannel.ID //If it's from a command, the command msg has been deleted, so we need to send it
-                        && e.getGroupID == lmd.groupID) { //Check if this is the group we want to test - #58
+                        && e.getGroupID() == lmd.groupID) { //Check if this is the group we want to test - #58
                         if (e.shouldSendTo(lmd.dcp)) { //Check original user's permissions
                             doit(lmd)
                         }
@@ -254,18 +253,17 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             .filter(channel => {
                 MCChatUtils.resetLastMessage(channel)
                 recevents.add(ev)
-                if (rectask != null) {
-                    return true
-                }
-                recrun = () => {
-                    recthread = Thread.currentThread
-                    processDiscordToMC()
-                    if (DiscordPlugin.plugin.isEnabled && !(stop)) {
-                        rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Continue message processing
+                if (rectask == null) {
+                    recrun = () => {
+                        recthread = Thread.currentThread
+                        processDiscordToMC()
+                        if (DiscordPlugin.plugin.isEnabled && !(stop)) {
+                            rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Continue message processing
+                        }
                     }
+                    rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Start message processing
                 }
-                rectask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, recrun) //Start message processing
-                return true
+                true
             }).map(_ => false).defaultIfEmpty(true)
     }
 
@@ -299,47 +297,44 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val dsender: DiscordSenderBase = MCChatUtils.getSender(event.getMessage.getChannelId, sender)
             val user: DiscordPlayer = dsender.getChromaUser
 
-            for (u <- SFlux(event.getMessage.getUserMentions).toIterable()) { //TODO: Role mentions
-                dmessage = dmessage.replace(u.getMention, "@" + u.getUsername) // TODO: IG Formatting
-                val m: Optional[Member] = u.asMember(DiscordPlugin.mainServer.getId).onErrorResume((t: Throwable) => Mono.empty).blockOptional
-                if (m.isPresent) {
-                    val mm: Member = m.get
-                    val nick: String = mm.getDisplayName
-                    dmessage = dmessage.replace(mm.getNicknameMention, "@" + nick)
+            def replaceUserMentions(): Unit = {
+                for (u <- SFlux(event.getMessage.getUserMentions).toIterable()) { //TODO: Role mentions
+                    dmessage = dmessage.replace(u.getMention, "@" + u.getUsername) // TODO: IG Formatting
+                    val m = u.asMember(DiscordPlugin.mainServer.getId).onErrorResume(_ => Mono.empty).blockOptional
+                    if (m.isPresent) {
+                        val mm: Member = m.get
+                        val nick: String = mm.getDisplayName
+                        dmessage = dmessage.replace(mm.getNicknameMention, "@" + nick)
+                    }
                 }
             }
 
-            for (ch <- SFlux(event.getGuild.flux).flatMap(_.getChannels).toIterable()) {
-                dmessage = dmessage.replace(ch.getMention, "#" + ch.getName)
-            }
-            dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE) //Converts emoji to text- TODO: Add option to disable (resource pack?)
-            dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:") //Convert to Discord's format so it still shows up
-            dmessage = dmessage.replaceAll("<a?:(\\S+):(\\d+)>", ":$1:") //We don't need info about the custom emojis, just display their text
-            val getChatMessage: Function[String, String] = (msg: String) => //
-                msg + (if (event.getMessage.getAttachments.size > 0) {
-                    "\n" + event.getMessage.getAttachments.stream.map(_.getUrl).collect(Collectors.joining("\n"))
-                }
-                else {
-                    ""
-                })
-            val clmd: MCChatCustom.CustomLMD = MCChatCustom.getCustomChat(event.getMessage.getChannelId)
-            var react: Boolean = false
-            val sendChannel: MessageChannel = event.getMessage.getChannel.block
-            val isPrivate: Boolean = sendChannel.isInstanceOf[PrivateChannel]
-            if (dmessage.startsWith("/")) { // Ingame command
-                if (handleIngameCommand(event, dmessage, dsender, user, clmd, isPrivate)) {
-                    return
+            replaceUserMentions()
+
+            def replaceChannelMentions(): Unit = {
+                for (ch <- SFlux(event.getGuild.flux).flatMap(_.getChannels).toIterable()) {
+                    dmessage = dmessage.replace(ch.getMention, "#" + ch.getName)
                 }
             }
-            else { // Not a command
-                react = handleIngameMessage(event, dmessage, dsender, user, getChatMessage, clmd, isPrivate)
+
+            replaceChannelMentions()
+
+            def replaceEmojis(): Unit = {
+                dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE) //Converts emoji to text- TODO: Add option to disable (resource pack?)
+                dmessage = dmessage.replaceAll(":(\\S+)\\|type_(?:(\\d)|(1)_2):", ":$1::skin-tone-$2:") //Convert to Discord's format so it still shows up
+                dmessage = dmessage.replaceAll("<a?:(\\S+):(\\d+)>", ":$1:") //We don't need info about the custom emojis, just display their text
             }
-            if (react) {
+
+            replaceEmojis()
+            val clmd = MCChatCustom.getCustomChat(event.getMessage.getChannelId)
+            val sendChannel = event.getMessage.getChannel.block
+            val isPrivate = sendChannel.isInstanceOf[PrivateChannel]
+
+            def addCheckmark() = {
                 try {
-                    val lmfd: Message = MCChatUtils.lastmsgfromd.get(event.getMessage.getChannelId.asLong)
-                    if (lmfd != null) {
+                    val lmfd = MCChatUtils.lastmsgfromd.get(event.getMessage.getChannelId.asLong)
+                    if (lmfd != null)
                         lmfd.removeSelfReaction(DiscordPlugin.DELIVERED_REACTION).subscribe // Remove it no matter what, we know it's there 99.99% of the time
-                    }
                 } catch {
                     case e: Exception =>
                         TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e, module)
@@ -347,123 +342,133 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 MCChatUtils.lastmsgfromd.put(event.getMessage.getChannelId.asLong, event.getMessage)
                 event.getMessage.addReaction(DiscordPlugin.DELIVERED_REACTION).subscribe
             }
+
+            if (dmessage.startsWith("/")) // Ingame command
+                handleIngameCommand(event, dmessage, dsender, user, clmd, isPrivate)
+            else if (handleIngameMessage(event, dmessage, dsender, user, clmd, isPrivate)) // Not a command
+                addCheckmark()
         } catch {
             case e: Exception =>
                 TBMCCoreAPI.SendException("An error occured while handling message \"" + dmessage + "\"!", e, module)
         }
     }
 
-    private def handleIngameMessage(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer, getChatMessage: Function[String, String], clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {
-        var react: Boolean = false
-        if (dmessage.isEmpty && event.getMessage.getAttachments.size == 0 && !(isPrivate) && (event.getMessage.getType eq Message.Type.CHANNEL_PINNED_MESSAGE)) {
-            val rtr: Channel.RecipientTestResult = if (clmd != null) {
-                clmd.mcchannel.getRTR(clmd.dcp)
-            }
-            else {
-                dsender.getChromaUser.channel.get.getRTR(dsender)
-            }
-            TBMCChatAPI.SendSystemMessage(if (clmd != null) clmd.mcchannel else dsender.getChromaUser.channel.get, rtr,
-                (dsender match {
-                    case player: Player =>
-                        player.getDisplayName
-                    case _ =>
-                        dsender.getName
-                }) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL)
+    /**
+     * Handles a message coming from Discord to Minecraft.
+     *
+     * @param event     The Discord event
+     * @param dmessage  The message itself
+     * @param dsender   The sender who sent it
+     * @param user      The Chroma user of the sender
+     * @param clmd      Custom chat last message data (if in a custom chat)
+     * @param isPrivate Whether the chat is private
+     * @return Whether the bot should react with a checkmark
+     */
+    private def handleIngameMessage(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer,
+                                    clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {
+        def getAttachmentText = {
+            val att = event.getMessage.getAttachments.asScala
+            if (att.nonEmpty) att map (_.getUrl) mkString "\n"
+            else ""
+        }
+
+        if (event.getMessage.getType eq Message.Type.CHANNEL_PINNED_MESSAGE) {
+            val mcchannel = if (clmd != null) clmd.mcchannel else dsender.getChromaUser.channel.get
+            val rtr = mcchannel getRTR (if (clmd != null) clmd.dcp else dsender)
+            TBMCChatAPI.SendSystemMessage(mcchannel, rtr, (dsender match {
+                case player: Player => player.getDisplayName
+                case _ => dsender.getName
+            }) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL)
+            false
         }
         else {
-            val cmb: ChatMessage.ChatMessageBuilder = ChatMessage.builder(dsender, user, getChatMessage.apply(dmessage)).fromCommand(false)
-            if (clmd != null) {
+            val cmb = ChatMessage.builder(dsender, user, dmessage + getAttachmentText()).fromCommand(false)
+            if (clmd != null)
                 TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build, clmd.mcchannel)
-            }
-            else {
+            else
                 TBMCChatAPI.SendChatMessage(cmb.build)
-            }
-            react = true
+            true
         }
-        react
     }
 
-    private def handleIngameCommand(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer, clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {
-        if (!(isPrivate)) {
+    /**
+     * Handle a Minecraft command coming from Discord.
+     *
+     * @param event     The Discord event
+     * @param dmessage  The Discord mewsage, starting with a slash
+     * @param dsender   The sender who sent it
+     * @param user      The Chroma user of the sender
+     * @param clmd      The custom last message data (if in a custom chat)
+     * @param isPrivate Whether the chat is private
+     * @return
+     */
+    private def handleIngameCommand(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer,
+                                    clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Unit = {
+        def notWhitelisted(cmd: String) = module.whitelistedCommands.get.stream
+            .noneMatch(s => cmd == s || cmd.startsWith(s + " "))
+
+        def whitelistedCommands = module.whitelistedCommands.get.stream
+            .map("/" + _).collect(Collectors.joining(", "))
+
+        if (!isPrivate)
             event.getMessage.delete.subscribe
-        }
-        val cmd: String = dmessage.substring(1)
-        val cmdlowercased: String = cmd.toLowerCase
-        if (dsender.isInstanceOf[DiscordSender] && module.whitelistedCommands.get.stream.noneMatch((s: String) => cmdlowercased == s || cmdlowercased.startsWith(s + " "))) { // Command not whitelisted
-            dsender.sendMessage("Sorry, you can only access these commands from here:\n" + module.whitelistedCommands.get.stream.map((uc: String) => "/" + uc).collect(Collectors.joining(", ")) + (if (user.getConnectedID(classOf[TBMCPlayer]) == null) {
-                "\nTo access your commands, first please connect your accounts, using /connect in " + DPUtils.botmention + "\nThen y"
-            }
-            else {
-                "\nY"
-            }) + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!")
-            return true
+        val cmd = dmessage.substring(1)
+        val cmdlowercased = cmd.toLowerCase
+        if (dsender.isInstanceOf[DiscordSender] && notWhitelisted(cmdlowercased)) { // Command not whitelisted
+            dsender.sendMessage("Sorry, you can only access these commands from here:\n" + whitelistedCommands() +
+                (if (user.getConnectedID(classOf[TBMCPlayer]) == null)
+                    "\nTo access your commands, first please connect your accounts, using /connect in " + DPUtils.botmention
+                        + "\nThen y" else "\nY") + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!")
+            return
         }
         module.log(dsender.getName + " ran from DC: /" + cmd)
         if (dsender.isInstanceOf[DiscordSender] && runCustomCommand(dsender, cmdlowercased)) {
-            return true
+            return
         }
-        val channel: Channel = if (clmd == null) {
-            user.channel.get
-        }
-        else {
-            clmd.mcchannel
-        }
-        val ev: TBMCCommandPreprocessEvent = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, if (clmd == null) {
-            dsender
-        }
-        else {
-            clmd.dcp
+        val channel = if (clmd == null) user.channel.get else clmd.mcchannel
+        val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, if (clmd == null) dsender else clmd.dcp)
+        Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => { //Commands need to be run sync
+            Bukkit.getPluginManager.callEvent(ev)
+            if (!ev.isCancelled)
+                runMCCommand(dsender, cmd)
         })
-        Bukkit.getScheduler.runTask(DiscordPlugin.plugin, //Commands need to be run sync
-            () => {
-                def foo(): Unit = {
-                    Bukkit.getPluginManager.callEvent(ev)
-                    if (ev.isCancelled) {
-                        return
-                    }
-                    try {
-                        val mcpackage: String = Bukkit.getServer.getClass.getPackage.getName
-                        if (!(module.enableVanillaCommands.get)) {
-                            Bukkit.dispatchCommand(dsender, cmd)
-                        }
-                        else {
-                            if (mcpackage.contains("1_12")) {
-                                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd)
-                            }
-                            else {
-                                if (mcpackage.contains("1_14")) {
-                                    VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd)
-                                }
-                                else {
-                                    if (mcpackage.contains("1_15") || mcpackage.contains("1_16")) {
-                                        VanillaCommandListener15.runBukkitOrVanillaCommand(dsender, cmd)
-                                    }
-                                    else {
-                                        Bukkit.dispatchCommand(dsender, cmd)
-                                    }
-                                }
-                            }
-                        }
-                    } catch {
-                        case e: NoClassDefFoundError =>
-                            TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e, module)
-                        case e: Exception =>
-                            TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "! Vanilla commands are only supported in some MC versions.", e, module)
-                    }
-                }
-
-                foo()
-            })
-        return true
     }
 
+    private def runMCCommand(dsender: DiscordSenderBase, cmd: String): Unit = {
+        try {
+            val mcpackage = Bukkit.getServer.getClass.getPackage.getName
+            if (!module.enableVanillaCommands.get)
+                Bukkit.dispatchCommand(dsender, cmd)
+            else if (mcpackage.contains("1_12"))
+                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd)
+            else if (mcpackage.contains("1_14"))
+                VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd)
+            else if (mcpackage.contains("1_15") || mcpackage.contains("1_16"))
+                VanillaCommandListener15.runBukkitOrVanillaCommand(dsender, cmd)
+            else
+                Bukkit.dispatchCommand(dsender, cmd)
+        } catch {
+            case e: NoClassDefFoundError =>
+                TBMCCoreAPI.SendException("A class is not found when trying to run command " + cmd + "!", e, module)
+            case e: Exception =>
+                TBMCCoreAPI.SendException("An error occurred when trying to run command " + cmd + "! Vanilla commands are only supported in some MC versions.", e, module)
+        }
+    }
+
+    /**
+     * Handles custom public commands. Used to hide sensitive information in public chats.
+     *
+     * @param dsender       The Discord sender
+     * @param cmdlowercased The command, lowercased
+     * @return Whether the command was a custom command
+     */
     private def runCustomCommand(dsender: DiscordSenderBase, cmdlowercased: String): Boolean = {
         if (cmdlowercased.startsWith("list")) {
-            val players: util.Collection[_ <: Player] = Bukkit.getOnlinePlayers
+            val players = Bukkit.getOnlinePlayers
             dsender.sendMessage("There are " + players.stream.filter(MCChatUtils.checkEssentials).count + " out of " + Bukkit.getMaxPlayers + " players online.")
-            dsender.sendMessage("Players: " + players.stream.filter(MCChatUtils.checkEssentials).map(Player.getDisplayName).collect(Collectors.joining(", ")))
-            return true
+            dsender.sendMessage("Players: " + players.stream.filter(MCChatUtils.checkEssentials).map(_.getDisplayName).collect(Collectors.joining(", ")))
+            true
         }
-        return false
+        else false
     }
 }

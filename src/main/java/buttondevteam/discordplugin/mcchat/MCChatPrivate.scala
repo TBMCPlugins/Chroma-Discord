@@ -4,12 +4,12 @@ import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.mcchat.MCChatUtils.LastMsgData
 import buttondevteam.discordplugin.{DiscordConnectedPlayer, DiscordPlayer, DiscordPlugin, DiscordSenderBase}
 import buttondevteam.lib.player.TBMCPlayer
-import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import org.bukkit.Bukkit
 
 import scala.collection.mutable.ListBuffer
+import scala.jdk.javaapi.CollectionConverters.asScala
 
 object MCChatPrivate {
     /**
@@ -39,7 +39,7 @@ object MCChatPrivate {
                         def foo(): Unit = {
                             if ((p == null || p.isInstanceOf[DiscordSenderBase]) // Player is offline - If the player is online, that takes precedence
                                 && sender.isLoggedIn) { //Don't call the quit event if login failed
-                                MCChatUtils.callLogoutEvent(sender, false) //The next line has to run *after* this one, so can't use the needsSync parameter
+                                MCChatUtils.callLogoutEvent(sender, needsSync = false) //The next line has to run *after* this one, so can't use the needsSync parameter
                             }
 
                             MCChatUtils.LoggedInPlayers.remove(sender.getUniqueId)
@@ -61,14 +61,13 @@ object MCChatPrivate {
     def isMinecraftChatEnabled(dp: DiscordPlayer): Boolean = isMinecraftChatEnabled(dp.getDiscordID)
 
     def isMinecraftChatEnabled(did: String): Boolean = { // Don't load the player data just for this
-        lastmsgPerUser.stream.anyMatch((lmd: MCChatUtils.LastMsgData) =>
-            lmd.channel.asInstanceOf[PrivateChannel].getRecipientIds.stream.anyMatch((u: Snowflake) => u.asString == did))
+        lastmsgPerUser.exists(_.channel.asInstanceOf[PrivateChannel].getRecipientIds.stream.anyMatch(u => u.asString == did))
     }
 
     def logoutAll(): Unit = {
         MCChatUtils.ConnectedSenders synchronized {
-            for (entry <- asScala(MCChatUtils.ConnectedSenders.entrySet)) {
-                for (valueEntry <- entry.getValue.entrySet) {
+            for ((_, userMap) <- MCChatUtils.ConnectedSenders) {
+                for (valueEntry <- asScala(userMap.entrySet)) {
                     if (MCChatUtils.getSender(MCChatUtils.OnlineSenders, valueEntry.getKey, valueEntry.getValue.getUser) == null) { //If the player is online then the fake player was already logged out
                         MCChatUtils.callLogoutEvent(valueEntry.getValue, !Bukkit.isPrimaryThread)
                     }

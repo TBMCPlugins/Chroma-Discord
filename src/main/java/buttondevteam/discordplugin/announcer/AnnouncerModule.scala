@@ -89,7 +89,7 @@ import scala.annotation.tailrec
 
             if (msgsb.nonEmpty) sendMsg(channel.get(), msgsb.toString())
             if (modmsgsb.nonEmpty) sendMsg(modChannel.get(), modmsgsb.toString())
-            if (lastAnnouncementTime.get ne lastanntime) lastAnnouncementTime.set(lastanntime) // If sending succeeded
+            if (lastAnnouncementTime.get != lastanntime) lastAnnouncementTime.set(lastanntime) // If sending succeeded
         } catch {
             case e: Exception =>
                 e.printStackTrace()

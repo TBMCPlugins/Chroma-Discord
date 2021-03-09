@@ -18,7 +18,6 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.player.{AsyncPlayerPreLoginEvent, PlayerJoinEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.plugin.AuthorNagException
-import org.reactivestreams.Publisher
 import reactor.core.scala.publisher.SMono
 
 import java.net.InetAddress
@@ -46,7 +45,7 @@ object MCChatUtils {
     @Nullable private[mcchat] var lastmsgdata: MCChatUtils.LastMsgData = null
     private[mcchat] val lastmsgfromd = new LongObjectHashMap[Message] // Last message sent by a Discord user, used for clearing checkmarks
     private var module: MinecraftChatModule = null
-    private val staticExcludedPlugins = Map[Class[_ <: Event], util.HashSet[String]]()
+    private val staticExcludedPlugins: concurrent.Map[Class[_ <: Event], util.HashSet[String]] = concurrent.TrieMap()
 
     def updatePlayerList(): Unit = {
         val mod = getModule
@@ -102,22 +101,22 @@ object MCChatUtils {
         addSender(senders, user.getId.asString, sender)
 
     def addSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], did: String, sender: T): T = {
-        val origMap = senders.get(did)
-        val map = if (origMap.isEmpty) new ConcurrentHashMap[Snowflake, T] else origMap.get
+        val mapOpt = senders.get(did)
+        val map = if (mapOpt.isEmpty) new ConcurrentHashMap[Snowflake, T] else mapOpt.get
         map.put(sender.getChannel.getId, sender)
         senders.put(did, map)
         sender
     }
 
-    def getSender[T <: DiscordSenderBase](senders: ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
-        val map = senders.get(user.getId.asString)
-        if (map != null) map.get(channel)
+    def getSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
+        val mapOpt = senders.get(user.getId.asString)
+        if (mapOpt.nonEmpty) mapOpt.get.get(channel)
         else null.asInstanceOf
     }
 
-    def removeSender[T <: DiscordSenderBase](senders: ConcurrentHashMap[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
-        val map = senders.get(user.getId.asString)
-        if (map != null) map.remove(channel)
+    def removeSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
+        val mapOpt = senders.get(user.getId.asString)
+        if (mapOpt.nonEmpty) mapOpt.get.remove(channel)
         else null.asInstanceOf
     }
 
@@ -138,11 +137,12 @@ object MCChatUtils {
      */
     def forCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
         if (notEnabled) return SMono.empty
-        val list = new ListBuffer[Publisher[_]]
-        if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) list.append(forPublicPrivateChat(action))
-        val customLMDFunction = (cc: MCChatCustom.CustomLMD) => action(SMono.just(cc.channel))
-        if (toggle == null) MCChatCustom.lastmsgCustom.map(customLMDFunction).foreach(list.append(_))
-        else MCChatCustom.lastmsgCustom.filter((cc) => (cc.toggles & (1 << toggle.id)) ne 0).map(customLMDFunction).foreach(list.append(_))
+        val list =
+            List(if (!GeneralEventBroadcasterModule.isHooked || !hookmsg)
+                forPublicPrivateChat(action) else SMono.empty) ++
+                (if (toggle == null) MCChatCustom.lastmsgCustom
+                else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
+                    .map(_.channel).map(SMono.just).map(action)
         SMono.whenDelayError(list)
     }
 
@@ -156,7 +156,7 @@ object MCChatUtils {
     def forAllowedCustomMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast): SMono[_] = {
         if (notEnabled) return SMono.empty
         val st = MCChatCustom.lastmsgCustom.filter(clmd => { //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
-            if (toggle != null && ((clmd.toggles & (1 << toggle.id)) eq 0)) false //If null then allow
+            if (toggle != null && ((clmd.toggles & (1 << toggle.id)) == 0)) false //If null then allow
             else if (sender == null) true
             else clmd.groupID.equals(clmd.mcchannel.getGroupID(sender))
         }).map(cc => action.apply(SMono.just(cc.channel))) //TODO: Send error messages on channel connect
@@ -204,13 +204,12 @@ object MCChatUtils {
      * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
      */
     private[mcchat] def getSender(channel: Snowflake, author: User): DiscordSenderBase = { //noinspection OptionalGetWithoutIsPresent
-        List[() => DiscordSenderBase]( // https://stackoverflow.com/a/28833677/2703239
-            () => getSender[DiscordSenderBase](OnlineSenders, channel, author), // Find first non-null
-            () => getSender[DiscordSenderBase](ConnectedSenders, channel, author), // This doesn't support the public chat, but it'll always return null for it
-            () => getSender[DiscordSenderBase](UnconnectedSenders, channel, author), //
-            () => addSender[DiscordSenderBase](UnconnectedSenders, author,
-                new DiscordSender(author, SMono(DiscordPlugin.dc.getChannelById(channel)).block().asInstanceOf[MessageChannel])))
-            .map(_.apply()).find(sender => sender != null).get
+        Option(getSender(OnlineSenders, channel, author)) // Find first non-null
+            .orElse(Option(getSender(ConnectedSenders, channel, author))) // This doesn't support the public chat, but it'll always return null for it
+            .orElse(Option(getSender(UnconnectedSenders, channel, author))) //
+            .orElse(Option(addSender(UnconnectedSenders, author,
+                new DiscordSender(author, SMono(DiscordPlugin.dc.getChannelById(channel)).block().asInstanceOf[MessageChannel]))))
+            .get
     }
 
     /**

@@ -39,9 +39,10 @@ object MCChatCustom {
     @Nullable def getCustomChat(channel: Snowflake): CustomLMD =
         lastmsgCustom.find(_.channel.getId.asLong == channel.asLong).orNull
 
-    def removeCustomChat(channel: Snowflake): Unit = {
+    def removeCustomChat(channel: Snowflake): Boolean = {
         lastmsgCustom synchronized {
             MCChatUtils.lastmsgfromd.remove(channel.asLong)
+            val count = lastmsgCustom.size
             lastmsgCustom.filterInPlace(lmd => {
                 if (lmd.channel.getId.asLong != channel.asLong) return true
                 lmd.mcchannel match {
@@ -50,6 +51,7 @@ object MCChatCustom {
                 }
                 false
             })
+            lastmsgCustom.size < count
         }
     }
 

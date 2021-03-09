@@ -17,7 +17,9 @@ import org.bukkit.entity.Player
     var WaitingToConnect: HashBiMap[String, String] = HashBiMap.create
 }
 
-@CommandClass(helpText = Array(Array("Connect command", "This command lets you connect your account with a Minecraft account. This allows using the private Minecraft chat and other things."))) class ConnectCommand extends ICommand2DC {
+@CommandClass(helpText = Array("Connect command",
+    "This command lets you connect your account with a Minecraft account." +
+        " This allows using the private Minecraft chat and other things.")) class ConnectCommand extends ICommand2DC {
     @Command2.Subcommand def `def`(sender: Command2DCSender, Minecraftname: String): Boolean = {
         val message = sender.getMessage
         val channel = message.getChannel.block

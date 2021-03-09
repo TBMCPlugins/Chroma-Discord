@@ -16,7 +16,7 @@ class DebugCommand extends ICommand2DC {
                 .map((u: User) => SMono(u.asMember(DiscordPlugin.mainServer.getId))).getOrElse(SMono.empty))
             .flatMap((m: Member) => DiscordPlugin.plugin.modRole.get
                 .map(mr => m.getRoleIds.stream.anyMatch((r: Snowflake) => r == mr.getId))
-                .switchIfEmpty(SMono.fromCallable(() => DiscordPlugin.mainServer.getOwnerId.asLong eq m.getId.asLong)))
+                .switchIfEmpty(SMono.fromCallable(() => DiscordPlugin.mainServer.getOwnerId.asLong == m.getId.asLong)))
             .onErrorResume(_ => SMono.just(false)) //Role not found
             .subscribe(success => {
                 if (success) {
