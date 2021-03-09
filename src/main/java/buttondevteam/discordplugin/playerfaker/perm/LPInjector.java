@@ -1,40 +1,9 @@
 package buttondevteam.discordplugin.playerfaker.perm;
 
-import buttondevteam.discordplugin.DiscordConnectedPlayer;
-import buttondevteam.discordplugin.DiscordPlugin;
-import buttondevteam.discordplugin.mcchat.MCChatUtils;
-import buttondevteam.lib.TBMCCoreAPI;
-import me.lucko.luckperms.bukkit.LPBukkitBootstrap;
-import me.lucko.luckperms.bukkit.LPBukkitPlugin;
-import me.lucko.luckperms.bukkit.inject.permissible.DummyPermissibleBase;
-import me.lucko.luckperms.bukkit.inject.permissible.LuckPermsPermissible;
-import me.lucko.luckperms.bukkit.listeners.BukkitConnectionListener;
-import me.lucko.luckperms.common.config.ConfigKeys;
-import me.lucko.luckperms.common.locale.Message;
-import me.lucko.luckperms.common.locale.TranslationManager;
-import me.lucko.luckperms.common.model.User;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.permissions.PermissibleBase;
-import org.bukkit.permissions.PermissionAttachment;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class LPInjector implements Listener { //Disable login event for LuckPerms
-	private final LPBukkitPlugin plugin;
+	/*private final LPBukkitPlugin plugin;
 	private final BukkitConnectionListener connectionListener;
 	private final Set<UUID> deniedLogin;
 	private final Field detectedCraftBukkitOfflineMode;
@@ -86,11 +55,11 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 
 	//Code copied from LuckPerms - me.lucko.luckperms.bukkit.listeners.BukkitConnectionListener
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerLogin(PlayerLoginEvent e) {
+	public void onPlayerLogin(PlayerLoginEvent e) {*/
         /* Called when the player starts logging into the server.
            At this point, the users data should be present and loaded. */
 
-		if (!(e.getPlayer() instanceof DiscordConnectedPlayer))
+		/*if (!(e.getPlayer() instanceof DiscordConnectedPlayer))
 			return; //Normal players must be handled by the plugin
 
 		final DiscordConnectedPlayer player = (DiscordConnectedPlayer) e.getPlayer();
@@ -102,7 +71,7 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 		final User user = plugin.getUserManager().getIfLoaded(player.getUniqueId());
 
 		/* User instance is null for whatever reason. Could be that it was unloaded between asyncpre and now. */
-		if (user == null) {
+		/*if (user == null) {
 			deniedLogin.add(player.getUniqueId());
 
 			if (!plugin.getConnectionListener().getUniqueConnections().contains(player.getUniqueId())) {
@@ -234,5 +203,5 @@ public final class LPInjector implements Listener { //Disable login event for Lu
 			player.setPerm(DummyPermissibleBase.INSTANCE);
 
 		}
-	}
+	}*/
 }

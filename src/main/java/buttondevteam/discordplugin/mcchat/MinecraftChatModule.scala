@@ -134,7 +134,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
                 }
             }
         }
-        try if (lpInjector == null) lpInjector = new LPInjector(DiscordPlugin.plugin)
+        try if (lpInjector == null) lpInjector = new LPInjector //new LPInjector(DiscordPlugin.plugin)
         catch {
             case e: Exception =>
                 TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e, this)

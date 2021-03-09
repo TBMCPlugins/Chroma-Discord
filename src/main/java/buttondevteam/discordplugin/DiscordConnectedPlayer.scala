@@ -4,11 +4,8 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.playerfaker.{DiscordInventory, VCMDWrapper}
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
-import net.md_5.bungee.api.ChatMessageType
-import net.md_5.bungee.api.chat.BaseComponent
 import org.bukkit._
 import org.bukkit.attribute.{Attribute, AttributeInstance, AttributeModifier}
-import org.bukkit.entity.Player.Spigot
 import org.bukkit.entity.{Entity, Player}
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerTeleportEvent}
 import org.bukkit.inventory.{Inventory, PlayerInventory}
@@ -19,7 +16,6 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.{MockSettings, Mockito}
 
 import java.lang.reflect.Modifier
-import java.net.InetSocketAddress
 import java.util
 import java.util._
 
@@ -202,7 +198,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
     override def getGameMode = GameMode.SPECTATOR
 
     //noinspection ScalaDeprecation
-    @SuppressWarnings(Array("deprecation")) override def spigot: Spigot = new Spigot() {
+    /*@SuppressWarnings(Array("deprecation")) override def spigot: super.Spigot = new super.Spigot() {
         override def getRawAddress: InetSocketAddress = null
 
         override def playEffect(location: Location, effect: Effect, id: Int, data: Int, offsetX: Float, offsetY: Float, offsetZ: Float, speed: Float, particleCount: Int, radius: Int): Unit = {
@@ -233,5 +229,5 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
             sendMessage(components: _*)
 
         override def isInvulnerable = true
-    }
+    }*/
 }

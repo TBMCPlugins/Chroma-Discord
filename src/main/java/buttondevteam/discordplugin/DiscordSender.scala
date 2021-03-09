@@ -56,5 +56,5 @@ class DiscordSender(user: User, channel: MessageChannel, pname: String) extends 
 
     override def getName: String = name
 
-    override def spigot = new CommandSender.Spigot
+    //override def spigot(): CommandSender.Spigot = new CommandSender.Spigot
 }
