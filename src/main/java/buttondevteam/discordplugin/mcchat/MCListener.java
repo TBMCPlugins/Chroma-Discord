@@ -68,7 +68,7 @@ class MCListener implements Listener {
 			final String message = e.getJoinMessage();
 			if (message != null && message.trim().length() > 0)
 				MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true).subscribe();
-			ChromaBot.updatePlayerList();
+			ChromaBot.getInstance().updatePlayerList();
 		});
 	}
 
@@ -81,7 +81,7 @@ class MCListener implements Listener {
 		Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin,
 			() -> Optional.ofNullable(MCChatUtils.LoggedInPlayers.get(e.getPlayer().getUniqueId())).ifPresent(MCChatUtils::callLoginEvents));
 		Bukkit.getScheduler().runTaskLaterAsynchronously(DiscordPlugin.plugin,
-			ChromaBot::updatePlayerList, 5);
+			ChromaBot.getInstance()::updatePlayerList, 5);
 		final String message = e.getQuitMessage();
 		if (message != null && message.trim().length() > 0)
 			MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), e.getPlayer(), ChannelconBroadcast.JOINLEAVE, true).subscribe();
@@ -119,7 +119,7 @@ class MCListener implements Listener {
 		final DiscordPlayer p = TBMCPlayerBase.getPlayer(source.getPlayer().getUniqueId(), TBMCPlayer.class)
 			.getAs(DiscordPlayer.class);
 		if (p == null) return;
-		DPUtils.ignoreError(DiscordPlugin.dc().getUserById(Snowflake.of(p.getDiscordID()))
+		DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID()))
 			.flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId()))
 			.flatMap(user -> role.flatMap(r -> {
 				if (e.getValue())
