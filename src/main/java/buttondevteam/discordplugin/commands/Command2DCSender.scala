@@ -4,9 +4,8 @@ import buttondevteam.discordplugin.DPUtils
 import buttondevteam.lib.chat.Command2Sender
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.{Message, User}
-import lombok.RequiredArgsConstructor
 
-@RequiredArgsConstructor class Command2DCSender(val message: Message) extends Command2Sender {
+class Command2DCSender(val message: Message) extends Command2Sender {
     def getMessage: Message = this.message
 
     override def sendMessage(message: String): Unit = {

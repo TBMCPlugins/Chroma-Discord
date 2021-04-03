@@ -22,6 +22,7 @@ import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
 import discord4j.core.{DiscordClientBuilder, GatewayDiscordClient}
 import discord4j.gateway.ShardInfo
+import discord4j.rest.interaction.Interactions
 import discord4j.store.jdk.JdkStoreService
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.Logger
@@ -216,6 +217,8 @@ import java.util.Optional
             blw.start()
             LogManager.getRootLogger.asInstanceOf[Logger].addAppender(blw)
             logWatcher = blw
+            Interactions.create().onCommand("teszt", Interactions.createHandler()
+                .guild(gi => gi.acknowledge().withFollowup(_.createFollowupMessage("Teszt"))).build());
             if (!TBMCCoreAPI.IsTestServer) DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe
             else DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe
             getLogger.info("Loaded!")

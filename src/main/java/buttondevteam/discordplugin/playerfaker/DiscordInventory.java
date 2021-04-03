@@ -1,7 +1,5 @@
 package buttondevteam.discordplugin.playerfaker;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -16,14 +14,23 @@ import java.util.stream.IntStream;
 public class DiscordInventory implements Inventory {
 	private ItemStack[] items = new ItemStack[27];
 	private List<ItemStack> itemStacks = Arrays.asList(items);
-	@Getter
-	@Setter
+
 	public int maxStackSize;
 	private static ItemStack emptyStack = new ItemStack(Material.AIR, 0);
 
 	@Override
 	public int getSize() {
 		return items.length;
+	}
+
+	@Override
+	public int getMaxStackSize() {
+		return maxStackSize;
+	}
+
+	@Override
+	public void setMaxStackSize(int maxStackSize) {
+		this.maxStackSize = maxStackSize;
 	}
 
 	@Override

@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.playerfaker
 
 import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
-import lombok.Getter
 import net.minecraft.server.v1_12_R1._
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.v1_12_R1.command.VanillaCommandWrapper
@@ -40,7 +39,7 @@ object VanillaCommandListener {
 class VanillaCommandListener[T <: DiscordSenderBase with IMCPlayer[T]] extends ICommandListener {
     def getPlayer: T = this.player
 
-    @Getter private var player: T = null.asInstanceOf
+    private var player: T = null.asInstanceOf
     private var bukkitplayer: Player = null
 
     /**

@@ -82,7 +82,7 @@ object DPUtils {
         roleData(config, key, defName, SMono.just(DiscordPlugin.mainServer))
 
     /**
-     * Needs to be a {@link ConfigData} for checking if it's set
+     * Needs to be a [[ConfigData]] for checking if it's set
      */
     def roleData(config: IHaveConfig, key: String, defName: String, guild: SMono[Guild]): ReadOnlyConfigData[SMono[Role]] = config.getReadOnlyDataPrimDef(key, defName, (name: Any) => {
         def foo(name: Any): SMono[Role] = {

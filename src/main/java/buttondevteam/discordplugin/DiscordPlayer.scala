@@ -14,7 +14,7 @@ import buttondevteam.lib.player.{ChromaGamerBase, UserClass}
 
     /**
      * Returns true if player has the private Minecraft chat enabled. For setting the value, see
-     * {@link MCChatPrivate# privateMCChat ( MessageChannel, boolean, User, DiscordPlayer)}
+     * [[MCChatPrivate.privateMCChat]]
      */
     def isMinecraftChatEnabled: Boolean = MCChatPrivate.isMinecraftChatEnabled(this)
 }

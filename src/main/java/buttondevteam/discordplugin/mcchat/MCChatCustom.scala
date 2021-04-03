@@ -6,7 +6,6 @@ import buttondevteam.lib.TBMCSystemChatEvent
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
-import lombok.NonNull
 
 import javax.annotation.Nullable
 import scala.collection.mutable.ListBuffer
@@ -59,8 +58,8 @@ object MCChatCustom {
 
     def getCustomChats: List[CustomLMD] = lastmsgCustom.toList
 
-    class CustomLMD private[mcchat](@NonNull channel: MessageChannel, @NonNull user: User, val groupID: String,
-                                    @NonNull mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
+    class CustomLMD private[mcchat](channel: MessageChannel, user: User, val groupID: String,
+                                    mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
                                     var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, user, mcchannel) {
     }
 

@@ -49,7 +49,7 @@ object DiscordConnectedPlayer {
 }
 
 /**
- * @constructor The parameters must match with {@link #create ( User, MessageChannel, UUID, String, MinecraftChatModule)}
+ * @constructor The parameters must match with [[DiscordConnectedPlayer.create]]
  * @param user     May be null.
  * @param channel  May not be null.
  * @param uniqueId The UUID of the player.
