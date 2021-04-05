@@ -1,6 +1,9 @@
+import scala.io.Source
+import scala.util.Using
+
 name := "Chroma-Discord"
 
-version := "0.1"
+version := "1.1"
 
 scalaVersion := "2.13.5"
 
@@ -25,44 +28,12 @@ libraryDependencies ++= Seq(
     "com.github.lucko.LuckPerms" % "bukkit" % "master-SNAPSHOT" % Provided,
 )
 
-
-/*val myAssemblySettings = inTask(assembly)(
-    Seq(
-        assemblyShadeRules := libraryDependencies.value.filter(!_.configurations.exists(_ contains "provided"))
-            .map { _.organization }
-            .map { p =>
-            ShadeRule.rename(s"$p.**" -> "btndvtm.dp.@0").inAll
-        },
-        assemblyMergeStrategy := {
-            case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.concat
-            // https://stackoverflow.com/a/55557287/457612
-            case "module-info.class" => MergeStrategy.discard
-            case x                   => assemblyMergeStrategy.value(x)
-        },
-        /*shadeResourceTransformers ++= Seq(
-            Rename(
-                "libnetty_tcnative_linux_x86_64.so"   -> "libcom_couchbase_client_core_deps_netty_tcnative_linux_x86_64.so",
-                "libnetty_tcnative_osx_x86_64.jnilib" -> "libcom_couchbase_client_core_deps_netty_tcnative_osx_x86_64.jnilib",
-                "netty_tcnative_windows_x86_64.dll"   -> "com_couchbase_client_core_deps_netty_tcnative_windows_x86_64.dll"
-            ).inDir("META-INF/native"),
-            Discard(
-                "com.fasterxml.jackson.core.JsonFactory",
-                "com.fasterxml.jackson.core.ObjectCodec",
-                "com.fasterxml.jackson.databind.Module"
-            ).inDir("META-INF/services")
-        )*/
-    )
-)*/
-
 assemblyJarName in assembly := "Chroma-Discord.jar"
-//assemblyShadeRules in assembly := libraryDependencies.value.filter(!_.configurations.exists(_ contains "provided"))
 assemblyShadeRules in assembly := Seq(
     "io.netty", "com.fasterxml", "org.mockito", "org.slf4j"
 ).map { p =>
     ShadeRule.rename(s"$p.**" -> "btndvtm.dp.@0").inAll
 }
-
-//logLevel in assembly := Level.Debug
 
 assemblyMergeStrategy in assembly := {
     case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.concat
@@ -71,4 +42,22 @@ assemblyMergeStrategy in assembly := {
     case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
-//lazy val `Chroma-Discord` = project.settings(myAssemblySettings)
+lazy val commenter = project.settings(Seq(
+    name := "Chroma-Commenter",
+    version := "1.0",
+    organization := "com.github.TBMCPlugins"
+))
+
+val teszt = TaskKey[Unit]("teszt")
+teszt := {
+    //val tv = target.value
+    val sv = (Compile / sources).value
+    for (file <- sv) {
+        Using(Source.fromFile(file)) { src =>
+            for (line <- src.getLines) {
+                if (line.contains("class"))
+                    println(line)
+            }
+        }.recover[Unit]({ case t => t.printStackTrace() })
+    }
+}

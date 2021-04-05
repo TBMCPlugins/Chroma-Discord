@@ -70,7 +70,7 @@ class VanillaCommandListener14[T <: DiscordSenderBase with IMCPlayer[T]] extends
         if (bukkitplayer != null && !bukkitplayer.isInstanceOf[CraftPlayer]) throw new ClassCastException("bukkitplayer must be a Bukkit player!")
     }
 
-    override def sendMessage(arg0: IChatBaseComponent): Unit = {
+    override def sendMessage(arg0: IChatBaseComponent): scala.Unit = {
         player.sendMessage(arg0.getString)
         if (bukkitplayer != null) bukkitplayer.asInstanceOf[CraftPlayer].getHandle.sendMessage(arg0)
     }
