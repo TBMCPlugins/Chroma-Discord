@@ -3,10 +3,10 @@ package buttondevteam.discordplugin
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.util.DPState
 import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.{Filter, LogEvent}
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.filter.LevelRangeFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
+import org.apache.logging.log4j.core.{Filter, LogEvent}
 
 class BukkitLogWatcher private[discordplugin]() extends AbstractAppender("ChromaDiscord",
     LevelRangeFilter.createFilter(Level.INFO, Level.INFO, Filter.Result.ACCEPT, Filter.Result.DENY),

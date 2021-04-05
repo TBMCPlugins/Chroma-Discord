@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.playerfaker
 
-import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
+import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
 import buttondevteam.lib.TBMCCoreAPI
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player

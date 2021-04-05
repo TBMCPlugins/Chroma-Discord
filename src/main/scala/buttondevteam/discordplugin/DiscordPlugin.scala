@@ -70,7 +70,8 @@ import java.util.Optional
             if (id.asInstanceOf[Long] == 0L) Option.empty
             else SMono.fromPublisher(DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long])))
                 .onErrorResume((t: Throwable) => {
-                    getLogger.warning("Failed to get guild: " + t.getMessage); SMono.empty
+                    getLogger.warning("Failed to get guild: " + t.getMessage);
+                    SMono.empty
                 }).blockOption()
         }
 
