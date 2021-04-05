@@ -1,3 +1,5 @@
+import org.bukkit.configuration.file.YamlConfiguration
+
 import java.util.regex.Pattern
 import scala.io.Source
 import scala.util.Using
@@ -46,49 +48,41 @@ assemblyMergeStrategy in assembly := {
 val getConfigComments = TaskKey[Unit]("getConfigComments")
 getConfigComments := {
     val sv = (Compile / sources).value
-    //val cdataRegex = Pattern.compile("(?:def|val|var) \\w*ConfigData\\w*(?:\\[\\w+])? (\\w+)")
     val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = get(?:I)?Config")
     val clRegex = Pattern.compile("class (\\w+) extends (\\w+)")
+    val config = new YamlConfiguration()
     for (file <- sv) {
         Using(Source.fromFile(file)) { src =>
             var pkg: String = null
-            var cl: String = null
+            var clKey: String = null
             var comment: String = null
             var justCommented: Boolean = false
-            var isComponent: Boolean = false
             for (line <- src.getLines) {
                 val clMatcher = clRegex.matcher(line)
                 if (line.startsWith("package")) {
                     pkg = line.substring("package ".length)
-                    //println("Found package: " + pkg)
-                } else if (line.contains("class") && pkg != null && cl == null && clMatcher.find()) { //First occurrence
-                    //cl = line.substring(line.indexOf("class") + "class ".length)
-                    cl = clMatcher.group(1)
-                    isComponent = clMatcher.group(2).contains("Component")
-                    //println("Found class: " + cl)
-                } else if (line.contains("/**") && cl != null) {
+                } else if (line.contains("class") && pkg != null && clKey == null && clMatcher.find()) { //First occurrence
+                    clKey = if (clMatcher.group(2).contains("Component"))
+                        "component." + clMatcher.group(1)
+                    else
+                        "global"
+                } else if (line.contains("/**") && clKey != null) {
                     comment = ""
                     justCommented = false
-                    //println("Found comment start")
-                } else if (line.contains("*/") && comment != null) {
+                } else if (line.contains("*/") && comment != null)
                     justCommented = true
-                    //println("Found comment end")
-                } else if (comment != null) {
+                else if (comment != null) {
                     if (justCommented) {
-                        //println("Just commented")
-                        //println(s"line: $line")
                         val matcher = cdataRegex.matcher(line)
                         if (matcher.find())
-                            println(s"$pkg.$cl.${matcher.group(1)} comment:\n" + comment)
+                            config.set(s"$clKey.${matcher.group(1)}", comment.trim)
                         justCommented = false
                         comment = null
                     }
-                    else {
-                        comment += line.replaceFirst("^\\s*\\*\\s+", "")
-                        //println("Adding to comment")
-                    }
+                    else comment += line.replaceFirst("^\\s*\\*\\s+", "") + "\n"
                 }
             }
+            config.save("configHelp.yml")
         }.recover[Unit]({ case t => t.printStackTrace() })
     }
 }
