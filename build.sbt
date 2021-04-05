@@ -42,21 +42,14 @@ assemblyMergeStrategy in assembly := {
     case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
-lazy val commenter = project.settings(Seq(
-    name := "Chroma-Commenter",
-    version := "1.0",
-    organization := "com.github.TBMCPlugins"
-))
-
 val teszt = TaskKey[Unit]("teszt")
 teszt := {
-    //val tv = target.value
     val sv = (Compile / sources).value
     for (file <- sv) {
         Using(Source.fromFile(file)) { src =>
             for (line <- src.getLines) {
                 if (line.contains("class"))
-                    println(line)
+                    println(line + "")
             }
         }.recover[Unit]({ case t => t.printStackTrace() })
     }
