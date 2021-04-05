@@ -1,3 +1,4 @@
+import java.util.regex.Pattern
 import scala.io.Source
 import scala.util.Using
 
@@ -42,14 +43,51 @@ assemblyMergeStrategy in assembly := {
     case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
-val teszt = TaskKey[Unit]("teszt")
-teszt := {
+val getConfigComments = TaskKey[Unit]("getConfigComments")
+getConfigComments := {
     val sv = (Compile / sources).value
+    //val cdataRegex = Pattern.compile("(?:def|val|var) \\w*ConfigData\\w*(?:\\[\\w+])? (\\w+)")
+    val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = get(?:I)?Config")
+    val clRegex = Pattern.compile("class (\\w+) extends (\\w+)")
     for (file <- sv) {
         Using(Source.fromFile(file)) { src =>
+            var pkg: String = null
+            var cl: String = null
+            var comment: String = null
+            var justCommented: Boolean = false
+            var isComponent: Boolean = false
             for (line <- src.getLines) {
-                if (line.contains("class"))
-                    println(line + "")
+                val clMatcher = clRegex.matcher(line)
+                if (line.startsWith("package")) {
+                    pkg = line.substring("package ".length)
+                    //println("Found package: " + pkg)
+                } else if (line.contains("class") && pkg != null && cl == null && clMatcher.find()) { //First occurrence
+                    //cl = line.substring(line.indexOf("class") + "class ".length)
+                    cl = clMatcher.group(1)
+                    isComponent = clMatcher.group(2).contains("Component")
+                    //println("Found class: " + cl)
+                } else if (line.contains("/**") && cl != null) {
+                    comment = ""
+                    justCommented = false
+                    //println("Found comment start")
+                } else if (line.contains("*/") && comment != null) {
+                    justCommented = true
+                    //println("Found comment end")
+                } else if (comment != null) {
+                    if (justCommented) {
+                        //println("Just commented")
+                        //println(s"line: $line")
+                        val matcher = cdataRegex.matcher(line)
+                        if (matcher.find())
+                            println(s"$pkg.$cl.${matcher.group(1)} comment:\n" + comment)
+                        justCommented = false
+                        comment = null
+                    }
+                    else {
+                        comment += line.replaceFirst("^\\s*\\*\\s+", "")
+                        //println("Adding to comment")
+                    }
+                }
             }
         }.recover[Unit]({ case t => t.printStackTrace() })
     }
