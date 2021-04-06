@@ -49,10 +49,12 @@ val saveConfigComments = TaskKey[Seq[File]]("saveConfigComments")
 saveConfigComments := {
     val sv = (Compile / sources).value
     val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = (?:(?:get(?:I)?Config)|(?:DPUtils.\\w+Data))") //Hack: DPUtils
-    val clRegex = Pattern.compile("class (\\w+) extends (\\w+)")
+    val clRegex = Pattern.compile("class (\\w+).* extends ((?:\\w|\\d)+)")
     val objRegex = Pattern.compile("object (\\w+)")
-    val subRegex = Pattern.compile("def `?(\\w+)`?\\((?:((?:\\w|\\d)+): ((?:\\w|[\\[\\].]|\\d)+),?\\s*)+\\)")
-    val config = new YamlConfiguration()
+    val subRegex = Pattern.compile("def `?(\\w+)`?")
+    val subParamRegex = Pattern.compile("((?:\\w|\\d)+): ((?:\\w|\\d)+)")
+    val configConfig = new YamlConfiguration()
+    val commandConfig = new YamlConfiguration()
 
     def getConfigComments(line: String, clKey: String, comment: String, justCommented: Boolean): (String, String, Boolean) = {
         val clMatcher = clRegex.matcher(line)
@@ -69,7 +71,7 @@ saveConfigComments := {
                 if (clKey != null) {
                     val matcher = cdataRegex.matcher(line)
                     if (matcher.find())
-                        config.set(s"$clKey.${matcher.group(1)}", comment.trim)
+                        configConfig.set(s"$clKey.${matcher.group(1)}", comment.trim)
                 }
                 else {
                     val matcher = objRegex.matcher(line)
@@ -79,7 +81,7 @@ saveConfigComments := {
                         else if (clName.contains("Plugin")) "global"
                         else null
                         if (compKey != null)
-                            config.set(s"${compKey}.generalDescriptionInsteadOfAConfig", comment.trim)
+                            configConfig.set(s"${compKey}.generalDescriptionInsteadOfAConfig", comment.trim)
                     }
                 }
                 (clKey, null, false)
@@ -106,33 +108,31 @@ saveConfigComments := {
                 val clMatcher = clRegex.matcher(line)
                 if (pkg == null && line.startsWith("package "))
                     pkg = line.substring("package ".length)
-                /*else if (clName == null && (line.contains("object") || line.contains("class"))
-                && !line.contains("import")) {
-                    val i = line.indexOf("class")
-                    val j = if (i == -1) line.indexOf("object") + "object ".length else i + "class ".length
-                    clName = line.substring(j)
-                }*/
                 else if (clName == null && objMatcher.find())
                     clName = objMatcher.group(1)
                 else if (clName == null && clMatcher.find())
                     clName = clMatcher.group(1)
                 val subMatcher = subRegex.matcher(line)
+                val subParamMatcher = subParamRegex.matcher(line)
                 val sub = line.contains("@Subcommand") || line.contains("@Command2.Subcommand")
                 if (subCommand || sub) //This line or the previous one had the annotation
                     if (subMatcher.find()) {
-                        val groups = (2 to subMatcher.groupCount()).map(subMatcher.group)
-                        val pairs = for (i <- groups.indices by 2) yield (groups(i), groups(i + 1))
+                        /*val groups = (2 to subMatcher.groupCount()).map(subMatcher.group)
+                        val pairs = for (i <- groups.indices by 2) yield (groups(i), groups(i + 1))*/
                         val mname = subMatcher.group(1)
-                        print(s"$pkg.$clName.$mname(")
-                        for ((name, ty) <- pairs) print(s"$name: $ty, ")
-                        println(")")
+                        val params = Iterator.continually(()).takeWhile(_ => subParamMatcher.find())
+                            .map(_ => subParamMatcher.group(1)).drop(1)
+                        val section = commandConfig.createSection(s"$pkg.$clName.$mname")
+                        section.set("method", s"$mname()")
+                        section.set("params", params.mkString(" "))
                     }
                 subCommand = sub
             }
-            config.save("target/configHelp.yml")
+            configConfig.save("target/configHelp.yml")
+            commandConfig.save("target/commands.yml")
         }.recover[Unit]({ case t => t.printStackTrace() })
     }
-    Seq(file("target/configHelp.yml"))
+    Seq(file("target/configHelp.yml"), file("target/commands.yml"))
 }
 
 resourceGenerators in Compile += saveConfigComments

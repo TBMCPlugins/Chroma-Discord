@@ -160,8 +160,8 @@ import java.util.Optional
     private def stopStarting(): Unit = {
         this synchronized {
             starting = false
+            notifyAll()
         }
-        notifyAll()
     }
 
     private def handleReady(event: java.util.List[GuildCreateEvent]): Unit = { //System.out.println("Got ready event");
