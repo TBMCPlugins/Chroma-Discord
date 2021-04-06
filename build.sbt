@@ -51,50 +51,83 @@ saveConfigComments := {
     val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = (?:(?:get(?:I)?Config)|(?:DPUtils.\\w+Data))") //Hack: DPUtils
     val clRegex = Pattern.compile("class (\\w+) extends (\\w+)")
     val objRegex = Pattern.compile("object (\\w+)")
+    val subRegex = Pattern.compile("def `?(\\w+)`?\\((?:((?:\\w|\\d)+): ((?:\\w|[\\[\\].]|\\d)+),?\\s*)+\\)")
     val config = new YamlConfiguration()
+
+    def getConfigComments(line: String, clKey: String, comment: String, justCommented: Boolean): (String, String, Boolean) = {
+        val clMatcher = clRegex.matcher(line)
+        if (clKey == null && clMatcher.find()) { //First occurrence
+            (if (clMatcher.group(2).contains("Component"))
+                "components." + clMatcher.group(1)
+            else "global", comment, justCommented)
+        } else if (line.contains("/**")) {
+            (clKey, "", false)
+        } else if (line.contains("*/") && comment != null)
+            (clKey, comment, true)
+        else if (comment != null) {
+            if (justCommented) {
+                if (clKey != null) {
+                    val matcher = cdataRegex.matcher(line)
+                    if (matcher.find())
+                        config.set(s"$clKey.${matcher.group(1)}", comment.trim)
+                }
+                else {
+                    val matcher = objRegex.matcher(line)
+                    if (matcher.find()) {
+                        val clName = matcher.group(1)
+                        val compKey = if (clName.contains("Module")) s"component.$clName"
+                        else if (clName.contains("Plugin")) "global"
+                        else null
+                        if (compKey != null)
+                            config.set(s"${compKey}.generalDescriptionInsteadOfAConfig", comment.trim)
+                    }
+                }
+                (clKey, null, false)
+            }
+            else (clKey, comment + line.replaceFirst("^\\s*\\*\\s+", "") + "\n", justCommented)
+        }
+        else (clKey, comment, justCommented)
+    }
+
     for (file <- sv) {
         Using(Source.fromFile(file)) { src =>
             var clKey: String = null
             var comment: String = null
             var justCommented: Boolean = false
+
+            var subCommand = false
+            var pkg: String = null
+            var clName: String = null
             for (line <- src.getLines) {
+                val (clk, c, jc) = getConfigComments(line, clKey, comment, justCommented)
+                clKey = clk; comment = c; justCommented = jc
+
+                val objMatcher = objRegex.matcher(line)
                 val clMatcher = clRegex.matcher(line)
-                if (clKey == null && clMatcher.find()) { //First occurrence
-                    clKey = if (clMatcher.group(2).contains("Component"))
-                        "components." + clMatcher.group(1)
-                    else
-                        "global"
-                    /*println("Class: "+clKey)
-                    println("Comment: "+comment)
-                    println("Just commented: "+justCommented)
-                    if (comment != null) { //Not checking justCommented because the object may have the comment and not extend anything
-                        config.set(s"$clKey.generalDescriptionInsteadOfAConfig", comment.trim)
-                        justCommented = false
-                        comment = null
-                        println("Found class comment for " + clKey)
-                    }*/
-                } else if (line.contains("/**")) {
-                    comment = ""
-                    justCommented = false
-                } else if (line.contains("*/") && comment != null)
-                    justCommented = true
-                else if (comment != null) {
-                    if (justCommented) {
-                        if (clKey != null) {
-                            val matcher = cdataRegex.matcher(line)
-                            if (matcher.find())
-                                config.set(s"$clKey.${matcher.group(1)}", comment.trim)
-                        }
-                        else {
-                            val matcher = objRegex.matcher(line)
-                            if (matcher.find())
-                                config.set(s"${matcher.group(1)}.generalDescriptionInsteadOfAConfig", comment.trim)
-                        }
-                        justCommented = false
-                        comment = null
+                if (pkg == null && line.startsWith("package "))
+                    pkg = line.substring("package ".length)
+                /*else if (clName == null && (line.contains("object") || line.contains("class"))
+                && !line.contains("import")) {
+                    val i = line.indexOf("class")
+                    val j = if (i == -1) line.indexOf("object") + "object ".length else i + "class ".length
+                    clName = line.substring(j)
+                }*/
+                else if (clName == null && objMatcher.find())
+                    clName = objMatcher.group(1)
+                else if (clName == null && clMatcher.find())
+                    clName = clMatcher.group(1)
+                val subMatcher = subRegex.matcher(line)
+                val sub = line.contains("@Subcommand") || line.contains("@Command2.Subcommand")
+                if (subCommand || sub) //This line or the previous one had the annotation
+                    if (subMatcher.find()) {
+                        val groups = (2 to subMatcher.groupCount()).map(subMatcher.group)
+                        val pairs = for (i <- groups.indices by 2) yield (groups(i), groups(i + 1))
+                        val mname = subMatcher.group(1)
+                        print(s"$pkg.$clName.$mname(")
+                        for ((name, ty) <- pairs) print(s"$name: $ty, ")
+                        println(")")
                     }
-                    else comment += line.replaceFirst("^\\s*\\*\\s+", "") + "\n"
-                }
+                subCommand = sub
             }
             config.save("target/configHelp.yml")
         }.recover[Unit]({ case t => t.printStackTrace() })
