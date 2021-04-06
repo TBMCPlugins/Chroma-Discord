@@ -38,9 +38,8 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     /**
      * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
      */
-    val whitelistedCommands: ConfigData[util.ArrayList[String]] =
-        getConfig.getData("whitelistedCommands",
-            () => Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
+    val whitelistedCommands: ConfigData[util.ArrayList[String]] = getConfig.getData("whitelistedCommands",
+        () => Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
 
     /**
      * The channel to use as the public Minecraft chat - everything public gets broadcasted here

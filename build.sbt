@@ -45,44 +45,61 @@ assemblyMergeStrategy in assembly := {
     case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
-val getConfigComments = TaskKey[Unit]("getConfigComments")
-getConfigComments := {
+val saveConfigComments = TaskKey[Seq[File]]("saveConfigComments")
+saveConfigComments := {
     val sv = (Compile / sources).value
-    val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = get(?:I)?Config")
+    val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = (?:(?:get(?:I)?Config)|(?:DPUtils.\\w+Data))") //Hack: DPUtils
     val clRegex = Pattern.compile("class (\\w+) extends (\\w+)")
+    val objRegex = Pattern.compile("object (\\w+)")
     val config = new YamlConfiguration()
     for (file <- sv) {
         Using(Source.fromFile(file)) { src =>
-            var pkg: String = null
             var clKey: String = null
             var comment: String = null
             var justCommented: Boolean = false
             for (line <- src.getLines) {
                 val clMatcher = clRegex.matcher(line)
-                if (line.startsWith("package")) {
-                    pkg = line.substring("package ".length)
-                } else if (line.contains("class") && pkg != null && clKey == null && clMatcher.find()) { //First occurrence
+                if (clKey == null && clMatcher.find()) { //First occurrence
                     clKey = if (clMatcher.group(2).contains("Component"))
-                        "component." + clMatcher.group(1)
+                        "components." + clMatcher.group(1)
                     else
                         "global"
-                } else if (line.contains("/**") && clKey != null) {
+                    /*println("Class: "+clKey)
+                    println("Comment: "+comment)
+                    println("Just commented: "+justCommented)
+                    if (comment != null) { //Not checking justCommented because the object may have the comment and not extend anything
+                        config.set(s"$clKey.generalDescriptionInsteadOfAConfig", comment.trim)
+                        justCommented = false
+                        comment = null
+                        println("Found class comment for " + clKey)
+                    }*/
+                } else if (line.contains("/**")) {
                     comment = ""
                     justCommented = false
                 } else if (line.contains("*/") && comment != null)
                     justCommented = true
                 else if (comment != null) {
                     if (justCommented) {
-                        val matcher = cdataRegex.matcher(line)
-                        if (matcher.find())
-                            config.set(s"$clKey.${matcher.group(1)}", comment.trim)
+                        if (clKey != null) {
+                            val matcher = cdataRegex.matcher(line)
+                            if (matcher.find())
+                                config.set(s"$clKey.${matcher.group(1)}", comment.trim)
+                        }
+                        else {
+                            val matcher = objRegex.matcher(line)
+                            if (matcher.find())
+                                config.set(s"${matcher.group(1)}.generalDescriptionInsteadOfAConfig", comment.trim)
+                        }
                         justCommented = false
                         comment = null
                     }
                     else comment += line.replaceFirst("^\\s*\\*\\s+", "") + "\n"
                 }
             }
-            config.save("configHelp.yml")
+            config.save("target/configHelp.yml")
         }.recover[Unit]({ case t => t.printStackTrace() })
     }
+    Seq(file("target/configHelp.yml"))
 }
+
+resourceGenerators in Compile += saveConfigComments
