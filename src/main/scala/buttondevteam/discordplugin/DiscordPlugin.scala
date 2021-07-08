@@ -2,7 +2,7 @@ package buttondevteam.discordplugin
 
 import buttondevteam.discordplugin.announcer.AnnouncerModule
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
-import buttondevteam.discordplugin.commands._
+import buttondevteam.discordplugin.commands.*
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
 import buttondevteam.discordplugin.fun.FunModule
 import buttondevteam.discordplugin.listeners.{CommonListeners, MCListener}
@@ -11,7 +11,7 @@ import buttondevteam.discordplugin.mccommands.DiscordMCCommand
 import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.{DPState, Timings}
 import buttondevteam.lib.TBMCCoreAPI
-import buttondevteam.lib.architecture._
+import buttondevteam.lib.architecture.*
 import buttondevteam.lib.player.ChromaGamerBase
 import com.google.common.io.Files
 import discord4j.common.util.Snowflake
@@ -142,13 +142,10 @@ import java.util.Optional
 
             foo(t)
         }).subscribe((dc: GatewayDiscordClient) => {
-            def foo(dc: GatewayDiscordClient): Disposable = { //System.out.println("Login successful, got dc: " + dc);
-                DiscordPlugin.dc = dc //Set to gateway client
-                dc.on(classOf[ReadyEvent]).map(_.getGuilds.size).flatMap(dc.on(classOf[GuildCreateEvent]).take(_).collectList)
-                    .doOnError(_ => stopStarting()).subscribe(this.handleReady _) // Take all received GuildCreateEvents and make it a List
-            }
-
-            foo(dc)
+            DiscordPlugin.dc = dc //Set to gateway client
+            dc.on(classOf[ReadyEvent]).map(_.getGuilds.size).flatMap(dc.on(classOf[GuildCreateEvent]).take(_).collectList)
+                .doOnError(_ => stopStarting()).subscribe(this.handleReady _) // Take all received GuildCreateEvents and make it a List
+            ()
         }) /* All guilds have been received, client is fully connected */
     } catch {
         case e: Exception =>

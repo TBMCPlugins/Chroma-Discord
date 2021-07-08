@@ -18,7 +18,7 @@ class DiscordSender(user: User, channel: MessageChannel, pname: String) extends 
             .map(u => u.getDisplayName)))
         .getOrElse("Discord user")
 
-    def this(user: User, channel: MessageChannel) {
+    def this(user: User, channel: MessageChannel) = {
         this(user, channel, null)
     }
 

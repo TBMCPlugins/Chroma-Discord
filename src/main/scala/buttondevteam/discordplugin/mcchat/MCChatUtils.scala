@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.{ComponentManager, MainPlugin, component}
+import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
-import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
@@ -86,7 +86,7 @@ object MCChatUtils {
         ).filter(MCChatUtils.checkEssentials) //If they can see it
             .filter(_ => C.incrementAndGet > 0) //Always true
             .map((p) => DPUtils.sanitizeString(p.getDisplayName)).collect(Collectors.joining(", "))
-        s(0) = C + " player" + (if (C.get != 1) "s" else "") + " online"
+        s(0) = s"$C player${if (C.get != 1) "s" else ""} online"
         lmd.channel.asInstanceOf[TextChannel].edit((tce: TextChannelEditSpec) =>
             tce.setTopic(String.join("\n----\n", s: _*)).setReason("Player list update")).subscribe //Don't wait
     }
@@ -192,7 +192,7 @@ object MCChatUtils {
                 list.append(action(SMono.just(data.channel))) //TODO: Only store ID?
         MCChatCustom.lastmsgCustom.filter(clmd =>
             clmd.brtoggles.contains(event.getTarget) && event.shouldSendTo(clmd.dcp))
-            .map(clmd => action(SMono.just(clmd.channel))).forEach(elem => {
+            .map(clmd => action(SMono.just(clmd.channel))).foreach(elem => {
             list.append(elem)
             ()
         })

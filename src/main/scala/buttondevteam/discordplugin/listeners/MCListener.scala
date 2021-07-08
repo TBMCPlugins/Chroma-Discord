@@ -37,7 +37,7 @@ class MCListener extends Listener {
         e.addInfo(pr.getStatus.toString)
         if (pr.getActivity.isPresent) {
             val activity = pr.getActivity.get
-            e.addInfo(activity.getType + ": " + activity.getName)
+            e.addInfo(s"${activity.getType}: ${activity.getName}")
         }
     }
 

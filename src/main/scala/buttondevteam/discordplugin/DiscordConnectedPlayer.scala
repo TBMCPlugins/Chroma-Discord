@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.playerfaker.{DiscordInventory, VCMDWrapper}
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
-import org.bukkit._
+import org.bukkit.*
 import org.bukkit.attribute.{Attribute, AttributeInstance, AttributeModifier}
 import org.bukkit.entity.{Entity, Player}
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerTeleportEvent}
@@ -17,7 +17,7 @@ import org.mockito.{MockSettings, Mockito}
 
 import java.lang.reflect.Modifier
 import java.util
-import java.util._
+import java.util.*
 
 object DiscordConnectedPlayer {
     def create(user: User, channel: MessageChannel, uuid: UUID, mcname: String, module: MinecraftChatModule): DiscordConnectedPlayer =
@@ -170,7 +170,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
 
     override def getEyeLocation: Location = getLocation
 
-    @deprecated override def getMaxHealth = 20
+    @deprecated override def getMaxHealth = 20d
 
     override def getPlayer: DiscordConnectedPlayer = this
 

@@ -87,7 +87,7 @@ object FunModule {
                 .filter(_ => lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime)) //This should stay so it checks this last
                 .flatMap(_ => {
                     lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime)
-                    SMono(channel.createMessage((mcs: MessageCreateSpec) => mcs.setContent("Full house!")
+                    SMono(channel.createMessage(_.setContent("Full house!")
                         .setEmbed((ecs: EmbedCreateSpec) => ecs.setImage("https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png"))))
                 })).subscribe
     }

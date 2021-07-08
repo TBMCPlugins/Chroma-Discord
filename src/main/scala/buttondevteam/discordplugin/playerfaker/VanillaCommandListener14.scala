@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.playerfaker
 
 import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
-import net.minecraft.server.v1_14_R1._
+import net.minecraft.server.v1_14_R1.*
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.craftbukkit.v1_14_R1.command.{ProxiedNativeCommandSender, VanillaCommandWrapper}
@@ -51,7 +51,7 @@ class VanillaCommandListener14[T <: DiscordSenderBase with IMCPlayer[T]] extends
      *
      * @param player The Discord sender player (the wrapper)
      */
-    def this(player: T) {
+    def this(player: T) = {
         this()
         this.player = player
         this.bukkitplayer = null
@@ -63,7 +63,7 @@ class VanillaCommandListener14[T <: DiscordSenderBase with IMCPlayer[T]] extends
      * @param player       The Discord sender player (the wrapper)
      * @param bukkitplayer The Bukkit player to send the raw message to
      */
-    def this(player: T, bukkitplayer: Player) {
+    def this(player: T, bukkitplayer: Player) = {
         this()
         this.player = player
         this.bukkitplayer = bukkitplayer

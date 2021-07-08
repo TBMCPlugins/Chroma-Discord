@@ -8,7 +8,7 @@ name := "Chroma-Discord"
 
 version := "1.1"
 
-scalaVersion := "2.13.5"
+scalaVersion := "3.0.0"
 
 resolvers += "spigot-repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
 resolvers += "jitpack.io" at "https://jitpack.io"
@@ -20,35 +20,37 @@ libraryDependencies ++= Seq(
     "org.spigotmc." % "spigot" % "1.14.4-R0.1-SNAPSHOT" % Provided,
     "com.destroystokyo.paper" % "paper" % "1.16.3-R0.1-SNAPSHOT" % Provided,
 
-    "com.discord4j" % "discord4j-core" % "3.1.4",
-    "org.slf4j" % "slf4j-jdk14" % "1.7.21",
-    "com.vdurmont" % "emoji-java" % "4.0.0",
-    "org.mockito" % "mockito-core" % "3.5.13",
-    "io.projectreactor" %% "reactor-scala-extensions" % "0.7.0",
+    "com.discord4j" % "discord4j-core" % "3.1.6",
+    "org.slf4j" % "slf4j-jdk14" % "1.7.31",
+    "com.vdurmont" % "emoji-java" % "5.1.1",
+    "org.mockito" % "mockito-core" % "3.11.1",
+    "io.projectreactor" % "reactor-scala-extensions_2.13" % "0.8.0",
+    // https://mvnrepository.com/artifact/org.immutables/value
+    "org.immutables" % "value" % "2.8.8" % "provided",
 
     "com.github.TBMCPlugins.ChromaCore" % "Chroma-Core" % "v1.0.0" % Provided,
     "net.ess3" % "EssentialsX" % "2.17.1" % Provided,
-    "com.github.lucko.LuckPerms" % "bukkit" % "master-SNAPSHOT" % Provided,
+    "net.luckperms" % "api" % "5.3" % Provided,
 )
 
-assemblyJarName in assembly := "Chroma-Discord.jar"
-assemblyShadeRules in assembly := Seq(
+assembly / assemblyJarName := "Chroma-Discord.jar"
+assembly / assemblyShadeRules := Seq(
     "io.netty", "com.fasterxml", "org.mockito", "org.slf4j"
 ).map { p =>
     ShadeRule.rename(s"$p.**" -> "btndvtm.dp.@0").inAll
 }
 
-assemblyMergeStrategy in assembly := {
+assembly / assemblyMergeStrategy := {
     case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.concat
     // https://stackoverflow.com/a/55557287/457612
     case "module-info.class" => MergeStrategy.discard
-    case x => (assemblyMergeStrategy in assembly).value(x)
+    case x => (assembly / assemblyMergeStrategy).value(x)
 }
 
 val saveConfigComments = TaskKey[Seq[File]]("saveConfigComments")
 saveConfigComments := {
     val sv = (Compile / sources).value
-    val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = (?:(?:get(?:I)?Config)|(?:DPUtils.\\w+Data))") //Hack: DPUtils
+    val cdataRegex = Pattern.compile("(?:def|val|var) (\\w+)(?::[^=]+)? = (?:getI?Config|DPUtils.\\w+Data)") //Hack: DPUtils
     val clRegex = Pattern.compile("class (\\w+).* extends ((?:\\w|\\d)+)")
     val objRegex = Pattern.compile("object (\\w+)")
     val subRegex = Pattern.compile("def `?(\\w+)`?")
@@ -81,7 +83,7 @@ saveConfigComments := {
                         else if (clName.contains("Plugin")) "global"
                         else null
                         if (compKey != null)
-                            configConfig.set(s"${compKey}.generalDescriptionInsteadOfAConfig", comment.trim)
+                            configConfig.set(s"$compKey.generalDescriptionInsteadOfAConfig", comment.trim)
                     }
                 }
                 (clKey, null, false)
@@ -135,4 +137,4 @@ saveConfigComments := {
     Seq(file("target/configHelp.yml"), file("target/commands.yml"))
 }
 
-resourceGenerators in Compile += saveConfigComments
+Compile / resourceGenerators += saveConfigComments

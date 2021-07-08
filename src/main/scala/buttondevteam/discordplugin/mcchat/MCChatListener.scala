@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin._
+import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.listeners.CommandListener
 import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
-import buttondevteam.lib._
+import buttondevteam.lib.*
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
 import buttondevteam.lib.player.TBMCPlayer
 import com.vdurmont.emoji.EmojiParser
@@ -44,7 +44,7 @@ object MCChatListener {
     @FunctionalInterface private trait InterruptibleConsumer[T] {
         @throws[TimeoutException]
         @throws[InterruptedException]
-        def accept(value: T)
+        def accept(value: T): Unit
     }
 
 }

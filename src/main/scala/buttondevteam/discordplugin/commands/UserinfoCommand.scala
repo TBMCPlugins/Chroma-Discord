@@ -28,7 +28,9 @@ class UserinfoCommand extends ICommand2DC {
                     channel.createMessage("The user cannot be found (by name): " + user).subscribe
                     return true
                 }
-                targets.collectFirst(_.getDiscriminator.equalsIgnoreCase(targettag(1)))
+                targets.collectFirst {
+                    case user => user.getDiscriminator.equalsIgnoreCase(targettag(1))
+                }
                 if (target == null) {
                     channel.createMessage("The user cannot be found (by discriminator): " + user + "(Found " + targets.size + " users with the name.)").subscribe
                     return true

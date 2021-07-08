@@ -12,7 +12,7 @@ import org.mockito.invocation.InvocationOnMock
 
 import java.lang.reflect.Modifier
 import java.util
-import java.util._
+import java.util.*
 
 object ServerWatcher {
 
@@ -62,7 +62,8 @@ class ServerWatcher {
                                         @SuppressWarnings("unchecked") var list = (List<Player>) method.invoke(origServer, invocation.getArguments());
                                         playerList = new AppendListView<>(list, fakePlayers);
                                       } - Your scientists were so preoccupied with whether or not they could, they didn’t stop to think if they should.
-                                      return playerList;*/ case "createProfile" => //Paper's method, casts the player to a CraftPlayer
+                                      return playerList;*/
+                        case "createProfile" => //Paper's method, casts the player to a CraftPlayer
                             if (pc == 2) {
                                 val uuid = invocation.getArgument(0)
                                 val name = invocation.getArgument(1)

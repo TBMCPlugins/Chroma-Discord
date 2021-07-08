@@ -50,8 +50,8 @@ import scala.annotation.tailrec
     override protected def disable(): Unit = AnnouncerModule.stop = true
 
     @tailrec
-    private def AnnouncementGetterThreadMethod() {
-        if (AnnouncerModule.stop) return
+    private def AnnouncementGetterThreadMethod(): Unit = {
+        if (AnnouncerModule.stop) return ()
         if (isEnabled) try { //If not enabled, just wait
             val body = TBMCCoreAPI.DownloadString(subredditURL.get + "/new/.json?limit=10")
             val json = new JsonParser().parse(body).getAsJsonObject.get("data").getAsJsonObject.get("children").getAsJsonArray
