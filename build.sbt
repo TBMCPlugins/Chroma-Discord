@@ -117,18 +117,19 @@ saveConfigComments := {
                 val subMatcher = subRegex.matcher(line)
                 val subParamMatcher = subParamRegex.matcher(line)
                 val sub = line.contains("@Subcommand") || line.contains("@Command2.Subcommand")
-                if (subCommand || sub) //This line or the previous one had the annotation
-                    if (subMatcher.find()) {
-                        /*val groups = (2 to subMatcher.groupCount()).map(subMatcher.group)
-                        val pairs = for (i <- groups.indices by 2) yield (groups(i), groups(i + 1))*/
-                        val mname = subMatcher.group(1)
-                        val params = Iterator.continually(()).takeWhile(_ => subParamMatcher.find())
-                            .map(_ => subParamMatcher.group(1)).drop(1)
-                        val section = commandConfig.createSection(s"$pkg.$clName.$mname")
-                        section.set("method", s"$mname()")
-                        section.set("params", params.mkString(" "))
-                    }
-                subCommand = sub
+                if (sub) subCommand = true
+                else if (line.contains("}")) subCommand = false
+                if (subCommand && subMatcher.find()) {
+                    /*val groups = (2 to subMatcher.groupCount()).map(subMatcher.group)
+                    val pairs = for (i <- groups.indices by 2) yield (groups(i), groups(i + 1))*/
+                    val mname = subMatcher.group(1)
+                    val params = Iterator.continually(()).takeWhile(_ => subParamMatcher.find())
+                        .map(_ => subParamMatcher.group(1)).drop(1)
+                    val section = commandConfig.createSection(s"$pkg.$clName.$mname")
+                    section.set("method", s"$mname()")
+                    section.set("params", params.mkString(" "))
+                    subCommand = false
+                }
             }
             configConfig.save("target/configHelp.yml")
             commandConfig.save("target/commands.yml")

@@ -49,12 +49,13 @@ object MCChatUtils {
 
     def updatePlayerList(): Unit = {
         val mod = getModule
-        if (mod == null || !mod.showPlayerListOnDC.get) return
+        if (mod == null || !mod.showPlayerListOnDC.get) return ()
         if (lastmsgdata != null) updatePL(lastmsgdata)
         MCChatCustom.lastmsgCustom.foreach(MCChatUtils.updatePL)
     }
 
     private def notEnabled = (module == null || !module.disabling) && getModule == null //Allow using things while disabling the module
+
     private def getModule = {
         if (module == null || !module.isEnabled) module = ComponentManager.getIfEnabled(classOf[MinecraftChatModule])
         //If disabled, it will try to get it again because another instance may be enabled - useful for /discord restart
@@ -218,7 +219,7 @@ object MCChatUtils {
      * @param channel The channel to reset in - the process is slightly different for the public, private and custom chats
      */
     def resetLastMessage(channel: Channel): Unit = {
-        if (notEnabled) return
+        if (notEnabled) return ()
         if (channel.getId.asLong == module.chatChannel.get.asLong) {
             if (lastmsgdata == null) lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono.block(), null)
             else lastmsgdata.message = null

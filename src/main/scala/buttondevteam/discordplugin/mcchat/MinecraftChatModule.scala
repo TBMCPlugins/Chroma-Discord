@@ -101,7 +101,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     final private val channelconCommand = new ChannelconCommand(this)
 
     override protected def enable(): Unit = {
-        if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return
+        if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return ()
         listener = new MCChatListener(this)
         TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin)
         TBMCCoreAPI.RegisterEventsForExceptions(new MCListener(this), getPlugin) //These get undone if restarting/resetting - it will ignore events if disabled
@@ -219,10 +219,14 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      * It will block to make sure all messages are sent
      */
     private def sendStateMessage(color: Color, message: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(spec => spec.setColor(color).setTitle(message)).^^()),
-            ChannelconBroadcast.RESTART, hookmsg = false).block()
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(
+            _.createEmbed(_.setColor(color).setTitle(message)).^^()
+                .onErrorResume(_ => SMono.empty)
+        ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 
     private def sendStateMessage(color: Color, message: String, extra: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(_.createEmbed(_.setColor(color).setTitle(message).setDescription(extra).^^()).^^()
-            .onErrorResume(_ => SMono.empty)), ChannelconBroadcast.RESTART, hookmsg = false).block()
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(
+            _.createEmbed(_.setColor(color).setTitle(message).setDescription(extra).^^()).^^()
+                .onErrorResume(_ => SMono.empty)
+        ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 }
