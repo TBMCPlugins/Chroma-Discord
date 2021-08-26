@@ -1,8 +1,8 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.{Channel, ChatRoom}
+import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
-import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.chat.{Command2, CommandClass}
@@ -36,9 +36,9 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         val message = sender.getMessage
         if (checkPerms(message, null)) return true
         else if (MCChatCustom.removeCustomChat(message.getChannelId))
-            DPUtils.reply(message, SMono.empty, "channel connection removed.").subscribe
+            DPUtils.reply(message, SMono.empty, "channel connection removed.").subscribe()
         else
-            DPUtils.reply(message, SMono.empty, "this channel isn't connected.").subscribe
+            DPUtils.reply(message, SMono.empty, "this channel isn't connected.").subscribe()
         true
     }
 
@@ -58,7 +58,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
                 target.getName + ": " + (if (cc.brtoggles.contains(target)) "enabled" else "disabled"))
                 .collect(Collectors.joining("\n"))
         if (toggle == null) {
-            DPUtils.reply(message, SMono.empty, "toggles:\n" + togglesString.get).subscribe
+            DPUtils.reply(message, SMono.empty, "toggles:\n" + togglesString.get).subscribe()
             return true
         }
         val arg: String = toggle.toUpperCase
@@ -66,7 +66,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         if (b.isEmpty) {
             val bt: TBMCSystemChatEvent.BroadcastTarget = TBMCSystemChatEvent.BroadcastTarget.get(arg)
             if (bt == null) {
-                DPUtils.reply(message, SMono.empty, "cannot find toggle. Toggles:\n" + togglesString.get).subscribe
+                DPUtils.reply(message, SMono.empty, "cannot find toggle. Toggles:\n" + togglesString.get).subscribe()
                 return true
             }
             val add: Boolean = !(cc.brtoggles.contains(bt))
@@ -87,7 +87,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         // XOR
         cc.toggles ^= (1 << b.get.id)
         DPUtils.reply(message, SMono.empty, "'" + b.get.toString.toLowerCase + "' "
-            + (if ((cc.toggles & (1 << b.get.id)) == 0) "disabled" else "enabled")).subscribe
+            + (if ((cc.toggles & (1 << b.get.id)) == 0) "disabled" else "enabled")).subscribe()
         true
     }
 
@@ -106,7 +106,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         }
         val chan: Optional[Channel] = Channel.getChannels.filter((ch: Channel) => ch.ID.equalsIgnoreCase(channelID) || (util.Arrays.stream(ch.IDs.get).anyMatch((cid: String) => cid.equalsIgnoreCase(channelID)))).findAny
         if (!(chan.isPresent)) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
-            DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe
+            DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe()
             return true
         }
         if (!(message.getAuthor.isPresent)) {
@@ -116,18 +116,18 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         val dp: DiscordPlayer = ChromaGamerBase.getUser(author.getId.asString, classOf[DiscordPlayer])
         val chp: TBMCPlayer = dp.getAs(classOf[TBMCPlayer])
         if (chp == null) {
-            DPUtils.reply(message, channel, "you need to connect your Minecraft account. On the main server in " + DPUtils.botmention + " do " + DiscordPlugin.getPrefix + "connect <MCname>").subscribe
+            DPUtils.reply(message, channel, "you need to connect your Minecraft account. On the main server in " + DPUtils.botmention + " do " + DiscordPlugin.getPrefix + "connect <MCname>").subscribe()
             return true
         }
         val dcp: DiscordConnectedPlayer = DiscordConnectedPlayer.create(message.getAuthor.get, channel, chp.getUUID, Bukkit.getOfflinePlayer(chp.getUUID).getName, module)
         //Using a fake player with no login/logout, should be fine for this event
         val groupid: String = chan.get.getGroupID(dcp)
         if (groupid == null && !((chan.get.isInstanceOf[ChatRoom]))) { //ChatRooms don't allow it unless the user joins, which happens later
-            DPUtils.reply(message, channel, "sorry, you cannot use that Minecraft channel.").subscribe
+            DPUtils.reply(message, channel, "sorry, you cannot use that Minecraft channel.").subscribe()
             return true
         }
         if (chan.get.isInstanceOf[ChatRoom]) { //ChatRooms don't work well
-            DPUtils.reply(message, channel, "chat rooms are not supported yet.").subscribe
+            DPUtils.reply(message, channel, "chat rooms are not supported yet.").subscribe()
             return true
         }
         /*if (MCChatListener.getCustomChats().stream().anyMatch(cc -> cc.groupID.equals(groupid) && cc.mcchannel.ID.equals(chan.get().ID))) {
@@ -137,10 +137,10 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         //TODO: "Channel admins" that can connect channels?
         MCChatCustom.addCustomChat(channel, groupid, chan.get, author, dcp, 0, Set())
         if (chan.get.isInstanceOf[ChatRoom]) {
-            DPUtils.reply(message, channel, "alright, connection made to the room!").subscribe
+            DPUtils.reply(message, channel, "alright, connection made to the room!").subscribe()
         }
         else {
-            DPUtils.reply(message, channel, "alright, connection made to group `" + groupid + "`!").subscribe
+            DPUtils.reply(message, channel, "alright, connection made to group `" + groupid + "`!").subscribe()
         }
         true
     }
@@ -151,13 +151,13 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
             return checkPerms(message, message.getChannel.block)
         }
         if (!((channel.isInstanceOf[GuildChannel]))) {
-            DPUtils.reply(message, channel, "you can only use this command in a server!").subscribe
+            DPUtils.reply(message, channel, "you can only use this command in a server!").subscribe()
             return true
         }
         //noinspection OptionalGetWithoutIsPresent
         val perms: PermissionSet = (channel.asInstanceOf[GuildChannel]).getEffectivePermissions(message.getAuthor.map(_.getId).get).block
         if (!(perms.contains(Permission.ADMINISTRATOR)) && !(perms.contains(Permission.MANAGE_CHANNELS))) {
-            DPUtils.reply(message, channel, "you need to have manage permissions for this channel!").subscribe
+            DPUtils.reply(message, channel, "you need to have manage permissions for this channel!").subscribe()
             return true
         }
         false

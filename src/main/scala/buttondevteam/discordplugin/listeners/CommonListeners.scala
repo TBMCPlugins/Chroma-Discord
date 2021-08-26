@@ -56,7 +56,7 @@ object CommonListeners {
             }
 
             foo(event)
-        }).onErrorContinue((err: Throwable, _) => TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin)).subscribe
+        }).onErrorContinue((err: Throwable, _) => TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin)).subscribe()
         dispatcher.on(classOf[PresenceUpdateEvent]).subscribe((event: PresenceUpdateEvent) => {
             if (!DiscordPlugin.SafeMode)
                 FunModule.handleFullHouse(event)

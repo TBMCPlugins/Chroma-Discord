@@ -7,6 +7,8 @@ import buttondevteam.lib.player.ChromaGamerBase.InfoTarget
 import discord4j.core.`object`.entity.{Message, User}
 import reactor.core.scala.publisher.SFlux
 
+import scala.jdk.CollectionConverters.ListHasAsScala
+
 @CommandClass(helpText = Array("User information", //
     "Shows some information about users, from Discord, from Minecraft or from Reddit if they have these accounts connected.",
     "If used without args, shows your info."))
@@ -19,31 +21,31 @@ class UserinfoCommand extends ICommand2DC {
         assert(channel != null)
         if (user == null || user.isEmpty) target = message.getAuthor.orElse(null)
         else {
-            val firstmention = message.getUserMentions.filter((m: User) => !(m.getId.asString == DiscordPlugin.dc.getSelfId.asString)).blockFirst
-            if (firstmention != null) target = firstmention
+            val firstmention = message.getUserMentions.asScala.find((m: User) => !(m.getId.asString == DiscordPlugin.dc.getSelfId.asString))
+            if (firstmention.isDefined) target = firstmention.get
             else if (user.contains("#")) {
                 val targettag = user.split("#")
                 val targets = getUsers(message, targettag(0))
                 if (targets.isEmpty) {
-                    channel.createMessage("The user cannot be found (by name): " + user).subscribe
+                    channel.createMessage("The user cannot be found (by name): " + user).subscribe()
                     return true
                 }
                 targets.collectFirst {
                     case user => user.getDiscriminator.equalsIgnoreCase(targettag(1))
                 }
                 if (target == null) {
-                    channel.createMessage("The user cannot be found (by discriminator): " + user + "(Found " + targets.size + " users with the name.)").subscribe
+                    channel.createMessage("The user cannot be found (by discriminator): " + user + "(Found " + targets.size + " users with the name.)").subscribe()
                     return true
                 }
             }
             else {
                 val targets = getUsers(message, user)
                 if (targets.isEmpty) {
-                    channel.createMessage("The user cannot be found on Discord: " + user).subscribe
+                    channel.createMessage("The user cannot be found on Discord: " + user).subscribe()
                     return true
                 }
                 if (targets.size > 1) {
-                    channel.createMessage("Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.").subscribe
+                    channel.createMessage("Multiple users found with that (nick)name. Please specify the whole tag, like ChromaBot#6338 or use a ping.").subscribe()
                     return true
                 }
                 target = targets.head
@@ -56,7 +58,7 @@ class UserinfoCommand extends ICommand2DC {
         val dp = ChromaGamerBase.getUser(target.getId.asString, classOf[DiscordPlayer])
         val uinfo = new StringBuilder("User info for ").append(target.getUsername).append(":\n")
         uinfo.append(dp.getInfo(InfoTarget.Discord))
-        channel.createMessage(uinfo.toString).subscribe
+        channel.createMessage(uinfo.toString).subscribe()
         true
     }
 

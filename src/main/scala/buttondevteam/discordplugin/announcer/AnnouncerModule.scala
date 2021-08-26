@@ -38,10 +38,10 @@ import scala.annotation.tailrec
     final private val subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
 
     override protected def enable(): Unit = {
-        if (DPUtils.disableIfConfigError(this, channel, modChannel)) return
+        if (DPUtils.disableIfConfigError(this, channel, modChannel)) return ()
         AnnouncerModule.stop = false //If not the first time
-        val kp: Short = keepPinned.get
-        if (kp <= 0) return
+        val kp = keepPinned.get
+        if (kp <= 0) return ()
         val msgs = channel.get.flatMapMany(_.getPinnedMessages).takeLast(kp)
         msgs.subscribe(_.unpin)
         new Thread(() => this.AnnouncementGetterThreadMethod()).start()
@@ -85,7 +85,7 @@ import scala.annotation.tailrec
             }
 
             def sendMsg(ch: SMono[MessageChannel], msg: String) =
-                ch.asJava().flatMap(c => c.createMessage(msg)).flatMap(_.pin).subscribe
+                ch.asJava().flatMap(c => c.createMessage(msg)).flatMap(_.pin).subscribe()
 
             if (msgsb.nonEmpty) sendMsg(channel.get(), msgsb.toString())
             if (modmsgsb.nonEmpty) sendMsg(modChannel.get(), modmsgsb.toString())

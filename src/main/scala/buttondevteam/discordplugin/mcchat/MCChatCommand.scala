@@ -22,7 +22,7 @@ class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC
         val channel = message.getChannel.block
         @SuppressWarnings(Array("OptionalGetWithoutIsPresent")) val author = message.getAuthor.get
         if (!((channel.isInstanceOf[PrivateChannel]))) {
-            DPUtils.reply(message, channel, "this command can only be issued in a direct message with the bot.").subscribe
+            DPUtils.reply(message, channel, "this command can only be issued in a direct message with the bot.").subscribe()
             return true
         }
         val user: DiscordPlayer = ChromaGamerBase.getUser(author.getId.asString, classOf[DiscordPlayer])
@@ -30,7 +30,7 @@ class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC
         MCChatPrivate.privateMCChat(channel, mcchat, author, user)
         DPUtils.reply(message, channel, "Minecraft chat " +
             (if (mcchat) "enabled. Use '" + DiscordPlugin.getPrefix + "mcchat' again to turn it off."
-            else "disabled.")).subscribe
+            else "disabled.")).subscribe()
         true
         // TODO: Pin channel switching to indicate the current channel
     }

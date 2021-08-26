@@ -130,7 +130,7 @@ object PlayerListWatcher {
                     if (packet.getClass eq ppoc) {
                         val msgf = ppoc.getDeclaredField("a")
                         msgf.setAccessible(true)
-                        MCChatUtils.forPublicPrivateChat(MCChatUtils.send(toPlainText.invoke(msgf.get(packet)).asInstanceOf[String])).subscribe
+                        MCChatUtils.forPublicPrivateChat(MCChatUtils.send(toPlainText.invoke(msgf.get(packet)).asInstanceOf[String])).subscribe()
                     }
                 } catch {
                     case e: Exception =>

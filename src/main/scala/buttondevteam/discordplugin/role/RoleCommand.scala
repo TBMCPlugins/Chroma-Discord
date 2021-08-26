@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono
     )) def add(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
         val role = checkAndGetRole(sender, rolename)
         if (role == null) return true
-        try sender.getMessage.getAuthorAsMember.flatMap(m => m.addRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("added role.")))).subscribe
+        try sender.getMessage.getAuthorAsMember.flatMap(m => m.addRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("added role.")))).subscribe()
         catch {
             case e: Exception =>
                 TBMCCoreAPI.SendException("Error while adding role!", e, grm)
@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono
     )) def remove(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean = {
         val role = checkAndGetRole(sender, rolename)
         if (role == null) return true
-        try sender.getMessage.getAuthorAsMember.flatMap(m => m.removeRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("removed role.")))).subscribe
+        try sender.getMessage.getAuthorAsMember.flatMap(m => m.removeRole(role.getId).switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("removed role.")))).subscribe()
         catch {
             case e: Exception =>
                 TBMCCoreAPI.SendException("Error while removing role!", e, grm)

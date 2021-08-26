@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.{ComponentManager, MainPlugin, component}
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
+import buttondevteam.discordplugin.DPUtils.SpecExtensions
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
@@ -10,7 +11,7 @@ import com.google.common.collect.Sets
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{Channel, MessageChannel, PrivateChannel, TextChannel}
 import discord4j.core.`object`.entity.{Message, User}
-import discord4j.core.spec.TextChannelEditSpec
+import discord4j.core.spec.legacy.LegacyTextChannelEditSpec
 import io.netty.util.collection.LongObjectHashMap
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
@@ -18,6 +19,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.player.{AsyncPlayerPreLoginEvent, PlayerJoinEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.plugin.AuthorNagException
+import reactor.core.publisher.{Flux as JFlux, Mono as JMono}
 import reactor.core.scala.publisher.SMono
 
 import java.net.InetAddress
@@ -31,7 +33,7 @@ import javax.annotation.Nullable
 import scala.collection.concurrent
 import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable.ListBuffer
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, SeqHasAsJava}
 import scala.jdk.javaapi.CollectionConverters.asScala
 
 object MCChatUtils {
@@ -65,12 +67,12 @@ object MCChatUtils {
     private def updatePL(lmd: MCChatUtils.LastMsgData): Unit = {
         if (!lmd.channel.isInstanceOf[TextChannel]) {
             TBMCCoreAPI.SendException("Failed to update player list for channel " + lmd.channel.getId, new Exception("The channel isn't a (guild) text channel."), getModule)
-            return
+            return ()
         }
         var topic = lmd.channel.asInstanceOf[TextChannel].getTopic.orElse("")
         if (topic.isEmpty) topic = ".\n----\nMinecraft chat\n----\n."
         val s = topic.split("\\n----\\n")
-        if (s.length < 3) return
+        if (s.length < 3) return ()
         var gid: String = null
         lmd match {
             case clmd: CustomLMD => gid = clmd.groupID
@@ -88,8 +90,8 @@ object MCChatUtils {
             .filter(_ => C.incrementAndGet > 0) //Always true
             .map((p) => DPUtils.sanitizeString(p.getDisplayName)).collect(Collectors.joining(", "))
         s(0) = s"$C player${if (C.get != 1) "s" else ""} online"
-        lmd.channel.asInstanceOf[TextChannel].edit((tce: TextChannelEditSpec) =>
-            tce.setTopic(String.join("\n----\n", s: _*)).setReason("Player list update")).subscribe //Don't wait
+        lmd.channel.asInstanceOf[TextChannel].edit((tce: LegacyTextChannelEditSpec) =>
+            tce.setTopic(String.join("\n----\n", s: _*)).setReason("Player list update").^^()).subscribe //Don't wait
     }
 
     private[mcchat] def checkEssentials(p: Player): Boolean = {
@@ -125,8 +127,7 @@ object MCChatUtils {
         if (notEnabled) return SMono.empty
         val list = MCChatPrivate.lastmsgPerUser.map(data => action(SMono.just(data.channel)))
             .prepend(action(module.chatChannelMono))
-        // lastmsgCustom.forEach(cc -> action.accept(cc.channel)); - Only send relevant messages to custom chat
-        SMono.whenDelayError(list)
+        SMono(JMono.whenDelayError(list.asJava))
     }
 
     /**
@@ -143,7 +144,7 @@ object MCChatUtils {
             (if (toggle == null) MCChatCustom.lastmsgCustom
             else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
                 .map(_.channel).map(SMono.just).map(action)
-        SMono.whenDelayError(list)
+        SMono(JMono.whenDelayError(list.asJava))
     }
 
     /**
@@ -223,13 +224,13 @@ object MCChatUtils {
         if (channel.getId.asLong == module.chatChannel.get.asLong) {
             if (lastmsgdata == null) lastmsgdata = new MCChatUtils.LastMsgData(module.chatChannelMono.block(), null)
             else lastmsgdata.message = null
-            return
+            return ()
         } // Don't set the whole object to null, the player and channel information should be preserved
         for (data <- if (channel.isInstanceOf[PrivateChannel]) MCChatPrivate.lastmsgPerUser
         else MCChatCustom.lastmsgCustom) {
             if (data.channel.getId.asLong == channel.getId.asLong) {
                 data.message = null
-                return
+                return ()
             }
         }
         //If it gets here, it's sending a message to a non-chat channel
@@ -240,7 +241,7 @@ object MCChatUtils {
             if (hs == null) Sets.newHashSet(plugin) else if (hs.add(plugin)) hs else hs)
 
     def callEventExcludingSome(event: Event): Unit = {
-        if (notEnabled) return
+        if (notEnabled) return ()
         val second = staticExcludedPlugins.get(event.getClass)
         val first = module.excludedPlugins.get
         val both = if (second.isEmpty) first
@@ -305,7 +306,7 @@ object MCChatUtils {
         callEventExcludingSome(event)
         if (event.getLoginResult ne AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             loginFail(event.getKickMessage)
-            return
+            return ()
         }
         Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => {
             def foo(): Unit = {
@@ -313,7 +314,7 @@ object MCChatUtils {
                 callEventExcludingSome(ev)
                 if (ev.getResult ne PlayerLoginEvent.Result.ALLOWED) {
                     loginFail(ev.getKickMessage)
-                    return
+                    return ()
                 }
                 callEventExcludingSome(new PlayerJoinEvent(dcp, ""))
                 dcp.setLoggedIn(true)
@@ -334,7 +335,7 @@ object MCChatUtils {
      * @param needsSync Whether we're in an async thread
      */
     def callLogoutEvent(dcp: DiscordConnectedPlayer, needsSync: Boolean): Unit = {
-        if (!dcp.isLoggedIn) return
+        if (!dcp.isLoggedIn) return ()
         val event = new PlayerQuitEvent(dcp, "")
         if (needsSync) callEventSync(event)
         else callEventExcludingSome(event)

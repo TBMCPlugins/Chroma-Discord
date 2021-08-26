@@ -41,7 +41,7 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
     override def sendMessage(message: String): Unit = try {
         val broadcast = new Exception().getStackTrace()(2).getMethodName.contains("broadcast")
         if (broadcast) { //We're catching broadcasts using the Bukkit event
-            return
+            return ()
         }
         val sendmsg = DPUtils.sanitizeString(message)
         this synchronized {
@@ -49,7 +49,7 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
             if (sendtask == null) sendtask = Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () => {
                 def foo(): Unit = {
                     channel.createMessage((if (user != null) user.getMention + "\n"
-                    else "") + msgtosend.trim).subscribe
+                    else "") + msgtosend.trim).subscribe()
                     sendtask = null
                     msgtosend = ""
                 }

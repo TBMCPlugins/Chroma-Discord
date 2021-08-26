@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.*
+import buttondevteam.discordplugin.DPUtils.SpecExtensions
 import buttondevteam.discordplugin.listeners.CommandListener
 import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
 import buttondevteam.lib.*
@@ -12,7 +13,7 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import discord4j.core.`object`.entity.{Member, Message, User}
 import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.spec.{EmbedCreateSpec, MessageEditSpec}
+import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacyMessageEditSpec}
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -26,7 +27,7 @@ import java.util
 import java.util.concurrent.{LinkedBlockingQueue, TimeoutException}
 import java.util.function.{Consumer, Predicate}
 import java.util.stream.Collectors
-import scala.jdk.CollectionConverters.SetHasAsScala
+import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 import scala.jdk.OptionConverters.RichOptional
 
 object MCChatListener {
@@ -58,12 +59,12 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
     @EventHandler // Minecraft
     def onMCChat(ev: TBMCChatEvent): Unit = {
         if (!(ComponentManager.isEnabled(classOf[MinecraftChatModule])) || ev.isCancelled) { //SafeMode: Needed so it doesn't restart after server shutdown
-            return
+            return ()
         }
 
         sendevents.add(new util.AbstractMap.SimpleEntry[TBMCChatEvent, Instant](ev, Instant.now))
         if (sendtask != null) {
-            return
+            return ()
         }
         sendrunnable = () => {
             def foo(): Unit = {
@@ -90,8 +91,8 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 (if ("Minecraft" == e.getOrigin) "" else "[" + e.getOrigin.charAt(0) + "]") +
                 DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender))
             val color: chat.Color = e.getChannel.Color.get
-            val embed: Consumer[EmbedCreateSpec] = (ecs: EmbedCreateSpec) => {
-                def foo(ecs: EmbedCreateSpec) = {
+            val embed: Consumer[LegacyEmbedCreateSpec] = (ecs: LegacyEmbedCreateSpec) => {
+                def foo(ecs: LegacyEmbedCreateSpec) = {
                     ecs.setDescription(e.getMessage).setColor(Color.of(color.getRed, color.getGreen, color.getBlue))
                     val url: String = module.profileURL.get
                     e.getSender match {
@@ -113,7 +114,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val nanoTime: Long = System.nanoTime
             val doit = (lastmsgdata: MCChatUtils.LastMsgData) => {
                 if (lastmsgdata.message == null
-                    || authorPlayer != lastmsgdata.message.getEmbeds.get(0).getAuthor.toScala.map(_.getName).orNull
+                    || authorPlayer != lastmsgdata.message.getEmbeds.get(0).getAuthor.toScala.flatMap(_.getName.toScala).orNull
                     || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
                     || !(lastmsgdata.mcchannel.ID == e.getChannel.ID)
                     || lastmsgdata.content.length + e.getMessage.length + 1 > 2048) {
@@ -124,7 +125,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 }
                 else {
                     lastmsgdata.content = lastmsgdata.content + "\n" + e.getMessage // The message object doesn't get updated
-                    lastmsgdata.message.edit((mes: MessageEditSpec) => mes.setEmbed(embed.andThen((ecs: EmbedCreateSpec) => ecs.setDescription(lastmsgdata.content)))).block
+                    lastmsgdata.message.edit((mes: LegacyMessageEditSpec) => mes.setEmbed(embed.andThen((ecs: LegacyEmbedCreateSpec) => ecs.setDescription(lastmsgdata.content))).^^()).block
                 }
             }
             // Checks if the given channel is different than where the message was sent from
@@ -151,7 +152,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                             true
                         }
                         else {
-                            lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe
+                            lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe()
                             false //If the user no longer has permission, remove the connection
                         }
                     }
@@ -175,7 +176,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         }) {
             val mid: Int = event.getMessage.indexOf('#', start + 1)
             if (mid == -1) {
-                return
+                return ()
             }
             var end_ = event.getMessage.indexOf(' ', mid + 1)
             if (end_ == -1) {
@@ -290,7 +291,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         catch {
             case _: InterruptedException =>
                 rectask.cancel()
-                return
+                return ()
         }
         val sender: User = event.getMessage.getAuthor.orElse(null)
         var dmessage: String = event.getMessage.getContent
@@ -299,7 +300,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val user: DiscordPlayer = dsender.getChromaUser
 
             def replaceUserMentions(): Unit = {
-                for (u <- SFlux(event.getMessage.getUserMentions).toIterable()) { //TODO: Role mentions
+                for (u <- event.getMessage.getUserMentions.asScala) { //TODO: Role mentions
                     dmessage = dmessage.replace(u.getMention, "@" + u.getUsername) // TODO: IG Formatting
                     val m = u.asMember(DiscordPlugin.mainServer.getId).onErrorResume(_ => Mono.empty).blockOptional
                     if (m.isPresent) {
@@ -341,7 +342,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                         TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e, module)
                 }
                 MCChatUtils.lastmsgfromd.put(event.getMessage.getChannelId.asLong, event.getMessage)
-                event.getMessage.addReaction(DiscordPlugin.DELIVERED_REACTION).subscribe
+                event.getMessage.addReaction(DiscordPlugin.DELIVERED_REACTION).subscribe()
             }
 
             if (dmessage.startsWith("/")) // Ingame command
@@ -412,7 +413,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             .map("/" + _).collect(Collectors.joining(", "))
 
         if (!isPrivate)
-            event.getMessage.delete.subscribe
+            event.getMessage.delete.subscribe()
         val cmd = dmessage.substring(1)
         val cmdlowercased = cmd.toLowerCase
         if (dsender.isInstanceOf[DiscordSender] && notWhitelisted(cmdlowercased)) { // Command not whitelisted
@@ -420,11 +421,11 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                 (if (user.getConnectedID(classOf[TBMCPlayer]) == null)
                     "\nTo access your commands, first please connect your accounts, using /connect in " + DPUtils.botmention
                         + "\nThen y" else "\nY") + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!")
-            return
+            return ()
         }
         module.log(dsender.getName + " ran from DC: /" + cmd)
         if (dsender.isInstanceOf[DiscordSender] && runCustomCommand(dsender, cmdlowercased)) {
-            return
+            return ()
         }
         val channel = if (clmd == null) user.channel.get else clmd.mcchannel
         val ev = new TBMCCommandPreprocessEvent(dsender, channel, dmessage, if (clmd == null) dsender else clmd.dcp)

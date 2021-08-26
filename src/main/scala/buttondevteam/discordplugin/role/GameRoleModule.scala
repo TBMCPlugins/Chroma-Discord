@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 @ComponentMetadata(enabledByDefault = false) object GameRoleModule {
     def handleRoleEvent(roleEvent: RoleEvent): Unit = {
         val grm = ComponentManager.getIfEnabled(classOf[GameRoleModule])
-        if (grm == null) return
+        if (grm == null) return ()
         val GameRoles = grm.GameRoles
         val logChannel = grm.logChannel.get
         val notMainServer = (_: Role).getGuildId.asLong != DiscordPlugin.mainServer.getId.asLong
@@ -39,23 +39,23 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
                             else
                                 SMono.empty
                         }
-                    }).subscribe
+                    }).subscribe()
                     ()
                 }
             }, 100)
             case roleDeleteEvent: RoleDeleteEvent =>
                 val role = roleDeleteEvent.getRole.orElse(null)
-                if (role == null) return
-                if (notMainServer(role)) return
+                if (role == null) return ()
+                if (notMainServer(role)) return ()
                 if (GameRoles.remove(role.getName) && logChannel != null)
-                    logChannel.flatMap(_.createMessage("Removed " + role.getName + " as a game role.").^^()).subscribe
+                    logChannel.flatMap(_.createMessage("Removed " + role.getName + " as a game role.").^^()).subscribe()
             case roleUpdateEvent: RoleUpdateEvent =>
                 if (!roleUpdateEvent.getOld.isPresent) {
                     grm.logWarn("Old role not stored, cannot update game role!")
-                    return
+                    return ()
                 }
                 val or = roleUpdateEvent.getOld.get
-                if (notMainServer(or)) return
+                if (notMainServer(or)) return ()
                 val cr = roleUpdateEvent.getCurrent
                 grm.isGameRole(cr).flatMap(isGameRole => {
                     if (!isGameRole)
@@ -76,7 +76,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
                         else
                             SMono.empty
                     }
-                }).subscribe
+                }).subscribe()
             case _ =>
         }
     }

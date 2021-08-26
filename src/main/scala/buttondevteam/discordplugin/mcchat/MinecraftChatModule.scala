@@ -220,7 +220,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      */
     private def sendStateMessage(color: Color, message: String) =
         MCChatUtils.forCustomAndAllMCChat(_.flatMap(
-            _.createEmbed(_.setColor(color).setTitle(message)).^^()
+            _.createEmbed(_.setColor(color).setTitle(message).^^()).^^()
                 .onErrorResume(_ => SMono.empty)
         ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 

@@ -9,7 +9,7 @@ import discord4j.core.`object`.entity.channel.{GuildChannel, MessageChannel}
 import discord4j.core.`object`.entity.{Guild, Message}
 import discord4j.core.`object`.presence.Status
 import discord4j.core.event.domain.PresenceUpdateEvent
-import discord4j.core.spec.{EmbedCreateSpec, MessageCreateSpec}
+import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacyMessageCreateSpec}
 import org.bukkit.Bukkit
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.{EventHandler, Listener}
@@ -52,7 +52,7 @@ object FunModule {
             ListC += 1
             ListC - 1
         } > 2) { // Lowered already
-            DPUtils.reply(message, SMono.empty, "stop it. You know the answer.").subscribe
+            DPUtils.reply(message, SMono.empty, "stop it. You know the answer.").subscribe()
             lastlist = 0
             lastlistp = Bukkit.getOnlinePlayers.size.toShort
             return true //Handled
@@ -62,7 +62,7 @@ object FunModule {
             var next = 0
             if (usableServerReadyStrings.size == 0) fm.createUsableServerReadyStrings()
             next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size))
-            DPUtils.reply(message, SMono.empty, fm.serverReadyAnswers.get.get(next)).subscribe
+            DPUtils.reply(message, SMono.empty, fm.serverReadyAnswers.get.get(next)).subscribe()
             return false //Still process it as a command/mcchat if needed
         }
         false
@@ -72,11 +72,11 @@ object FunModule {
 
     def handleFullHouse(event: PresenceUpdateEvent): Unit = {
         val fm = ComponentManager.getIfEnabled(classOf[FunModule])
-        if (fm == null) return
-        if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return
+        if (fm == null) return ()
+        if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return ()
         if (!Option(event.getOld.orElse(null)).exists(_.getStatus == Status.OFFLINE)
             || event.getCurrent.getStatus == Status.OFFLINE)
-            return //If it's not an offline -> online change
+            return () //If it's not an offline -> online change
         fm.fullHouseChannel.get.filter((ch: MessageChannel) => ch.isInstanceOf[GuildChannel])
             .flatMap(channel => fm.fullHouseDevRole(SMono(channel.asInstanceOf[GuildChannel].getGuild)).get
                 .filterWhen(devrole => SMono(event.getMember)
@@ -88,8 +88,8 @@ object FunModule {
                 .flatMap(_ => {
                     lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime)
                     SMono(channel.createMessage(_.setContent("Full house!")
-                        .setEmbed((ecs: EmbedCreateSpec) => ecs.setImage("https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png"))))
-                })).subscribe
+                        .setEmbed((ecs: LegacyEmbedCreateSpec) => ecs.setImage("https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png"))))
+                })).subscribe()
     }
 }
 

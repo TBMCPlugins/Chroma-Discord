@@ -10,35 +10,32 @@ import discord4j.common.util.Snowflake
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.{EventHandler, Listener}
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.javaOptional2ScalaOption
 
 class MCListener extends Listener {
     @EventHandler def onPlayerJoin(e: PlayerJoinEvent): Unit =
         if (ConnectCommand.WaitingToConnect.containsKey(e.getPlayer.getName)) {
             @SuppressWarnings(Array("ConstantConditions")) val user = DiscordPlugin.dc.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect.get(e.getPlayer.getName))).block
-            if (user == null) return
+            if (user == null) return ()
             e.getPlayer.sendMessage("§bTo connect with the Discord account @" + user.getUsername + "#" + user.getDiscriminator + " do /discord accept")
             e.getPlayer.sendMessage("§bIf it wasn't you, do /discord decline")
         }
 
     @EventHandler def onGetInfo(e: TBMCPlayerGetInfoEvent): Unit = {
-        if (DiscordPlugin.SafeMode) return
-        val dp = e.getPlayer.getAs(classOf[DiscordPlayer])
-        if (dp == null || dp.getDiscordID == null || dp.getDiscordID == "") return
-        val userOpt = DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).onErrorResume(_ => Mono.empty).blockOptional
-        if (!userOpt.isPresent) return
-        val user = userOpt.get
-        e.addInfo("Discord tag: " + user.getUsername + "#" + user.getDiscriminator)
-        val memberOpt = user.asMember(DiscordPlugin.mainServer.getId).onErrorResume((t: Throwable) => Mono.empty).blockOptional
-        if (!memberOpt.isPresent) return
-        val member = memberOpt.get
-        val prOpt = member.getPresence.blockOptional
-        if (!prOpt.isPresent) return
-        val pr = prOpt.get
-        e.addInfo(pr.getStatus.toString)
-        if (pr.getActivity.isPresent) {
-            val activity = pr.getActivity.get
-            e.addInfo(s"${activity.getType}: ${activity.getName}")
-        }
+        Option(DiscordPlugin.SafeMode).filterNot(identity).flatMap(_ => Option(e.getPlayer.getAs(classOf[DiscordPlayer])))
+            .flatMap(dp => Option(dp.getDiscordID)).filter(_.nonEmpty)
+            .map(Snowflake.of).flatMap(id => DiscordPlugin.dc.getUserById(id).onErrorResume(_ => Mono.empty).blockOptional())
+            .map(user => {
+                e.addInfo("Discord tag: " + user.getUsername + "#" + user.getDiscriminator)
+                user
+            })
+            .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId).onErrorResume(t => Mono.empty).blockOptional())
+            .flatMap(member => member.getPresence.blockOptional())
+            .map(pr => {
+                e.addInfo(pr.getStatus.toString)
+                pr
+            })
+            .flatMap(_.getActivity).foreach(activity => e.addInfo(s"${activity.getType}: ${activity.getName}"))
     }
 
     /*@EventHandler

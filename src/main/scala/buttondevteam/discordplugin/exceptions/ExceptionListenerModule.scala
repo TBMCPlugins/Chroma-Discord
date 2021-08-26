@@ -19,7 +19,7 @@ import java.util.stream.Collectors
  */
 object ExceptionListenerModule {
     private def SendException(e: Throwable, sourcemessage: String): Unit = {
-        if (instance == null) return
+        if (instance == null) return ()
         try getChannel.flatMap(channel => {
             val coderRole = channel match {
                 case ch: GuildChannel => instance.pingRole(SMono(ch.getGuild)).get
@@ -31,14 +31,14 @@ object ExceptionListenerModule {
                 sb.append(sourcemessage).append("\n")
                 sb.append("```").append("\n")
                 var stackTrace = util.Arrays.stream(ExceptionUtils.getStackTrace(e).split("\\n"))
-                    .filter(s => !s.contains("\tat ") || s.contains("\tat buttondevteam."))
+                    .filter(s => !s.contains("\tat ") || s.contains("buttondevteam."))
                     .collect(Collectors.joining("\n"))
                 if (sb.length + stackTrace.length >= 1980) stackTrace = stackTrace.substring(0, 1980 - sb.length)
                 sb.append(stackTrace).append("\n")
                 sb.append("```")
                 SMono(channel.createMessage(sb.toString))
             })
-        }).subscribe
+        }).subscribe()
         catch {
             case ex: Exception =>
                 ex.printStackTrace()
@@ -58,11 +58,11 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     final private val lastsourcemsg = new util.ArrayList[String]
 
     @EventHandler def onException(e: TBMCExceptionEvent): Unit = {
-        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(getClass)) return
+        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(getClass)) return ()
         if (lastthrown.stream.anyMatch(ex => e.getException.getStackTrace.sameElements(ex.getStackTrace)
             && (if (e.getException.getMessage == null) ex.getMessage == null else e.getException.getMessage == ex.getMessage))
             && lastsourcemsg.contains(e.getSourceMessage)) {
-            return
+            return ()
         }
         ExceptionListenerModule.SendException(e.getException, e.getSourceMessage)
         if (lastthrown.size >= 10) lastthrown.remove(0)
@@ -83,7 +83,7 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     private def pingRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "pingRole", "Coder", guild)
 
     override protected def enable(): Unit = {
-        if (DPUtils.disableIfConfigError(this, channel)) return
+        if (DPUtils.disableIfConfigError(this, channel)) return ()
         ExceptionListenerModule.instance = this
         Bukkit.getPluginManager.registerEvents(new ExceptionListenerModule, getPlugin)
         TBMCCoreAPI.RegisterEventsForExceptions(new DebugMessageListener, getPlugin)

@@ -9,15 +9,15 @@ import reactor.core.scala.publisher.SMono
 
 object DebugMessageListener {
     private def SendMessage(message: String): Unit = {
-        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(classOf[ExceptionListenerModule])) return
+        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(classOf[ExceptionListenerModule])) return ()
         try {
             val mc = ExceptionListenerModule.getChannel
-            if (mc == null) return
+            if (mc == null) return ()
             val sb = new StringBuilder
             sb.append("```").append("\n")
             sb.append(if (message.length > 2000) message.substring(0, 2000) else message).append("\n")
             sb.append("```")
-            mc.flatMap((ch: MessageChannel) => SMono(ch.createMessage(sb.toString))).subscribe
+            mc.flatMap((ch: MessageChannel) => SMono(ch.createMessage(sb.toString))).subscribe()
         } catch {
             case ex: Exception =>
                 ex.printStackTrace()

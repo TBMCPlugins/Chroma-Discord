@@ -16,7 +16,7 @@ import buttondevteam.lib.player.ChromaGamerBase
 import com.google.common.io.Files
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.{ApplicationInfo, Guild, Role}
-import discord4j.core.`object`.presence.{Activity, Presence}
+import discord4j.core.`object`.presence.{Activity, ClientActivity, ClientPresence, Presence}
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
@@ -124,15 +124,15 @@ import java.util.Optional
                 getLogger.severe("Token not found! Please set it in private.yml then do /discord restart")
                 getLogger.severe("You need to have a bot account to use with your server.")
                 getLogger.severe("If you don't have one, go to https://discordapp.com/developers/applications/ and create an application, then create a bot for it and copy the bot token.")
-                return
+                return ()
             }
         }
         starting = true
         //System.out.println("This line should show up for sure");
         val cb = DiscordClientBuilder.create(token).build.gateway
         //System.out.println("Got gateway bootstrap");
-        cb.setInitialStatus((si: ShardInfo) => Presence.doNotDisturb(Activity.playing("booting")))
-        cb.setStoreService(new JdkStoreService) //The default doesn't work for some reason - it's waaay faster now
+        cb.setInitialPresence((si: ShardInfo) => ClientPresence.doNotDisturb(ClientActivity.playing("booting")))
+        //cb.setStore(new JdkStoreService) //The default doesn't work for some reason - it's waaay faster now
         //System.out.println("Initial status and store service set");
         cb.login.doOnError((t: Throwable) => {
             def foo(t: Throwable): Unit = {
@@ -165,8 +165,8 @@ import java.util.Optional
         try {
             if (DiscordPlugin.mainServer != null) { //This is not the first ready event
                 getLogger.info("Ready event already handled") //TODO: It should probably handle disconnections
-                DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe //Update from the initial presence
-                return
+                DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft"))).subscribe //Update from the initial presence
+                return ()
             }
             DiscordPlugin.mainServer = mainServer.get.orNull //Shouldn't change afterwards
             if (DiscordPlugin.mainServer == null) {
@@ -217,8 +217,8 @@ import java.util.Optional
             logWatcher = blw
             Interactions.create().onCommand("teszt", Interactions.createHandler()
                 .guild(gi => gi.acknowledge().withFollowup(_.createFollowupMessage("Teszt"))).build());
-            if (!TBMCCoreAPI.IsTestServer) DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("Minecraft"))).subscribe
-            else DiscordPlugin.dc.updatePresence(Presence.online(Activity.playing("testing"))).subscribe
+            if (!TBMCCoreAPI.IsTestServer) DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft"))).subscribe()
+            else DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("testing"))).subscribe()
             getLogger.info("Loaded!")
         } catch {
             case e: Exception =>
@@ -247,7 +247,7 @@ import java.util.Optional
     override def pluginDisable(): Unit = {
         val timings = new Timings
         timings.printElapsed("Actual disable start (logout)")
-        if (!ChromaBot.enabled) return
+        if (!ChromaBot.enabled) return ()
         try {
             DiscordPlugin.SafeMode = true // Stop interacting with Discord
             ChromaBot.enabled = false

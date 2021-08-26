@@ -60,7 +60,7 @@ import java.lang.reflect.Method
             def foo(): Unit = {
                 if (!DiscordPlugin.plugin.tryReloadConfig) {
                     sender.sendMessage("§cFailed to reload config so not restarting. Check the console.")
-                    return
+                    return ()
                 }
                 MinecraftChatModule.state = DPState.RESTARTING_PLUGIN //Reset in MinecraftChatModule
                 sender.sendMessage("§bDisabling DiscordPlugin...")
@@ -95,12 +95,12 @@ import java.lang.reflect.Method
         "Shows an invite link to the server"
     )) def invite(sender: CommandSender): Unit = {
         if (checkSafeMode(sender)) {
-            return
+            return ()
         }
         val invi: String = DiscordPlugin.plugin.inviteLink.get
         if (invi.nonEmpty) {
             sender.sendMessage("§bInvite link: " + invi)
-            return
+            return ()
         }
         DiscordPlugin.mainServer.getInvites.limitRequest(1)
             .switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("§cNo invites found for the server.")))

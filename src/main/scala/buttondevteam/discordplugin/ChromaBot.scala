@@ -21,7 +21,7 @@ object ChromaBot {
      * @param message The message to send, duh (use [[MessageChannel.createMessage]])
      */
     def sendMessage(message: SMono[MessageChannel] => SMono[Message]): Unit =
-        MCChatUtils.forPublicPrivateChat(message).subscribe
+        MCChatUtils.forPublicPrivateChat(message).subscribe()
 
     /**
      * Send a message to the chat channels, private chats and custom chats.
@@ -30,7 +30,7 @@ object ChromaBot {
      * @param toggle  The toggle type for channelcon
      */
     def sendMessageCustomAsWell(message: SMono[MessageChannel] => SMono[Message], @Nullable toggle: ChannelconBroadcast): Unit =
-        MCChatUtils.forCustomAndAllMCChat(message.apply, toggle, hookmsg = false).subscribe
+        MCChatUtils.forCustomAndAllMCChat(message.apply, toggle, hookmsg = false).subscribe()
 
     def updatePlayerList(): Unit =
         MCChatUtils.updatePlayerList()

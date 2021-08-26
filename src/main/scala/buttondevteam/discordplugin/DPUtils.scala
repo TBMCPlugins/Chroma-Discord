@@ -5,7 +5,7 @@ import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig, ReadO
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.{Guild, Message, Role}
-import discord4j.core.spec.{EmbedCreateSpec, Spec}
+import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacySpec}
 import reactor.core.publisher.{Flux, Mono}
 import reactor.core.scala.publisher.{SFlux, SMono}
 
@@ -19,7 +19,7 @@ object DPUtils {
     private val URL_PATTERN = Pattern.compile("https?://\\S*")
     private val FORMAT_PATTERN = Pattern.compile("[*_~]")
 
-    def embedWithHead(ecs: EmbedCreateSpec, displayname: String, playername: String, profileUrl: String): EmbedCreateSpec =
+    def embedWithHead(ecs: LegacyEmbedCreateSpec, displayname: String, playername: String, profileUrl: String): LegacyEmbedCreateSpec =
         ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png")
 
     /**
@@ -216,7 +216,7 @@ object DPUtils {
         def ^^(): SFlux[T] = SFlux(flux)
     }
 
-    implicit class SpecExtensions[T <: Spec[_]](spec: T) {
+    implicit class SpecExtensions[T <: LegacySpec[_]](spec: T) {
         def ^^(): Unit = ()
     }
 

@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
+import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.{FluxExtensions, MonoExtensions}
-import buttondevteam.discordplugin._
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
 import discord4j.common.util.Snowflake
@@ -11,8 +11,8 @@ import net.ess3.api.events.{AfkStatusChangeEvent, MuteStatusChangeEvent, NickCha
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.*
 import org.bukkit.event.player.PlayerLoginEvent.Result
-import org.bukkit.event.player._
 import org.bukkit.event.server.{BroadcastMessageEvent, TabCompleteEvent}
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
 import reactor.core.scala.publisher.{SFlux, SMono}
@@ -21,8 +21,8 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     final private val muteRole = DPUtils.roleData(module.getConfig, "muteRole", "Muted")
 
     @EventHandler(priority = EventPriority.HIGHEST) def onPlayerLogin(e: PlayerLoginEvent): Unit = {
-        if (e.getResult ne Result.ALLOWED) return
-        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return
+        if (e.getResult ne Result.ALLOWED) return ()
+        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return ()
         val dcp = MCChatUtils.LoggedInPlayers.get(e.getPlayer.getUniqueId)
         if (dcp.nonEmpty) MCChatUtils.callLogoutEvent(dcp.get, needsSync = false)
     }
@@ -39,7 +39,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, chan, p, module))
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, cc, p, module)) //Stored per-channel
                             SMono.empty
-                        }))).subscribe
+                        }))).subscribe()
                 val message = e.getJoinMessage
                 sendJoinLeaveMessage(message, e.getPlayer)
                 ChromaBot.updatePlayerList()
@@ -51,7 +51,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
 
     private def sendJoinLeaveMessage(message: String, player: Player): Unit =
         if (message != null && message.trim.nonEmpty)
-            MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), player, ChannelconBroadcast.JOINLEAVE, hookmsg = true).subscribe
+            MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), player, ChannelconBroadcast.JOINLEAVE, hookmsg = true).subscribe()
 
     @EventHandler(priority = EventPriority.MONITOR) def onPlayerLeave(e: PlayerQuitEvent): Unit = {
         if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return // Only care about real users
@@ -69,23 +69,23 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW) def onPlayerDeath(e: PlayerDeathEvent): Unit =
-        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage), e.getEntity, ChannelconBroadcast.DEATH, hookmsg = true).subscribe
+        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage), e.getEntity, ChannelconBroadcast.DEATH, hookmsg = true).subscribe()
 
     @EventHandler def onPlayerAFK(e: AfkStatusChangeEvent): Unit = {
         val base = e.getAffected.getBase
-        if (e.isCancelled || !base.isOnline) return
+        if (e.isCancelled || !base.isOnline) return ()
         val msg = base.getDisplayName + " is " + (if (e.getValue) "now"
         else "no longer") + " AFK."
-        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, hookmsg = false).subscribe
+        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, hookmsg = false).subscribe()
     }
 
     @EventHandler def onPlayerMute(e: MuteStatusChangeEvent): Unit = {
         val role = muteRole.get
-        if (role == null) return
+        if (role == null) return ()
         val source = e.getAffected.getSource
-        if (!source.isPlayer) return
+        if (!source.isPlayer) return ()
         val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
-        if (p == null) return
+        if (p == null) return ()
         DPUtils.ignoreError(SMono(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID)))
             .flatMap(user => SMono(user.asMember(DiscordPlugin.mainServer.getId)))
             .flatMap(user => role.flatMap((r: Role) => {
@@ -101,14 +101,14 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
                 }
 
                 foo(r)
-            }))).subscribe
+            }))).subscribe()
     }
 
     @EventHandler def onChatSystemMessage(event: TBMCSystemChatEvent): Unit =
-        MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage), event).subscribe
+        MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage), event).subscribe()
 
     @EventHandler def onBroadcastMessage(event: BroadcastMessageEvent): Unit =
-        MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage), ChannelconBroadcast.BROADCAST, hookmsg = false).subscribe
+        MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage), ChannelconBroadcast.BROADCAST, hookmsg = false).subscribe()
 
     @EventHandler def onYEEHAW(event: TBMCYEEHAWEvent): Unit = { //TODO: Inherit from the chat event base to have channel support
         val name = event.getSender match {
@@ -119,7 +119,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         DiscordPlugin.mainServer.getEmojis.^^().filter(e => "YEEHAW" == e.getName).take(1).singleOrEmpty
             .map(Option.apply).defaultIfEmpty(Option.empty)
             .flatMap(yeehaw => MCChatUtils.forPublicPrivateChat(MCChatUtils.send(name +
-                yeehaw.map(guildEmoji => " <:YEEHAW:" + guildEmoji.getId.asString + ">s").getOrElse(" YEEHAWs")))).subscribe
+                yeehaw.map(guildEmoji => " <:YEEHAW:" + guildEmoji.getId.asString + ">s").getOrElse(" YEEHAWs")))).subscribe()
     }
 
     @EventHandler def onNickChange(event: NickChangeEvent): Unit = MCChatUtils.updatePlayerList()
@@ -127,7 +127,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     @EventHandler def onTabComplete(event: TabCompleteEvent): Unit = {
         val i = event.getBuffer.lastIndexOf(' ')
         val t = event.getBuffer.substring(i + 1) //0 if not found
-        if (!t.startsWith("@")) return
+        if (!t.startsWith("@")) return ()
         val token = t.substring(1)
         val x = DiscordPlugin.mainServer.getMembers.^^().flatMap(m => SFlux.just(m.getUsername, m.getNickname.orElse("")))
             .filter(_.startsWith(token)).map("@" + _).doOnNext(event.getCompletions.add(_)).blockLast()
@@ -136,7 +136,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     @EventHandler def onCommandSend(event: PlayerCommandSendEvent): Boolean = event.getCommands.add("g")
 
     @EventHandler def onVanish(event: VanishStatusChangeEvent): Unit = {
-        if (event.isCancelled) return
+        if (event.isCancelled) return ()
         Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => MCChatUtils.updatePlayerList())
     }
 }

@@ -20,10 +20,10 @@ libraryDependencies ++= Seq(
     "org.spigotmc." % "spigot" % "1.14.4-R0.1-SNAPSHOT" % Provided,
     "com.destroystokyo.paper" % "paper" % "1.16.3-R0.1-SNAPSHOT" % Provided,
 
-    "com.discord4j" % "discord4j-core" % "3.1.6",
-    "org.slf4j" % "slf4j-jdk14" % "1.7.31",
+    "com.discord4j" % "discord4j-core" % "3.2.1",
+    "org.slf4j" % "slf4j-jdk14" % "1.7.32",
     "com.vdurmont" % "emoji-java" % "5.1.1",
-    "org.mockito" % "mockito-core" % "3.11.1",
+    "org.mockito" % "mockito-core" % "4.2.0",
     "io.projectreactor" % "reactor-scala-extensions_2.13" % "0.8.0",
     // https://mvnrepository.com/artifact/org.immutables/value
     "org.immutables" % "value" % "2.8.8" % "provided",

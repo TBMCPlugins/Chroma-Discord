@@ -27,7 +27,7 @@ import buttondevteam.lib.architecture.{Component, ComponentMetadata}
     }
 
     override protected def disable(): Unit = try {
-        if (!GeneralEventBroadcasterModule.hooked) return
+        if (!GeneralEventBroadcasterModule.hooked) return ()
         if (PlayerListWatcher.hookUpDown(false, this)) log("Finished unhooking the player list!")
         else log("Didn't have the player list hooked.")
         GeneralEventBroadcasterModule.hooked = false
