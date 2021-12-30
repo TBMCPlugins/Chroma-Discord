@@ -28,7 +28,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR) def onPlayerJoin(e: PlayerJoinEvent): Unit = {
-        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return // Don't show the joined message for the fake player
+        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return () // Don't show the joined message for the fake player
         Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, () => {
             def foo(): Unit = {
                 val p = e.getPlayer
@@ -54,7 +54,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
             MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), player, ChannelconBroadcast.JOINLEAVE, hookmsg = true).subscribe()
 
     @EventHandler(priority = EventPriority.MONITOR) def onPlayerLeave(e: PlayerQuitEvent): Unit = {
-        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return // Only care about real users
+        if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return () // Only care about real users
         MCChatUtils.OnlineSenders.filterInPlace((_, userMap) => userMap.entrySet.stream.noneMatch(_.getValue.getUniqueId.equals(e.getPlayer.getUniqueId)))
         Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, () => MCChatUtils.LoggedInPlayers.get(e.getPlayer.getUniqueId).foreach(MCChatUtils.callLoginEvents))
         Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () => ChromaBot.updatePlayerList(), 5)

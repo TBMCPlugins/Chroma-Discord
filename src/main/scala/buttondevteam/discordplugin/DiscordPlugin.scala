@@ -42,8 +42,8 @@ import java.util.Optional
     private[discordplugin] var SafeMode = true
 
     def getPrefix: Char = {
-        if (plugin == null) return '/'
-        plugin.prefix.get
+        if (plugin == null) '/'
+        else plugin.prefix.get
     }
 
     private[discordplugin] var mainServer: Guild = null
@@ -174,7 +174,7 @@ import java.util.Optional
                     getLogger.severe("Main server not found! Invite the bot and do /discord restart")
                     DiscordPlugin.dc.getApplicationInfo.subscribe((info: ApplicationInfo) => getLogger.severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.getId.asString + "&scope=bot&permissions=268509264"))
                     saveConfig() //Put default there
-                    return //We should have all guilds by now, no need to retry
+                    return () //We should have all guilds by now, no need to retry
                 }
                 DiscordPlugin.mainServer = event.get(0).getGuild
                 getLogger.warning("Main server set to first one: " + DiscordPlugin.mainServer.getName)
@@ -186,7 +186,7 @@ import java.util.Optional
             //Won't disable, just prints the warning here
             if (MinecraftChatModule.state eq DPState.STOPPING_SERVER) {
                 stopStarting()
-                return //Reusing that field to check if stopping while still initializing
+                return () //Reusing that field to check if stopping while still initializing
             }
             CommonListeners.register(DiscordPlugin.dc.getEventDispatcher)
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener, this)
@@ -236,7 +236,7 @@ import java.util.Optional
                     e.printStackTrace()
             }
         }
-        if (!ChromaBot.enabled) return //Failed to load
+        if (!ChromaBot.enabled) return () //Failed to load
         val timings = new Timings
         timings.printElapsed("Disable start")
         timings.printElapsed("Updating player list")

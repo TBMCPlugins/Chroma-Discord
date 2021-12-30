@@ -14,14 +14,14 @@ import discord4j.core.`object`.entity.channel.PrivateChannel
 ))
 class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC {
     @Command2.Subcommand override def `def`(sender: Command2DCSender): Boolean = {
-        if (!(module.allowPrivateChat.get)) {
+        if (!module.allowPrivateChat.get) {
             sender.sendMessage("using the private chat is not allowed on this Minecraft server.")
             return true
         }
         val message = sender.getMessage
         val channel = message.getChannel.block
         @SuppressWarnings(Array("OptionalGetWithoutIsPresent")) val author = message.getAuthor.get
-        if (!((channel.isInstanceOf[PrivateChannel]))) {
+        if (!channel.isInstanceOf[PrivateChannel]) {
             DPUtils.reply(message, channel, "this command can only be issued in a direct message with the bot.").subscribe()
             return true
         }

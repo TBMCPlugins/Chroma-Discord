@@ -53,17 +53,10 @@ object DPUtils {
     private def escape(message: String) = { //var ts = new TreeSet<>();
         val ts = new util.TreeSet[Array[Int]](Comparator.comparingInt((a: Array[Int]) => a(0)): Comparator[Array[Int]]) //Compare the start, then check the end
         var matcher = URL_PATTERN.matcher(message)
-        while ( {
-            matcher.find
-        }) ts.add(Array[Int](matcher.start, matcher.end))
+        while (matcher.find) ts.add(Array[Int](matcher.start, matcher.end))
         matcher = FORMAT_PATTERN.matcher(message)
-        /*Function<MatchResult, String> aFunctionalInterface = result ->
-              Optional.ofNullable(ts.floor(new int[]{result.start(), 0})).map(a -> a[1]).orElse(0) < result.start()
-                ? "\\\\" + result.group() : result.group();
-            return matcher.replaceAll(aFunctionalInterface); //Find nearest URL match and if it's not reaching to the char then escape*/ val sb = new StringBuffer
-        while ( {
-            matcher.find
-        }) matcher.appendReplacement(sb, if (Option(ts.floor(Array[Int](matcher.start, 0))).map( //Find a URL start <= our start
+        val sb = new StringBuffer
+        while (matcher.find) matcher.appendReplacement(sb, if (Option(ts.floor(Array[Int](matcher.start, 0))).map( //Find a URL start <= our start
             (a: Array[Int]) => a(1)).getOrElse(-1) < matcher.start //Check if URL end < our start
         ) "\\\\" + matcher.group else matcher.group)
         matcher.appendTail(sb)
@@ -71,13 +64,14 @@ object DPUtils {
     }
 
     def getLogger: Logger = {
-        if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger == null) return Logger.getLogger("DiscordPlugin")
-        DiscordPlugin.plugin.getLogger
+        if (DiscordPlugin.plugin == null || DiscordPlugin.plugin.getLogger == null) Logger.getLogger("DiscordPlugin")
+        else DiscordPlugin.plugin.getLogger
     }
 
     def channelData(config: IHaveConfig, key: String): ReadOnlyConfigData[SMono[MessageChannel]] =
         config.getReadOnlyDataPrimDef(key, 0L, (id: Any) =>
             getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])), (_: SMono[MessageChannel]) => 0L) //We can afford to search for the channel in the cache once (instead of using mainServer)
+
     def roleData(config: IHaveConfig, key: String, defName: String): ReadOnlyConfigData[SMono[Role]] =
         roleData(config, key, defName, SMono.just(DiscordPlugin.mainServer))
 

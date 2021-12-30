@@ -27,8 +27,8 @@ class DiscordSender(user: User, channel: MessageChannel, pname: String) extends 
     override def isPermissionSet(perm: Permission): Boolean = this.perm.isPermissionSet(perm)
 
     override def hasPermission(name: String): Boolean = {
-        if (name.contains("essentials") && !(name == "essentials.list")) return false
-        perm.hasPermission(name)
+        if (name.contains("essentials") && !(name == "essentials.list")) false
+        else perm.hasPermission(name)
     }
 
     override def hasPermission(perm: Permission): Boolean = this.perm.hasPermission(perm)
