@@ -3,7 +3,6 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.SpecExtensions
-import buttondevteam.discordplugin.listeners.CommandListener
 import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
 import buttondevteam.lib.*
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
@@ -251,7 +250,6 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         SMono(ev.getMessage.getChannel)
             .filter(channel => isChatEnabled(channel, author, hasCustomChat))
             .filter(channel => !isRunningMCChatCommand(channel, ev.getMessage.getContent, prefix))
-            .filterWhen(_ => CommandListener.runCommand(ev.getMessage, DiscordPlugin.plugin.commandChannel.get, mentionedonly = true)) //Allow running commands in chat channels
             .filter(channel => {
                 MCChatUtils.resetLastMessage(channel)
                 recevents.add(ev)

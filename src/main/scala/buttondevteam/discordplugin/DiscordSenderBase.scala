@@ -46,11 +46,11 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
         val sendmsg = DPUtils.sanitizeString(message)
         this synchronized {
             msgtosend += "\n" + sendmsg
-            if (sendtask == null) sendtask = Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () => {
+            if (sendtask == null) sendtask = Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, (() => {
                 channel.createMessage((if (user != null) user.getMention + "\n" else "") + msgtosend.trim).subscribe()
                 sendtask = null
                 msgtosend = ""
-            }, 4) // Waits a 0.2 second to gather all/most of the different messages
+            }): Runnable, 4) // Waits a 0.2 second to gather all/most of the different messages
         }
     } catch {
         case e: Exception =>

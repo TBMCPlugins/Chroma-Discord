@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin
 
+import buttondevteam.discordplugin.DiscordPlugin.dc
 import buttondevteam.discordplugin.announcer.AnnouncerModule
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.commands.*
@@ -84,7 +85,7 @@ import java.util.Optional
     var commandChannel: ReadOnlyConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
     /**
      * The role that allows using mod-only Discord commands.
-     * If empty (''), then it will only allow for the owner.
+     * If empty (&#39;&#39;), then it will only allow for the owner.
      */
     var modRole: ReadOnlyConfigData[SMono[Role]] = null
     /**
@@ -204,19 +205,19 @@ import java.util.Optional
             Component.registerComponent(this, new AnnouncerModule)
             Component.registerComponent(this, new FunModule)
             ChromaBot.updatePlayerList() //The MCChatModule is tested to be enabled
-            manager.registerCommand(new VersionCommand)
-            manager.registerCommand(new UserinfoCommand)
-            manager.registerCommand(new HelpCommand)
-            manager.registerCommand(new DebugCommand)
-            manager.registerCommand(new ConnectCommand)
+            val applicationId = dc.getRestClient.getApplicationId.block()
+            val guildId = Some(DiscordPlugin.mainServer.getId.asLong())
+            manager.registerCommand(new VersionCommand, applicationId, guildId)
+            manager.registerCommand(new UserinfoCommand, applicationId, guildId)
+            manager.registerCommand(new HelpCommand, applicationId, guildId)
+            manager.registerCommand(new DebugCommand, applicationId, guildId)
+            manager.registerCommand(new ConnectCommand, applicationId, guildId)
             TBMCCoreAPI.SendUnsentExceptions()
             TBMCCoreAPI.SendUnsentDebugMessages()
             val blw = new BukkitLogWatcher
             blw.start()
             LogManager.getRootLogger.asInstanceOf[Logger].addAppender(blw)
             logWatcher = blw
-            Interactions.create().onCommand("teszt", Interactions.createHandler()
-                .guild(gi => gi.acknowledge().withFollowup(_.createFollowupMessage("Teszt"))).build());
             if (!TBMCCoreAPI.IsTestServer) DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft"))).subscribe()
             else DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("testing"))).subscribe()
             getLogger.info("Loaded!")
