@@ -102,8 +102,6 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     final private val mcChatCommand = new MCChatCommand(this)
     final private val channelconCommand = new ChannelconCommand(this)
 
-    val broadcastedMessages: mutable.Map[String, Long] = mutable.Map()
-
     override protected def enable(): Unit = {
         if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return ()
         listener = new MCChatListener(this)

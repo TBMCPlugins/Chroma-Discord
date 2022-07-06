@@ -109,7 +109,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage), event).subscribe()
 
     @EventHandler def onBroadcastMessage(event: BroadcastMessageEvent): Unit = {
-        module.broadcastedMessages += ((event.getMessage, System.nanoTime()))
+        MCChatUtils.broadcastedMessages += ((event.getMessage, System.nanoTime()))
         MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage), ChannelconBroadcast.BROADCAST, hookmsg = false).subscribe()
     }
 

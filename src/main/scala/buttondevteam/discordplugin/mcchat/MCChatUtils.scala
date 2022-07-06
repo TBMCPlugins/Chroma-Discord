@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.stream.Collectors
 import javax.annotation.Nullable
-import scala.collection.concurrent
+import scala.collection.{concurrent, mutable}
 import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, SeqHasAsJava}
@@ -49,6 +49,8 @@ object MCChatUtils {
     private[mcchat] val lastmsgfromd = new LongObjectHashMap[Message] // Last message sent by a Discord user, used for clearing checkmarks
     private var module: MinecraftChatModule = null
     private val staticExcludedPlugins: concurrent.Map[Class[_ <: Event], util.HashSet[String]] = concurrent.TrieMap()
+
+    val broadcastedMessages: mutable.Map[String, Long] = mutable.Map()
 
     def updatePlayerList(): Unit = {
         val mod = getModule

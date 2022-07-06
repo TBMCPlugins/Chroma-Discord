@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mcchat.sender
 
+import buttondevteam.discordplugin.mcchat.MCChatUtils
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.player.ChromaGamerBase
@@ -40,8 +41,11 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
     }
 
     override def sendMessage(message: String): Unit = try {
-        val broadcast = new Exception().getStackTrace()(2).getMethodName.contains("broadcast")
+        val broadcast = MCChatUtils.broadcastedMessages.contains(message);
         if (broadcast) { //We're catching broadcasts using the Bukkit event
+            if (MCChatUtils.broadcastedMessages.size >= 4) { // We really don't need to store messages for long
+                MCChatUtils.broadcastedMessages.filterInPlace((_, time) => time > System.nanoTime() - 1000 * 1000 * 1000)
+            }
             return ()
         }
         val sendmsg = DPUtils.sanitizeString(message)

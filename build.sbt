@@ -22,17 +22,17 @@ libraryDependencies ++= Seq(
     "org.spigotmc." % "spigot" % "1.14.4-R0.1-SNAPSHOT" % Provided,
     "com.destroystokyo.paper" % "paper" % "1.16.3-R0.1-SNAPSHOT" % Provided,
 
-    "com.discord4j" % "discord4j-core" % "3.2.1",
-    "org.slf4j" % "slf4j-jdk14" % "1.7.32",
+    "com.discord4j" % "discord4j-core" % "3.2.2",
+    "org.slf4j" % "slf4j-jdk14" % "1.7.36",
     "com.vdurmont" % "emoji-java" % "5.1.1",
-    "org.mockito" % "mockito-core" % "4.2.0",
+    "org.mockito" % "mockito-core" % "4.6.1",
     "io.projectreactor" % "reactor-scala-extensions_2.13" % "0.8.0",
     // https://mvnrepository.com/artifact/org.immutables/value
-    "org.immutables" % "value" % "2.8.8" % "provided",
+    "org.immutables" % "value" % "2.9.0" % "provided",
 
     "com.github.TBMCPlugins.ChromaCore" % "Chroma-Core" % "v1.0.0" % Provided,
     "net.ess3" % "EssentialsX" % "2.17.1" % Provided,
-    "net.luckperms" % "api" % "5.3" % Provided,
+    "net.luckperms" % "api" % "5.4" % Provided,
 )
 
 assembly / assemblyJarName := "Chroma-Discord.jar"
