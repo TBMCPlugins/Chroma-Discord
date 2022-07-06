@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.broadcaster
 
 import buttondevteam.discordplugin.mcchat.MCChatUtils
-import buttondevteam.discordplugin.playerfaker.DelegatingMockMaker
+import buttondevteam.discordplugin.mcchat.playerfaker.DelegatingMockMaker
 import buttondevteam.lib.TBMCCoreAPI
 import org.bukkit.Bukkit
 import org.mockito.Mockito

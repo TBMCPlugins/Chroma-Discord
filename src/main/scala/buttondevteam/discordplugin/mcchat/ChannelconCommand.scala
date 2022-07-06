@@ -4,6 +4,7 @@ import buttondevteam.core.component.channel.{Channel, ChatRoom}
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer}
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer}

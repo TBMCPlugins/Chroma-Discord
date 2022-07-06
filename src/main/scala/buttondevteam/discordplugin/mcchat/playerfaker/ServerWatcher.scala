@@ -1,7 +1,7 @@
-package buttondevteam.discordplugin.playerfaker
+package buttondevteam.discordplugin.mcchat.playerfaker
 
-import buttondevteam.discordplugin.DiscordConnectedPlayer
 import buttondevteam.discordplugin.mcchat.MCChatUtils
+import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import com.destroystokyo.paper.profile.CraftPlayerProfile
 import net.bytebuddy.implementation.bind.annotation.IgnoreForBinding
 import org.bukkit.entity.Player

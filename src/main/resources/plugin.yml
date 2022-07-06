@@ -10,3 +10,9 @@ commands:
     description: 'Main command for Chroma-Discord'
 website: 'https://github.com/TBMCPlugins/Chroma-Discord'
 api-version: '1.13'
+#libraries:
+#  - 'org.slf4j:slf4j-jdk14:1.7.32'
+#  - 'com.vdurmont:emoji-java:5.1.1'
+#  - 'org.mockito:mockito-core:4.2.0'
+#  - 'io.projectreactor:reactor-scala-extensions_2.13:0.8.0'
+#  - 'org.scala-lang:scala3-library_3:3.1.0'

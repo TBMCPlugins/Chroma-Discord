@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin.playerfaker.perm;
+package buttondevteam.discordplugin.mcchat.playerfaker.perm;
 
 import org.bukkit.event.Listener;
 

@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin.playerfaker;
+package buttondevteam.discordplugin.mcchat.playerfaker;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

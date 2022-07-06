@@ -1,9 +1,10 @@
 package buttondevteam.discordplugin.mccommands
 
 import buttondevteam.discordplugin.commands.{ConnectCommand, VersionCommand}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSenderBase}
 import buttondevteam.discordplugin.mcchat.{MCChatUtils, MinecraftChatModule}
 import buttondevteam.discordplugin.util.DPState
-import buttondevteam.discordplugin.{DPUtils, DiscordPlayer, DiscordPlugin, DiscordSenderBase}
+import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.chat.{Command2, CommandClass, ICommand2MC}
 import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer, TBMCPlayerBase}
 import discord4j.core.`object`.ExtendedInvite

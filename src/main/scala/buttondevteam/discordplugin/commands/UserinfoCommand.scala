@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.commands
 
-import buttondevteam.discordplugin.{DiscordPlayer, DiscordPlugin}
+import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget

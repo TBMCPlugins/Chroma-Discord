@@ -8,6 +8,7 @@ import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
 import buttondevteam.discordplugin.fun.FunModule
 import buttondevteam.discordplugin.listeners.{CommonListeners, MCListener}
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
+import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSenderBase}
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand
 import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.{DPState, Timings}
@@ -32,6 +33,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.mockito.internal.util.MockUtil
 import reactor.core.Disposable
 import reactor.core.scala.publisher.SMono
+import reactor.core.scala.publisher.scalaOption2JavaOptional
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -129,16 +131,11 @@ import java.util.Optional
             }
         }
         starting = true
-        //System.out.println("This line should show up for sure");
         val cb = DiscordClientBuilder.create(token).build.gateway
-        //System.out.println("Got gateway bootstrap");
         cb.setInitialPresence((si: ShardInfo) => ClientPresence.doNotDisturb(ClientActivity.playing("booting")))
-        //cb.setStore(new JdkStoreService) //The default doesn't work for some reason - it's waaay faster now
-        //System.out.println("Initial status and store service set");
         cb.login.doOnError((t: Throwable) => {
             def foo(t: Throwable): Unit = {
                 stopStarting()
-                //System.out.println("Got this error: " + t); t.printStackTrace();
             }
 
             foo(t)
@@ -192,10 +189,10 @@ import java.util.Optional
             CommonListeners.register(DiscordPlugin.dc.getEventDispatcher)
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener, this)
             TBMCCoreAPI.RegisterUserClass(classOf[DiscordPlayer], () => new DiscordPlayer)
-            ChromaGamerBase.addConverter((sender: CommandSender) => Optional.ofNullable(sender match {
-                case dsender: DiscordSenderBase => dsender.getChromaUser
-                case _ => null
-            }))
+            ChromaGamerBase.addConverter((sender: CommandSender) => sender match {
+                case dsender: DiscordSenderBase => Some(dsender.getChromaUser)
+                case _ => None
+            })
             IHaveConfig.pregenConfig(this, null)
             ChromaBot.enabled = true //Initialize ChromaBot
             Component.registerComponent(this, new GeneralEventBroadcasterModule)

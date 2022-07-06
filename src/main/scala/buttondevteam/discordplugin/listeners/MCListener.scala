@@ -3,7 +3,8 @@ package buttondevteam.discordplugin.listeners
 import buttondevteam.discordplugin.commands.ConnectCommand
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.util.DPState
-import buttondevteam.discordplugin.{DiscordPlayer, DiscordPlugin}
+import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
 import buttondevteam.lib.ScheduledServerRestartEvent
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent
 import discord4j.common.util.Snowflake

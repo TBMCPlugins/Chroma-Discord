@@ -6,6 +6,7 @@ import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils.SpecExtensions
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayerSender, DiscordSender, DiscordSenderBase}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Sets
 import discord4j.common.util.Snowflake

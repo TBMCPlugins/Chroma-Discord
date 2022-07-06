@@ -1,7 +1,7 @@
-package buttondevteam.discordplugin
+package buttondevteam.discordplugin.mcchat.sender
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.playerfaker.{DiscordInventory, VCMDWrapper}
+import buttondevteam.discordplugin.mcchat.playerfaker.{DiscordInventory, VCMDWrapper}
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import org.bukkit.*

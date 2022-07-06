@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin
+package buttondevteam.discordplugin.mcchat.sender
 
 import buttondevteam.discordplugin.mcchat.MCChatPrivate
 import buttondevteam.lib.player.{ChromaGamerBase, UserClass}

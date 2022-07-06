@@ -1,6 +1,6 @@
-package buttondevteam.discordplugin.playerfaker
+package buttondevteam.discordplugin.mcchat.playerfaker
 
-import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordSenderBase, IMCPlayer}
 import org.bukkit.Bukkit
 import org.bukkit.command.{CommandSender, SimpleCommandMap}
 import org.bukkit.entity.Player

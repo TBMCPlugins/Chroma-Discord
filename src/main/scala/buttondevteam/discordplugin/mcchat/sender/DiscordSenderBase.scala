@@ -1,5 +1,6 @@
-package buttondevteam.discordplugin
+package buttondevteam.discordplugin.mcchat.sender
 
+import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.player.ChromaGamerBase
 import discord4j.core.`object`.entity.User

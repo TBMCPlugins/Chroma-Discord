@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.{FluxExtensions, MonoExtensions}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer, DiscordPlayerSender}
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
 import discord4j.common.util.Snowflake
@@ -107,8 +108,10 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     @EventHandler def onChatSystemMessage(event: TBMCSystemChatEvent): Unit =
         MCChatUtils.forAllowedMCChat(MCChatUtils.send(event.getMessage), event).subscribe()
 
-    @EventHandler def onBroadcastMessage(event: BroadcastMessageEvent): Unit =
+    @EventHandler def onBroadcastMessage(event: BroadcastMessageEvent): Unit = {
+        module.broadcastedMessages += ((event.getMessage, System.nanoTime()))
         MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage), ChannelconBroadcast.BROADCAST, hookmsg = false).subscribe()
+    }
 
     @EventHandler def onYEEHAW(event: TBMCYEEHAWEvent): Unit = { //TODO: Inherit from the chat event base to have channel support
         val name = event.getSender match {

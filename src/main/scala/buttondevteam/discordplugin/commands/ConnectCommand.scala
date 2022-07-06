@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.commands
 
-import buttondevteam.discordplugin.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase}
 import com.google.common.collect.HashBiMap

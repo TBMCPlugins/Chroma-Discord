@@ -1,38 +1,34 @@
-package buttondevteam.discordplugin.playerfaker
+package buttondevteam.discordplugin.mcchat.playerfaker
 
-import buttondevteam.discordplugin.{DiscordSenderBase, IMCPlayer}
-import net.minecraft.server.v1_14_R1.*
+import buttondevteam.discordplugin.mcchat.sender.{DiscordSenderBase, IMCPlayer}
+import net.minecraft.server.v1_12_R1.*
 import org.bukkit.Bukkit
-import org.bukkit.command.CommandSender
-import org.bukkit.craftbukkit.v1_14_R1.command.{ProxiedNativeCommandSender, VanillaCommandWrapper}
-import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer
-import org.bukkit.craftbukkit.v1_14_R1.{CraftServer, CraftWorld}
+import org.bukkit.craftbukkit.v1_12_R1.command.VanillaCommandWrapper
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer
+import org.bukkit.craftbukkit.v1_12_R1.{CraftServer, CraftWorld}
 import org.bukkit.entity.Player
 
 import java.util
 
-object VanillaCommandListener14 {
+object VanillaCommandListener {
     def runBukkitOrVanillaCommand(dsender: DiscordSenderBase, cmdstr: String): Boolean = {
         val cmd = Bukkit.getServer.asInstanceOf[CraftServer].getCommandMap.getCommand(cmdstr.split(" ")(0).toLowerCase)
         if (!dsender.isInstanceOf[Player] || !cmd.isInstanceOf[VanillaCommandWrapper])
             return Bukkit.dispatchCommand(dsender, cmdstr) // Unconnected users are treated well in vanilla cmds
         if (!dsender.isInstanceOf[IMCPlayer[_]])
             throw new ClassCastException("dsender needs to implement IMCPlayer to use vanilla commands as it implements Player.")
-        val sender = dsender.asInstanceOf[IMCPlayer[_]] // Don't use val on recursive interfaces :P
+        val sender = dsender.asInstanceOf[IMCPlayer[_]]
         val vcmd = cmd.asInstanceOf[VanillaCommandWrapper]
         if (!vcmd.testPermission(sender)) return true
-        val world = Bukkit.getWorlds.get(0).asInstanceOf[CraftWorld].getHandle
         val icommandlistener = sender.getVanillaCmdListener.getListener.asInstanceOf[ICommandListener]
         if (icommandlistener == null) return VCMDWrapper.compatResponse(dsender)
-        val wrapper = new CommandListenerWrapper(icommandlistener, new Vec3D(0, 0, 0), new Vec2F(0, 0), world, 0, sender.getName, new ChatComponentText(sender.getName), world.getMinecraftServer, null)
-        val pncs = new ProxiedNativeCommandSender(wrapper, sender, sender)
         var args = cmdstr.split(" ")
         args = util.Arrays.copyOfRange(args, 1, args.length)
-        try return vcmd.execute(pncs, cmd.getLabel, args)
+        try vcmd.dispatchVanillaCommand(sender, icommandlistener, args)
         catch {
             case commandexception: CommandException =>
                 // Taken from CommandHandler
-                val chatmessage = new ChatMessage(commandexception.getMessage, commandexception.a)
+                val chatmessage = new ChatMessage(commandexception.getMessage, commandexception.getArgs)
                 chatmessage.getChatModifier.setColor(EnumChatFormat.RED)
                 icommandlistener.sendMessage(chatmessage)
         }
@@ -40,7 +36,7 @@ object VanillaCommandListener14 {
     }
 }
 
-class VanillaCommandListener14[T <: DiscordSenderBase with IMCPlayer[T]] extends ICommandListener {
+class VanillaCommandListener[T <: DiscordSenderBase with IMCPlayer[T]] extends ICommandListener {
     def getPlayer: T = this.player
 
     private var player: T = null.asInstanceOf
@@ -67,18 +63,22 @@ class VanillaCommandListener14[T <: DiscordSenderBase with IMCPlayer[T]] extends
         this()
         this.player = player
         this.bukkitplayer = bukkitplayer
-        if (bukkitplayer != null && !bukkitplayer.isInstanceOf[CraftPlayer]) throw new ClassCastException("bukkitplayer must be a Bukkit player!")
+        if (bukkitplayer != null && !bukkitplayer.isInstanceOf[CraftPlayer])
+            throw new ClassCastException("bukkitplayer must be a Bukkit player!")
     }
 
-    override def sendMessage(arg0: IChatBaseComponent): scala.Unit = {
-        player.sendMessage(arg0.getString)
+    override def C_(): MinecraftServer = Bukkit.getServer.asInstanceOf[CraftServer].getServer
+
+    override def a(oplevel: Int, cmd: String): Boolean = { //return oplevel <= 2; // Value from CommandBlockListenerAbstract, found what it is in EntityPlayer - Wait, that'd always allow OP commands
+        oplevel == 0 || player.isOp
+    }
+
+    override def getName: String = player.getName
+
+    override def getWorld: World = player.getWorld.asInstanceOf[CraftWorld].getHandle
+
+    override def sendMessage(arg0: IChatBaseComponent): Unit = {
+        player.sendMessage(arg0.toPlainText)
         if (bukkitplayer != null) bukkitplayer.asInstanceOf[CraftPlayer].getHandle.sendMessage(arg0)
     }
-
-    override def shouldSendSuccess = true
-
-    override def shouldSendFailure = true
-
-    override def shouldBroadcastCommands = true //Broadcast to in-game admins
-    override def getBukkitSender(commandListenerWrapper: CommandListenerWrapper): CommandSender = player
 }

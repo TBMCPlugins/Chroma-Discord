@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.{Channel, ChatRoom}
-import buttondevteam.discordplugin.DiscordConnectedPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.lib.TBMCSystemChatEvent
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User

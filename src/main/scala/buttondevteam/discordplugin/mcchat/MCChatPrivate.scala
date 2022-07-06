@@ -2,7 +2,8 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.mcchat.MCChatUtils.LastMsgData
-import buttondevteam.discordplugin.{DiscordConnectedPlayer, DiscordPlayer, DiscordPlugin, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer, DiscordSenderBase}
+import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.lib.player.TBMCPlayer
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}

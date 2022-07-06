@@ -1,5 +1,6 @@
-package buttondevteam.discordplugin
+package buttondevteam.discordplugin.mcchat.sender
 
+import buttondevteam.discordplugin.DiscordPlugin
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import org.bukkit.command.CommandSender

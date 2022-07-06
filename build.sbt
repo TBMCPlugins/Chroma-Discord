@@ -8,11 +8,13 @@ name := "Chroma-Discord"
 
 version := "1.1"
 
-scalaVersion := "3.0.0"
+scalaVersion := "3.1.0"
 
 resolvers += "spigot-repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
 resolvers += "jitpack.io" at "https://jitpack.io"
 resolvers += Resolver.mavenLocal
+
+// assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = false)
 
 libraryDependencies ++= Seq(
     "org.spigotmc" % "spigot-api" % "1.12.2-R0.1-SNAPSHOT" % Provided,

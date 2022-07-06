@@ -2,10 +2,11 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.DPUtils.{MonoExtensions, SpecExtensions}
-import buttondevteam.discordplugin.playerfaker.ServerWatcher
-import buttondevteam.discordplugin.playerfaker.perm.LPInjector
+import buttondevteam.discordplugin.mcchat.playerfaker.ServerWatcher
+import buttondevteam.discordplugin.mcchat.playerfaker.perm.LPInjector
+import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
-import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordConnectedPlayer, DiscordPlugin}
+import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
 import buttondevteam.lib.architecture.{Component, ConfigData, ReadOnlyConfigData}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
@@ -18,6 +19,7 @@ import reactor.core.scala.publisher.SMono
 import java.util
 import java.util.stream.Collectors
 import java.util.{Objects, UUID}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
@@ -99,6 +101,8 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     final private val serverUp = getConfig.getData("serverUp", false)
     final private val mcChatCommand = new MCChatCommand(this)
     final private val channelconCommand = new ChannelconCommand(this)
+
+    val broadcastedMessages: mutable.Map[String, Long] = mutable.Map()
 
     override protected def enable(): Unit = {
         if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return ()

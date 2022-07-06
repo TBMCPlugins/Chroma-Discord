@@ -3,7 +3,8 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.SpecExtensions
-import buttondevteam.discordplugin.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
+import buttondevteam.discordplugin.mcchat.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSender, DiscordSenderBase}
 import buttondevteam.lib.*
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
 import buttondevteam.lib.player.TBMCPlayer

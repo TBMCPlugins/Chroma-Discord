@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.announcer
 
-import buttondevteam.discordplugin.{DPUtils, DiscordPlayer, DiscordPlugin}
+import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.{Component, ComponentMetadata}
 import buttondevteam.lib.player.ChromaGamerBase
@@ -9,6 +10,7 @@ import discord4j.core.`object`.entity.channel.MessageChannel
 import reactor.core.scala.publisher.SMono
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
  * Posts new posts from Reddit to the specified channel(s). It will pin the regular posts (not the mod posts).
@@ -55,8 +57,8 @@ import scala.annotation.tailrec
         if (isEnabled) try { //If not enabled, just wait
             val body = TBMCCoreAPI.DownloadString(subredditURL.get + "/new/.json?limit=10")
             val json = new JsonParser().parse(body).getAsJsonObject.get("data").getAsJsonObject.get("children").getAsJsonArray
-            val msgsb = new StringBuilder
-            val modmsgsb = new StringBuilder
+            val msgsb = new mutable.StringBuilder
+            val modmsgsb = new mutable.StringBuilder
             var lastanntime = lastAnnouncementTime.get
             for (i <- json.size - 1 to 0 by -1) {
                 val item = json.get(i).getAsJsonObject

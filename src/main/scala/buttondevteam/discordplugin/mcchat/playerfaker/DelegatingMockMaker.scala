@@ -1,4 +1,4 @@
-package buttondevteam.discordplugin.playerfaker
+package buttondevteam.discordplugin.mcchat.playerfaker
 
 import org.mockito.MockedConstruction
 import org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker

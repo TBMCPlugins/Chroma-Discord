@@ -1,7 +1,8 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
-import buttondevteam.discordplugin.{DPUtils, DiscordPlayer, DiscordPlugin}
+import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
 import discord4j.core.`object`.entity.channel.PrivateChannel
