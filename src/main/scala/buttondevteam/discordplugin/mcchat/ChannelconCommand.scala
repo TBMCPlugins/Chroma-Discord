@@ -34,7 +34,7 @@ import javax.annotation.Nullable
 ))
 class ChannelconCommand(private val module: MinecraftChatModule) extends ICommand2DC {
     @Command2.Subcommand def remove(sender: Command2DCSender): Boolean = {
-        val message = sender.getMessage
+        val message: Message = null // TODO
         if (checkPerms(message, null)) return true
         else if (MCChatCustom.removeCustomChat(message.getChannelId))
             DPUtils.reply(message, SMono.empty, "channel connection removed.").subscribe()
@@ -44,7 +44,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
     }
 
     @Command2.Subcommand def toggle(sender: Command2DCSender, @Command2.OptionalArg toggle: String): Boolean = {
-        val message = sender.getMessage
+        val message: Message = null // TODO
         if (checkPerms(message, null)) {
             return true
         }
@@ -93,7 +93,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
     }
 
     @Command2.Subcommand def `def`(sender: Command2DCSender, channelID: String): Boolean = {
-        val message = sender.getMessage
+        val message: Message = null // TODO
         if (!(module.allowCustomChat.get)) {
             sender.sendMessage("channel connection is not allowed on this Minecraft server.")
             return true

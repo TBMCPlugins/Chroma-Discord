@@ -17,7 +17,7 @@ class Command2DC extends Command2[ICommand2DC, Command2DCSender] {
         super.registerCommand(command, DiscordPlugin.getPrefix) //Needs to be configurable for the helps
         val greetCmdRequest = ApplicationCommandRequest.builder()
             .name(command.getCommandPath) //TODO: Main path
-            .description("A ChromaBot command.") //TODO: Description
+            .description("Connect your Minecraft account.") //TODO: Description
             .addOption(ApplicationCommandOptionData.builder()
                 .name("name")
                 .description("Your name")

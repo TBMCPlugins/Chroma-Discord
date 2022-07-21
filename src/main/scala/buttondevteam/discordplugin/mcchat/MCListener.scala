@@ -136,8 +136,6 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
             .filter(_.startsWith(token)).map("@" + _).doOnNext(event.getCompletions.add(_)).blockLast()
     }
 
-    @EventHandler def onCommandSend(event: PlayerCommandSendEvent): Boolean = event.getCommands.add("g")
-
     @EventHandler def onVanish(event: VanishStatusChangeEvent): Unit = {
         if (event.isCancelled) return ()
         Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => MCChatUtils.updatePlayerList())

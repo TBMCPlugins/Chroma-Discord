@@ -11,8 +11,8 @@ import reactor.core.scala.publisher.SMono
 class DebugCommand extends ICommand2DC {
     @Command2.Subcommand
     override def `def`(sender: Command2DCSender): Boolean = {
-        SMono(sender.getMessage.getAuthorAsMember)
-            .switchIfEmpty(Option(sender.getMessage.getAuthor.orElse(null)) //Support DMs
+        SMono.justOrEmpty(sender.authorAsMember)
+            .switchIfEmpty(Option(sender.author) //Support DMs
                 .map((u: User) => SMono(u.asMember(DiscordPlugin.mainServer.getId))).getOrElse(SMono.empty))
             .flatMap((m: Member) => DiscordPlugin.plugin.modRole.get
                 .map(mr => m.getRoleIds.stream.anyMatch((r: Snowflake) => r == mr.getId))

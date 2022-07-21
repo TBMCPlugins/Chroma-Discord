@@ -16,22 +16,20 @@ import discord4j.core.`object`.entity.channel.PrivateChannel
 class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC {
     @Command2.Subcommand override def `def`(sender: Command2DCSender): Boolean = {
         if (!module.allowPrivateChat.get) {
-            sender.sendMessage("using the private chat is not allowed on this Minecraft server.")
+            sender.sendMessage("Using the private chat is not allowed on this Minecraft server.")
             return true
         }
-        val message = sender.getMessage
-        val channel = message.getChannel.block
-        @SuppressWarnings(Array("OptionalGetWithoutIsPresent")) val author = message.getAuthor.get
+        val channel = sender.event.getInteraction.getChannel.block()
         if (!channel.isInstanceOf[PrivateChannel]) {
-            DPUtils.reply(message, channel, "this command can only be issued in a direct message with the bot.").subscribe()
+            sender.sendMessage("This command can only be issued in a direct message with the bot.")
             return true
         }
-        val user: DiscordPlayer = ChromaGamerBase.getUser(author.getId.asString, classOf[DiscordPlayer])
-        val mcchat: Boolean = !(user.isMinecraftChatEnabled)
-        MCChatPrivate.privateMCChat(channel, mcchat, author, user)
-        DPUtils.reply(message, channel, "Minecraft chat " +
+        val user: DiscordPlayer = ChromaGamerBase.getUser(sender.author.getId.asString, classOf[DiscordPlayer])
+        val mcchat: Boolean = !user.isMinecraftChatEnabled
+        MCChatPrivate.privateMCChat(channel, mcchat, sender.author, user)
+        sender.sendMessage("Minecraft chat " +
             (if (mcchat) "enabled. Use '" + DiscordPlugin.getPrefix + "mcchat' again to turn it off."
-            else "disabled.")).subscribe()
+            else "disabled."))
         true
         // TODO: Pin channel switching to indicate the current channel
     }

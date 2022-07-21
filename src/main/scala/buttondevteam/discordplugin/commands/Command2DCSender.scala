@@ -3,19 +3,22 @@ package buttondevteam.discordplugin.commands
 import buttondevteam.discordplugin.DPUtils
 import buttondevteam.lib.chat.Command2Sender
 import discord4j.core.`object`.entity.channel.MessageChannel
-import discord4j.core.`object`.entity.{Message, User}
+import discord4j.core.`object`.entity.{Member, Message, User}
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 
-class Command2DCSender(val message: Message) extends Command2Sender {
-    def getMessage: Message = this.message
+import java.util.Optional
+import reactor.core.scala.publisher.javaOptional2ScalaOption;
 
+class Command2DCSender(val event: ChatInputInteractionEvent) extends Command2Sender {
+    val authorAsMember: Option[Member] = event.getInteraction.getMember
+    val author: User = event.getInteraction.getUser
     override def sendMessage(message: String): Unit = {
         if (message.isEmpty) return ()
-        var msg = DPUtils.sanitizeString(message)
-        msg = Character.toLowerCase(message.charAt(0)) + message.substring(1)
-        this.message.getChannel.flatMap((ch: MessageChannel) => ch.createMessage(this.message.getAuthor.map((u: User) => DPUtils.nickMention(u.getId) + ", ").orElse("") + msg)).subscribe()
+        //Some(message) map DPUtils.sanitizeString map { (msg: String) => Character.toLowerCase(msg.charAt(0)) + msg.substring(1) } foreach event.reply - don't even need this
+        event.reply(message);
     }
 
     override def sendMessage(message: Array[String]): Unit = sendMessage(String.join("\n", message: _*))
 
-    override def getName: String = Option(message.getAuthor.orElse(null)).map(_.getUsername).getOrElse("Discord")
+    override def getName: String = authorAsMember.flatMap(_.getNickname).getOrElse(author.getUsername)
 }

@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.listeners
 
+import buttondevteam.discordplugin.commands.{Command2DCSender, ConnectCommand}
 import buttondevteam.discordplugin.fun.FunModule
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.role.GameRoleModule
@@ -40,9 +41,12 @@ object CommonListeners {
         SFlux(dispatcher.on(classOf[RoleDeleteEvent])).subscribe(GameRoleModule.handleRoleEvent)
         SFlux(dispatcher.on(classOf[RoleUpdateEvent])).subscribe(GameRoleModule.handleRoleEvent)
         SFlux(dispatcher.on(classOf[ChatInputInteractionEvent], event => {
-            if(event.getCommandName() eq "help")
-                event.reply("Hello there")
-            else
+            if(event.getCommandName() equals "connect") {
+                println("Message: "+event.getInteraction.getMessage.isPresent)
+                val asd = Mono.just(new ConnectCommand().`def`(new Command2DCSender(event)))
+                println("Ran connect command")
+                asd
+            } else
                 Mono.empty()
         })).subscribe()
     }
