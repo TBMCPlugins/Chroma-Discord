@@ -42,9 +42,7 @@ object CommonListeners {
         SFlux(dispatcher.on(classOf[RoleUpdateEvent])).subscribe(GameRoleModule.handleRoleEvent)
         SFlux(dispatcher.on(classOf[ChatInputInteractionEvent], event => {
             if(event.getCommandName() equals "connect") {
-                println("Message: "+event.getInteraction.getMessage.isPresent)
-                val asd = Mono.just(new ConnectCommand().`def`(new Command2DCSender(event)))
-                println("Ran connect command")
+                val asd = Mono.just(new ConnectCommand().`def`(new Command2DCSender(event), event.getOption("name").get.getValue.get.asString))
                 asd
             } else
                 Mono.empty()
