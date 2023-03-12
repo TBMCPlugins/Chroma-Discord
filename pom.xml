@@ -14,11 +14,9 @@
     <packaging>jar</packaging>
 
     <name>Chroma-Discord</name>
-    <url>http://maven.apache.org</url>
+    <url>https://maven.apache.org</url>
 
     <build>
-        <!-- <sourceDirectory>target/generated-sources/delombok</sourceDirectory>
-            <testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory> -->
         <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
@@ -31,7 +29,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.4.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -81,32 +79,20 @@
         </repository>
         <repository> <!-- This repo fixes issues with transitive dependencies -->
             <id>jcenter</id>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-        <!-- <repository>
-            <id>vault-repo</id>
-            <url>http://nexus.hc.to/content/repositories/pub_releases</url>
-        </repository> -->
         <repository>
             <id>Essentials</id>
             <url>https://ci.ender.zone/plugin/repository/everything/</url>
         </repository>
         <repository>
             <id>projectlombok.org</id>
-            <url>http://projectlombok.org/mavenrepo</url>
+            <url>https://projectlombok.org/mavenrepo</url>
         </repository>
-        <!-- <repository>
-            <id>pex-repo</id>
-            <url>http://pex-repo.aoeu.xyz</url>
-        </repository> -->
-        <!-- <repository>
-            <id>Reactor-Tools</id>
-            <url>https://repo.spring.io/milestone</url>
-        </repository> -->
         <repository>
             <id>papermc</id>
             <url>https://papermc.io/repo/repository/maven-public/</url>
@@ -172,37 +158,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.10</version>
+            <version>1.18.26</version>
             <scope>provided</scope>
         </dependency>
-        <!-- <dependency>
-            <groupId>ru.tehkode</groupId>
-            <artifactId>PermissionsEx</artifactId>
-            <version>1.23.1</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bukkit</groupId>
-                    <artifactId>bukkit</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency> -->
         <dependency>
             <groupId>com.vdurmont</groupId>
             <artifactId>emoji-java</artifactId>
             <version>4.0.0</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/io.projectreactor.tools/blockhound -->
-        <!-- <dependency>
-            <groupId>io.projectreactor.tools</groupId>
-            <artifactId>blockhound</artifactId>
-            <version>1.0.0.M3</version>
-        </dependency> -->
-        <dependency>
-            <groupId>com.github.lucko.LuckPerms</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>master-SNAPSHOT</version>
-            <scope>provided</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
         <dependency>

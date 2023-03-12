@@ -6,7 +6,6 @@ import buttondevteam.discordplugin.DPUtils;
 import buttondevteam.discordplugin.DiscordConnectedPlayer;
 import buttondevteam.discordplugin.DiscordPlugin;
 import buttondevteam.discordplugin.playerfaker.ServerWatcher;
-import buttondevteam.discordplugin.playerfaker.perm.LPInjector;
 import buttondevteam.discordplugin.util.DPState;
 import buttondevteam.lib.TBMCCoreAPI;
 import buttondevteam.lib.TBMCSystemChatEvent;
@@ -35,7 +34,6 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 	public static DPState state = DPState.RUNNING;
 	private @Getter MCChatListener listener;
 	ServerWatcher serverWatcher;
-	private LPInjector lpInjector;
 	boolean disabling = false;
 
 	/**
@@ -151,8 +149,8 @@ public class MinecraftChatModule extends Component<DiscordPlugin> {
 		}
 
 		try {
-			if (lpInjector == null)
-				lpInjector = new LPInjector(DiscordPlugin.plugin);
+			// TODO: Fix injector, look for a more stable solution
+			log("LuckPerms injector is broken atm, you may encounter issues with the mcchat command");
 		} catch (Exception e) {
 			TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e, this);
 		} catch (NoClassDefFoundError e) {

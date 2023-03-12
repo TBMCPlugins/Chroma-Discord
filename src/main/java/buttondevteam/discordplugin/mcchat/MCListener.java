@@ -142,6 +142,7 @@ class MCListener implements Listener {
 
 	@EventHandler
 	public void onBroadcastMessage(BroadcastMessageEvent event) {
+		event.getRecipients().removeIf(sender -> sender instanceof DiscordSenderBase);
 		MCChatUtils.forCustomAndAllMCChat(MCChatUtils.send(event.getMessage()), ChannelconBroadcast.BROADCAST, false).subscribe();
 	}
 
