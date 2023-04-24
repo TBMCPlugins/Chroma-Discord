@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.mcchat.sender
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
+import net.kyori.adventure.text.Component
 import org.bukkit.*
 import org.bukkit.attribute.{Attribute, AttributeInstance, AttributeModifier}
 import org.bukkit.entity.{Entity, Player}
@@ -49,12 +50,12 @@ object DiscordConnectedPlayer {
  * @param user     May be null.
  * @param channel  May not be null.
  * @param uniqueId The UUID of the player.
- * @param name     The Minecraft name of the player.
+ * @param playerName     The Minecraft name of the player.
  * @param module   The MinecraftChatModule or null if testing.
  */
-abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val uniqueId: UUID, val name: String, val module: MinecraftChatModule) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] {
+abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val uniqueId: UUID, val playerName: String, val module: MinecraftChatModule) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] {
     private var loggedIn = false
-    private var displayName: String = name
+    private var displayName: String = playerName
 
     private var location: Location = if (module == null) null else Bukkit.getWorlds.get(0).getSpawnLocation
     private val basePlayer: OfflinePlayer = if (module == null) null else Bukkit.getOfflinePlayer(uniqueId)
@@ -98,7 +99,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
 
     def isLoggedIn: Boolean = this.loggedIn
 
-    override def getName: String = this.name
+    override def getName: String = this.playerName
 
     def getBasePlayer: OfflinePlayer = this.basePlayer
 
@@ -195,6 +196,8 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
     override def getGameMode = GameMode.SPECTATOR
 
     override def getInventory: PlayerInventory = inventory
+
+    override def name(): Component = Component.text(playerName)
 
     //noinspection ScalaDeprecation
     /*@SuppressWarnings(Array("deprecation")) override def spigot: super.Spigot = new super.Spigot() {

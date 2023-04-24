@@ -228,14 +228,10 @@ object MCChatUtils {
             else lastmsgdata.message = null
             return ()
         } // Don't set the whole object to null, the player and channel information should be preserved
-        for (data <- if (channel.isInstanceOf[PrivateChannel]) MCChatPrivate.lastmsgPerUser
-        else MCChatCustom.lastmsgCustom) {
-            if (data.channel.getId.asLong == channel.getId.asLong) {
-                data.message = null
-                return ()
-            }
-        }
-        //If it gets here, it's sending a message to a non-chat channel
+        val channelData = if (channel.isInstanceOf[PrivateChannel]) MCChatPrivate.lastmsgPerUser else MCChatCustom.lastmsgCustom
+        channelData.collectFirst({ case data if data.channel.getId.asLong == channel.getId.asLong => data })
+            .foreach(data => data.message = null)
+        //If the above didn't find anything, it's sending a message to a non-chat channel
     }
 
     def addStaticExcludedPlugin(event: Class[_ <: Event], plugin: String): util.HashSet[String] =

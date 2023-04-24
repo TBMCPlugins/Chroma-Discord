@@ -8,7 +8,7 @@ name := "Chroma-Discord"
 
 version := "1.1"
 
-scalaVersion := "3.1.0"
+scalaVersion := "3.2.2"
 
 resolvers += "spigot-repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
 resolvers += "jitpack.io" at "https://jitpack.io"
@@ -18,19 +18,21 @@ resolvers += Resolver.mavenLocal
 // assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = false)
 
 libraryDependencies ++= Seq(
-    "org.spigotmc" % "spigot" % "1.19.4-R0.1-SNAPSHOT" % Provided,
     "io.papermc.paper" % "paper-api" % "1.19.4-R0.1-SNAPSHOT" % Provided,
 
-    "com.discord4j" % "discord4j-core" % "3.2.2",
-    "org.slf4j" % "slf4j-jdk14" % "1.7.36",
+    "com.discord4j" % "discord4j-core" % "3.2.3",
     "com.vdurmont" % "emoji-java" % "5.1.1",
-    "org.mockito" % "mockito-core" % "4.6.1",
-    // https://mvnrepository.com/artifact/org.immutables/value
-    "org.immutables" % "value" % "2.9.0" % "provided",
+    "org.mockito" % "mockito-core" % "5.2.0",
 
     "com.github.TBMCPlugins.ChromaCore" % "Chroma-Core" % "v2.0.0-SNAPSHOT" % Provided,
     "net.ess3" % "EssentialsX" % "2.17.1" % Provided,
     "net.luckperms" % "api" % "5.4" % Provided,
+    // https://mvnrepository.com/artifact/com.mojang/brigadier
+    "com.mojang" % "brigadier" % "1.0.500" % "provided",
+    // https://mvnrepository.com/artifact/net.kyori/examination-api
+    "net.kyori" % "examination-api" % "1.3.0" % "provided",
+    // https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib
+    "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.8.20" % "provided"
 )
 
 assembly / assemblyJarName := "Chroma-Discord.jar"
@@ -44,6 +46,7 @@ assembly / assemblyMergeStrategy := {
     case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.concat
     // https://stackoverflow.com/a/55557287/457612
     case "module-info.class" => MergeStrategy.discard
+    case "META-INF/versions/9/module-info.class" => MergeStrategy.discard
     case x => (assembly / assemblyMergeStrategy).value(x)
 }
 

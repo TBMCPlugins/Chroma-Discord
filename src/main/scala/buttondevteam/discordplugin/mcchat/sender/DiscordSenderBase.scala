@@ -10,6 +10,8 @@ import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.scheduler.BukkitTask
 
+import java.util.UUID
+
 /**
  *
  * @param user    May be null.
@@ -62,5 +64,8 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
             TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e, DiscordPlugin.plugin)
     }
 
-    override def sendMessage(messages: Array[String]): Unit = sendMessage(String.join("\n", messages: _*))
+    override def sendMessage(messages: Array[? <: String]): Unit = sendMessage(String.join("\n", messages: _*))
+
+    override def sendMessage(sender: UUID, message: String): Unit = sendMessage(message)
+    override def sendMessage(sender: UUID, messages: Array[? <: String]): Unit = sendMessage(messages)
 }

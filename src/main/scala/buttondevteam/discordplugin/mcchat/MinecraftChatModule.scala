@@ -1,11 +1,10 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
-import buttondevteam.discordplugin.DPUtils.{MonoExtensions, SpecExtensions}
 import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
-import buttondevteam.lib.architecture.{Component, ConfigData, ReadOnlyConfigData}
+import buttondevteam.lib.architecture.{Component, ConfigData}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
 import discord4j.common.util.Snowflake

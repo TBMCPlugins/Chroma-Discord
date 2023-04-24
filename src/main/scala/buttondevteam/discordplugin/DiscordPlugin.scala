@@ -26,8 +26,6 @@ import discord4j.core.{DiscordClientBuilder, GatewayDiscordClient}
 import discord4j.gateway.ShardInfo
 import discord4j.rest.interaction.Interactions
 import discord4j.store.jdk.JdkStoreService
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.core.Logger
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
 import org.mockito.internal.util.MockUtil
@@ -59,7 +57,6 @@ import scala.jdk.OptionConverters.*
     def manager: Command2DC = _manager
 
     private var starting = false
-    private var logWatcher: BukkitLogWatcher = null
     /**
      * The prefix to use with Discord commands like /role. It only works in the bot channel.
      */
@@ -206,10 +203,7 @@ import scala.jdk.OptionConverters.*
             manager.registerCommand(new ConnectCommand, applicationId, guildId)
             TBMCCoreAPI.SendUnsentExceptions()
             TBMCCoreAPI.SendUnsentDebugMessages()
-            val blw = new BukkitLogWatcher
-            blw.start()
-            LogManager.getRootLogger.asInstanceOf[Logger].addAppender(blw)
-            logWatcher = blw
+            // TODO: Removed log watcher (responsible for detecting restarts)
             if (!TBMCCoreAPI.IsTestServer) DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft"))).subscribe()
             else DiscordPlugin.dc.updatePresence(ClientPresence.online(ClientActivity.playing("testing"))).subscribe()
             getLogger.info("Loaded!")
@@ -244,7 +238,6 @@ import scala.jdk.OptionConverters.*
         try {
             DiscordPlugin.SafeMode = true // Stop interacting with Discord
             ChromaBot.enabled = false
-            LogManager.getRootLogger.asInstanceOf[Logger].removeAppender(logWatcher)
             timings.printElapsed("Logging out...")
             DiscordPlugin.dc.logout.block
             DiscordPlugin.mainServer = null //Allow ReadyEvent again

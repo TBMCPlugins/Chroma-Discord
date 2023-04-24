@@ -71,7 +71,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
                 DPUtils.reply(message, Mono.empty, "cannot find toggle. Toggles:\n" + togglesString.get).subscribe()
                 return true
             }
-            val add: Boolean = !(cc.brtoggles.contains(bt))
+            val add: Boolean = !cc.brtoggles.contains(bt)
             if (add) {
                 cc.brtoggles += bt
             }
@@ -106,8 +106,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         if (MCChatCustom.hasCustomChat(message.getChannelId)) {
             return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.")
         }
-        val chan: Optional[Channel] = Channel.getChannels.filter(ch => ch.getIdentifier.equalsIgnoreCase(channelID)
-            || util.Arrays.stream(ch.extraIdentifiers.get).anyMatch(cid => cid.equalsIgnoreCase(channelID))).findAny
+        val chan: Optional[Channel] = Channel.getChannels.filter(ch => ch.getIdentifier.equalsIgnoreCase(channelID)).findAny // TODO: Removed erroring shit
         if (!chan.isPresent) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
             DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe()
             return true

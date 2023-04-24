@@ -3,18 +3,19 @@ package buttondevteam.discordplugin.mcchat.sender
 import buttondevteam.discordplugin.DiscordPlugin
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
+import net.kyori.adventure.text.{Component, ComponentBuilder, TextComponent}
 import org.bukkit.command.CommandSender
 import org.bukkit.permissions.{PermissibleBase, Permission, PermissionAttachment, PermissionAttachmentInfo}
 import org.bukkit.plugin.Plugin
 import org.bukkit.{Bukkit, Server}
 import reactor.core.publisher.Mono
-import scala.jdk.OptionConverters._
 
+import scala.jdk.OptionConverters.*
 import java.util
 
 class DiscordSender(user: User, channel: MessageChannel, pname: String) extends DiscordSenderBase(user, channel) with CommandSender {
     private val perm = new PermissibleBase(this)
-    private val name: String = Option(pname)
+    private val senderName: String = Option(pname)
         .orElse(Option(user).flatMap(u => u.asMember(DiscordPlugin.mainServer.getId)
             .onErrorResume(_ => Mono.empty).blockOptional().toScala
             .map(u => u.getDisplayName)))
@@ -56,7 +57,9 @@ class DiscordSender(user: User, channel: MessageChannel, pname: String) extends 
 
     override def getServer: Server = Bukkit.getServer
 
-    override def getName: String = name
+    override def getName: String = senderName
+
+    override def name(): Component = Component.text(senderName)
 
     //override def spigot(): CommandSender.Spigot = new CommandSender.Spigot
     override def spigot(): CommandSender.Spigot = ???

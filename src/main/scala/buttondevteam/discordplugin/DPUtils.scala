@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin
 
 import buttondevteam.lib.TBMCCoreAPI
-import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig, ReadOnlyConfigData}
+import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig}
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{Channel, MessageChannel}
 import discord4j.core.`object`.entity.{Guild, Message, Role}
@@ -182,7 +182,7 @@ object DPUtils {
         DiscordPlugin.dc.getChannelById(id).onErrorResume(e => {
             getLogger.warning(s"Failed to get channel data for $key=$id - ${e.getMessage}")
             Mono.empty[Channel]
-        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast(classOf[MessageChannel]])
+        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast(classOf[MessageChannel])
     }
 
     def getMessageChannel(config: ConfigData[Snowflake]): Mono[MessageChannel] =

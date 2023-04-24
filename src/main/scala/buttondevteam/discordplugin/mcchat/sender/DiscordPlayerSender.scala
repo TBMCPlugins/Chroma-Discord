@@ -32,7 +32,7 @@ abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var play
         super.sendMessage(message)
     }
 
-    override def sendMessage(messages: Array[String]): Unit = {
+    override def sendMessage(messages: Array[? <: String]): Unit = {
         player.sendMessage(messages*)
         super.sendMessage(messages)
     }
