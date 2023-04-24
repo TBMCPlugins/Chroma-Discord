@@ -16,7 +16,7 @@ import org.bukkit.event.player.*
 import org.bukkit.event.player.PlayerLoginEvent.Result
 import org.bukkit.event.server.{BroadcastMessageEvent, TabCompleteEvent}
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
-import reactor.core.scala.publisher.{SFlux, SMono}
+import reactor.core.publisher.{Flux, Mono}
 
 class MCListener(val module: MinecraftChatModule) extends Listener {
     final private val muteRole = DPUtils.roleData(module.getConfig, "muteRole", "Muted")
@@ -35,11 +35,11 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
                 val p = e.getPlayer
                 val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
                 if (dp != null)
-                    DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).^^().flatMap(user =>
-                        user.getPrivateChannel.^^().flatMap(chan => module.chatChannelMono.flatMap(cc => {
+                    DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).flatMap(user =>
+                        user.getPrivateChannel.flatMap(chan => module.chatChannelMono.flatMap(cc => {
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, chan, p, module))
                             MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, cc, p, module)) //Stored per-channel
-                            SMono.empty
+                            Mono.empty
                         }))).subscribe()
                 val message = e.getJoinMessage
                 sendJoinLeaveMessage(message, e.getPlayer)
@@ -87,18 +87,17 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         if (!source.isPlayer) return ()
         val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
         if (p == null) return ()
-        DPUtils.ignoreError(SMono(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID)))
-            .flatMap(user => SMono(user.asMember(DiscordPlugin.mainServer.getId)))
+        DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID))
+            .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId))
             .flatMap(user => role.flatMap((r: Role) => {
-                def foo(r: Role): SMono[_] = {
+                def foo(r: Role): Mono[_] = {
                     if (e.getValue) user.addRole(r.getId)
                     else user.removeRole(r.getId)
                     val modlog = module.modlogChannel.get
-                    val msg = (if (e.getValue) "M"
-                    else "Unm") + "uted user: " + user.getUsername + "#" + user.getDiscriminator
+                    val msg = s"${(if (e.getValue) "M" else "Unm")}uted user: ${user.getUsername}#${user.getDiscriminator}"
                     module.log(msg)
-                    if (modlog != null) return modlog.flatMap((ch: MessageChannel) => SMono(ch.createMessage(msg)))
-                    SMono.empty
+                    if (modlog != null) return modlog.flatMap((ch: MessageChannel) => ch.createMessage(msg))
+                    Mono.empty
                 }
 
                 foo(r)
@@ -119,7 +118,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
             case _ => event.getSender.getName
         }
         //Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-        DiscordPlugin.mainServer.getEmojis.^^().filter(e => "YEEHAW" == e.getName).take(1).singleOrEmpty
+        DiscordPlugin.mainServer.getEmojis.filter(e => "YEEHAW" == e.getName).take(1).singleOrEmpty
             .map(Option.apply).defaultIfEmpty(Option.empty)
             .flatMap(yeehaw => MCChatUtils.forPublicPrivateChat(MCChatUtils.send(name +
                 yeehaw.map(guildEmoji => " <:YEEHAW:" + guildEmoji.getId.asString + ">s").getOrElse(" YEEHAWs")))).subscribe()
@@ -132,7 +131,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         val t = event.getBuffer.substring(i + 1) //0 if not found
         if (!t.startsWith("@")) return ()
         val token = t.substring(1)
-        val x = DiscordPlugin.mainServer.getMembers.^^().flatMap(m => SFlux.just(m.getUsername, m.getNickname.orElse("")))
+        val x = DiscordPlugin.mainServer.getMembers.flatMap(m => Flux.just(m.getUsername, m.getNickname.orElse("")))
             .filter(_.startsWith(token)).map("@" + _).doOnNext(event.getCompletions.add(_)).blockLast()
     }
 

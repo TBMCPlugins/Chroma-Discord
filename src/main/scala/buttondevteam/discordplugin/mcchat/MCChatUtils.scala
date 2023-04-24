@@ -20,8 +20,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.player.{AsyncPlayerPreLoginEvent, PlayerJoinEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.plugin.AuthorNagException
-import reactor.core.publisher.{Flux as JFlux, Mono as JMono}
-import reactor.core.scala.publisher.SMono
+import reactor.core.publisher.{Flux, Mono}
 
 import java.net.InetAddress
 import java.util
@@ -36,6 +35,7 @@ import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, SeqHasAsJava}
 import scala.jdk.javaapi.CollectionConverters.asScala
+import scala.jdk.javaapi.OptionConverters._
 
 object MCChatUtils {
     /**
@@ -93,8 +93,7 @@ object MCChatUtils {
             .filter(_ => C.incrementAndGet > 0) //Always true
             .map((p) => DPUtils.sanitizeString(p.getDisplayName)).collect(Collectors.joining(", "))
         s(0) = s"$C player${if (C.get != 1) "s" else ""} online"
-        lmd.channel.asInstanceOf[TextChannel].edit((tce: LegacyTextChannelEditSpec) =>
-            tce.setTopic(String.join("\n----\n", s: _*)).setReason("Player list update").^^()).subscribe //Don't wait
+        lmd.channel.asInstanceOf[TextChannel].edit().withTopic(String.join("\n----\n", s: _*)).withReason("Player list update").subscribe() //Don't wait
     }
 
     private[mcchat] def checkEssentials(p: Player): Boolean = {
@@ -126,11 +125,11 @@ object MCChatUtils {
         else null.asInstanceOf
     }
 
-    def forPublicPrivateChat(action: SMono[MessageChannel] => SMono[_]): SMono[_] = {
-        if (notEnabled) return SMono.empty
-        val list = MCChatPrivate.lastmsgPerUser.map(data => action(SMono.just(data.channel)))
+    def forPublicPrivateChat(action: Mono[MessageChannel] => Mono[_]): Mono[_] = {
+        if (notEnabled) return Mono.empty
+        val list = MCChatPrivate.lastmsgPerUser.map(data => action(Mono.just(data.channel)))
             .prepend(action(module.chatChannelMono))
-        SMono(JMono.whenDelayError(list.asJava))
+        Mono.whenDelayError(list.asJava)
     }
 
     /**
@@ -140,14 +139,14 @@ object MCChatUtils {
      * @param toggle  The toggle to check
      * @param hookmsg Whether the message is also sent from the hook
      */
-    def forCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
-        if (notEnabled) return SMono.empty
+    def forCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
+        if (notEnabled) return Mono.empty
         val list = List(if (!GeneralEventBroadcasterModule.isHooked || !hookmsg)
-            forPublicPrivateChat(action) else SMono.empty) ++
+            forPublicPrivateChat(action) else Mono.empty) ++
             (if (toggle == null) MCChatCustom.lastmsgCustom
             else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
-                .map(_.channel).map(SMono.just).map(action)
-        SMono(JMono.whenDelayError(list.asJava))
+                .map(_.channel).map(Mono.just).map(action)
+        Mono.whenDelayError(list.asJava)
     }
 
     /**
@@ -157,15 +156,15 @@ object MCChatUtils {
      * @param sender The sender to check perms of or null to send to all that has it toggled
      * @param toggle The toggle to check or null to send to all allowed
      */
-    def forAllowedCustomMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast): SMono[_] = {
-        if (notEnabled) return SMono.empty
+    def forAllowedCustomMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast): Mono[_] = {
+        if (notEnabled) return Mono.empty
         val st = MCChatCustom.lastmsgCustom.filter(clmd => { //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
             if (toggle != null && ((clmd.toggles & (1 << toggle.id)) == 0)) false //If null then allow
             else if (sender == null) true
             else clmd.groupID.equals(clmd.mcchannel.getGroupID(sender))
-        }).map(cc => action.apply(SMono.just(cc.channel))) //TODO: Send error messages on channel connect
+        }).map(cc => action.apply(Mono.just(cc.channel))) //TODO: Send error messages on channel connect
         //Mono.whenDelayError((() => st.iterator).asInstanceOf[java.lang.Iterable[Mono[_]]]) //Can't convert as an iterator or inside the stream, but I can convert it as a stream
-        SMono.whenDelayError(st)
+        Mono.whenDelayError(st.asJava)
     }
 
     /**
@@ -176,32 +175,32 @@ object MCChatUtils {
      * @param toggle  The toggle to check or null to send to all allowed
      * @param hookmsg Whether the message is also sent from the hook
      */
-    def forAllowedCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
-        if (notEnabled) return SMono.empty
+    def forAllowedCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
+        if (notEnabled) return Mono.empty
         val cc = forAllowedCustomMCChat(action, sender, toggle)
-        if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) return SMono.whenDelayError(Array(forPublicPrivateChat(action), cc))
-        SMono.whenDelayError(Array(cc))
+        if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) return Mono.whenDelayError(forPublicPrivateChat(action), cc)
+        Mono.whenDelayError(cc)
     }
 
-    def send(message: String): SMono[MessageChannel] => SMono[_] = _.flatMap((mc: MessageChannel) => {
+    def send(message: String): Mono[MessageChannel] => Mono[_] = _.flatMap((mc: MessageChannel) => {
         resetLastMessage(mc)
-        SMono(mc.createMessage(DPUtils.sanitizeString(message)))
+        mc.createMessage(DPUtils.sanitizeString(message))
     })
 
-    def forAllowedMCChat(action: SMono[MessageChannel] => SMono[_], event: TBMCSystemChatEvent): SMono[_] = {
-        if (notEnabled) return SMono.empty
-        val list = new ListBuffer[SMono[_]]
+    def forAllowedMCChat(action: Mono[MessageChannel] => Mono[_], event: TBMCSystemChatEvent): Mono[_] = {
+        if (notEnabled) return Mono.empty
+        val list = new ListBuffer[Mono[_]]
         if (event.getChannel.isGlobal) list.append(action(module.chatChannelMono))
         for (data <- MCChatPrivate.lastmsgPerUser)
             if (event.shouldSendTo(getSender(data.channel.getId, data.user)))
-                list.append(action(SMono.just(data.channel))) //TODO: Only store ID?
+                list.append(action(Mono.just(data.channel))) //TODO: Only store ID?
         MCChatCustom.lastmsgCustom.filter(clmd =>
             clmd.brtoggles.contains(event.getTarget) && event.shouldSendTo(clmd.dcp))
-            .map(clmd => action(SMono.just(clmd.channel))).foreach(elem => {
+            .map(clmd => action(Mono.just(clmd.channel))).foreach(elem => {
             list.append(elem)
             ()
         })
-        SMono.whenDelayError(list)
+        Mono.whenDelayError(list.asJava)
     }
 
     /**
@@ -212,7 +211,7 @@ object MCChatUtils {
             .orElse(Option(getSender(ConnectedSenders, channel, author))) // This doesn't support the public chat, but it'll always return null for it
             .orElse(Option(getSender(UnconnectedSenders, channel, author))) //
             .orElse(Option(addSender(UnconnectedSenders, author,
-                new DiscordSender(author, SMono(DiscordPlugin.dc.getChannelById(channel)).block().asInstanceOf[MessageChannel]))))
+                new DiscordSender(author, DiscordPlugin.dc.getChannelById(channel).block().asInstanceOf[MessageChannel]))))
             .get
     }
 
@@ -322,7 +321,7 @@ object MCChatUtils {
                 callEventExcludingSome(new PlayerJoinEvent(dcp, ""))
                 dcp.setLoggedIn(true)
                 if (module != null) {
-                    if (module.serverWatcher != null) module.serverWatcher.fakePlayers.add(dcp)
+                    // TODO: ServerWatcher
                     module.log(dcp.getName + " (" + dcp.getUniqueId + ") logged in from Discord")
                 }
             }
@@ -345,7 +344,7 @@ object MCChatUtils {
         dcp.setLoggedIn(false)
         if (module != null) {
             module.log(dcp.getName + " (" + dcp.getUniqueId + ") logged out from Discord")
-            if (module.serverWatcher != null) module.serverWatcher.fakePlayers.remove(dcp)
+            // TODO: ServerWatcher
         }
     }
 

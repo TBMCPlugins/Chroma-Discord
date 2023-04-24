@@ -16,9 +16,7 @@ import buttondevteam.lib.architecture.{Component, ComponentMetadata}
 
 @ComponentMetadata(enabledByDefault = false) class GeneralEventBroadcasterModule extends Component[DiscordPlugin] {
     override protected def enable(): Unit = try {
-        PlayerListWatcher.hookUpDown(true, this)
-        log("Finished hooking into the player list")
-        GeneralEventBroadcasterModule.hooked = true
+        // TODO: Removed for now
     } catch {
         case e: Exception =>
             TBMCCoreAPI.SendException("Error while hacking the player list! Disable this module if you're on an incompatible version.", e, this)
@@ -28,9 +26,6 @@ import buttondevteam.lib.architecture.{Component, ComponentMetadata}
 
     override protected def disable(): Unit = try {
         if (!GeneralEventBroadcasterModule.hooked) return ()
-        if (PlayerListWatcher.hookUpDown(false, this)) log("Finished unhooking the player list!")
-        else log("Didn't have the player list hooked.")
-        GeneralEventBroadcasterModule.hooked = false
     } catch {
         case e: Exception =>
             TBMCCoreAPI.SendException("Error while hacking the player list!", e, this)

@@ -1,12 +1,12 @@
 package buttondevteam.discordplugin.mcchat.sender
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.mcchat.playerfaker.{DiscordInventory, VCMDWrapper}
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import org.bukkit.*
 import org.bukkit.attribute.{Attribute, AttributeInstance, AttributeModifier}
 import org.bukkit.entity.{Entity, Player}
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerTeleportEvent}
 import org.bukkit.inventory.{Inventory, PlayerInventory}
 import org.bukkit.permissions.{PermissibleBase, Permission, PermissionAttachment, PermissionAttachmentInfo}
@@ -31,10 +31,6 @@ object DiscordConnectedPlayer {
             try {
                 if (!Modifier.isAbstract(invocation.getMethod.getModifiers))
                     invocation.callRealMethod
-                else if (classOf[PlayerInventory].isAssignableFrom(invocation.getMethod.getReturnType))
-                    Mockito.mock(classOf[DiscordInventory], Mockito.withSettings.extraInterfaces(classOf[PlayerInventory]))
-                else if (classOf[Inventory].isAssignableFrom(invocation.getMethod.getReturnType))
-                    new DiscordInventory
                 else
                     RETURNS_DEFAULTS.answer(invocation)
             } catch {
@@ -64,7 +60,8 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
     private val basePlayer: OfflinePlayer = if (module == null) null else Bukkit.getOfflinePlayer(uniqueId)
     private var perm: PermissibleBase = if (module == null) null else new PermissibleBase(basePlayer)
     private val origPerm: PermissibleBase = perm
-    private val vanillaCmdListener: VCMDWrapper = if (module == null) null else new VCMDWrapper(VCMDWrapper.createListener(this, module))
+    private val vanillaCmdListener = null // TODO
+    private val inventory: PlayerInventory = if (module == null) null else Bukkit.createInventory(this, InventoryType.PLAYER).asInstanceOf
 
     override def isPermissionSet(name: String): Boolean = this.origPerm.isPermissionSet(name)
 
@@ -97,7 +94,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
 
     override def setDisplayName(displayName: String): Unit = this.displayName = displayName
 
-    override def getVanillaCmdListener: VCMDWrapper = this.vanillaCmdListener
+    override def getVanillaCmdListener = this.vanillaCmdListener
 
     def isLoggedIn: Boolean = this.loggedIn
 
@@ -196,6 +193,8 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
     }
 
     override def getGameMode = GameMode.SPECTATOR
+
+    override def getInventory: PlayerInventory = inventory
 
     //noinspection ScalaDeprecation
     /*@SuppressWarnings(Array("deprecation")) override def spigot: super.Spigot = new super.Spigot() {

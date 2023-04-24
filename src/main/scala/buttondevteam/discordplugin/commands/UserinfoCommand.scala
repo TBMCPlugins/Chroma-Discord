@@ -6,7 +6,6 @@ import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget
 import discord4j.core.`object`.entity.{Message, User}
-import reactor.core.scala.publisher.SFlux
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
@@ -34,9 +33,9 @@ class UserinfoCommand extends ICommand2DC {
     private def getUsers(message: Message, args: String) = {
         val guild = message.getGuild.block
         if (guild == null) { //Private channel
-            SFlux(DiscordPlugin.dc.getUsers).filter(u => u.getUsername.equalsIgnoreCase(args)).collectSeq().block()
+            DiscordPlugin.dc.getUsers.filter(u => u.getUsername.equalsIgnoreCase(args)).collectList().block()
         }
         else
-            SFlux(guild.getMembers).filter(_.getUsername.equalsIgnoreCase(args)).map(_.asInstanceOf[User]).collectSeq().block()
+            guild.getMembers.filter(_.getUsername.equalsIgnoreCase(args)).map(_.asInstanceOf[User]).collectList().block()
     }
 }

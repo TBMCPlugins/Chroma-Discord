@@ -5,6 +5,7 @@ import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSenderBa
 import buttondevteam.discordplugin.mcchat.{MCChatUtils, MinecraftChatModule}
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
+import buttondevteam.lib.chat.commands.MCCommandSettings
 import buttondevteam.lib.chat.{Command2, CommandClass, ICommand2MC}
 import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer, TBMCPlayerBase}
 import discord4j.core.`object`.ExtendedInvite
@@ -19,7 +20,8 @@ import java.lang.reflect.Method
     "Discord",
     "This command allows performing Discord-related actions."
 )) class DiscordMCCommand extends ICommand2MC {
-    @Command2.Subcommand def accept(player: Player): Boolean = {
+    @Command2.Subcommand
+    def accept(player: Player): Boolean = {
         if (checkSafeMode(player)) return true
         val did = ConnectCommand.WaitingToConnect.get(player.getName)
         if (did == null) {
@@ -35,7 +37,8 @@ import java.lang.reflect.Method
         true
     }
 
-    @Command2.Subcommand def decline(player: Player): Boolean = {
+    @Command2.Subcommand
+    def decline(player: Player): Boolean = {
         if (checkSafeMode(player)) return true
         val did = ConnectCommand.WaitingToConnect.remove(player.getName)
         if (did == null) {
@@ -46,17 +49,21 @@ import java.lang.reflect.Method
         true
     }
 
-    @Command2.Subcommand(permGroup = Command2.Subcommand.MOD_GROUP, helpText = Array(
+    @Command2.Subcommand(helpText = Array(
         "Reload Discord plugin",
         "Reloads the config. To apply some changes, you may need to also run /discord restart."
-    )) def reload(sender: CommandSender): Unit =
+    ))
+    @MCCommandSettings(permGroup = MCCommandSettings.MOD_GROUP)
+    def reload(sender: CommandSender): Unit =
         if (DiscordPlugin.plugin.tryReloadConfig) sender.sendMessage("§bConfig reloaded.")
         else sender.sendMessage("§cFailed to reload config.")
 
-    @Command2.Subcommand(permGroup = Command2.Subcommand.MOD_GROUP, helpText = Array(
+    @Command2.Subcommand(helpText = Array(
         "Restart the plugin", //
         "This command disables and then enables the plugin." //
-    )) def restart(sender: CommandSender): Unit = {
+    ))
+    @MCCommandSettings(permGroup = MCCommandSettings.MOD_GROUP)
+    def restart(sender: CommandSender): Unit = {
         val task: Runnable = () => {
             def foo(): Unit = {
                 if (!DiscordPlugin.plugin.tryReloadConfig) {
@@ -87,14 +94,16 @@ import java.lang.reflect.Method
 
     @Command2.Subcommand(helpText = Array(
         "Version command",
-        "Prints the plugin version")) def version(sender: CommandSender): Unit = {
-        sender.sendMessage(VersionCommand.getVersion)
+        "Prints the plugin version"))
+    def version(sender: CommandSender): Unit = {
+        sender.sendMessage(VersionCommand.getVersion*)
     }
 
     @Command2.Subcommand(helpText = Array(
         "Invite",
         "Shows an invite link to the server"
-    )) def invite(sender: CommandSender): Unit = {
+    ))
+    def invite(sender: CommandSender): Unit = {
         if (checkSafeMode(sender)) {
             return ()
         }

@@ -32,12 +32,12 @@ import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
 import org.mockito.internal.util.MockUtil
 import reactor.core.Disposable
-import reactor.core.scala.publisher.SMono
-import reactor.core.scala.publisher.scalaOption2JavaOptional
+import reactor.core.publisher.Mono
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Optional
+import scala.jdk.OptionConverters.*
 
 @ButtonPlugin.ConfigOpts(disableConfigGen = true) object DiscordPlugin {
     private[discordplugin] var dc: GatewayDiscordClient = null
@@ -68,28 +68,24 @@ import java.util.Optional
     /**
      * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
      */
-    private def mainServer = getIConfig.getDataPrimDef("mainServer", 0L, (id: Any) => {
-        def foo(id: Any): Option[Guild] = { //It attempts to get the default as well
-            if (id.asInstanceOf[Long] == 0L) Option.empty
-            else SMono.fromPublisher(DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long])))
-                .onErrorResume((t: Throwable) => {
-                    getLogger.warning("Failed to get guild: " + t.getMessage);
-                    SMono.empty
-                }).blockOption()
-        }
-
-        foo(id)
-    }, (g: Option[Guild]) => (g.map(_.getId.asLong): Option[Long]).getOrElse(0L))
+    private def mainServer = getIConfig.getData("mainServer", id => { //It attempts to get the default as well
+        if (id.asInstanceOf[Long] == 0L) Option.empty
+        else DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long]))
+            .onErrorResume(t => {
+                getLogger.warning("Failed to get guild: " + t.getMessage)
+                Mono.empty
+            }).blockOptional().toScala
+    }, g => g.map(_.getId.asLong).getOrElse(0L), 0L, true)
 
     /**
      * The (bot) channel to use for Discord commands like /role.
      */
-    var commandChannel: ReadOnlyConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
+    var commandChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
     /**
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
-    var modRole: ReadOnlyConfigData[SMono[Role]] = null
+    var modRole: ConfigData[Mono[Role]] = null
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
@@ -189,11 +185,10 @@ import java.util.Optional
             CommonListeners.register(DiscordPlugin.dc.getEventDispatcher)
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener, this)
             TBMCCoreAPI.RegisterUserClass(classOf[DiscordPlayer], () => new DiscordPlayer)
-            ChromaGamerBase.addConverter((sender: CommandSender) => sender match {
-                case dsender: DiscordSenderBase => Some(dsender.getChromaUser)
-                case _ => None
-            })
-            IHaveConfig.pregenConfig(this, null)
+            ChromaGamerBase.addConverter {
+                case dsender: DiscordSenderBase => Some(dsender.getChromaUser).toJava
+                case _ => None.toJava
+            }
             ChromaBot.enabled = true //Initialize ChromaBot
             Component.registerComponent(this, new GeneralEventBroadcasterModule)
             Component.registerComponent(this, new MinecraftChatModule)

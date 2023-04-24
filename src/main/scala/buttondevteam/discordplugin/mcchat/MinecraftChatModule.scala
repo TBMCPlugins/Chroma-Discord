@@ -2,8 +2,6 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.DPUtils.{MonoExtensions, SpecExtensions}
-import buttondevteam.discordplugin.mcchat.playerfaker.ServerWatcher
-import buttondevteam.discordplugin.mcchat.playerfaker.perm.LPInjector
 import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
@@ -14,7 +12,7 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
-import reactor.core.scala.publisher.SMono
+import reactor.core.publisher.Mono
 
 import java.util
 import java.util.stream.Collectors
@@ -33,27 +31,27 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     def getListener: MCChatListener = this.listener
 
     private var listener: MCChatListener = null
-    private[mcchat] var serverWatcher: ServerWatcher = null
-    private var lpInjector: LPInjector = null
+    private[mcchat] var serverWatcher = null
+    private var lpInjector = null
     private[mcchat] var disabling = false
 
     /**
      * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
      */
     val whitelistedCommands: ConfigData[util.ArrayList[String]] = getConfig.getData("whitelistedCommands",
-        () => Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
+        Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
 
     /**
      * The channel to use as the public Minecraft chat - everything public gets broadcasted here
      */
-    val chatChannel: ReadOnlyConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
+    val chatChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
 
-    def chatChannelMono: SMono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
+    def chatChannelMono: Mono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    val modlogChannel: ReadOnlyConfigData[SMono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
+    val modlogChannel: ConfigData[Mono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
      */
@@ -117,7 +115,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
             val chconkeys = chcons.getKeys(false)
             for (chconkey <- chconkeys.asScala) {
                 val chcon = chcons.getConfigurationSection(chconkey)
-                val mcch = Channel.getChannels.filter((ch: Channel) => ch.ID == chcon.getString("mcchid")).findAny
+                val mcch = Channel.getChannels.filter((ch: Channel) => ch.getIdentifier == chcon.getString("mcchid")).findAny
                 val ch = DiscordPlugin.dc.getChannelById(Snowflake.of(chcon.getLong("chid"))).block
                 val did = chcon.getLong("did")
                 val user = DiscordPlugin.dc.getUserById(Snowflake.of(did)).block
@@ -135,18 +133,9 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
                 }
             }
         }
-        try if (lpInjector == null) lpInjector = new LPInjector //new LPInjector(DiscordPlugin.plugin)
-        catch {
-            case e: Exception =>
-                TBMCCoreAPI.SendException("Failed to init LuckPerms injector", e, this)
-            case e: NoClassDefFoundError =>
-                log("No LuckPerms, not injecting")
-            //e.printStackTrace();
-        }
+        // TODO: LPInjector
         if (addFakePlayersToBukkit.get) try {
-            serverWatcher = new ServerWatcher
-            serverWatcher.enableDisable(true)
-            log("Finished hooking into the server")
+            // TODO: Fake players
         } catch {
             case e: Exception =>
                 TBMCCoreAPI.SendException("Failed to hack the server (object)! Disable addFakePlayersToBukkit in the config.", e, this)
@@ -189,8 +178,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
         serverUp.set(false) //Disable even if just the component is disabled because that way it won't falsely report crashes
         try //If it's not enabled it won't do anything
             if (serverWatcher != null) {
-                serverWatcher.enableDisable(false)
-                log("Finished unhooking the server")
+                // TODO: ServerWatcher
             }
         catch {
             case e: Exception =>
@@ -200,7 +188,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
         val chconsc = getConfig.getConfig.createSection("chcons")
         for (chcon <- chcons) {
             val chconc = chconsc.createSection(chcon.channel.getId.asString)
-            chconc.set("mcchid", chcon.mcchannel.ID)
+            chconc.set("mcchid", chcon.mcchannel.getIdentifier)
             chconc.set("chid", chcon.channel.getId.asLong)
             chconc.set("did", chcon.user.getId.asLong)
             chconc.set("mcuid", chcon.dcp.getUniqueId.toString)
@@ -222,13 +210,13 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      */
     private def sendStateMessage(color: Color, message: String) =
         MCChatUtils.forCustomAndAllMCChat(_.flatMap(
-            _.createEmbed(_.setColor(color).setTitle(message).^^()).^^()
-                .onErrorResume(_ => SMono.empty)
+            _.createEmbed(_.setColor(color).setTitle(message))
+                .onErrorResume(_ => Mono.empty)
         ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 
     private def sendStateMessage(color: Color, message: String, extra: String) =
         MCChatUtils.forCustomAndAllMCChat(_.flatMap(
-            _.createEmbed(_.setColor(color).setTitle(message).setDescription(extra).^^()).^^()
-                .onErrorResume(_ => SMono.empty)
+            _.createEmbed(_.setColor(color).setTitle(message).setDescription(extra))
+                .onErrorResume(_ => Mono.empty)
         ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 }

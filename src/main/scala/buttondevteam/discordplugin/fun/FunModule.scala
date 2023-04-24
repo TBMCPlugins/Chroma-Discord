@@ -13,7 +13,7 @@ import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacyMessageCreateSpe
 import org.bukkit.Bukkit
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.{EventHandler, Listener}
-import reactor.core.scala.publisher.{SFlux, SMono}
+import reactor.core.publisher.Mono
 
 import java.util
 import java.util.Calendar
@@ -52,7 +52,7 @@ object FunModule {
             ListC += 1
             ListC - 1
         } > 2) { // Lowered already
-            DPUtils.reply(message, SMono.empty, "stop it. You know the answer.").subscribe()
+            DPUtils.reply(message, Mono.empty, "stop it. You know the answer.").subscribe()
             lastlist = 0
             lastlistp = Bukkit.getOnlinePlayers.size.toShort
             return true //Handled
@@ -62,7 +62,7 @@ object FunModule {
             var next = 0
             if (usableServerReadyStrings.size == 0) fm.createUsableServerReadyStrings()
             next = usableServerReadyStrings.remove(serverReadyRandom.nextInt(usableServerReadyStrings.size))
-            DPUtils.reply(message, SMono.empty, fm.serverReadyAnswers.get.get(next)).subscribe()
+            DPUtils.reply(message, Mono.empty, fm.serverReadyAnswers.get.get(next)).subscribe()
             return false //Still process it as a command/mcchat if needed
         }
         false
@@ -78,17 +78,17 @@ object FunModule {
             || event.getCurrent.getStatus == Status.OFFLINE)
             return () //If it's not an offline -> online change
         fm.fullHouseChannel.get.filter((ch: MessageChannel) => ch.isInstanceOf[GuildChannel])
-            .flatMap(channel => fm.fullHouseDevRole(SMono(channel.asInstanceOf[GuildChannel].getGuild)).get
-                .filterWhen(devrole => SMono(event.getMember)
-                    .flatMap(m => SFlux(m.getRoles).any(_.getId.asLong == devrole.getId.asLong)))
-                .filterWhen(devrole => SMono(event.getGuild)
-                    .flatMapMany(g => SFlux(g.getMembers).filter(_.getRoleIds.stream.anyMatch(_ == devrole.getId)))
+            .flatMap(channel => fm.fullHouseDevRole(channel.asInstanceOf[GuildChannel].getGuild).get
+                .filterWhen(devrole => event.getMember
+                    .flatMap(m => m.getRoles.any(_.getId.asLong == devrole.getId.asLong)))
+                .filterWhen(devrole => event.getGuild
+                    .flatMapMany(g => g.getMembers.filter(_.getRoleIds.stream.anyMatch(_ == devrole.getId)))
                     .flatMap(_.getPresence).all(_.getStatus != Status.OFFLINE))
                 .filter(_ => lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime)) //This should stay so it checks this last
                 .flatMap(_ => {
                     lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime)
-                    SMono(channel.createMessage(_.setContent("Full house!")
-                        .setEmbed((ecs: LegacyEmbedCreateSpec) => ecs.setImage("https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png"))))
+                    channel.createMessage(_.setContent("Full house!")
+                        .setEmbed((ecs: LegacyEmbedCreateSpec) => ecs.setImage("https://cdn.discordapp.com/attachments/249295547263877121/249687682618359808/poker-hand-full-house-aces-kings-playing-cards-15553791.png")))
                 })).subscribe()
     }
 }
@@ -98,7 +98,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
      * Questions that the bot will choose a random answer to give to.
      */
     final private val serverReady: ConfigData[Array[String]] =
-        getConfig.getData("serverReady", () => Array[String](
+        getConfig.getData("serverReady", Array[String](
             "when will the server be open", "when will the server be ready",
             "when will the server be done", "when will the server be complete",
             "when will the server be finished", "when's the server ready",
@@ -107,7 +107,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
      * Answers for a recognized question. Selected randomly.
      */
     final private val serverReadyAnswers: ConfigData[util.ArrayList[String]] =
-        getConfig.getData("serverReadyAnswers", () => Lists.newArrayList(FunModule.serverReadyStrings: _*))
+        getConfig.getData("serverReadyAnswers", Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
     private def createUsableServerReadyStrings(): Unit =
         IntStream.range(0, serverReadyAnswers.get.size).forEach((i: Int) => FunModule.usableServerReadyStrings.add(i.toShort))
@@ -125,7 +125,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * If all of the people who have this role are online, the bot will post a full house.
      */
-    private def fullHouseDevRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "fullHouseDevRole", "Developer", guild)
+    private def fullHouseDevRole(guild: Mono[Guild]) = DPUtils.roleData(getConfig, "fullHouseDevRole", "Developer", guild)
 
     /**
      * The channel to post the full house to.

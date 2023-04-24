@@ -9,7 +9,7 @@ import discord4j.core.`object`.entity.{Guild, Role}
 import org.apache.commons.lang.exception.ExceptionUtils
 import org.bukkit.Bukkit
 import org.bukkit.event.{EventHandler, Listener}
-import reactor.core.scala.publisher.SMono
+import reactor.core.publisher.Mono
 
 import java.util
 import java.util.stream.Collectors
@@ -22,8 +22,8 @@ object ExceptionListenerModule {
         if (instance == null) return ()
         try getChannel.flatMap(channel => {
             val coderRole = channel match {
-                case ch: GuildChannel => instance.pingRole(SMono(ch.getGuild)).get
-                case _ => SMono.empty
+                case ch: GuildChannel => instance.pingRole(ch.getGuild).get
+                case _ => Mono.empty
             }
             coderRole.map((role: Role) => if (TBMCCoreAPI.IsTestServer) new StringBuilder
             else new StringBuilder(role.getMention).append("\n"))
@@ -36,7 +36,7 @@ object ExceptionListenerModule {
                 if (sb.length + stackTrace.length >= 1980) stackTrace = stackTrace.substring(0, 1980 - sb.length)
                 sb.append(stackTrace).append("\n")
                 sb.append("```")
-                SMono(channel.createMessage(sb.toString))
+                channel.createMessage(sb.toString)
             })
         }).subscribe()
         catch {
@@ -47,9 +47,9 @@ object ExceptionListenerModule {
 
     private var instance: ExceptionListenerModule = null
 
-    def getChannel: SMono[MessageChannel] = {
+    def getChannel: Mono[MessageChannel] = {
         if (instance != null) return instance.channel.get
-        SMono.empty
+        Mono.empty
     }
 }
 
@@ -69,7 +69,7 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
         if (lastsourcemsg.size >= 10) lastsourcemsg.remove(0)
         lastthrown.add(e.getException)
         lastsourcemsg.add(e.getSourceMessage)
-        e.setHandled()
+        e.setHandled(true)
     }
 
     /**
@@ -80,7 +80,7 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     /**
      * The role to ping if an error occurs. Set to empty ('') to disable.
      */
-    private def pingRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "pingRole", "Coder", guild)
+    private def pingRole(guild: Mono[Guild]) = DPUtils.roleData(getConfig, "pingRole", "Coder", guild)
 
     override protected def enable(): Unit = {
         if (DPUtils.disableIfConfigError(this, channel)) return ()

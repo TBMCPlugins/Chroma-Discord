@@ -7,15 +7,16 @@ import org.bukkit.command.CommandSender
 import org.bukkit.permissions.{PermissibleBase, Permission, PermissionAttachment, PermissionAttachmentInfo}
 import org.bukkit.plugin.Plugin
 import org.bukkit.{Bukkit, Server}
-import reactor.core.scala.publisher.SMono
+import reactor.core.publisher.Mono
+import scala.jdk.OptionConverters._
 
 import java.util
 
 class DiscordSender(user: User, channel: MessageChannel, pname: String) extends DiscordSenderBase(user, channel) with CommandSender {
     private val perm = new PermissibleBase(this)
     private val name: String = Option(pname)
-        .orElse(Option(user).flatMap(u => SMono(u.asMember(DiscordPlugin.mainServer.getId))
-            .onErrorResume(_ => SMono.empty).blockOption()
+        .orElse(Option(user).flatMap(u => u.asMember(DiscordPlugin.mainServer.getId)
+            .onErrorResume(_ => Mono.empty).blockOptional().toScala
             .map(u => u.getDisplayName)))
         .getOrElse("Discord user")
 

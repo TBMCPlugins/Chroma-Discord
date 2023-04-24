@@ -8,13 +8,13 @@ import discord4j.discordjson.json.{ApplicationCommandOptionData, ApplicationComm
 
 import java.lang.reflect.Method
 
-class Command2DC extends Command2[ICommand2DC, Command2DCSender] {
+class Command2DC extends Command2[ICommand2DC, Command2DCSender]('/', false) {
     override def registerCommand(command: ICommand2DC): Unit = {
         registerCommand(command, DiscordPlugin.dc.getApplicationInfo.block().getId.asLong())
     }
 
     def registerCommand(command: ICommand2DC, appId: Long, guildId: Option[Long] = None): Unit = {
-        super.registerCommand(command, DiscordPlugin.getPrefix) //Needs to be configurable for the helps
+        super.registerCommand(command) //Needs to be configurable for the helps
         val greetCmdRequest = ApplicationCommandRequest.builder()
             .name(command.getCommandPath) //TODO: Main path
             .description("Connect your Minecraft account.") //TODO: Description

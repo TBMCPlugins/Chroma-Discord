@@ -3,7 +3,6 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.SpecExtensions
-import buttondevteam.discordplugin.mcchat.playerfaker.{VanillaCommandListener, VanillaCommandListener14, VanillaCommandListener15}
 import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSender, DiscordSenderBase}
 import buttondevteam.lib.*
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
@@ -13,6 +12,7 @@ import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import discord4j.core.`object`.entity.{Member, Message, User}
 import discord4j.core.event.domain.message.MessageCreateEvent
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacyMessageEditSpec}
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
@@ -20,14 +20,13 @@ import org.bukkit.entity.Player
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitTask
 import reactor.core.publisher.Mono
-import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.time.Instant
 import java.util
 import java.util.concurrent.{LinkedBlockingQueue, TimeoutException}
-import java.util.function.{Consumer, Predicate}
+import java.util.function.{Consumer, Predicate, Supplier}
 import java.util.stream.Collectors
-import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
+import scala.jdk.CollectionConverters.{IterableHasAsScala, ListHasAsScala, SetHasAsScala}
 import scala.jdk.OptionConverters.RichOptional
 
 object MCChatListener {
@@ -87,45 +86,42 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val se: util.AbstractMap.SimpleEntry[TBMCChatEvent, Instant] = sendevents.take // Wait until an element is available
             e = se.getKey
             time = se.getValue
-            val authorPlayer: String = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel.DisplayName.get) + "] " + //
+            val authorPlayer: String = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel.displayName.get) + "] " + //
                 (if ("Minecraft" == e.getOrigin) "" else "[" + e.getOrigin.charAt(0) + "]") +
                 DPUtils.sanitizeStringNoEscape(ChromaUtils.getDisplayName(e.getSender))
-            val color: chat.Color = e.getChannel.Color.get
-            val embed: Consumer[LegacyEmbedCreateSpec] = (ecs: LegacyEmbedCreateSpec) => {
-                def foo(ecs: LegacyEmbedCreateSpec) = {
-                    ecs.setDescription(e.getMessage).setColor(Color.of(color.getRed, color.getGreen, color.getBlue))
-                    val url: String = module.profileURL.get
-                    e.getSender match {
-                        case player: Player =>
-                            DPUtils.embedWithHead(ecs, authorPlayer, e.getSender.getName,
-                                if (url.nonEmpty) url + "?type=minecraft&id=" + player.getUniqueId else null)
-                        case dsender: DiscordSenderBase =>
-                            ecs.setAuthor(authorPlayer,
-                                if (url.nonEmpty) url + "?type=discord&id=" + dsender.getUser.getId.asString else null,
-                                dsender.getUser.getAvatarUrl)
-                        case _ =>
-                            DPUtils.embedWithHead(ecs, authorPlayer, e.getSender.getName, null)
-                    }
-                    ecs.setTimestamp(time)
+            val color: chat.Color = e.getChannel.color.get
+            val embed = () => {
+                val ecs = EmbedCreateSpec.builder()
+                ecs.description(e.getMessage).color(Color.of(color.getRed, color.getGreen, color.getBlue))
+                val url: String = module.profileURL.get
+                e.getSender match {
+                    case player: Player =>
+                        DPUtils.embedWithHead(ecs, authorPlayer, e.getSender.getName,
+                            if (url.nonEmpty) url + "?type=minecraft&id=" + player.getUniqueId else null)
+                    case dsender: DiscordSenderBase =>
+                        ecs.author(authorPlayer,
+                            if (url.nonEmpty) url + "?type=discord&id=" + dsender.getUser.getId.asString else null,
+                            dsender.getUser.getAvatarUrl)
+                    case _ =>
+                        DPUtils.embedWithHead(ecs, authorPlayer, e.getSender.getName, null)
                 }
-
-                foo(ecs)
+                ecs.timestamp(time)
             }
             val nanoTime: Long = System.nanoTime
             val doit = (lastmsgdata: MCChatUtils.LastMsgData) => {
                 if (lastmsgdata.message == null
                     || authorPlayer != lastmsgdata.message.getEmbeds.get(0).getAuthor.toScala.flatMap(_.getName.toScala).orNull
                     || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-                    || !(lastmsgdata.mcchannel.ID == e.getChannel.ID)
+                    || !(lastmsgdata.mcchannel.getIdentifier == e.getChannel.getIdentifier)
                     || lastmsgdata.content.length + e.getMessage.length + 1 > 2048) {
-                    lastmsgdata.message = lastmsgdata.channel.createEmbed(embed).block
+                    lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).block
                     lastmsgdata.time = nanoTime
                     lastmsgdata.mcchannel = e.getChannel
                     lastmsgdata.content = e.getMessage
                 }
                 else {
                     lastmsgdata.content = lastmsgdata.content + "\n" + e.getMessage // The message object doesn't get updated
-                    lastmsgdata.message.edit((mes: LegacyMessageEditSpec) => mes.setEmbed(embed.andThen((ecs: LegacyEmbedCreateSpec) => ecs.setDescription(lastmsgdata.content))).^^()).block
+                    lastmsgdata.message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).block
                 }
             }
             // Checks if the given channel is different than where the message was sent from
@@ -145,7 +141,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             MCChatCustom.lastmsgCustom synchronized {
                 MCChatCustom.lastmsgCustom.filterInPlace(lmd => {
                     if ((e.isFromCommand || isdifferentchannel.test(lmd.channel.getId)) //Test if msg is from Discord
-                        && e.getChannel.ID == lmd.mcchannel.ID //If it's from a command, the command msg has been deleted, so we need to send it
+                        && e.getChannel.getIdentifier == lmd.mcchannel.getIdentifier //If it's from a command, the command msg has been deleted, so we need to send it
                         && e.getGroupID() == lmd.groupID) { //Check if this is the group we want to test - #58
                         if (e.shouldSendTo(lmd.dcp)) { //Check original user's permissions
                             doit(lmd)
@@ -244,11 +240,11 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
     private var recthread: Thread = null
 
     // Discord
-    def handleDiscord(ev: MessageCreateEvent): SMono[Boolean] = {
+    def handleDiscord(ev: MessageCreateEvent): Mono[Boolean] = {
         val author = Option(ev.getMessage.getAuthor.orElse(null))
         val hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage.getChannelId)
         val prefix = DiscordPlugin.getPrefix
-        SMono(ev.getMessage.getChannel)
+        ev.getMessage.getChannel
             .filter(channel => isChatEnabled(channel, author, hasCustomChat))
             .filter(channel => !isRunningMCChatCommand(channel, ev.getMessage.getContent, prefix))
             .filter(channel => {
@@ -313,7 +309,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             replaceUserMentions()
 
             def replaceChannelMentions(): Unit = {
-                for (ch <- SFlux(event.getGuild.flux).flatMap(_.getChannels).toIterable()) {
+                for (ch <- event.getGuild.flux.flatMap(_.getChannels).toIterable().asScala) {
                     dmessage = dmessage.replace(ch.getMention, "#" + ch.getName)
                 }
             }
@@ -385,9 +381,9 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         else {
             val cmb = ChatMessage.builder(dsender, user, dmessage + getAttachmentText).fromCommand(false)
             if (clmd != null)
-                TBMCChatAPI.SendChatMessage(cmb.permCheck(clmd.dcp).build, clmd.mcchannel)
+                TBMCChatAPI.sendChatMessage(cmb.permCheck(clmd.dcp).build, clmd.mcchannel)
             else
-                TBMCChatAPI.SendChatMessage(cmb.build)
+                TBMCChatAPI.sendChatMessage(cmb.build)
             true
         }
     }
@@ -440,13 +436,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             val mcpackage = Bukkit.getServer.getClass.getPackage.getName
             if (!module.enableVanillaCommands.get)
                 Bukkit.dispatchCommand(dsender, cmd)
-            else if (mcpackage.contains("1_12"))
-                VanillaCommandListener.runBukkitOrVanillaCommand(dsender, cmd)
-            else if (mcpackage.contains("1_14"))
-                VanillaCommandListener14.runBukkitOrVanillaCommand(dsender, cmd)
-            else if (mcpackage.contains("1_15") || mcpackage.contains("1_16"))
-                VanillaCommandListener15.runBukkitOrVanillaCommand(dsender, cmd)
-            else
+            else // TODO: Vanilla command handling
                 Bukkit.dispatchCommand(dsender, cmd)
         } catch {
             case e: NoClassDefFoundError =>

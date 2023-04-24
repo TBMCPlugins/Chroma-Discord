@@ -22,13 +22,13 @@ object MCChatPrivate {
         MCChatUtils.ConnectedSenders synchronized {
             val mcp = dp.getAs(classOf[TBMCPlayer])
             if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
-                val p = Bukkit.getPlayer(mcp.getUUID)
-                val op = Bukkit.getOfflinePlayer(mcp.getUUID)
+                val p = Bukkit.getPlayer(mcp.getUniqueId)
+                val op = Bukkit.getOfflinePlayer(mcp.getUniqueId)
                 val mcm = ComponentManager.getIfEnabled(classOf[MinecraftChatModule])
                 if (start) {
-                    val sender = DiscordConnectedPlayer.create(user, channel, mcp.getUUID, op.getName, mcm)
+                    val sender = DiscordConnectedPlayer.create(user, channel, mcp.getUniqueId, op.getName, mcm)
                     MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender)
-                    MCChatUtils.LoggedInPlayers.put(mcp.getUUID, sender)
+                    MCChatUtils.LoggedInPlayers.put(mcp.getUniqueId, sender)
                     if (p == null) { // Player is offline - If the player is online, that takes precedence
                         MCChatUtils.callLoginEvents(sender)
                     }

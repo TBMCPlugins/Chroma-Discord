@@ -3,11 +3,11 @@ package buttondevteam.discordplugin
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig, ReadOnlyConfigData}
 import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.channel.MessageChannel
+import discord4j.core.`object`.entity.channel.{Channel, MessageChannel}
 import discord4j.core.`object`.entity.{Guild, Message, Role}
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacySpec}
 import reactor.core.publisher.{Flux, Mono}
-import reactor.core.scala.publisher.{SFlux, SMono}
 
 import java.util
 import java.util.Comparator
@@ -19,8 +19,8 @@ object DPUtils {
     private val URL_PATTERN = Pattern.compile("https?://\\S*")
     private val FORMAT_PATTERN = Pattern.compile("[*_~]")
 
-    def embedWithHead(ecs: LegacyEmbedCreateSpec, displayname: String, playername: String, profileUrl: String): LegacyEmbedCreateSpec =
-        ecs.setAuthor(displayname, profileUrl, "https://minotar.net/avatar/" + playername + "/32.png")
+    def embedWithHead(ecs: EmbedCreateSpec.Builder, displayname: String, playername: String, profileUrl: String): EmbedCreateSpec.Builder =
+        ecs.author(displayname, profileUrl, s"https://minotar.net/avatar/$playername/32.png")
 
     /**
      * Removes §[char] colour codes from strings & escapes them for Discord <br>
@@ -68,34 +68,26 @@ object DPUtils {
         else DiscordPlugin.plugin.getLogger
     }
 
-    def channelData(config: IHaveConfig, key: String): ReadOnlyConfigData[SMono[MessageChannel]] =
-        config.getReadOnlyDataPrimDef(key, 0L, (id: Any) =>
-            getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])), (_: SMono[MessageChannel]) => 0L) //We can afford to search for the channel in the cache once (instead of using mainServer)
+    def channelData(config: IHaveConfig, key: String): ConfigData[Mono[MessageChannel]] =
+        config.getData(key, id => getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])),
+            (_: Mono[MessageChannel]) => 0L, 0L, true) //We can afford to search for the channel in the cache once (instead of using mainServer)
 
-    def roleData(config: IHaveConfig, key: String, defName: String): ReadOnlyConfigData[SMono[Role]] =
-        roleData(config, key, defName, SMono.just(DiscordPlugin.mainServer))
+    def roleData(config: IHaveConfig, key: String, defName: String): ConfigData[Mono[Role]] =
+        roleData(config, key, defName, Mono.just(DiscordPlugin.mainServer))
 
     /**
      * Needs to be a [[ConfigData]] for checking if it's set
      */
-    def roleData(config: IHaveConfig, key: String, defName: String, guild: SMono[Guild]): ReadOnlyConfigData[SMono[Role]] = config.getReadOnlyDataPrimDef(key, defName, (name: Any) => {
-        def foo(name: Any): SMono[Role] = {
-            if (!name.isInstanceOf[String] || name.asInstanceOf[String].isEmpty) return SMono.empty[Role]
-            guild.flatMapMany(_.getRoles).filter((r: Role) => r.getName == name).onErrorResume((e: Throwable) => {
-                def foo(e: Throwable): SMono[Role] = {
-                    getLogger.warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage)
-                    SMono.empty[Role]
-                }
+    def roleData(config: IHaveConfig, key: String, defName: String, guild: Mono[Guild]): ConfigData[Mono[Role]] = config.getData(key, name => {
+        if (!name.isInstanceOf[String] || name.asInstanceOf[String].isEmpty) Mono.empty[Role]
+        else guild.flatMapMany(_.getRoles).filter(_.getName == name).onErrorResume(e => {
+            getLogger.warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage)
+            Mono.empty[Role]
+        }).next
+    }, _ => defName, defName, true)
 
-                foo(e)
-            }).next
-        }
-
-        foo(name)
-    }, (_: SMono[Role]) => defName)
-
-    def snowflakeData(config: IHaveConfig, key: String, defID: Long): ReadOnlyConfigData[Snowflake] =
-        config.getReadOnlyDataPrimDef(key, defID, (id: Any) => Snowflake.of(id.asInstanceOf[Long]), _.asLong)
+    def snowflakeData(config: IHaveConfig, key: String, defID: Long): ConfigData[Snowflake] =
+        config.getData(key, id => Snowflake.of(id.asInstanceOf[Long]), _.asLong, defID, true)
 
     /**
      * Mentions the <b>bot channel</b>. Useful for help texts.
@@ -132,7 +124,7 @@ object DPUtils {
      */
     def disableIfConfigErrorRes(@Nullable component: Component[DiscordPlugin], config: ConfigData[_], result: Any): Boolean = {
         //noinspection ConstantConditions
-        if (result == null || (result.isInstanceOf[SMono[_]] && !result.asInstanceOf[SMono[_]].hasElement.block())) {
+        if (result == null || (result.isInstanceOf[Mono[_]] && !result.asInstanceOf[Mono[_]].hasElement.block())) {
             var path: String = null
             try {
                 if (component != null) Component.setComponentEnabled(component, false)
@@ -152,26 +144,26 @@ object DPUtils {
     }
 
     /**
-     * Send a response in the form of "@User, message". Use SMono.empty() if you don't have a channel object.
+     * Send a response in the form of "@User, message". Use Mono.empty() if you don't have a channel object.
      *
      * @param original The original message to reply to
      * @param channel  The channel to send the message in, defaults to the original
      * @param message  The message to send
      * @return A mono to send the message
      */
-    def reply(original: Message, @Nullable channel: MessageChannel, message: String): SMono[Message] = {
-        val ch = if (channel == null) SMono(original.getChannel)
-        else SMono.just(channel)
+    def reply(original: Message, @Nullable channel: MessageChannel, message: String): Mono[Message] = {
+        val ch = if (channel == null) original.getChannel
+        else Mono.just(channel)
         reply(original, ch, message)
     }
 
     /**
      * @see #reply(Message, MessageChannel, String)
      */
-    def reply(original: Message, ch: SMono[MessageChannel], message: String): SMono[Message] =
-        ch.flatMap(channel => SMono(channel.createMessage((if (original.getAuthor.isPresent)
+    def reply(original: Message, ch: Mono[MessageChannel], message: String): Mono[Message] =
+        ch.flatMap(channel => channel.createMessage((if (original.getAuthor.isPresent)
             original.getAuthor.get.getMention + ", "
-        else "") + message)))
+        else "") + message))
 
     def nickMention(userId: Snowflake): String = "<@!" + userId.asString + ">"
 
@@ -184,31 +176,19 @@ object DPUtils {
      * @param id  The channel ID
      * @return A message channel
      */
-    def getMessageChannel(key: String, id: Snowflake): SMono[MessageChannel] = {
-        if (id.asLong == 0L) return SMono.empty[MessageChannel]
+    def getMessageChannel(key: String, id: Snowflake): Mono[MessageChannel] = {
+        if (id.asLong == 0L) return Mono.empty[MessageChannel]
 
-        SMono(DiscordPlugin.dc.getChannelById(id)).onErrorResume(e => {
-            def foo(e: Throwable) = {
-                getLogger.warning("Failed to get channel data for " + key + "=" + id + " - " + e.getMessage)
-                SMono.empty
-            }
-
-            foo(e)
-        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast[MessageChannel]
+        DiscordPlugin.dc.getChannelById(id).onErrorResume(e => {
+            getLogger.warning(s"Failed to get channel data for $key=$id - ${e.getMessage}")
+            Mono.empty[Channel]
+        }).filter(ch => ch.isInstanceOf[MessageChannel]).cast(classOf[MessageChannel]])
     }
 
-    def getMessageChannel(config: ConfigData[Snowflake]): SMono[MessageChannel] =
+    def getMessageChannel(config: ConfigData[Snowflake]): Mono[MessageChannel] =
         getMessageChannel(config.getPath, config.get)
 
-    def ignoreError[T](mono: SMono[T]): SMono[T] = mono.onErrorResume((_: Throwable) => SMono.empty)
-
-    implicit class MonoExtensions[T](mono: Mono[T]) {
-        def ^^(): SMono[T] = SMono(mono)
-    }
-
-    implicit class FluxExtensions[T](flux: Flux[T]) {
-        def ^^(): SFlux[T] = SFlux(flux)
-    }
+    def ignoreError[T](mono: Mono[T]): Mono[T] = mono.onErrorResume((_: Throwable) => Mono.empty)
 
     implicit class SpecExtensions[T <: LegacySpec[_]](spec: T) {
         def ^^(): Unit = ()

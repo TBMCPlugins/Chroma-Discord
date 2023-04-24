@@ -1,7 +1,6 @@
 package buttondevteam.discordplugin.mcchat.sender
 
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.mcchat.playerfaker.VCMDWrapper
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import org.bukkit.entity.Player
@@ -25,9 +24,8 @@ object DiscordPlayerSender {
 }
 
 abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] {
-    val vanillaCmdListener = new VCMDWrapper(VCMDWrapper.createListener(this, player, module))
 
-    override def getVanillaCmdListener: VCMDWrapper = this.vanillaCmdListener
+    override def getVanillaCmdListener = null
 
     override def sendMessage(message: String): Unit = {
         player.sendMessage(message)
@@ -35,7 +33,7 @@ abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var play
     }
 
     override def sendMessage(messages: Array[String]): Unit = {
-        player.sendMessage(messages)
+        player.sendMessage(messages*)
         super.sendMessage(messages)
     }
 }
