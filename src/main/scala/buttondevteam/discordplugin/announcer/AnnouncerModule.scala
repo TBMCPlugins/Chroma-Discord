@@ -23,21 +23,21 @@ import scala.collection.mutable
     /**
      * Channel to post new posts.
      */
-    final val channel = DPUtils.channelData(getConfig, "channel")
+    final def channel = DPUtils.channelData(getConfig, "channel")
     /**
      * Channel where distinguished (moderator) posts go.
      */
-    final private val modChannel = DPUtils.channelData(getConfig, "modChannel")
+    final private def modChannel = DPUtils.channelData(getConfig, "modChannel")
     /**
      * Automatically unpins all messages except the last few. Set to 0 or >50 to disable
      */
-    final private val keepPinned = getConfig.getData("keepPinned", 40.toShort)
-    final private val lastAnnouncementTime = getConfig.getData("lastAnnouncementTime", 0L)
-    final private val lastSeenTime = getConfig.getData("lastSeenTime", 0L)
+    final private def keepPinned = getConfig.getData("keepPinned", 40.toShort)
+    final private def lastAnnouncementTime = getConfig.getData("lastAnnouncementTime", 0L)
+    final private def lastSeenTime = getConfig.getData("lastSeenTime", 0L)
     /**
      * The subreddit to pull the posts from
      */
-    final private val subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
+    final private def subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
 
     override protected def enable(): Unit = {
         if (DPUtils.disableIfConfigError(this, channel, modChannel)) return ()

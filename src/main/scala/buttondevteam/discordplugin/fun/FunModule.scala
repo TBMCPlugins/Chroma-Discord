@@ -97,7 +97,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * Questions that the bot will choose a random answer to give to.
      */
-    final private val serverReady: ConfigData[Array[String]] =
+    final private def serverReady: ConfigData[Array[String]] =
         getConfig.getData("serverReady", Array[String](
             "when will the server be open", "when will the server be ready",
             "when will the server be done", "when will the server be complete",
@@ -106,7 +106,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * Answers for a recognized question. Selected randomly.
      */
-    final private val serverReadyAnswers: ConfigData[util.ArrayList[String]] =
+    final private def serverReadyAnswers: ConfigData[util.ArrayList[String]] =
         getConfig.getData("serverReadyAnswers", Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
     private def createUsableServerReadyStrings(): Unit =
@@ -130,5 +130,5 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * The channel to post the full house to.
      */
-    final private val fullHouseChannel = DPUtils.channelData(getConfig, "fullHouseChannel")
+    final private def fullHouseChannel = DPUtils.channelData(getConfig, "fullHouseChannel")
 }

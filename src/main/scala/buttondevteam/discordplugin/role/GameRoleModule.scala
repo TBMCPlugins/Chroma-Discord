@@ -95,12 +95,12 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
     /**
      * The channel where the bot logs when it detects a role change that results in a new game role or one being removed.
      */
-    final private val logChannel = DPUtils.channelData(getConfig, "logChannel")
+    final private def logChannel = DPUtils.channelData(getConfig, "logChannel")
     /**
      * The role color that is used by game roles.
      * Defaults to the second to last in the upper row - #95a5a6.
      */
-    final private val roleColor = getConfig.getData("roleColor", Color.of(149, 165, 166),
+    final private def roleColor = getConfig.getData("roleColor", Color.of(149, 165, 166),
         rgb => Color.of(Integer.parseInt(rgb.asInstanceOf[String].substring(1), 16)),
         color => String.format("#%08x", color.getRGB), true)
 

@@ -77,18 +77,16 @@ import scala.jdk.OptionConverters.*
     /**
      * The (bot) channel to use for Discord commands like /role.
      */
-    var commandChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
+    def commandChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
     /**
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
-    var modRole: ConfigData[Mono[Role]] = null
+    def modRole: ConfigData[Mono[Role]] = DPUtils.roleData(getIConfig, "modRole", "Moderator")
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
-    var inviteLink: ConfigData[String] = getIConfig.getData("inviteLink", "")
-
-    private def setupConfig(): Unit = modRole = DPUtils.roleData(getIConfig, "modRole", "Moderator")
+    def inviteLink: ConfigData[String] = getIConfig.getData("inviteLink", "")
 
     override def onLoad(): Unit = { //Needed by ServerWatcher
         val thread = Thread.currentThread
@@ -172,7 +170,6 @@ import scala.jdk.OptionConverters.*
                 mainServer.set(Option(DiscordPlugin.mainServer)) //Save in config
             }
             DiscordPlugin.SafeMode = false
-            setupConfig()
             DPUtils.disableIfConfigErrorRes(null, commandChannel, DPUtils.getMessageChannel(commandChannel))
             //Won't disable, just prints the warning here
             if (MinecraftChatModule.state eq DPState.STOPPING_SERVER) {

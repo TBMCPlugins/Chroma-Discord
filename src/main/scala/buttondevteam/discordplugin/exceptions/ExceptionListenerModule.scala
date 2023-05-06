@@ -75,7 +75,7 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     /**
      * The channel to post the errors to.
      */
-    final private val channel = DPUtils.channelData(getConfig, "channel")
+    final private def channel = DPUtils.channelData(getConfig, "channel")
 
     /**
      * The role to ping if an error occurs. Set to empty ('') to disable.
