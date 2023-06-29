@@ -3,7 +3,7 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.DPUtils.SpecExtensions
-import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSender, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSender, DiscordSenderBase}
 import buttondevteam.lib.*
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
 import buttondevteam.lib.player.TBMCPlayer
@@ -100,7 +100,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
                     case player: TBMCPlayer =>
                         DPUtils.embedWithHead(ecs, authorPlayer, e.getUser.getName,
                             if (url.nonEmpty) url + "?type=minecraft&id=" + player.getUniqueId else null)
-                    case dsender: DiscordPlayer =>
+                    case dsender: DiscordUser =>
                         ecs.author(authorPlayer,
                             if (url.nonEmpty) url + "?type=discord&id=" + dsender.getDiscordID else null,
                             dsender.getDiscordUser.getAvatarUrl)
@@ -139,7 +139,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             // Checks if the given channel is different than where the message was sent from
             // Or if it was from MC
             val isdifferentchannel: Predicate[Snowflake] = {
-                id => !e.getUser.isInstanceOf[DiscordPlayer] || e.getUser.asInstanceOf[DiscordSender].getChannel.getId.asLong != id.asLong
+                id => !e.getUser.isInstanceOf[DiscordUser] || e.getUser.asInstanceOf[DiscordSender].getChannel.getId.asLong != id.asLong
             }
             if (e.getChannel.isGlobal && (e.isFromCommand || isdifferentchannel.test(module.chatChannel.get))) {
                 if (MCChatUtils.lastmsgdata == null)
@@ -306,7 +306,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         var dmessage: String = event.getMessage.getContent
         try {
             val dsender: DiscordSenderBase = MCChatUtils.getSender(event.getMessage.getChannelId, sender)
-            val user: DiscordPlayer = dsender.getChromaUser
+            val user: DiscordUser = dsender.getChromaUser
 
             def replaceUserMentions(): Unit = {
                 for (u <- event.getMessage.getUserMentions.asScala) { //TODO: Role mentions
@@ -375,7 +375,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
      * @param isPrivate Whether the chat is private
      * @return Whether the bot should react with a checkmark
      */
-    private def handleIngameMessage(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer,
+    private def handleIngameMessage(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordUser,
                                     clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {
         def getAttachmentText = {
             val att = event.getMessage.getAttachments.asScala
@@ -413,7 +413,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
      * @param isPrivate Whether the chat is private
      * @return
      */
-    private def handleIngameCommand(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordPlayer,
+    private def handleIngameCommand(event: MessageCreateEvent, dmessage: String, dsender: DiscordSenderBase, user: DiscordUser,
                                     clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Unit = {
         def notWhitelisted(cmd: String) = module.whitelistedCommands.get.stream
             .noneMatch(s => cmd == s || cmd.startsWith(s + " "))

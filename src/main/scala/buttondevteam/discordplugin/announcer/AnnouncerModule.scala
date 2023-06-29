@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.announcer
 
-import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.{Component, ComponentMetadata}
@@ -74,7 +74,7 @@ import scala.collection.mutable
                         val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit")
                         if (reddituserclass != null) {
                             val user = ChromaGamerBase.getUser(author, reddituserclass)
-                            val id = user.getConnectedID(classOf[DiscordPlayer])
+                            val id = user.getConnectedID(classOf[DiscordUser])
                             if (id != null) author = "<@" + id + ">"
                         }
                     }

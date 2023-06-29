@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.*
-import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer, DiscordPlayerSender}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordUser, DiscordPlayerSender}
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
 import discord4j.common.util.Snowflake
@@ -32,7 +32,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, () => {
             def foo(): Unit = {
                 val p = e.getPlayer
-                val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
+                val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordUser])
                 if (dp != null)
                     DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).flatMap(user =>
                         user.getPrivateChannel.flatMap(chan => module.chatChannelMono.flatMap(cc => {
@@ -84,7 +84,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
         if (role == null) return ()
         val source = e.getAffected.getSource
         if (!source.isPlayer) return ()
-        val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordPlayer])
+        val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordUser])
         if (p == null) return ()
         DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID))
             .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId))

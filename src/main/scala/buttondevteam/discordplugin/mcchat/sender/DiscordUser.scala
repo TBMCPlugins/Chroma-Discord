@@ -6,7 +6,7 @@ import buttondevteam.lib.player.{ChromaGamerBase, UserClass}
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User
 
-@UserClass(foldername = "discord") class DiscordPlayer() extends ChromaGamerBase {
+@UserClass(foldername = "discord") class DiscordUser() extends ChromaGamerBase {
     private var did: String = null
     private var discordUser: User = null
 

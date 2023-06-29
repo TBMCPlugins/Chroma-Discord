@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mccommands
 
 import buttondevteam.discordplugin.commands.{ConnectCommand, VersionCommand}
-import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSenderBase}
 import buttondevteam.discordplugin.mcchat.{MCChatUtils, MinecraftChatModule}
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
@@ -28,7 +28,7 @@ import java.lang.reflect.Method
             player.sendMessage("§cYou don't have a pending connection to Discord.")
             return true
         }
-        val dp = ChromaGamerBase.getUser(did, classOf[DiscordPlayer])
+        val dp = ChromaGamerBase.getUser(did, classOf[DiscordUser])
         val mcp = TBMCPlayerBase.getPlayer(player.getUniqueId, classOf[TBMCPlayer])
         dp.connectWith(mcp)
         ConnectCommand.WaitingToConnect.remove(player.getName)

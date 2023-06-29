@@ -8,7 +8,7 @@ import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
 import buttondevteam.discordplugin.fun.FunModule
 import buttondevteam.discordplugin.listeners.{CommonListeners, MCListener}
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.mcchat.sender.{DiscordPlayer, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSenderBase}
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand
 import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.{DPState, Timings}
@@ -179,7 +179,7 @@ import scala.jdk.OptionConverters.*
             }
             CommonListeners.register(DiscordPlugin.dc.getEventDispatcher)
             TBMCCoreAPI.RegisterEventsForExceptions(new MCListener, this)
-            TBMCCoreAPI.RegisterUserClass(classOf[DiscordPlayer], () => new DiscordPlayer)
+            TBMCCoreAPI.RegisterUserClass(classOf[DiscordUser], () => new DiscordUser)
             ChromaGamerBase.addConverter {
                 case dsender: DiscordSenderBase => Some(dsender.getChromaUser).toJava
                 case _ => None.toJava

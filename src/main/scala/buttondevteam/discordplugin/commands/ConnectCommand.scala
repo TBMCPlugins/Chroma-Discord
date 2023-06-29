@@ -1,6 +1,6 @@
 package buttondevteam.discordplugin.commands
 
-import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase}
 import com.google.common.collect.HashBiMap
@@ -34,7 +34,7 @@ import org.bukkit.entity.Player
             return true
         }
         val pl = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer])
-        val dp = pl.getAs(classOf[DiscordPlayer])
+        val dp = pl.getAs(classOf[DiscordUser])
         if (dp != null && author.getId.asString == dp.getDiscordID) {
             sender.event.reply("You already have this account connected.").subscribe()
             return true

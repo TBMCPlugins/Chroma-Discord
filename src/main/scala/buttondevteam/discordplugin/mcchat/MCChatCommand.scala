@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
-import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
@@ -25,7 +25,7 @@ class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC
             sender.sendMessage("This command can only be issued in a direct message with the bot.")
             return true
         }
-        val user: DiscordPlayer = ChromaGamerBase.getUser(sender.author.getId.asString, classOf[DiscordPlayer])
+        val user: DiscordUser = ChromaGamerBase.getUser(sender.author.getId.asString, classOf[DiscordUser])
         val mcchat: Boolean = !user.isMinecraftChatEnabled
         MCChatPrivate.privateMCChat(channel, mcchat, sender.author, user)
         sender.sendMessage("Minecraft chat " +

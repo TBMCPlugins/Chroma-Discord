@@ -30,15 +30,15 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
 
     def getChannel: MessageChannel = channel
 
-    private var chromaUser: DiscordPlayer = null
+    private var chromaUser: DiscordUser = null
 
     /**
      * Loads the user data on first query.
      *
      * @return A Chroma user of Discord or a Discord user of Chroma
      */
-    def getChromaUser: DiscordPlayer = {
-        if (chromaUser == null) chromaUser = ChromaGamerBase.getUser(user.getId.asString, classOf[DiscordPlayer])
+    def getChromaUser: DiscordUser = {
+        if (chromaUser == null) chromaUser = ChromaGamerBase.getUser(user.getId.asString, classOf[DiscordUser])
         chromaUser
     }
 

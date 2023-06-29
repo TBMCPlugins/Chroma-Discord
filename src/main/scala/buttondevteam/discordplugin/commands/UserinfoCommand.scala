@@ -1,7 +1,7 @@
 package buttondevteam.discordplugin.commands
 
 import buttondevteam.discordplugin.DiscordPlugin
-import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.ChromaGamerBase.InfoTarget
@@ -23,7 +23,7 @@ class UserinfoCommand extends ICommand2DC {
             sender.sendMessage("An error occurred.")
             return true
         }
-        val dp = ChromaGamerBase.getUser(target.getId.asString, classOf[DiscordPlayer])
+        val dp = ChromaGamerBase.getUser(target.getId.asString, classOf[DiscordUser])
         val uinfo = new StringBuilder("User info for ").append(target.getUsername).append(":\n")
         uinfo.append(dp.getInfo(InfoTarget.Discord))
         sender.sendMessage(uinfo.toString)

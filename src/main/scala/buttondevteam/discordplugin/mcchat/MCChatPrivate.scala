@@ -2,7 +2,7 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.mcchat.MCChatUtils.LastMsgData
-import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordUser, DiscordSenderBase}
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.lib.player.TBMCPlayer
 import discord4j.core.`object`.entity.User
@@ -18,7 +18,7 @@ object MCChatPrivate {
      */
     private[mcchat] var lastmsgPerUser: ListBuffer[LastMsgData] = ListBuffer()
 
-    def privateMCChat(channel: MessageChannel, start: Boolean, user: User, dp: DiscordPlayer): Unit = {
+    def privateMCChat(channel: MessageChannel, start: Boolean, user: User, dp: DiscordUser): Unit = {
         MCChatUtils.ConnectedSenders synchronized {
             val mcp = dp.getAs(classOf[TBMCPlayer])
             if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
@@ -59,7 +59,7 @@ object MCChatPrivate {
         }
     }
 
-    def isMinecraftChatEnabled(dp: DiscordPlayer): Boolean = isMinecraftChatEnabled(dp.getDiscordID)
+    def isMinecraftChatEnabled(dp: DiscordUser): Boolean = isMinecraftChatEnabled(dp.getDiscordID)
 
     def isMinecraftChatEnabled(did: String): Boolean = { // Don't load the player data just for this
         lastmsgPerUser.exists(_.channel.asInstanceOf[PrivateChannel].getRecipientIds.stream.anyMatch(u => u.asString == did))

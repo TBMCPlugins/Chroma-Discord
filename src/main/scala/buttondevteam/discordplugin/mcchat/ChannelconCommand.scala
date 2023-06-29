@@ -4,7 +4,7 @@ import buttondevteam.core.component.channel.{Channel, ChatRoom}
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
-import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordUser}
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.chat.{Command2, CommandClass}
@@ -115,7 +115,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
             return true
         }
         val author = message.getAuthor.get
-        val dp: DiscordPlayer = ChromaGamerBase.getUser(author.getId.asString, classOf[DiscordPlayer])
+        val dp: DiscordUser = ChromaGamerBase.getUser(author.getId.asString, classOf[DiscordUser])
         val chp: TBMCPlayer = dp.getAs(classOf[TBMCPlayer])
         if (chp == null) {
             DPUtils.reply(message, channel, "you need to connect your Minecraft account. On the main server in " + DPUtils.botmention + " do " + DiscordPlugin.getPrefix + "connect <MCname>").subscribe()

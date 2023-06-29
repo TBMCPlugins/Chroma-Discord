@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.commands.ConnectCommand
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.DiscordPlugin
-import buttondevteam.discordplugin.mcchat.sender.DiscordPlayer
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.lib.ScheduledServerRestartEvent
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent
 import discord4j.common.util.Snowflake
@@ -23,7 +23,7 @@ class MCListener extends Listener {
         }
 
     @EventHandler def onGetInfo(e: TBMCPlayerGetInfoEvent): Unit = {
-        Option(DiscordPlugin.SafeMode).filterNot(identity).flatMap(_ => Option(e.getPlayer.getAs(classOf[DiscordPlayer])))
+        Option(DiscordPlugin.SafeMode).filterNot(identity).flatMap(_ => Option(e.getPlayer.getAs(classOf[DiscordUser])))
             .flatMap(dp => Option(dp.getDiscordID)).filter(_.nonEmpty)
             .map(Snowflake.of).flatMap(id => DiscordPlugin.dc.getUserById(id).onErrorResume(_ => Mono.empty).blockOptional().toScala)
             .map(user => {
