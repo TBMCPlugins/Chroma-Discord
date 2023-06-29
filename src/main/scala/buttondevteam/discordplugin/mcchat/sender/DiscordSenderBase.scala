@@ -17,7 +17,7 @@ import java.util.UUID
  * @param user    May be null.
  * @param channel May not be null.
  */
-abstract class DiscordSenderBase protected(var user: User, var channel: MessageChannel) extends CommandSender {
+abstract class DiscordSenderBase protected(var user: User, var channel: MessageChannel) extends CommandSender { // TODO: Move most of this to DiscordUser
     private var msgtosend = ""
     private var sendtask: BukkitTask = null
 

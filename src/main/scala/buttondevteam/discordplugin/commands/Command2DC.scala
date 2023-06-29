@@ -15,9 +15,10 @@ class Command2DC extends Command2[ICommand2DC, Command2DCSender]('/', false) {
     }
 
     def registerCommand(command: ICommand2DC, appId: Long, guildId: Option[Long] = None): Unit = {
-        super.registerCommandSuper(command) //Needs to be configurable for the helps
+        val mainNode = super.registerCommandSuper(command) //Needs to be configurable for the helps
+        // TODO: Go through all subcommands and register them
         val greetCmdRequest = ApplicationCommandRequest.builder()
-            .name(command.getCommandPath) //TODO: Main path
+            .name(mainNode.getName)
             .description("Connect your Minecraft account.") //TODO: Description
             .addOption(ApplicationCommandOptionData.builder()
                 .name("name")

@@ -7,6 +7,7 @@ import buttondevteam.discordplugin.DPUtils.SpecExtensions
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
 import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayerSender, DiscordSender, DiscordSenderBase}
+import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayerBase}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Sets
 import discord4j.common.util.Snowflake
@@ -35,7 +36,7 @@ import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, SeqHasAsJava}
 import scala.jdk.javaapi.CollectionConverters.asScala
-import scala.jdk.javaapi.OptionConverters._
+import scala.jdk.javaapi.OptionConverters.*
 
 object MCChatUtils {
     /**
@@ -87,7 +88,7 @@ object MCChatUtils {
             gid == buttondevteam.core.component.channel.Channel.GROUP_EVERYONE //If null, allow if public (custom chats will have their channel stored anyway)
         }
         else {
-            gid == lmd.mcchannel.getGroupID(p)
+            gid == lmd.mcchannel.getGroupID(ChromaGamerBase.getFromSender(p))
         }
         ).filter(MCChatUtils.checkEssentials) //If they can see it
             .filter(_ => C.incrementAndGet > 0) //Always true
@@ -102,10 +103,10 @@ object MCChatUtils {
         !ess.getUser(p).isHidden
     }
 
-    def addSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], user: User, sender: T): T =
-        addSender(senders, user.getId.asString, sender)
+    def addSenderTo[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], user: User, sender: T): T =
+        addSenderTo(senders, user.getId.asString, sender)
 
-    def addSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], did: String, sender: T): T = {
+    def addSenderTo[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], did: String, sender: T): T = {
         val mapOpt = senders.get(did)
         val map = if (mapOpt.isEmpty) new ConcurrentHashMap[Snowflake, T] else mapOpt.get
         map.put(sender.getChannel.getId, sender)
@@ -113,13 +114,13 @@ object MCChatUtils {
         sender
     }
 
-    def getSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
+    def getSenderFrom[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
         val mapOpt = senders.get(user.getId.asString)
         if (mapOpt.nonEmpty) mapOpt.get.get(channel)
         else null.asInstanceOf
     }
 
-    def removeSender[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
+    def removeSenderFrom[T <: DiscordSenderBase](senders: concurrent.Map[String, ConcurrentHashMap[Snowflake, T]], channel: Snowflake, user: User): T = {
         val mapOpt = senders.get(user.getId.asString)
         if (mapOpt.nonEmpty) mapOpt.get.remove(channel)
         else null.asInstanceOf
@@ -153,15 +154,15 @@ object MCChatUtils {
      * Do the {@code action} for each custom chat the {@code sender} have access to and has that broadcast type enabled.
      *
      * @param action The action to do
-     * @param sender The sender to check perms of or null to send to all that has it toggled
+     * @param permUser The user to check perms of or null to send to all that has it toggled
      * @param toggle The toggle to check or null to send to all allowed
      */
-    def forAllowedCustomMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast): Mono[_] = {
+    def forAllowedCustomMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast): Mono[_] = {
         if (notEnabled) return Mono.empty
         val st = MCChatCustom.lastmsgCustom.filter(clmd => { //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
             if (toggle != null && ((clmd.toggles & (1 << toggle.id)) == 0)) false //If null then allow
-            else if (sender == null) true
-            else clmd.groupID.equals(clmd.mcchannel.getGroupID(sender))
+            else if (permUser == null) true
+            else clmd.groupID.equals(clmd.mcchannel.getGroupID(permUser))
         }).map(cc => action.apply(Mono.just(cc.channel))) //TODO: Send error messages on channel connect
         //Mono.whenDelayError((() => st.iterator).asInstanceOf[java.lang.Iterable[Mono[_]]]) //Can't convert as an iterator or inside the stream, but I can convert it as a stream
         Mono.whenDelayError(st.asJava)
@@ -171,13 +172,13 @@ object MCChatUtils {
      * Do the {@code action} for each custom chat the {@code sender} have access to and has that broadcast type enabled.
      *
      * @param action  The action to do
-     * @param sender  The sender to check perms of or null to send to all that has it toggled
+     * @param permUser  The user to check perms of or null to send to all that has it toggled
      * @param toggle  The toggle to check or null to send to all allowed
      * @param hookmsg Whether the message is also sent from the hook
      */
-    def forAllowedCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable sender: CommandSender, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
+    def forAllowedCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
         if (notEnabled) return Mono.empty
-        val cc = forAllowedCustomMCChat(action, sender, toggle)
+        val cc = forAllowedCustomMCChat(action, permUser, toggle)
         if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) return Mono.whenDelayError(forPublicPrivateChat(action), cc)
         Mono.whenDelayError(cc)
     }
@@ -195,7 +196,7 @@ object MCChatUtils {
             if (event.shouldSendTo(getSender(data.channel.getId, data.user)))
                 list.append(action(Mono.just(data.channel))) //TODO: Only store ID?
         MCChatCustom.lastmsgCustom.filter(clmd =>
-            clmd.brtoggles.contains(event.getTarget) && event.shouldSendTo(clmd.dcp))
+            clmd.brtoggles.contains(event.getTarget) && event.shouldSendTo(clmd.dcp.getChromaUser))
             .map(clmd => action(Mono.just(clmd.channel))).foreach(elem => {
             list.append(elem)
             ()
@@ -207,10 +208,10 @@ object MCChatUtils {
      * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
      */
     private[mcchat] def getSender(channel: Snowflake, author: User): DiscordSenderBase = { //noinspection OptionalGetWithoutIsPresent
-        Option(getSender(OnlineSenders, channel, author)) // Find first non-null
-            .orElse(Option(getSender(ConnectedSenders, channel, author))) // This doesn't support the public chat, but it'll always return null for it
-            .orElse(Option(getSender(UnconnectedSenders, channel, author))) //
-            .orElse(Option(addSender(UnconnectedSenders, author,
+        Option(getSenderFrom(OnlineSenders, channel, author)) // Find first non-null
+            .orElse(Option(getSenderFrom(ConnectedSenders, channel, author))) // This doesn't support the public chat, but it'll always return null for it
+            .orElse(Option(getSenderFrom(UnconnectedSenders, channel, author))) //
+            .orElse(Option(addSenderTo(UnconnectedSenders, author,
                 new DiscordSender(author, DiscordPlugin.dc.getChannelById(channel).block().asInstanceOf[MessageChannel]))))
             .get
     }

@@ -21,8 +21,8 @@ object MCChatCustom {
             var gid: String = null
             mcchannel match {
                 case room: ChatRoom =>
-                    room.joinRoom(dcp)
-                    gid = if (groupid == null) mcchannel.getGroupID(dcp) else groupid
+                    room.joinRoom(dcp.getChromaUser)
+                    gid = if (groupid == null) mcchannel.getGroupID(dcp.getChromaUser) else groupid
                 case _ =>
                     gid = groupid
             }
@@ -46,7 +46,7 @@ object MCChatCustom {
                 if (lmd.channel.getId.asLong != channel.asLong) true
                 else {
                     lmd.mcchannel match {
-                        case room: ChatRoom => room.leaveRoom(lmd.dcp)
+                        case room: ChatRoom => room.leaveRoom(lmd.dcp.getChromaUser)
                         case _ =>
                     }
                     false
@@ -58,6 +58,7 @@ object MCChatCustom {
 
     def getCustomChats: List[CustomLMD] = lastmsgCustom.toList
 
+    // TODO: Store Chroma user only
     class CustomLMD private[mcchat](channel: MessageChannel, user: User, val groupID: String,
                                     mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
                                     var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, user, mcchannel) {

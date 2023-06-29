@@ -8,7 +8,7 @@ name := "Chroma-Discord"
 
 version := "1.1"
 
-scalaVersion := "3.2.2"
+scalaVersion := "3.3.0"
 
 resolvers += "spigot-repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
 resolvers += "jitpack.io" at "https://jitpack.io"

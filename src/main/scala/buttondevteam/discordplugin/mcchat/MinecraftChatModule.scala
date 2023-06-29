@@ -4,6 +4,7 @@ import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
+import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.architecture.{Component, ConfigData}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
@@ -37,56 +38,56 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
     /**
      * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
      */
-    def whitelistedCommands: ConfigData[util.ArrayList[String]] = getConfig.getData("whitelistedCommands",
+    def whitelistedCommands: IConfigData[util.ArrayList[String]] = getConfig.getData("whitelistedCommands",
         Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
 
     /**
      * The channel to use as the public Minecraft chat - everything public gets broadcasted here
      */
-    def chatChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
+    def chatChannel: IConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
 
     def chatChannelMono: Mono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    def modlogChannel: ConfigData[Mono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
+    def modlogChannel: IConfigData[Mono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
      */
-    def excludedPlugins: ConfigData[Array[String]] = getConfig.getData("excludedPlugins", Array[String]("ProtocolLib", "LibsDisguises", "JourneyMapServer"))
+    def excludedPlugins: IConfigData[Array[String]] = getConfig.getData("excludedPlugins", Array[String]("ProtocolLib", "LibsDisguises", "JourneyMapServer"))
     /**
      * If this setting is on then players logged in through the 'mcchat' command will be able to teleport using plugin commands.
      * They can then use commands like /tpahere to teleport others to that place.<br />
      * If this is off, then teleporting will have no effect.
      */
-    def allowFakePlayerTeleports: ConfigData[Boolean] = getConfig.getData("allowFakePlayerTeleports", false)
+    def allowFakePlayerTeleports: IConfigData[Boolean] = getConfig.getData("allowFakePlayerTeleports", false)
     /**
      * If this is on, each chat channel will have a player list in their description.
      * It only gets added if there's no description yet or there are (at least) two lines of "----" following each other.
      * Note that it will replace <b>everything</b> above the first and below the last "----" but it will only detect exactly four dashes.
      * So if you want to use dashes for something else in the description, make sure it's either less or more dashes in one line.
      */
-    def showPlayerListOnDC: ConfigData[Boolean] = getConfig.getData("showPlayerListOnDC", true)
+    def showPlayerListOnDC: IConfigData[Boolean] = getConfig.getData("showPlayerListOnDC", true)
     /**
      * This setting controls whether custom chat connections can be <i>created</i> (existing connections will always work).
      * Custom chat connections can be created using the channelcon command and they allow players to display town chat in a Discord channel for example.
      * See the channelcon command for more details.
      */
-    def allowCustomChat: ConfigData[Boolean] = getConfig.getData("allowCustomChat", true)
+    def allowCustomChat: IConfigData[Boolean] = getConfig.getData("allowCustomChat", true)
     /**
      * This setting allows you to control if players can DM the bot to log on the server from Discord.
      * This allows them to both chat and perform any command they can in-game.
      */
-    def allowPrivateChat: ConfigData[Boolean] = getConfig.getData("allowPrivateChat", true)
+    def allowPrivateChat: IConfigData[Boolean] = getConfig.getData("allowPrivateChat", true)
     /**
      * If set, message authors appearing on Discord will link to this URL. A 'type' and 'id' parameter will be added with the user's platform (Discord, Minecraft, ...) and ID.
      */
-    def profileURL: ConfigData[String] = getConfig.getData("profileURL", "")
+    def profileURL: IConfigData[String] = getConfig.getData("profileURL", "")
     /**
      * Enables support for running vanilla commands through Discord, if you ever need it.
      */
-    def enableVanillaCommands: ConfigData[Boolean] = getConfig.getData("enableVanillaCommands", true)
+    def enableVanillaCommands: IConfigData[Boolean] = getConfig.getData("enableVanillaCommands", true)
     /**
      * Whether players logged on from Discord (mcchat command) should be recognised by other plugins. Some plugins might break if it's turned off.
      * But it's really hacky.

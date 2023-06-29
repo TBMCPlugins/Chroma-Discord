@@ -3,6 +3,7 @@ package buttondevteam.discordplugin.fun
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
+import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.architecture.{Component, ConfigData}
 import com.google.common.collect.Lists
 import discord4j.core.`object`.entity.channel.{GuildChannel, MessageChannel}
@@ -97,7 +98,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * Questions that the bot will choose a random answer to give to.
      */
-    final private def serverReady: ConfigData[Array[String]] =
+    final private def serverReady: IConfigData[Array[String]] =
         getConfig.getData("serverReady", Array[String](
             "when will the server be open", "when will the server be ready",
             "when will the server be done", "when will the server be complete",
@@ -106,7 +107,7 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * Answers for a recognized question. Selected randomly.
      */
-    final private def serverReadyAnswers: ConfigData[util.ArrayList[String]] =
+    final private def serverReadyAnswers: IConfigData[util.ArrayList[String]] =
         getConfig.getData("serverReadyAnswers", Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
     private def createUsableServerReadyStrings(): Unit =

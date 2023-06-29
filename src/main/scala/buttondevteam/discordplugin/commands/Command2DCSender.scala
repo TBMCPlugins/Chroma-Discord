@@ -15,7 +15,7 @@ class Command2DCSender(val event: ChatInputInteractionEvent) extends Command2Sen
     override def sendMessage(message: String): Unit = {
         if (message.isEmpty) return ()
         //Some(message) map DPUtils.sanitizeString map { (msg: String) => Character.toLowerCase(msg.charAt(0)) + msg.substring(1) } foreach event.reply - don't even need this
-        event.reply(message);
+        event.reply(message)
     }
 
     override def sendMessage(message: Array[String]): Unit = sendMessage(String.join("\n", message: _*))

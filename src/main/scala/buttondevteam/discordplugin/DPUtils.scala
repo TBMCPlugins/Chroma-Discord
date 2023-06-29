@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin
 
 import buttondevteam.lib.TBMCCoreAPI
+import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.architecture.{Component, ConfigData, IHaveConfig}
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{Channel, MessageChannel}
@@ -68,17 +69,17 @@ object DPUtils {
         else DiscordPlugin.plugin.getLogger
     }
 
-    def channelData(config: IHaveConfig, key: String): ConfigData[Mono[MessageChannel]] =
+    def channelData(config: IHaveConfig, key: String): IConfigData[Mono[MessageChannel]] =
         config.getData(key, id => getMessageChannel(key, Snowflake.of(id.asInstanceOf[Long])),
             (_: Mono[MessageChannel]) => 0L, 0L, true) //We can afford to search for the channel in the cache once (instead of using mainServer)
 
-    def roleData(config: IHaveConfig, key: String, defName: String): ConfigData[Mono[Role]] =
+    def roleData(config: IHaveConfig, key: String, defName: String): IConfigData[Mono[Role]] =
         roleData(config, key, defName, Mono.just(DiscordPlugin.mainServer))
 
     /**
      * Needs to be a [[ConfigData]] for checking if it's set
      */
-    def roleData(config: IHaveConfig, key: String, defName: String, guild: Mono[Guild]): ConfigData[Mono[Role]] = config.getData(key, name => {
+    def roleData(config: IHaveConfig, key: String, defName: String, guild: Mono[Guild]): IConfigData[Mono[Role]] = config.getData(key, name => {
         if (!name.isInstanceOf[String] || name.asInstanceOf[String].isEmpty) Mono.empty[Role]
         else guild.flatMapMany(_.getRoles).filter(_.getName == name).onErrorResume(e => {
             getLogger.warning("Failed to get role data for " + key + "=" + name + " - " + e.getMessage)
@@ -86,7 +87,7 @@ object DPUtils {
         }).next
     }, _ => defName, defName, true)
 
-    def snowflakeData(config: IHaveConfig, key: String, defID: Long): ConfigData[Snowflake] =
+    def snowflakeData(config: IHaveConfig, key: String, defID: Long): IConfigData[Snowflake] =
         config.getData(key, id => Snowflake.of(id.asInstanceOf[Long]), _.asLong, defID, true)
 
     /**
@@ -106,7 +107,7 @@ object DPUtils {
      * @param configs   The configs to check for null
      * @return Whether the component got disabled and a warning logged
      */
-    def disableIfConfigError(@Nullable component: Component[DiscordPlugin], configs: ConfigData[_]*): Boolean = {
+    def disableIfConfigError(@Nullable component: Component[DiscordPlugin], configs: IConfigData[_]*): Boolean = {
         for (config <- configs) {
             val v = config.get
             if (disableIfConfigErrorRes(component, config, v)) return true
@@ -122,7 +123,7 @@ object DPUtils {
      * @param result    The result of getting the value
      * @return Whether the component got disabled and a warning logged
      */
-    def disableIfConfigErrorRes(@Nullable component: Component[DiscordPlugin], config: ConfigData[_], result: Any): Boolean = {
+    def disableIfConfigErrorRes(@Nullable component: Component[DiscordPlugin], config: IConfigData[_], result: Any): Boolean = {
         //noinspection ConstantConditions
         if (result == null || (result.isInstanceOf[Mono[_]] && !result.asInstanceOf[Mono[_]].hasElement.block())) {
             var path: String = null
@@ -185,7 +186,7 @@ object DPUtils {
         }).filter(ch => ch.isInstanceOf[MessageChannel]).cast(classOf[MessageChannel])
     }
 
-    def getMessageChannel(config: ConfigData[Snowflake]): Mono[MessageChannel] =
+    def getMessageChannel(config: IConfigData[Snowflake]): Mono[MessageChannel] =
         getMessageChannel(config.getPath, config.get)
 
     def ignoreError[T](mono: Mono[T]): Mono[T] = mono.onErrorResume((_: Throwable) => Mono.empty)

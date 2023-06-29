@@ -123,7 +123,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         }
         val dcp: DiscordConnectedPlayer = DiscordConnectedPlayer.create(message.getAuthor.get, channel, chp.getUniqueId, Bukkit.getOfflinePlayer(chp.getUniqueId).getName, module)
         //Using a fake player with no login/logout, should be fine for this event
-        val groupid: String = chan.get.getGroupID(dcp)
+        val groupid: String = chan.get.getGroupID(chp)
         if (groupid == null && !((chan.get.isInstanceOf[ChatRoom]))) { //ChatRooms don't allow it unless the user joins, which happens later
             DPUtils.reply(message, channel, "sorry, you cannot use that Minecraft channel.").subscribe()
             return true

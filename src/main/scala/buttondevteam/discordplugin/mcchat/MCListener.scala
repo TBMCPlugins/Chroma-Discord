@@ -3,7 +3,7 @@ package buttondevteam.discordplugin.mcchat
 import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayer, DiscordPlayerSender}
 import buttondevteam.lib.TBMCSystemChatEvent
-import buttondevteam.lib.player.{TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
+import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer, TBMCPlayerBase, TBMCYEEHAWEvent}
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.channel.MessageChannel
@@ -36,8 +36,8 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
                 if (dp != null)
                     DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).flatMap(user =>
                         user.getPrivateChannel.flatMap(chan => module.chatChannelMono.flatMap(cc => {
-                            MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, chan, p, module))
-                            MCChatUtils.addSender(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, cc, p, module)) //Stored per-channel
+                            MCChatUtils.addSenderTo(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, chan, p, module))
+                            MCChatUtils.addSenderTo(MCChatUtils.OnlineSenders, dp.getDiscordID, DiscordPlayerSender.create(user, cc, p, module)) //Stored per-channel
                             Mono.empty
                         }))).subscribe()
                 val message = e.getJoinMessage
@@ -51,7 +51,7 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
 
     private def sendJoinLeaveMessage(message: String, player: Player): Unit =
         if (message != null && message.trim.nonEmpty)
-            MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), player, ChannelconBroadcast.JOINLEAVE, hookmsg = true).subscribe()
+            MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(message), ChromaGamerBase.getFromSender(player), ChannelconBroadcast.JOINLEAVE, hookmsg = true).subscribe()
 
     @EventHandler(priority = EventPriority.MONITOR) def onPlayerLeave(e: PlayerQuitEvent): Unit = {
         if (e.getPlayer.isInstanceOf[DiscordConnectedPlayer]) return () // Only care about real users
@@ -69,14 +69,14 @@ class MCListener(val module: MinecraftChatModule) extends Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW) def onPlayerDeath(e: PlayerDeathEvent): Unit =
-        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage), e.getEntity, ChannelconBroadcast.DEATH, hookmsg = true).subscribe()
+        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(e.getDeathMessage), ChromaGamerBase.getFromSender(e.getEntity), ChannelconBroadcast.DEATH, hookmsg = true).subscribe()
 
     @EventHandler def onPlayerAFK(e: AfkStatusChangeEvent): Unit = {
         val base = e.getAffected.getBase
         if (e.isCancelled || !base.isOnline) return ()
         val msg = base.getDisplayName + " is " + (if (e.getValue) "now"
         else "no longer") + " AFK."
-        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), base, ChannelconBroadcast.AFK, hookmsg = false).subscribe()
+        MCChatUtils.forAllowedCustomAndAllMCChat(MCChatUtils.send(msg), ChromaGamerBase.getFromSender(base), ChannelconBroadcast.AFK, hookmsg = false).subscribe()
     }
 
     @EventHandler def onPlayerMute(e: MuteStatusChangeEvent): Unit = {

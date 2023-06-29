@@ -15,6 +15,7 @@ import discord4j.core.`object`.entity.channel.PrivateChannel
 ))
 class MCChatCommand(private val module: MinecraftChatModule) extends ICommand2DC {
     @Command2.Subcommand override def `def`(sender: Command2DCSender): Boolean = {
+        // TODO: If the user is logged in, don't let the object be removed from the cache (test first)
         if (!module.allowPrivateChat.get) {
             sender.sendMessage("Using the private chat is not allowed on this Minecraft server.")
             return true

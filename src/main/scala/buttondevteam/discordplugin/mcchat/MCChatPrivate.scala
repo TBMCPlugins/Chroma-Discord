@@ -27,14 +27,14 @@ object MCChatPrivate {
                 val mcm = ComponentManager.getIfEnabled(classOf[MinecraftChatModule])
                 if (start) {
                     val sender = DiscordConnectedPlayer.create(user, channel, mcp.getUniqueId, op.getName, mcm)
-                    MCChatUtils.addSender(MCChatUtils.ConnectedSenders, user, sender)
+                    MCChatUtils.addSenderTo(MCChatUtils.ConnectedSenders, user, sender)
                     MCChatUtils.LoggedInPlayers.put(mcp.getUniqueId, sender)
                     if (p == null) { // Player is offline - If the player is online, that takes precedence
                         MCChatUtils.callLoginEvents(sender)
                     }
                 }
                 else {
-                    val sender = MCChatUtils.removeSender(MCChatUtils.ConnectedSenders, channel.getId, user)
+                    val sender = MCChatUtils.removeSenderFrom(MCChatUtils.ConnectedSenders, channel.getId, user)
                     assert(sender != null)
                     Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => {
                         def foo(): Unit = {
@@ -69,7 +69,7 @@ object MCChatPrivate {
         MCChatUtils.ConnectedSenders synchronized {
             for ((_, userMap) <- MCChatUtils.ConnectedSenders) {
                 for (valueEntry <- asScala(userMap.entrySet)) {
-                    if (MCChatUtils.getSender(MCChatUtils.OnlineSenders, valueEntry.getKey, valueEntry.getValue.getUser) == null) { //If the player is online then the fake player was already logged out
+                    if (MCChatUtils.getSenderFrom(MCChatUtils.OnlineSenders, valueEntry.getKey, valueEntry.getValue.getUser) == null) { //If the player is online then the fake player was already logged out
                         MCChatUtils.callLogoutEvent(valueEntry.getValue, !Bukkit.isPrimaryThread)
                     }
                 }

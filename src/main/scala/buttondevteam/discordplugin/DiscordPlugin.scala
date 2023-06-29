@@ -14,6 +14,7 @@ import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.{DPState, Timings}
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.*
+import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.player.ChromaGamerBase
 import com.google.common.io.Files
 import discord4j.common.util.Snowflake
@@ -77,16 +78,16 @@ import scala.jdk.OptionConverters.*
     /**
      * The (bot) channel to use for Discord commands like /role.
      */
-    def commandChannel: ConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
+    def commandChannel: IConfigData[Snowflake] = DPUtils.snowflakeData(getIConfig, "commandChannel", 0L)
     /**
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
-    def modRole: ConfigData[Mono[Role]] = DPUtils.roleData(getIConfig, "modRole", "Moderator")
+    def modRole: IConfigData[Mono[Role]] = DPUtils.roleData(getIConfig, "modRole", "Moderator")
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
-    def inviteLink: ConfigData[String] = getIConfig.getData("inviteLink", "")
+    def inviteLink: IConfigData[String] = getIConfig.getData("inviteLink", "")
 
     override def onLoad(): Unit = { //Needed by ServerWatcher
         val thread = Thread.currentThread
