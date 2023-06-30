@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
 import buttondevteam.discordplugin.mcchat.MCChatUtils
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.MessageChannel
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import javax.annotation.Nullable
 
@@ -20,7 +20,7 @@ object ChromaBot {
      *
      * @param message The message to send, duh (use [[MessageChannel.createMessage]])
      */
-    def sendMessage(message: Mono[MessageChannel] => Mono[Message]): Unit =
+    def sendMessage(message: SMono[MessageChannel] => SMono[Message]): Unit =
         MCChatUtils.forPublicPrivateChat(message).subscribe()
 
     /**
@@ -29,7 +29,7 @@ object ChromaBot {
      * @param message The message to send, duh
      * @param toggle  The toggle type for channelcon
      */
-    def sendMessageCustomAsWell(message: Mono[MessageChannel] => Mono[Message], @Nullable toggle: ChannelconBroadcast): Unit =
+    def sendMessageCustomAsWell(message: SMono[MessageChannel] => SMono[Message], @Nullable toggle: ChannelconBroadcast): Unit =
         MCChatUtils.forCustomAndAllMCChat(message.apply, toggle, hookmsg = false).subscribe()
 
     def updatePlayerList(): Unit =

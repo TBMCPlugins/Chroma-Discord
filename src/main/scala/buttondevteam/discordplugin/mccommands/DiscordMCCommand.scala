@@ -1,7 +1,8 @@
 package buttondevteam.discordplugin.mccommands
 
+import buttondevteam.discordplugin.DPUtils.FluxExtensions
 import buttondevteam.discordplugin.commands.{ConnectCommand, VersionCommand}
-import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordSenderBase, DiscordUser}
 import buttondevteam.discordplugin.mcchat.{MCChatUtils, MinecraftChatModule}
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
@@ -96,7 +97,7 @@ import java.lang.reflect.Method
         "Version command",
         "Prints the plugin version"))
     def version(sender: CommandSender): Unit = {
-        sender.sendMessage(VersionCommand.getVersion*)
+        sender.sendMessage(VersionCommand.getVersion: _*)
     }
 
     @Command2.Subcommand(helpText = Array(
@@ -112,9 +113,9 @@ import java.lang.reflect.Method
             sender.sendMessage("§bInvite link: " + invi)
             return ()
         }
-        DiscordPlugin.mainServer.getInvites.limitRequest(1)
+        DiscordPlugin.mainServer.getInvites.^^().take(1)
             .switchIfEmpty(Mono.fromRunnable(() => sender.sendMessage("§cNo invites found for the server.")))
-            .subscribe((inv: ExtendedInvite) => sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode), _ => sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it."))
+            .subscribe((inv: ExtendedInvite) => sender.sendMessage("§bInvite link: https://discord.gg/" + inv.getCode), Some(_ => sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it.")))
     }
 
     override def getHelpText(method: Method, ann: Command2.Subcommand): Array[String] = {

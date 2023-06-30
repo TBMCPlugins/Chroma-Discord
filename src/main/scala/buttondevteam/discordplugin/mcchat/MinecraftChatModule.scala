@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.Channel
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
@@ -10,9 +11,11 @@ import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.MessageChannel
+import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.util
 import java.util.stream.Collectors
@@ -46,12 +49,12 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      */
     def chatChannel: IConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
 
-    def chatChannelMono: Mono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
+    def chatChannelMono: SMono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    def modlogChannel: IConfigData[Mono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
+    def modlogChannel: IConfigData[SMono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
      */
@@ -167,7 +170,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
         }
         else {
             val kickmsg = if (Bukkit.getOnlinePlayers.size > 0)
-                DPUtils.sanitizeString(Bukkit.getOnlinePlayers.stream.map(_.getDisplayName).collect(Collectors.joining(", "))) +
+                DPUtils.sanitizeString(Bukkit.getOnlinePlayers.asScala.map(_.getDisplayName).mkString(", ")) +
                     (if (Bukkit.getOnlinePlayers.size == 1) " was " else " were ") + "thrown out" //TODO: Make configurable
             else ""
             if (MinecraftChatModule.state eq DPState.RESTARTING_SERVER) sendStateMessage(Color.ORANGE, "Server restarting", kickmsg)
@@ -190,7 +193,7 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
             val chconc = chconsc.createSection(chcon.channel.getId.asString)
             chconc.set("mcchid", chcon.mcchannel.getIdentifier)
             chconc.set("chid", chcon.channel.getId.asLong)
-            chconc.set("did", chcon.user.getId.asLong)
+            chconc.set("did", chcon.dcUser.getId.asLong)
             chconc.set("mcuid", chcon.dcp.getUniqueId.toString)
             chconc.set("mcname", chcon.dcp.getName)
             chconc.set("groupid", chcon.groupID)
@@ -209,14 +212,14 @@ class MinecraftChatModule extends Component[DiscordPlugin] {
      * It will block to make sure all messages are sent
      */
     private def sendStateMessage(color: Color, message: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(
-            _.createEmbed(_.setColor(color).setTitle(message))
-                .onErrorResume(_ => Mono.empty)
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(ch => ch.createMessage(
+            EmbedCreateSpec.builder().color(color).title(message).build()).^^()
+                .onErrorResume(_ => SMono.empty)
         ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 
     private def sendStateMessage(color: Color, message: String, extra: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(
-            _.createEmbed(_.setColor(color).setTitle(message).setDescription(extra))
-                .onErrorResume(_ => Mono.empty)
+        MCChatUtils.forCustomAndAllMCChat(_.flatMap(ch => ch.createMessage(
+            EmbedCreateSpec.builder().color(color).title(message).description(extra).build()).^^()
+                .onErrorResume(_ => SMono.empty)
         ), ChannelconBroadcast.RESTART, hookmsg = false).block()
 }

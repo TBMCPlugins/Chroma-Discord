@@ -59,9 +59,9 @@ object MCChatCustom {
     def getCustomChats: List[CustomLMD] = lastmsgCustom.toList
 
     // TODO: Store Chroma user only
-    class CustomLMD private[mcchat](channel: MessageChannel, user: User, val groupID: String,
+    class CustomLMD private[mcchat](channel: MessageChannel, val dcUser: User, val groupID: String,
                                     mcchannel: Channel, val dcp: DiscordConnectedPlayer, var toggles: Int,
-                                    var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, user, mcchannel) {
+                                    var brtoggles: Set[TBMCSystemChatEvent.BroadcastTarget]) extends MCChatUtils.LastMsgData(channel, mcchannel, dcp.getChromaUser) {
     }
 
 }

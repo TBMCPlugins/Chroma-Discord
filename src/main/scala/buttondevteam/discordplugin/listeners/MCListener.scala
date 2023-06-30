@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.listeners
 
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.commands.ConnectCommand
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.util.DPState
@@ -11,6 +12,8 @@ import discord4j.common.util.Snowflake
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.{EventHandler, Listener}
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
+
 import scala.jdk.OptionConverters._
 
 class MCListener extends Listener {
@@ -25,12 +28,12 @@ class MCListener extends Listener {
     @EventHandler def onGetInfo(e: TBMCPlayerGetInfoEvent): Unit = {
         Option(DiscordPlugin.SafeMode).filterNot(identity).flatMap(_ => Option(e.getPlayer.getAs(classOf[DiscordUser])))
             .flatMap(dp => Option(dp.getDiscordID)).filter(_.nonEmpty)
-            .map(Snowflake.of).flatMap(id => DiscordPlugin.dc.getUserById(id).onErrorResume(_ => Mono.empty).blockOptional().toScala)
+            .map(Snowflake.of).flatMap(id => DiscordPlugin.dc.getUserById(id).^^().onErrorResume(_ => SMono.empty).blockOption())
             .map(user => {
                 e.addInfo("Discord tag: " + user.getUsername + "#" + user.getDiscriminator)
                 user
             })
-            .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId).onErrorResume(t => Mono.empty).blockOptional().toScala)
+            .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId).^^().onErrorResume(t => SMono.empty).blockOption())
             .flatMap(member => member.getPresence.blockOptional().toScala)
             .map(pr => {
                 e.addInfo(pr.getStatus.toString)

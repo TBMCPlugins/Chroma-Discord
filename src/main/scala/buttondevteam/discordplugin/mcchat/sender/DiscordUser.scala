@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mcchat.sender
 
+import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.MCChatPrivate
 import buttondevteam.lib.player.{ChromaGamerBase, UserClass}
@@ -26,4 +27,12 @@ import discord4j.core.`object`.entity.User
      * [[MCChatPrivate.privateMCChat]]
      */
     def isMinecraftChatEnabled: Boolean = MCChatPrivate.isMinecraftChatEnabled(this)
+
+    override def checkChannelInGroup(s: String): Channel.RecipientTestResult = ???
+
+    override def sendMessage(message: String): Unit = ??? // TODO: Somehow check which message is this a response to
+
+    override def sendMessage(message: Array[String]): Unit = ???
+
+    override def getName: String = ???
 }

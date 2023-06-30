@@ -1,19 +1,20 @@
 package buttondevteam.discordplugin
 
+import buttondevteam.discordplugin.DPUtils.{FluxExtensions, MonoExtensions}
 import buttondevteam.discordplugin.DiscordPlugin.dc
 import buttondevteam.discordplugin.announcer.AnnouncerModule
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
-import buttondevteam.discordplugin.commands.*
+import buttondevteam.discordplugin.commands._
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
 import buttondevteam.discordplugin.fun.FunModule
 import buttondevteam.discordplugin.listeners.{CommonListeners, MCListener}
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSenderBase}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordSenderBase, DiscordUser}
 import buttondevteam.discordplugin.mccommands.DiscordMCCommand
 import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.{DPState, Timings}
 import buttondevteam.lib.TBMCCoreAPI
-import buttondevteam.lib.architecture.*
+import buttondevteam.lib.architecture._
 import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.player.ChromaGamerBase
 import com.google.common.io.Files
@@ -32,11 +33,12 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.mockito.internal.util.MockUtil
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Optional
-import scala.jdk.OptionConverters.*
+import scala.jdk.OptionConverters._
 
 @ButtonPlugin.ConfigOpts(disableConfigGen = true) object DiscordPlugin {
     private[discordplugin] var dc: GatewayDiscordClient = null
@@ -66,14 +68,14 @@ import scala.jdk.OptionConverters.*
     /**
      * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
      */
-    private def mainServer = getIConfig.getData("mainServer", id => { //It attempts to get the default as well
+    private def mainServer = getIConfig.getData("mainServer", (id: Any) => { //It attempts to get the default as well
         if (id.asInstanceOf[Long] == 0L) Option.empty
-        else DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long]))
+        else DiscordPlugin.dc.getGuildById(Snowflake.of(id.asInstanceOf[Long])).^^()
             .onErrorResume(t => {
                 getLogger.warning("Failed to get guild: " + t.getMessage)
-                Mono.empty
-            }).blockOptional().toScala
-    }, g => g.map(_.getId.asLong).getOrElse(0L), 0L, true)
+                SMono.empty
+            }).blockOption()
+    }, (g: Option[Guild]) => g.map(_.getId.asLong).getOrElse(0L), 0L, true)
 
     /**
      * The (bot) channel to use for Discord commands like /role.
@@ -83,7 +85,7 @@ import scala.jdk.OptionConverters.*
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
-    def modRole: IConfigData[Mono[Role]] = DPUtils.roleData(getIConfig, "modRole", "Moderator")
+    def modRole: IConfigData[SMono[Role]] = DPUtils.roleData(getIConfig, "modRole", "Moderator")
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
@@ -133,7 +135,7 @@ import scala.jdk.OptionConverters.*
             foo(t)
         }).subscribe((dc: GatewayDiscordClient) => {
             DiscordPlugin.dc = dc //Set to gateway client
-            dc.on(classOf[ReadyEvent]).map(_.getGuilds.size).flatMap(dc.on(classOf[GuildCreateEvent]).take(_).collectList)
+            dc.on(classOf[ReadyEvent]).^^().map(_.getGuilds.size).flatMap(dc.on(classOf[GuildCreateEvent]).take(_).collectList)
                 .doOnError(_ => stopStarting()).subscribe(this.handleReady _) // Take all received GuildCreateEvents and make it a List
             ()
         }) /* All guilds have been received, client is fully connected */

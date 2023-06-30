@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin.*
-import buttondevteam.discordplugin.DPUtils.SpecExtensions
-import buttondevteam.discordplugin.mcchat.sender.{DiscordUser, DiscordSender, DiscordSenderBase}
-import buttondevteam.lib.*
+import buttondevteam.discordplugin._
+import buttondevteam.discordplugin.DPUtils.{MonoExtensions, SpecExtensions}
+import buttondevteam.discordplugin.mcchat.sender.{DiscordSender, DiscordSenderBase, DiscordUser}
+import buttondevteam.lib._
 import buttondevteam.lib.chat.{ChatMessage, TBMCChatAPI}
 import buttondevteam.lib.player.TBMCPlayer
 import com.vdurmont.emoji.EmojiParser
@@ -22,6 +22,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.scheduler.BukkitTask
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.time.Instant
 import java.util
@@ -148,7 +149,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             }
 
             for (data <- MCChatPrivate.lastmsgPerUser) {
-                if ((e.isFromCommand || isdifferentchannel.test(data.channel.getId)) && e.shouldSendTo(MCChatUtils.getSender(data.channel.getId, data.user))) {
+                if ((e.isFromCommand || isdifferentchannel.test(data.channel.getId)) && e.shouldSendTo(data.user)) {
                     doit(data)
                 }
             }
@@ -254,11 +255,11 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
     private var recthread: Thread = null
 
     // Discord
-    def handleDiscord(ev: MessageCreateEvent): Mono[Boolean] = {
+    def handleDiscord(ev: MessageCreateEvent): SMono[Boolean] = {
         val author = Option(ev.getMessage.getAuthor.orElse(null))
         val hasCustomChat = MCChatCustom.hasCustomChat(ev.getMessage.getChannelId)
         val prefix = DiscordPlugin.getPrefix
-        ev.getMessage.getChannel
+        ev.getMessage.getChannel.^^()
             .filter(channel => isChatEnabled(channel, author, hasCustomChat))
             .filter(channel => !isRunningMCChatCommand(channel, ev.getMessage.getContent, prefix))
             .filter(channel => {
@@ -311,8 +312,8 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
             def replaceUserMentions(): Unit = {
                 for (u <- event.getMessage.getUserMentions.asScala) { //TODO: Role mentions
                     dmessage = dmessage.replace(u.getMention, "@" + u.getUsername) // TODO: IG Formatting
-                    val m = u.asMember(DiscordPlugin.mainServer.getId).onErrorResume(_ => Mono.empty).blockOptional
-                    if (m.isPresent) {
+                    val m = u.asMember(DiscordPlugin.mainServer.getId).^^().onErrorResume(_ => SMono.empty).blockOption()
+                    if (m.nonEmpty) {
                         val mm: Member = m.get
                         val nick: String = mm.getDisplayName
                         dmessage = dmessage.replace(mm.getNicknameMention, "@" + nick)
@@ -418,8 +419,7 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
         def notWhitelisted(cmd: String) = module.whitelistedCommands.get.stream
             .noneMatch(s => cmd == s || cmd.startsWith(s + " "))
 
-        def whitelistedCommands = module.whitelistedCommands.get.stream
-            .map("/" + _).collect(Collectors.joining(", "))
+        def whitelistedCommands = module.whitelistedCommands.get.asScala.map("/" + _).mkString(", ")
 
         if (!isPrivate)
             event.getMessage.delete.subscribe()
@@ -469,9 +469,9 @@ class MCChatListener(val module: MinecraftChatModule) extends Listener {
      */
     private def runCustomCommand(dsender: DiscordSenderBase, cmdlowercased: String): Boolean = {
         if (cmdlowercased.startsWith("list")) {
-            val players = Bukkit.getOnlinePlayers
-            dsender.sendMessage("There are " + players.stream.filter(MCChatUtils.checkEssentials).count + " out of " + Bukkit.getMaxPlayers + " players online.")
-            dsender.sendMessage("Players: " + players.stream.filter(MCChatUtils.checkEssentials).map(_.getDisplayName).collect(Collectors.joining(", ")))
+            val players = Bukkit.getOnlinePlayers.asScala
+            dsender.sendMessage("There are " + players.count(MCChatUtils.checkEssentials) + " out of " + Bukkit.getMaxPlayers + " players online.")
+            dsender.sendMessage("Players: " + players.filter(MCChatUtils.checkEssentials).map(_.getDisplayName).mkString(", "))
             true
         }
         else false

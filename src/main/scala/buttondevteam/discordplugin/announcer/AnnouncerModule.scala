@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.announcer
 
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
@@ -7,7 +8,7 @@ import buttondevteam.lib.architecture.{Component, ComponentMetadata}
 import buttondevteam.lib.player.ChromaGamerBase
 import com.google.gson.JsonParser
 import discord4j.core.`object`.entity.channel.MessageChannel
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -86,8 +87,8 @@ import scala.collection.mutable
                 }
             }
 
-            def sendMsg(ch: Mono[MessageChannel], msg: String) =
-                ch.flatMap(c => c.createMessage(msg)).flatMap(_.pin).subscribe()
+            def sendMsg(ch: SMono[MessageChannel], msg: String) =
+                ch.flatMap(c => c.createMessage(msg).^^()).flatMap(_.pin.^^()).subscribe()
 
             if (msgsb.nonEmpty) sendMsg(channel.get(), msgsb.toString())
             if (modmsgsb.nonEmpty) sendMsg(modChannel.get(), modmsgsb.toString())

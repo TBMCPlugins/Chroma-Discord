@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import net.kyori.adventure.text.Component
-import org.bukkit.*
+import org.bukkit._
 import org.bukkit.attribute.{Attribute, AttributeInstance, AttributeModifier}
 import org.bukkit.entity.{Entity, Player}
 import org.bukkit.event.inventory.InventoryType
@@ -18,7 +18,7 @@ import org.mockito.{MockSettings, Mockito}
 
 import java.lang.reflect.Modifier
 import java.util
-import java.util.*
+import java.util._
 
 object DiscordConnectedPlayer {
     def create(user: User, channel: MessageChannel, uuid: UUID, mcname: String, module: MinecraftChatModule): DiscordConnectedPlayer =
@@ -53,9 +53,9 @@ object DiscordConnectedPlayer {
  * @param playerName     The Minecraft name of the player.
  * @param module   The MinecraftChatModule or null if testing.
  */
-abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val uniqueId: UUID, val playerName: String, val module: MinecraftChatModule) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] {
+abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val uniqueId: UUID, val playerName: String, val module: MinecraftChatModule) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordConnectedPlayer] with Player {
     private var loggedIn = false
-    private var displayName: String = playerName
+    private var dispName: String = playerName
 
     private var location: Location = if (module == null) null else Bukkit.getWorlds.get(0).getSpawnLocation
     private val basePlayer: OfflinePlayer = if (module == null) null else Bukkit.getOfflinePlayer(uniqueId)
@@ -93,7 +93,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
 
     def setPerm(perm: PermissibleBase): Unit = this.perm = perm
 
-    override def setDisplayName(displayName: String): Unit = this.displayName = displayName
+    override def setDisplayName(displayName: String): Unit = this.dispName = displayName
 
     override def getVanillaCmdListener = this.vanillaCmdListener
 
@@ -107,7 +107,7 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
 
     override def getUniqueId: UUID = this.uniqueId
 
-    override def getDisplayName: String = this.displayName
+    override def getDisplayName: String = this.dispName
 
     /**
      * For testing
@@ -191,6 +191,9 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
         override def getValue: Double = getDefaultValue
 
         override def getDefaultValue: Double = 20 //Works for max health, should be okay for the rest
+
+        override def addTransientModifier(modifier: AttributeModifier): Unit = {
+        }
     }
 
     override def getGameMode = GameMode.SPECTATOR

@@ -41,7 +41,7 @@ import reactor.core.publisher.Mono
     @Command2.Subcommand def list(sender: Command2DCSender): Unit = {
         val sb = new StringBuilder
         var b = false
-        for (role <- grm.GameRoles.stream.sorted.iterator.asInstanceOf[Iterable[String]]) {
+        for (role <- grm.GameRoles.sorted.iterator.asInstanceOf[Iterable[String]]) {
             sb.append(role)
             if (!b) for (_ <- 0 until Math.max(1, 20 - role.length)) {
                 sb.append(" ")
@@ -56,8 +56,8 @@ import reactor.core.publisher.Mono
     private def checkAndGetRole(sender: Command2DCSender, rolename: String): Role = {
         var rname = rolename
         if (!grm.GameRoles.contains(rolename)) { //If not found as-is, correct case
-            val orn = grm.GameRoles.stream.filter(r => r.equalsIgnoreCase(rolename)).findAny
-            if (!orn.isPresent) {
+            val orn = grm.GameRoles.find(r => r.equalsIgnoreCase(rolename))
+            if (orn.isEmpty) {
                 sender.sendMessage("that role cannot be found.")
                 list(sender)
                 return null
@@ -72,7 +72,7 @@ import reactor.core.publisher.Mono
         }
         if (roles.size == 0) {
             sender.sendMessage("the specified role cannot be found on Discord! Removing from the list.")
-            grm.GameRoles.remove(rolename)
+            grm.GameRoles.subtractOne(rolename)
             return null
         }
         if (roles.size > 1) {

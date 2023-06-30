@@ -1,15 +1,16 @@
 package buttondevteam.discordplugin.exceptions
 
 import buttondevteam.core.ComponentManager
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.{TBMCCoreAPI, TBMCExceptionEvent}
+import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.channel.{GuildChannel, MessageChannel}
-import discord4j.core.`object`.entity.{Guild, Role}
 import org.apache.commons.lang.exception.ExceptionUtils
 import org.bukkit.Bukkit
 import org.bukkit.event.{EventHandler, Listener}
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.util
 import java.util.stream.Collectors
@@ -22,11 +23,10 @@ object ExceptionListenerModule {
         if (instance == null) return ()
         try getChannel.flatMap(channel => {
             val coderRole = channel match {
-                case ch: GuildChannel => instance.pingRole(ch.getGuild).get
-                case _ => Mono.empty
+                case ch: GuildChannel => instance.pingRole(ch.getGuild.^^()).get
+                case _ => SMono.empty
             }
-            coderRole.map((role: Role) => if (TBMCCoreAPI.IsTestServer) new StringBuilder
-            else new StringBuilder(role.getMention).append("\n"))
+            coderRole.map(role => if (TBMCCoreAPI.IsTestServer) new StringBuilder else new StringBuilder(role.getMention).append("\n")) // Ping if prod server
                 .defaultIfEmpty(new StringBuilder).flatMap(sb => {
                 sb.append(sourcemessage).append("\n")
                 sb.append("```").append("\n")
@@ -36,7 +36,7 @@ object ExceptionListenerModule {
                 if (sb.length + stackTrace.length >= 1980) stackTrace = stackTrace.substring(0, 1980 - sb.length)
                 sb.append(stackTrace).append("\n")
                 sb.append("```")
-                channel.createMessage(sb.toString)
+                channel.createMessage(sb.toString).^^()
             })
         }).subscribe()
         catch {
@@ -47,9 +47,9 @@ object ExceptionListenerModule {
 
     private var instance: ExceptionListenerModule = null
 
-    def getChannel: Mono[MessageChannel] = {
+    def getChannel: SMono[MessageChannel] = {
         if (instance != null) return instance.channel.get
-        Mono.empty
+        SMono.empty
     }
 }
 
@@ -80,7 +80,7 @@ class ExceptionListenerModule extends Component[DiscordPlugin] with Listener {
     /**
      * The role to ping if an error occurs. Set to empty ('') to disable.
      */
-    private def pingRole(guild: Mono[Guild]) = DPUtils.roleData(getConfig, "pingRole", "Coder", guild)
+    private def pingRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "pingRole", "Coder", guild)
 
     override protected def enable(): Unit = {
         if (DPUtils.disableIfConfigError(this, channel)) return ()

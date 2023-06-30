@@ -23,7 +23,7 @@ object DiscordPlayerSender {
         }).useConstructor(user, channel, player, module))
 }
 
-abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] {
+abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] with Player {
 
     override def getVanillaCmdListener = null
 
@@ -32,8 +32,8 @@ abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var play
         super.sendMessage(message)
     }
 
-    override def sendMessage(messages: Array[? <: String]): Unit = {
-        player.sendMessage(messages*)
-        super.sendMessage(messages)
+    override def sendMessage(messages: String*): Unit = {
+        player.sendMessage(messages: _*)
+        super.sendMessage(messages: _*)
     }
 }

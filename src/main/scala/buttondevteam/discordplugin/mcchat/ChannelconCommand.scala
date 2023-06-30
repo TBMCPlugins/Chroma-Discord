@@ -1,26 +1,27 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.component.channel.{Channel, ChatRoom}
-import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
+import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.commands.{Command2DCSender, ICommand2DC}
 import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordUser}
 import buttondevteam.lib.TBMCSystemChatEvent
-import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.chat.{Command2, CommandClass}
 import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayer}
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.channel.{GuildChannel, MessageChannel}
 import discord4j.rest.util.{Permission, PermissionSet}
 import org.bukkit.Bukkit
-import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
 import java.lang.reflect.Method
-import java.util
 import java.util.function.Supplier
-import java.util.stream.Collectors
 import java.util.{Objects, Optional}
 import javax.annotation.Nullable
+import scala.jdk.Accumulator
+import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.StreamConverters.StreamHasToScala
 
 @SuppressWarnings(Array("SimplifyOptionalCallChains")) //Java 11
 @CommandClass(helpText = Array("Channel connect", //
@@ -38,9 +39,9 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         val message: Message = null // TODO
         if (checkPerms(message, null)) return true
         else if (MCChatCustom.removeCustomChat(message.getChannelId))
-            DPUtils.reply(message, Mono.empty, "channel connection removed.").subscribe()
+            DPUtils.reply(message, SMono.empty, "channel connection removed.").subscribe()
         else
-            DPUtils.reply(message, Mono.empty, "this channel isn't connected.").subscribe()
+            DPUtils.reply(message, SMono.empty, "this channel isn't connected.").subscribe()
         true
     }
 
@@ -56,11 +57,11 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         val togglesString: Supplier[String] = () => ChannelconBroadcast.values
             .map(t => t.toString.toLowerCase + ": " + (if ((cc.toggles & (1 << t.id)) == 0) "disabled" else "enabled"))
             .mkString("\n") + "\n\n" +
-            TBMCSystemChatEvent.BroadcastTarget.stream.map((target: TBMCSystemChatEvent.BroadcastTarget) =>
-                target.getName + ": " + (if (cc.brtoggles.contains(target)) "enabled" else "disabled"))
-                .collect(Collectors.joining("\n"))
+            TBMCSystemChatEvent.BroadcastTarget.stream.toScala(Accumulator)
+                .map(target => s"${target.getName}: ${if (cc.brtoggles.contains(target)) "enabled" else "disabled"}")
+                .mkString("\n")
         if (toggle == null) {
-            DPUtils.reply(message, Mono.empty, "toggles:\n" + togglesString.get).subscribe()
+            DPUtils.reply(message, SMono.empty, "toggles:\n" + togglesString.get).subscribe()
             return true
         }
         val arg: String = toggle.toUpperCase
@@ -68,7 +69,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         if (b.isEmpty) {
             val bt: TBMCSystemChatEvent.BroadcastTarget = TBMCSystemChatEvent.BroadcastTarget.get(arg)
             if (bt == null) {
-                DPUtils.reply(message, Mono.empty, "cannot find toggle. Toggles:\n" + togglesString.get).subscribe()
+                DPUtils.reply(message, SMono.empty, "cannot find toggle. Toggles:\n" + togglesString.get).subscribe()
                 return true
             }
             val add: Boolean = !cc.brtoggles.contains(bt)
@@ -88,7 +89,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         //1 1 | 0
         // XOR
         cc.toggles ^= (1 << b.get.id)
-        DPUtils.reply(message, Mono.empty, "'" + b.get.toString.toLowerCase + "' "
+        DPUtils.reply(message, SMono.empty, "'" + b.get.toString.toLowerCase + "' "
             + (if ((cc.toggles & (1 << b.get.id)) == 0) "disabled" else "enabled")).subscribe()
         true
     }
@@ -157,7 +158,7 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
             return true
         }
         //noinspection OptionalGetWithoutIsPresent
-        val perms: PermissionSet = (channel.asInstanceOf[GuildChannel]).getEffectivePermissions(message.getAuthor.map(_.getId).get).block
+        val perms: PermissionSet = (channel.asInstanceOf[GuildChannel]).getEffectivePermissions(message.getAuthor.toScala.map(_.getId).get).block
         if (!(perms.contains(Permission.ADMINISTRATOR)) && !(perms.contains(Permission.MANAGE_CHANNELS))) {
             DPUtils.reply(message, channel, "you need to have manage permissions for this channel!").subscribe()
             return true
@@ -176,6 +177,6 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
             "To remove a connection use @ChromaBot channelcon remove in the channel.",
             "Mentioning the bot is needed in this case because the " + DiscordPlugin.getPrefix + " prefix only works in " + DPUtils.botmention + ".",
             "Invite link: <https://discordapp.com/oauth2/authorize?client_id="
-                + DiscordPlugin.dc.getApplicationInfo.map(info => info.getId.asString).blockOptional().orElse("Unknown")
+                + DiscordPlugin.dc.getApplicationInfo.^^().map(info => info.getId.asString).blockOption().getOrElse("Unknown")
                 + "&scope=bot&permissions=268509264>")
 }

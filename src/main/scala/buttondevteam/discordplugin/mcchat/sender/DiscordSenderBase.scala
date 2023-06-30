@@ -64,8 +64,8 @@ abstract class DiscordSenderBase protected(var user: User, var channel: MessageC
             TBMCCoreAPI.SendException("An error occured while sending message to DiscordSender", e, DiscordPlugin.plugin)
     }
 
-    override def sendMessage(messages: Array[? <: String]): Unit = sendMessage(String.join("\n", messages: _*))
+    override def sendMessage(messages: String*): Unit = sendMessage(messages.mkString("\n"))
 
     override def sendMessage(sender: UUID, message: String): Unit = sendMessage(message)
-    override def sendMessage(sender: UUID, messages: Array[? <: String]): Unit = sendMessage(messages)
+    override def sendMessage(sender: UUID, messages: String*): Unit = sendMessage(messages : _*)
 }

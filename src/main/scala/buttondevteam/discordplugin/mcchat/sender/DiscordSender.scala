@@ -1,5 +1,6 @@
 package buttondevteam.discordplugin.mcchat.sender
 
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.DiscordPlugin
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
@@ -9,15 +10,16 @@ import org.bukkit.permissions.{PermissibleBase, Permission, PermissionAttachment
 import org.bukkit.plugin.Plugin
 import org.bukkit.{Bukkit, Server}
 import reactor.core.publisher.Mono
+import reactor.core.scala.publisher.SMono
 
-import scala.jdk.OptionConverters.*
+import scala.jdk.OptionConverters._
 import java.util
 
 class DiscordSender(user: User, channel: MessageChannel, pname: String) extends DiscordSenderBase(user, channel) with CommandSender {
     private val perm = new PermissibleBase(this)
     private val senderName: String = Option(pname)
-        .orElse(Option(user).flatMap(u => u.asMember(DiscordPlugin.mainServer.getId)
-            .onErrorResume(_ => Mono.empty).blockOptional().toScala
+        .orElse(Option(user).flatMap(u => u.asMember(DiscordPlugin.mainServer.getId).^^()
+            .onErrorResume(_ => SMono.empty).blockOption()
             .map(u => u.getDisplayName)))
         .getOrElse("Discord user")
 

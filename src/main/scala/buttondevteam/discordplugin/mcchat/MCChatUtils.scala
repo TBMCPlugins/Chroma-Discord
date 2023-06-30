@@ -1,27 +1,25 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.{ComponentManager, MainPlugin, component}
-import buttondevteam.discordplugin.*
 import buttondevteam.discordplugin.ChannelconBroadcast.ChannelconBroadcast
-import buttondevteam.discordplugin.DPUtils.SpecExtensions
+import buttondevteam.discordplugin.DPUtils.MonoExtensions
+import buttondevteam.discordplugin._
 import buttondevteam.discordplugin.broadcaster.GeneralEventBroadcasterModule
 import buttondevteam.discordplugin.mcchat.MCChatCustom.CustomLMD
 import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordPlayerSender, DiscordSender, DiscordSenderBase}
-import buttondevteam.lib.player.{ChromaGamerBase, TBMCPlayerBase}
+import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Sets
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.channel.{Channel, MessageChannel, PrivateChannel, TextChannel}
 import discord4j.core.`object`.entity.{Message, User}
-import discord4j.core.spec.legacy.LegacyTextChannelEditSpec
 import io.netty.util.collection.LongObjectHashMap
 import org.bukkit.Bukkit
-import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.player.{AsyncPlayerPreLoginEvent, PlayerJoinEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.plugin.AuthorNagException
-import reactor.core.publisher.{Flux, Mono}
+import reactor.core.scala.publisher.SMono
 
 import java.net.InetAddress
 import java.util
@@ -31,12 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.stream.Collectors
 import javax.annotation.Nullable
-import scala.collection.{concurrent, mutable}
 import scala.collection.convert.ImplicitConversions.`map AsJavaMap`
 import scala.collection.mutable.ListBuffer
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, SeqHasAsJava}
+import scala.collection.{concurrent, mutable}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.javaapi.CollectionConverters.asScala
-import scala.jdk.javaapi.OptionConverters.*
 
 object MCChatUtils {
     /**
@@ -84,7 +81,7 @@ object MCChatUtils {
                 gid = buttondevteam.core.component.channel.Channel.GROUP_EVERYONE // (Though it's a public chat then rn)
         }
         val C = new AtomicInteger
-        s(s.length - 1) = "Players: " + Bukkit.getOnlinePlayers.stream.filter(p => if (lmd.mcchannel == null) {
+        s(s.length - 1) = "Players: " + Bukkit.getOnlinePlayers.asScala.filter(p => if (lmd.mcchannel == null) {
             gid == buttondevteam.core.component.channel.Channel.GROUP_EVERYONE //If null, allow if public (custom chats will have their channel stored anyway)
         }
         else {
@@ -92,7 +89,7 @@ object MCChatUtils {
         }
         ).filter(MCChatUtils.checkEssentials) //If they can see it
             .filter(_ => C.incrementAndGet > 0) //Always true
-            .map((p) => DPUtils.sanitizeString(p.getDisplayName)).collect(Collectors.joining(", "))
+            .map((p) => DPUtils.sanitizeString(p.getDisplayName)).mkString(", ")
         s(0) = s"$C player${if (C.get != 1) "s" else ""} online"
         lmd.channel.asInstanceOf[TextChannel].edit().withTopic(String.join("\n----\n", s: _*)).withReason("Player list update").subscribe() //Don't wait
     }
@@ -126,11 +123,11 @@ object MCChatUtils {
         else null.asInstanceOf
     }
 
-    def forPublicPrivateChat(action: Mono[MessageChannel] => Mono[_]): Mono[_] = {
-        if (notEnabled) return Mono.empty
-        val list = MCChatPrivate.lastmsgPerUser.map(data => action(Mono.just(data.channel)))
+    def forPublicPrivateChat(action: SMono[MessageChannel] => SMono[_]): SMono[_] = {
+        if (notEnabled) return SMono.empty
+        val list = MCChatPrivate.lastmsgPerUser.map(data => action(SMono.just(data.channel)))
             .prepend(action(module.chatChannelMono))
-        Mono.whenDelayError(list.asJava)
+        SMono.whenDelayError(list)
     }
 
     /**
@@ -140,14 +137,14 @@ object MCChatUtils {
      * @param toggle  The toggle to check
      * @param hookmsg Whether the message is also sent from the hook
      */
-    def forCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
-        if (notEnabled) return Mono.empty
+    def forCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
+        if (notEnabled) return SMono.empty
         val list = List(if (!GeneralEventBroadcasterModule.isHooked || !hookmsg)
-            forPublicPrivateChat(action) else Mono.empty) ++
+            forPublicPrivateChat(action) else SMono.empty) ++
             (if (toggle == null) MCChatCustom.lastmsgCustom
             else MCChatCustom.lastmsgCustom.filter(cc => (cc.toggles & (1 << toggle.id)) != 0))
-                .map(_.channel).map(Mono.just).map(action)
-        Mono.whenDelayError(list.asJava)
+                .map(_.channel).map(SMono.just).map(action)
+        SMono.whenDelayError(list)
     }
 
     /**
@@ -157,15 +154,15 @@ object MCChatUtils {
      * @param permUser The user to check perms of or null to send to all that has it toggled
      * @param toggle The toggle to check or null to send to all allowed
      */
-    def forAllowedCustomMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast): Mono[_] = {
-        if (notEnabled) return Mono.empty
+    def forAllowedCustomMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast): SMono[_] = {
+        if (notEnabled) return SMono.empty
         val st = MCChatCustom.lastmsgCustom.filter(clmd => { //new TBMCChannelConnectFakeEvent(sender, clmd.mcchannel).shouldSendTo(clmd.dcp) - Thought it was this simple hehe - Wait, it *should* be this simple
             if (toggle != null && ((clmd.toggles & (1 << toggle.id)) == 0)) false //If null then allow
             else if (permUser == null) true
             else clmd.groupID.equals(clmd.mcchannel.getGroupID(permUser))
-        }).map(cc => action.apply(Mono.just(cc.channel))) //TODO: Send error messages on channel connect
-        //Mono.whenDelayError((() => st.iterator).asInstanceOf[java.lang.Iterable[Mono[_]]]) //Can't convert as an iterator or inside the stream, but I can convert it as a stream
-        Mono.whenDelayError(st.asJava)
+        }).map(cc => action.apply(SMono.just(cc.channel))) //TODO: Send error messages on channel connect
+        //Mono.whenDelayError((() => st.iterator).asInstanceOf[java.lang.Iterable[SMono[_]]]) //Can't convert as an iterator or inside the stream, but I can convert it as a stream
+        SMono.whenDelayError(st)
     }
 
     /**
@@ -176,38 +173,38 @@ object MCChatUtils {
      * @param toggle  The toggle to check or null to send to all allowed
      * @param hookmsg Whether the message is also sent from the hook
      */
-    def forAllowedCustomAndAllMCChat(action: Mono[MessageChannel] => Mono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): Mono[_] = {
-        if (notEnabled) return Mono.empty
+    def forAllowedCustomAndAllMCChat(action: SMono[MessageChannel] => SMono[_], @Nullable permUser: ChromaGamerBase, @Nullable toggle: ChannelconBroadcast, hookmsg: Boolean): SMono[_] = {
+        if (notEnabled) return SMono.empty
         val cc = forAllowedCustomMCChat(action, permUser, toggle)
-        if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) return Mono.whenDelayError(forPublicPrivateChat(action), cc)
-        Mono.whenDelayError(cc)
+        if (!GeneralEventBroadcasterModule.isHooked || !hookmsg) return SMono.whenDelayError(List(forPublicPrivateChat(action), cc))
+        SMono.whenDelayError(List(cc))
     }
 
-    def send(message: String): Mono[MessageChannel] => Mono[_] = _.flatMap((mc: MessageChannel) => {
+    def send(message: String): SMono[MessageChannel] => SMono[_] = _.flatMap((mc: MessageChannel) => {
         resetLastMessage(mc)
-        mc.createMessage(DPUtils.sanitizeString(message))
+        mc.createMessage(DPUtils.sanitizeString(message)).^^()
     })
 
-    def forAllowedMCChat(action: Mono[MessageChannel] => Mono[_], event: TBMCSystemChatEvent): Mono[_] = {
-        if (notEnabled) return Mono.empty
-        val list = new ListBuffer[Mono[_]]
+    def forAllowedMCChat(action: SMono[MessageChannel] => SMono[_], event: TBMCSystemChatEvent): SMono[_] = {
+        if (notEnabled) return SMono.empty
+        val list = new ListBuffer[SMono[_]]
         if (event.getChannel.isGlobal) list.append(action(module.chatChannelMono))
         for (data <- MCChatPrivate.lastmsgPerUser)
-            if (event.shouldSendTo(getSender(data.channel.getId, data.user)))
-                list.append(action(Mono.just(data.channel))) //TODO: Only store ID?
+            if (event.shouldSendTo(data.user))
+                list.append(action(SMono.just(data.channel))) //TODO: Only store ID?
         MCChatCustom.lastmsgCustom.filter(clmd =>
             clmd.brtoggles.contains(event.getTarget) && event.shouldSendTo(clmd.dcp.getChromaUser))
-            .map(clmd => action(Mono.just(clmd.channel))).foreach(elem => {
+            .map(clmd => action(SMono.just(clmd.channel))).foreach(elem => {
             list.append(elem)
             ()
         })
-        Mono.whenDelayError(list.asJava)
+        SMono.whenDelayError(list)
     }
 
     /**
      * This method will find the best sender to use: if the player is online, use that, if not but connected then use that etc.
      */
-    private[mcchat] def getSender(channel: Snowflake, author: User): DiscordSenderBase = { //noinspection OptionalGetWithoutIsPresent
+    private[mcchat] def getSender(channel: Snowflake, author: User): DiscordSenderBase = {
         Option(getSenderFrom(OnlineSenders, channel, author)) // Find first non-null
             .orElse(Option(getSenderFrom(ConnectedSenders, channel, author))) // This doesn't support the public chat, but it'll always return null for it
             .orElse(Option(getSenderFrom(UnconnectedSenders, channel, author))) //
@@ -347,13 +344,14 @@ object MCChatUtils {
 
     private[mcchat] def callEventSync(event: Event) = Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => callEventExcludingSome(event))
 
-    class LastMsgData(val channel: MessageChannel, val user: User) {
+    class LastMsgData(val channel: MessageChannel, @Nullable val user: ChromaGamerBase) {
+
         var message: Message = null
         var time = 0L
         var content: String = null
         var mcchannel: component.channel.Channel = null
 
-        protected def this(channel: MessageChannel, user: User, mcchannel: component.channel.Channel) = {
+        protected def this(channel: MessageChannel, mcchannel: component.channel.Channel, user: ChromaGamerBase) = {
             this(channel, user)
             this.mcchannel = mcchannel
         }

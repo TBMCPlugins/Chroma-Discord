@@ -54,7 +54,7 @@ object MCChatPrivate {
                 // ---- PermissionsEx warning is normal on logout ----
             }
             if (!start) MCChatUtils.lastmsgfromd.remove(channel.getId.asLong)
-            if (start) lastmsgPerUser += new MCChatUtils.LastMsgData(channel, user) // Doesn't support group DMs
+            if (start) lastmsgPerUser += new MCChatUtils.LastMsgData(channel, dp) // Doesn't support group DMs
             else lastmsgPerUser.filterInPlace(_.channel.getId.asLong != channel.getId.asLong) //Remove
         }
     }
