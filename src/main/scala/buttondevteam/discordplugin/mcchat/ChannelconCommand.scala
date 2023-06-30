@@ -20,6 +20,7 @@ import java.util.function.Supplier
 import java.util.{Objects, Optional}
 import javax.annotation.Nullable
 import scala.jdk.Accumulator
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.StreamConverters.StreamHasToScala
 
@@ -107,7 +108,8 @@ class ChannelconCommand(private val module: MinecraftChatModule) extends IComman
         if (MCChatCustom.hasCustomChat(message.getChannelId)) {
             return respond(sender, "this channel is already connected to a Minecraft channel. Use `@ChromaBot channelcon remove` to remove it.")
         }
-        val chan: Optional[Channel] = Channel.getChannels.filter(ch => ch.getIdentifier.equalsIgnoreCase(channelID)).findAny // TODO: Removed erroring shit
+        val chan: Optional[Channel] = Channel.getChannels.filter(ch => ch.getIdentifier.equalsIgnoreCase(channelID)
+            || ch.extraIdentifiers.get().asScala.exists(id => id.equalsIgnoreCase(channelID))).findAny
         if (!chan.isPresent) { //TODO: Red embed that disappears over time (kinda like the highlight messages in OW)
             DPUtils.reply(message, channel, "MC channel with ID '" + channelID + "' not found! The ID is the command for it without the /.").subscribe()
             return true
