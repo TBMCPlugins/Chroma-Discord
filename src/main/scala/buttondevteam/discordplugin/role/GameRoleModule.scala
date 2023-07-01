@@ -120,7 +120,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
         val rc = roleColor.get
         if (r.getColor equals rc)
             DiscordPlugin.dc.getSelf.^^().flatMap(u => u.asMember(DiscordPlugin.mainServer.getId).^^())
-                .flatMap(_.hasHigherRoles(Collections.singleton(r.getId)).^^()).cast[Boolean].defaultIfEmpty(false) //Below one of our roles
+                .flatMap(_.hasHigherRoles(Collections.singleton(r.getId)).^^().map(b => b: Boolean)).defaultIfEmpty(false) //Below one of our roles
         else SMono.just(false)
     }
 }

@@ -2,7 +2,7 @@ name := "Chroma-Discord"
 
 version := "1.1"
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.11"
 
 resolvers += "jitpack.io" at "https://jitpack.io"
 resolvers += "paper-repo" at "https://papermc.io/repo/repository/maven-public/"
@@ -11,11 +11,10 @@ resolvers += Resolver.mavenLocal
 // assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = false)
 
 libraryDependencies ++= Seq(
-    "io.papermc.paper" % "paper-api" % "1.19.4-R0.1-SNAPSHOT" % Provided,
+    "io.papermc.paper" % "paper-api" % "1.19.1-R0.1-SNAPSHOT" % Provided,
 
     "com.discord4j" % "discord4j-core" % "3.2.3",
     "com.vdurmont" % "emoji-java" % "5.1.1",
-    "org.mockito" % "mockito-core" % "5.2.0",
     "io.projectreactor" % "reactor-scala-extensions_2.13" % "0.8.0",
 
     "com.github.TBMCPlugins.ChromaCore" % "Chroma-Core" % "v2.0.0-SNAPSHOT" % Provided,
@@ -25,12 +24,17 @@ libraryDependencies ++= Seq(
     // https://mvnrepository.com/artifact/net.kyori/examination-api
     "net.kyori" % "examination-api" % "1.3.0" % "provided",
     // https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib
-    "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.8.20" % "provided"
+    "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.8.20" % "provided",
+    // https://mvnrepository.com/artifact/org.scalatest/scalatest
+    "org.scalatest" %% "scalatest" % "3.2.16" % Test,
+    // https://mvnrepository.com/artifact/com.github.seeseemelk/MockBukkit-v1.19
+    "com.github.seeseemelk" % "MockBukkit-v1.19" % "2.29.0" % Test,
+    "org.yaml" % "snakeyaml" % "1.32" % Compile
 )
 
 assembly / assemblyJarName := "Chroma-Discord.jar"
 assembly / assemblyShadeRules := Seq(
-    "io.netty", "com.fasterxml", "org.mockito", "org.slf4j"
+    "io.netty", "com.fasterxml", "org.slf4j"
 ).map { p =>
     ShadeRule.rename(s"$p.**" -> "btndvtm.dp.@0").inAll
 }

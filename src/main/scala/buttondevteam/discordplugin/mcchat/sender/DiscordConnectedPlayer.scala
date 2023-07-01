@@ -191,9 +191,6 @@ abstract class DiscordConnectedPlayer(user: User, channel: MessageChannel, val u
         override def getValue: Double = getDefaultValue
 
         override def getDefaultValue: Double = 20 //Works for max health, should be okay for the rest
-
-        override def addTransientModifier(modifier: AttributeModifier): Unit = {
-        }
     }
 
     override def getGameMode = GameMode.SPECTATOR

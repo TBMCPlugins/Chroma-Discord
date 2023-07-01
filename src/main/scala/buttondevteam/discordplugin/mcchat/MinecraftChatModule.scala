@@ -5,8 +5,8 @@ import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.discordplugin.{ChannelconBroadcast, DPUtils, DiscordPlugin}
+import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.architecture.config.IConfigData
-import buttondevteam.lib.architecture.{Component, ConfigData}
 import buttondevteam.lib.{TBMCCoreAPI, TBMCSystemChatEvent}
 import com.google.common.collect.Lists
 import discord4j.common.util.Snowflake
@@ -14,13 +14,10 @@ import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
-import reactor.core.publisher.Mono
 import reactor.core.scala.publisher.SMono
 
 import java.util
-import java.util.stream.Collectors
 import java.util.{Objects, UUID}
-import scala.collection.mutable
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
