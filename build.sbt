@@ -11,7 +11,7 @@ resolvers += Resolver.mavenLocal
 // assembly / assemblyOption := (assembly / assemblyOption).value.copy(includeScala = false)
 
 libraryDependencies ++= Seq(
-    "io.papermc.paper" % "paper-api" % "1.19.1-R0.1-SNAPSHOT" % Provided,
+    "io.papermc.paper" % "paper-api" % "1.19-R0.1-SNAPSHOT" % Provided,
 
     "com.discord4j" % "discord4j-core" % "3.2.3",
     "com.vdurmont" % "emoji-java" % "5.1.1",
@@ -24,12 +24,12 @@ libraryDependencies ++= Seq(
     // https://mvnrepository.com/artifact/net.kyori/examination-api
     "net.kyori" % "examination-api" % "1.3.0" % "provided",
     // https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib
-    "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.8.20" % "provided",
+    //"org.jetbrains.kotlin" % "kotlin-stdlib" % "1.8.20" % "provided",
     // https://mvnrepository.com/artifact/org.scalatest/scalatest
     "org.scalatest" %% "scalatest" % "3.2.16" % Test,
     // https://mvnrepository.com/artifact/com.github.seeseemelk/MockBukkit-v1.19
     "com.github.seeseemelk" % "MockBukkit-v1.19" % "2.29.0" % Test,
-    "org.yaml" % "snakeyaml" % "1.32" % Compile
+    "com.github.milkbowl" % "vault" % "master-SNAPSHOT" % Test
 )
 
 assembly / assemblyJarName := "Chroma-Discord.jar"
@@ -55,3 +55,13 @@ saveConfigComments := {
 Compile / resourceGenerators += saveConfigComments
 //scalacOptions ++= Seq("-release", "17", "--verbose")
 scalacOptions ++= Seq("-release", "17")
+//Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
+Test / fork := true // This changes the tests ran through sbt to work like IntelliJ tests, fixes mocking issues
+/*excludeDependencies ++= Seq(
+    ExclusionRule("org.bukkit"),
+    ExclusionRule("io.papermc.paper"),
+    ExclusionRule("com.destroystokyo")
+)*/
+excludeDependencies ++= Seq(
+    ExclusionRule("net.milkbowl.vault", "VaultAPI")
+)

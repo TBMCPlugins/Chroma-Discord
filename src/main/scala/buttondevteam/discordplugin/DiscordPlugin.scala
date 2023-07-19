@@ -30,6 +30,8 @@ import discord4j.rest.interaction.Interactions
 import discord4j.store.jdk.JdkStoreService
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.plugin.PluginDescriptionFile
+import org.bukkit.plugin.java.JavaPluginLoader
 import org.mockito.internal.util.MockUtil
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
@@ -54,7 +56,7 @@ import scala.jdk.OptionConverters._
     private[discordplugin] val DELIVERED_REACTION = ReactionEmoji.unicode("✅")
 }
 
-@ButtonPlugin.ConfigOpts(disableConfigGen = true) class DiscordPlugin extends ButtonPlugin {
+@ButtonPlugin.ConfigOpts(disableConfigGen = true) class DiscordPlugin(loader: JavaPluginLoader, description: PluginDescriptionFile, folder: File, file: File) extends ButtonPlugin(loader, description, folder, file) {
     private var _manager: Command2DC = null
 
     def manager: Command2DC = _manager

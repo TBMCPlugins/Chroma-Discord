@@ -16,6 +16,7 @@ class Command2DC extends Command2[ICommand2DC, Command2DCSender]('/', false) {
 
     def registerCommand(command: ICommand2DC, appId: Long, guildId: Option[Long] = None): Unit = {
         val mainNode = super.registerCommandSuper(command) //Needs to be configurable for the helps
+        println("Main node name is " + mainNode.getName)
         // TODO: Go through all subcommands and register them
         val greetCmdRequest = ApplicationCommandRequest.builder()
             .name(mainNode.getName)
