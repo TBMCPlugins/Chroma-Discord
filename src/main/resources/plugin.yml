@@ -16,3 +16,6 @@ api-version: '1.13'
 #  - 'org.mockito:mockito-core:4.2.0'
 #  - 'io.projectreactor:reactor-scala-extensions_2.13:0.8.0'
 #  - 'org.scala-lang:scala3-library_3:3.1.0'
+libraries:
+  - com.github.shynixn.mccoroutine:mccoroutine-bukkit-api:2.23.0
+  - com.github.shynixn.mccoroutine:mccoroutine-bukkit-core:2.23.0

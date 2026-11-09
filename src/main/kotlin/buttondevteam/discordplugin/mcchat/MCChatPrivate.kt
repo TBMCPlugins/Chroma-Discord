@@ -1,16 +1,11 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin.mcchat.MCChatUtils.LastMsgData
-import buttondevteam.discordplugin.mcchat.sender.{DiscordConnectedPlayer, DiscordUser, DiscordSenderBase}
 import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.discordplugin.mcchat.MCChatUtils.LastMsgData
 import buttondevteam.lib.player.TBMCPlayer
 import discord4j.core.`object`.entity.User
-import discord4j.core.`object`.entity.channel.{MessageChannel, PrivateChannel}
 import org.bukkit.Bukkit
-
-import scala.collection.mutable.ListBuffer
-import scala.jdk.javaapi.CollectionConverters.asScala
 
 object MCChatPrivate {
     /**
@@ -18,7 +13,7 @@ object MCChatPrivate {
      */
     private[mcchat] var lastmsgPerUser: ListBuffer[LastMsgData] = ListBuffer()
 
-    def privateMCChat(channel: MessageChannel, start: Boolean, user: User, dp: DiscordUser): Unit = {
+    fun privateMCChat(channel: MessageChannel, start: Boolean, user: User, dp: DiscordUser): Unit = {
         MCChatUtils.ConnectedSenders synchronized {
             val mcp = dp.getAs(classOf[TBMCPlayer])
             if (mcp != null) { // If the accounts aren't connected, can't make a connected sender
@@ -36,8 +31,8 @@ object MCChatPrivate {
                 else {
                     val sender = MCChatUtils.removeSenderFrom(MCChatUtils.ConnectedSenders, channel.getId, user)
                     assert(sender != null)
-                    Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () => {
-                        def foo(): Unit = {
+                    Bukkit.getScheduler.runTask(DiscordPlugin.plugin, () -> {
+                        fun foo(): Unit = {
                             if ((p == null || p.isInstanceOf[DiscordSenderBase]) // Player is offline - If the player is online, that takes precedence
                                 && sender.isLoggedIn) { //Don't call the quit event if login failed
                                 MCChatUtils.callLogoutEvent(sender, needsSync = false) //The next line has to run *after* this one, so can't use the needsSync parameter
@@ -54,18 +49,18 @@ object MCChatPrivate {
                 // ---- PermissionsEx warning is normal on logout ----
             }
             if (!start) MCChatUtils.lastmsgfromd.remove(channel.getId.asLong)
-            if (start) lastmsgPerUser += new MCChatUtils.LastMsgData(channel, dp) // Doesn't support group DMs
+            if (start) lastmsgPerUser += MCChatUtils.LastMsgData(channel, dp) // Doesn't support group DMs
             else lastmsgPerUser.filterInPlace(_.channel.getId.asLong != channel.getId.asLong) //Remove
         }
     }
 
-    def isMinecraftChatEnabled(dp: DiscordUser): Boolean = isMinecraftChatEnabled(dp.getDiscordID)
+    fun isMinecraftChatEnabled(dp: DiscordUser): Boolean = isMinecraftChatEnabled(dp.getDiscordID)
 
-    def isMinecraftChatEnabled(did: String): Boolean = { // Don't load the player data just for this
-        lastmsgPerUser.exists(_.channel.asInstanceOf[PrivateChannel].getRecipientIds.stream.anyMatch(u => u.asString == did))
+    fun isMinecraftChatEnabled(did: String): Boolean = { // Don't load the player data just for this
+        lastmsgPerUser.exists(_.channel.asInstanceOf[PrivateChannel].getRecipientIds.stream.anyMatch(u -> u.asString == did))
     }
 
-    def logoutAll(): Unit = {
+    fun logoutAll(): Unit = {
         MCChatUtils.ConnectedSenders synchronized {
             for ((_, userMap) <- MCChatUtils.ConnectedSenders) {
                 for (valueEntry <- asScala(userMap.entrySet)) {

@@ -10,9 +10,9 @@ import org.mockito.invocation.InvocationOnMock
 import java.lang.reflect.Modifier
 
 object DiscordPlayerSender {
-    def create(user: User, channel: MessageChannel, player: Player, module: MinecraftChatModule): DiscordPlayerSender =
-        Mockito.mock(classOf[DiscordPlayerSender], Mockito.withSettings.stubOnly.defaultAnswer((invocation: InvocationOnMock) => {
-            def foo(invocation: InvocationOnMock): AnyRef = {
+    fun create(user: User, channel: MessageChannel, player: Player, module: MinecraftChatModule): DiscordPlayerSender =
+        Mockito.mock(classOf[DiscordPlayerSender], Mockito.withSettings.stubOnly.defaultAnswer((invocation: InvocationOnMock) -> {
+            fun foo(invocation: InvocationOnMock): AnyRef = {
                 if (!Modifier.isAbstract(invocation.getMethod.getModifiers))
                     invocation.callRealMethod
                 else
@@ -23,16 +23,16 @@ object DiscordPlayerSender {
         }).useConstructor(user, channel, player, module))
 }
 
-abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) extends DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] with Player {
+abstract class DiscordPlayerSender(user: User, channel: MessageChannel, var player: Player, val module: Nothing) : DiscordSenderBase(user, channel) with IMCPlayer[DiscordPlayerSender] with Player {
 
-    override def getVanillaCmdListener = null
+    override fun getVanillaCmdListener = null
 
-    override def sendMessage(message: String): Unit = {
+    override fun sendMessage(message: String): Unit = {
         player.sendMessage(message)
         super.sendMessage(message)
     }
 
-    override def sendMessage(messages: String*): Unit = {
+    override fun sendMessage(messages: String*): Unit = {
         player.sendMessage(messages: _*)
         super.sendMessage(messages: _*)
     }

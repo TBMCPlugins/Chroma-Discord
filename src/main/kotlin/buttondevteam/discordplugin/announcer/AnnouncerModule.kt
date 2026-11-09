@@ -2,64 +2,56 @@ package buttondevteam.discordplugin.announcer
 
 import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
-import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
-import buttondevteam.lib.architecture.{Component, ComponentMetadata}
 import buttondevteam.lib.player.ChromaGamerBase
-import com.google.gson.JsonParser
-import discord4j.core.`object`.entity.channel.MessageChannel
-import reactor.core.scala.publisher.SMono
-
-import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
  * Posts new posts from Reddit to the specified channel(s). It will pin the regular posts (not the mod posts).
  */
-@ComponentMetadata(enabledByDefault = false) object AnnouncerModule {
-    private var stop = false
-}
+@ComponentMetadata(enabledByDefault = false) class AnnouncerModule : Component<DiscordPlugin> {
+    companion object AnnouncerModule {
+        private var stop = false
+    }
 
-@ComponentMetadata(enabledByDefault = false) class AnnouncerModule extends Component[DiscordPlugin] {
     /**
      * Channel to post new posts.
      */
-    final def channel = DPUtils.channelData(getConfig, "channel")
+    final val channel = DPUtils.channelData(getConfig, "channel")
     /**
      * Channel where distinguished (moderator) posts go.
      */
-    final private def modChannel = DPUtils.channelData(getConfig, "modChannel")
+    final private val modChannel = DPUtils.channelData(getConfig, "modChannel")
     /**
      * Automatically unpins all messages except the last few. Set to 0 or >50 to disable
      */
-    final private def keepPinned = getConfig.getData("keepPinned", 40.toShort)
-    final private def lastAnnouncementTime = getConfig.getData("lastAnnouncementTime", 0L)
-    final private def lastSeenTime = getConfig.getData("lastSeenTime", 0L)
+    final private val keepPinned = getConfig.getData("keepPinned", 40.toShort)
+    final private val lastAnnouncementTime = getConfig.getData("lastAnnouncementTime", 0L)
+    final private val lastSeenTime = getConfig.getData("lastSeenTime", 0L)
     /**
      * The subreddit to pull the posts from
      */
-    final private def subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
+    final private val subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
 
-    override protected def enable(): Unit = {
-        if (DPUtils.disableIfConfigError(this, channel, modChannel)) return ()
+    override protected fun enable(): Unit = {
+        if (DPUtils.disableIfConfigError(this, channel, modChannel)) return Unit
         AnnouncerModule.stop = false //If not the first time
         val kp = keepPinned.get
-        if (kp <= 0) return ()
+        if (kp <= 0) return Unit
         val msgs = channel.get.flatMapMany(_.getPinnedMessages).takeLast(kp)
         msgs.subscribe(_.unpin)
-        new Thread(() => this.AnnouncementGetterThreadMethod()).start()
+        Thread(() -> this.AnnouncementGetterThreadMethod()).start()
     }
 
-    override protected def disable(): Unit = AnnouncerModule.stop = true
+    override protected fun disable(): Unit = AnnouncerModule.stop = true
 
     @tailrec
-    private def AnnouncementGetterThreadMethod(): Unit = {
-        if (AnnouncerModule.stop) return ()
+    private fun AnnouncementGetterThreadMethod(): Unit = {
+        if (AnnouncerModule.stop) return Unit
         if (isEnabled) try { //If not enabled, just wait
             val body = TBMCCoreAPI.DownloadString(subredditURL.get + "/new/.json?limit=10")
-            val json = new JsonParser().parse(body).getAsJsonObject.get("data").getAsJsonObject.get("children").getAsJsonArray
-            val msgsb = new mutable.StringBuilder
-            val modmsgsb = new mutable.StringBuilder
+            val json = JsonParser().parse(body).getAsJsonObject.get("data").getAsJsonObject.get("children").getAsJsonArray
+            val msgsb = mutable.StringBuilder
+            val modmsgsb = mutable.StringBuilder
             var lastanntime = lastAnnouncementTime.get
             for (i <- json.size - 1 to 0 by -1) {
                 val item = json.get(i).getAsJsonObject
@@ -81,25 +73,25 @@ import scala.collection.mutable
                     }
                     if (!author.startsWith("<")) author = "/u/" + author
                     (if (distinguished != null && distinguished == "moderator") modmsgsb else msgsb)
-                        .append("A new post was submitted to the subreddit by ").append(author).append("\n")
+                        .append("A post was submitted to the subreddit by ").append(author).append("\n")
                         .append(permalink).append("\n")
                     lastanntime = date
                 }
             }
 
-            def sendMsg(ch: SMono[MessageChannel], msg: String) =
-                ch.flatMap(c => c.createMessage(msg).^^()).flatMap(_.pin.^^()).subscribe()
+            fun sendMsg(ch: SMono[MessageChannel], msg: String) =
+                ch.flatMap(c -> c.createMessage(msg).^^()).flatMap(_.pin.^^()).subscribe()
 
             if (msgsb.nonEmpty) sendMsg(channel.get(), msgsb.toString())
             if (modmsgsb.nonEmpty) sendMsg(modChannel.get(), modmsgsb.toString())
             if (lastAnnouncementTime.get != lastanntime) lastAnnouncementTime.set(lastanntime) // If sending succeeded
         } catch {
-            case e: Exception =>
+            case e: Exception ->
                 e.printStackTrace()
         }
         try Thread.sleep(10000)
         catch {
-            case ex: InterruptedException =>
+            case ex: InterruptedException ->
                 Thread.currentThread.interrupt()
         }
         AnnouncementGetterThreadMethod()

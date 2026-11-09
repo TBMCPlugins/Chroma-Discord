@@ -1,29 +1,20 @@
 package buttondevteam.discordplugin.fun
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin.DPUtils.{FluxExtensions, MonoExtensions}
-import buttondevteam.discordplugin.{DPUtils, DiscordPlugin}
 import buttondevteam.lib.TBMCCoreAPI
+import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.architecture.config.IConfigData
-import buttondevteam.lib.architecture.{Component, ConfigData}
 import com.google.common.collect.Lists
-import discord4j.core.`object`.entity.channel.{GuildChannel, MessageChannel}
-import discord4j.core.`object`.entity.{Guild, Message}
 import discord4j.core.`object`.presence.Status
 import discord4j.core.event.domain.PresenceUpdateEvent
-import discord4j.core.spec.{EmbedCreateSpec, MessageCreateSpec}
-import discord4j.core.spec.legacy.{LegacyEmbedCreateSpec, LegacyMessageCreateSpec}
 import org.bukkit.Bukkit
 import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.{EventHandler, Listener}
-import reactor.core.publisher.Mono
 import reactor.core.scala.publisher.SMono
 
 import java.util
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream
-import scala.util.Random
 
 /**
  * All kinds of random things.
@@ -37,13 +28,13 @@ object FunModule {
         "next commit", "after we finish strangling Towny", "when we kill every *fucking* bug",
         "once the server stops screaming.", "after HL3 comes out", "next time you ask",
         "when will *you* be open?") // Ali
-    private val serverReadyRandom = new Random
-    private val usableServerReadyStrings = new java.util.ArrayList[Short](0)
+    private val serverReadyRandom = Random
+    private val usableServerReadyStrings = java.util.ArrayList[Short](0)
     private var lastlist = 0
     private var lastlistp = 0
     private var ListC = 0
 
-    def executeMemes(message: Message): Boolean = {
+    fun executeMemes(message: Message): Boolean = {
         val fm = ComponentManager.getIfEnabled(classOf[FunModule])
         if (fm == null) return false
         val msglowercased = message.getContent.toLowerCase
@@ -74,22 +65,22 @@ object FunModule {
 
     private var lasttime: Long = 0
 
-    def handleFullHouse(event: PresenceUpdateEvent): Unit = {
+    fun handleFullHouse(event: PresenceUpdateEvent): Unit = {
         val fm = ComponentManager.getIfEnabled(classOf[FunModule])
-        if (fm == null) return ()
-        if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return ()
+        if (fm == null) return Unit
+        if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return Unit
         if (!Option(event.getOld.orElse(null)).exists(_.getStatus == Status.OFFLINE)
             || event.getCurrent.getStatus == Status.OFFLINE)
-            return () //If it's not an offline -> online change
-        fm.fullHouseChannel.get.filter((ch: MessageChannel) => ch.isInstanceOf[GuildChannel])
-            .flatMap(channel => fm.fullHouseDevRole(channel.asInstanceOf[GuildChannel].getGuild.^^()).get
-                .filterWhen(devrole => event.getMember.^^()
-                    .flatMap(m => m.getRoles.^^().any(_.getId.asLong == devrole.getId.asLong)))
-                .filterWhen(devrole => event.getGuild.^^()
-                    .flatMapMany(g => g.getMembers.filter(_.getRoleIds.stream.anyMatch(_ == devrole.getId)))
+            return Unit //If it's not an offline -> online change
+        fm.fullHouseChannel.get.filter((ch: MessageChannel) -> ch.isInstanceOf[GuildChannel])
+            .flatMap(channel -> fm.fullHouseDevRole(channel.asInstanceOf[GuildChannel].getGuild.^^()).get
+                .filterWhen(devrole -> event.getMember.^^()
+                    .flatMap(m -> m.getRoles.^^().any(_.getId.asLong == devrole.getId.asLong)))
+                .filterWhen(devrole -> event.getGuild.^^()
+                    .flatMapMany(g -> g.getMembers.filter(_.getRoleIds.stream.anyMatch(_ == devrole.getId)))
                     .flatMap(_.getPresence).all(_.getStatus != Status.OFFLINE))
-                .filter(_ => lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime)) //This should stay so it checks this last
-                .flatMap(_ => {
+                .filter(_ -> lasttime + 10 < TimeUnit.NANOSECONDS.toHours(System.nanoTime)) //This should stay so it checks this last
+                .flatMap(_ -> {
                     lasttime = TimeUnit.NANOSECONDS.toHours(System.nanoTime)
                     channel.createMessage(MessageCreateSpec.builder().content("Full house!")
                         .addEmbed(EmbedCreateSpec.builder()
@@ -100,11 +91,11 @@ object FunModule {
     }
 }
 
-class FunModule extends Component[DiscordPlugin] with Listener {
+class FunModule : Component<DiscordPlugin> with Listener {
     /**
      * Questions that the bot will choose a random answer to give to.
      */
-    final private def serverReady: IConfigData[Array[String]] =
+    final private fun serverReady(): IConfigData[Array[String]] =
         getConfig.getData("serverReady", Array[String](
             "when will the server be open", "when will the server be ready",
             "when will the server be done", "when will the server be complete",
@@ -114,29 +105,29 @@ class FunModule extends Component[DiscordPlugin] with Listener {
     /**
      * Answers for a recognized question. Selected randomly.
      */
-    final private def serverReadyAnswers: IConfigData[util.ArrayList[String]] =
+    final private fun serverReadyAnswers(): IConfigData[util.ArrayList[String]] =
         getConfig.getData("serverReadyAnswers", Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
-    private def createUsableServerReadyStrings(): Unit =
-        IntStream.range(0, serverReadyAnswers.get.size).forEach((i: Int) => FunModule.usableServerReadyStrings.add(i.toShort))
+    private fun createUsableServerReadyStrings(): Unit =
+        IntStream.range(0, serverReadyAnswers.get.size).forEach((i: Int) -> FunModule.usableServerReadyStrings.add(i.toShort))
 
-    override protected def enable(): Unit = registerListener(this)
+    override protected fun enable(): Unit = registerListener(this)
 
-    override protected def disable(): Unit = {
+    override protected fun disable(): Unit = {
         FunModule.lastlist = 0
         FunModule.lastlistp = 0
         FunModule.ListC = 0
     }
 
-    @EventHandler def onPlayerJoin(event: PlayerJoinEvent): Unit = FunModule.ListC = 0
+    @EventHandler fun onPlayerJoin(event: PlayerJoinEvent): Unit = FunModule.ListC = 0
 
     /**
      * If all of the people who have this role are online, the bot will post a full house.
      */
-    private def fullHouseDevRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "fullHouseDevRole", "Developer", guild)
+    private fun fullHouseDevRole(guild: SMono[Guild]) = DPUtils.roleData(getConfig, "fullHouseDevRole", "Developer", guild)
 
     /**
      * The channel to post the full house to.
      */
-    final private def fullHouseChannel = DPUtils.channelData(getConfig, "fullHouseChannel")
+    final private fun fullHouseChannel = DPUtils.channelData(getConfig, "fullHouseChannel")
 }

@@ -1,25 +1,22 @@
 package buttondevteam.discordplugin.commands
 
-import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.listeners.CommonListeners
-import buttondevteam.lib.chat.{Command2, CommandClass}
 import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.{Member, User}
 import reactor.core.scala.publisher.SMono
 
-@CommandClass(helpText = Array("Switches debug mode."))
-class DebugCommand extends ICommand2DC {
+@CommandClass(helpText = arrayOf("Switches debug mode."))
+class DebugCommand : ICommand2DC {
     @Command2.Subcommand
-    override def `def`(sender: Command2DCSender): Boolean = {
+    override fun def(sender: Command2DCSender): Boolean = {
         SMono.justOrEmpty(sender.authorAsMember.orNull)
             .switchIfEmpty(Option(sender.author) //Support DMs
-                .map((u: User) => u.asMember(DiscordPlugin.mainServer.getId).^^()).getOrElse(SMono.empty[Member]))
-            .flatMap((m: Member) => DiscordPlugin.plugin.modRole.get
-                .map(mr => m.getRoleIds.stream.anyMatch((r: Snowflake) => r == mr.getId))
-                .switchIfEmpty(SMono.fromCallable(() => DiscordPlugin.mainServer.getOwnerId.asLong == m.getId.asLong)))
-            .onErrorResume(_ => SMono.just(false)) //Role not found
-            .subscribe(success => {
+                .map((u: User) -> u.asMember(DiscordPlugin.mainServer.getId).^^()).getOrElse(SMono.empty[Member]))
+            .flatMap((m: Member) -> DiscordPlugin.plugin.modRole.get
+                .map(mr -> m.getRoleIds.stream.anyMatch((r: Snowflake) -> r == mr.getId))
+                .switchIfEmpty(SMono.fromCallable(() -> DiscordPlugin.mainServer.getOwnerId.asLong == m.getId.asLong)))
+            .onErrorResume(_ -> SMono.just(false)) //Role not found
+            .subscribe(success -> {
                 if (success) {
                     CommonListeners.debug = !CommonListeners.debug
                     sender.sendMessage("debug " + (if (CommonListeners.debug) "enabled" else "disabled"))

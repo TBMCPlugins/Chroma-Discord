@@ -1,55 +1,50 @@
 package buttondevteam.discordplugin.listeners
 
-import buttondevteam.discordplugin.DPUtils.MonoExtensions
+import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.commands.ConnectCommand
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
-import buttondevteam.discordplugin.util.DPState
-import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
+import buttondevteam.discordplugin.util.DPState
 import buttondevteam.lib.ScheduledServerRestartEvent
 import buttondevteam.lib.player.TBMCPlayerGetInfoEvent
 import discord4j.common.util.Snowflake
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.reactive.asFlow
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.{EventHandler, Listener}
-import reactor.core.publisher.Mono
-import reactor.core.scala.publisher.SMono
+import kotlin.jvm.optionals.getOrNull
 
-import scala.jdk.OptionConverters._
-
-class MCListener extends Listener {
-    @EventHandler def onPlayerJoin(e: PlayerJoinEvent): Unit =
-        if (ConnectCommand.WaitingToConnect.containsKey(e.getPlayer.getName)) {
-            @SuppressWarnings(Array("ConstantConditions")) val user = DiscordPlugin.dc.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect.get(e.getPlayer.getName))).block
-            if (user == null) return ()
-            e.getPlayer.sendMessage("§bTo connect with the Discord account @" + user.getUsername + "#" + user.getDiscriminator + " do /discord accept")
-            e.getPlayer.sendMessage("§bIf it wasn't you, do /discord decline")
+class MCListener : Listener {
+    @EventHandler
+    fun onPlayerJoin(e: PlayerJoinEvent) {
+        if (ConnectCommand.WaitingToConnect.containsKey(e.player.name)) {
+            @SuppressWarnings("ConstantConditions") val user =
+                DiscordPlugin.dc.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect[e.player.name]!!)).block()
+                    ?: return
+            e.player.sendMessage("§bTo connect with the Discord account @" + user.username + "#" + user.discriminator + " do /discord accept")
+            e.player.sendMessage("§bIf it wasn't you, do /discord decline")
         }
-
-    @EventHandler def onGetInfo(e: TBMCPlayerGetInfoEvent): Unit = {
-        Option(DiscordPlugin.SafeMode).filterNot(identity).flatMap(_ => Option(e.getPlayer.getAs(classOf[DiscordUser])))
-            .flatMap(dp => Option(dp.getDiscordID)).filter(_.nonEmpty)
-            .map(Snowflake.of).flatMap(id => DiscordPlugin.dc.getUserById(id).^^().onErrorResume(_ => SMono.empty).blockOption())
-            .map(user => {
-                e.addInfo("Discord tag: " + user.getUsername + "#" + user.getDiscriminator)
-                user
-            })
-            .flatMap(user => user.asMember(DiscordPlugin.mainServer.getId).^^().onErrorResume(t => SMono.empty).blockOption())
-            .flatMap(member => member.getPresence.blockOptional().toScala)
-            .map(pr => {
-                e.addInfo(pr.getStatus.toString)
-                pr
-            })
-            .flatMap(_.getActivity.toScala).foreach(activity => e.addInfo(s"${activity.getType}: ${activity.getName}"))
     }
 
-    /*@EventHandler
-      public void onCommandPreprocess(TBMCCommandPreprocessEvent e) {
-        if (e.getMessage().equalsIgnoreCase("/stop"))
-          MinecraftChatModule.state = DPState.STOPPING_SERVER;
-        else if (e.getMessage().equalsIgnoreCase("/restart"))
-          MinecraftChatModule.state = DPState.RESTARTING_SERVER;
-      }*/ @EventHandler //We don't really need this with the logger stuff but hey
-    def onScheduledRestart(e: ScheduledServerRestartEvent): Unit =
+    @EventHandler
+    suspend fun onGetInfo(e: TBMCPlayerGetInfoEvent) {
+        if (DiscordPlugin.SafeMode) return
+        val dp = e.player?.getAs(DiscordUser::class.java)
+        val user = dp?.getDiscordUser() ?: return
+        e.addInfo("Discord tag: " + user.username + "#" + user.discriminator)
+        val member = user.asMember(DiscordPlugin.plugin!!.mainServer!!.id).asFlow().first()
+        val presence = member.presence.asFlow().first()
+        e.addInfo(presence.status.toString())
+        val activity = presence.activity.getOrNull()
+        if (activity != null) {
+            e.addInfo("${activity.type}: ${activity.name}")
+        }
+    }
+
+    @EventHandler //We don't really need this with the logger stuff but hey
+    fun onScheduledRestart(e: ScheduledServerRestartEvent) {
         MinecraftChatModule.state = DPState.RESTARTING_SERVER
+    }
 
 }

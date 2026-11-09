@@ -1,9 +1,6 @@
 package buttondevteam.discordplugin.util
 
-object DPState extends Enumeration {
-    type DPState = Value
-    val
-
+enum class DPState {
     /**
      * Used from server start until anything else happens
      */
@@ -27,5 +24,5 @@ object DPState extends Enumeration {
     /**
      * Used when the plugin is in the RUNNING state when the chat is disabled
      */
-    DISABLED_MCCHAT = Value
+    DISABLED_MCCHAT
 }

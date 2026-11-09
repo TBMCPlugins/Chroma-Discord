@@ -3,36 +3,36 @@ package buttondevteam.discordplugin.mcchat.sender
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.MCChatPrivate
-import buttondevteam.lib.player.{ChromaGamerBase, UserClass}
+import buttondevteam.lib.player.ChromaGamerBase
+import buttondevteam.lib.player.UserClass
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.reactive.asFlow
 
-@UserClass(foldername = "discord") class DiscordUser() extends ChromaGamerBase {
-    private var did: String = null
-    private var discordUser: User = null
+@UserClass(foldername = "discord")
+class DiscordUser : ChromaGamerBase() {
+    private var discordUser: User? = null
 
-    // private @Getter @Setter boolean minecraftChatEnabled;
-    def getDiscordID: String = {
-        if (did == null) did = getFileName
-        did
-    }
+    val discordID get() = fileName
 
-    def getDiscordUser: User = {
-        if (discordUser == null) discordUser = DiscordPlugin.dc.getUserById(Snowflake.of(getDiscordID)).block() // TODO: Don't do it blocking
-        discordUser
+    suspend fun getDiscordUser(): User {
+        val user = discordUser ?: DiscordPlugin.dc.getUserById(Snowflake.of(discordID)).asFlow().first()
+        discordUser = user
+        return user
     }
 
     /**
      * Returns true if player has the private Minecraft chat enabled. For setting the value, see
      * [[MCChatPrivate.privateMCChat]]
      */
-    def isMinecraftChatEnabled: Boolean = MCChatPrivate.isMinecraftChatEnabled(this)
+    fun isMinecraftChatEnabled(): Boolean = MCChatPrivate.isMinecraftChatEnabled(this)
 
-    override def checkChannelInGroup(s: String): Channel.RecipientTestResult = ???
+    override fun checkChannelInGroup(group: String?): Channel.RecipientTestResult = TODO()
 
-    override def sendMessage(message: String): Unit = ??? // TODO: Somehow check which message is this a response to
+    override fun sendMessage(message: String): Unit = TODO() // TODO: Somehow check which message is this a response to
 
-    override def sendMessage(message: Array[String]): Unit = ???
+    override fun sendMessage(message: Array<String>): Unit = TODO()
 
-    override def getName: String = ???
+    override fun getName(): String = TODO()
 }

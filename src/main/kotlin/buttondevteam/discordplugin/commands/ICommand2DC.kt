@@ -1,16 +1,16 @@
 package buttondevteam.discordplugin.commands
 
 import buttondevteam.discordplugin.DiscordPlugin
-import buttondevteam.lib.chat.{CommandClass, ICommand2}
+import buttondevteam.lib.chat.CommandClass
+import buttondevteam.lib.chat.ICommand2
 
-abstract class ICommand2DC() extends ICommand2[Command2DCSender](DiscordPlugin.plugin.manager) {
-    final private var modOnly = false
+abstract class ICommand2DC : ICommand2<Command2DCSender>(DiscordPlugin.plugin!!.manager) {
+    private var modOnly = false
 
-    {
-        val ann: CommandClass = getClass.getAnnotation(classOf[CommandClass])
-        if (ann == null) modOnly = false
-        else modOnly = ann.modOnly
+    init {
+        val ann = javaClass.getAnnotation(CommandClass::class.java)
+        modOnly = ann?.modOnly ?: false
     }
 
-    def isModOnly: Boolean = this.modOnly
+    fun isModOnly(): Boolean = this.modOnly
 }
