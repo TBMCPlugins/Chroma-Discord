@@ -367,7 +367,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                                     clmd: MCChatCustom.CustomLMD, isPrivate: Boolean): Boolean = {
         fun getAttachmentText = {
             val att = event.getMessage.getAttachments.asScala
-            if (att.nonEmpty) att map (_.getUrl) mkString "\n"
+            if (att.nonEmpty) att map (_.getUrl) joinToString "\n"
             else ""
         }
 
@@ -406,7 +406,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         fun notWhitelisted(cmd: String) = module.whitelistedCommands.get.stream
             .noneMatch(s -> cmd == s || cmd.startsWith(s + " "))
 
-        fun whitelistedCommands = module.whitelistedCommands.get.asScala.map("/" + _).mkString(", ")
+        fun whitelistedCommands = module.whitelistedCommands.get.asScala.map("/" + _).joinToString(", ")
 
         if (!isPrivate)
             event.getMessage.delete.subscribe()
@@ -458,7 +458,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         if (cmdlowercased.startsWith("list")) {
             val players = Bukkit.getOnlinePlayers.asScala
             dsender.sendMessage("There are " + players.count(MCChatUtils.checkEssentials) + " out of " + Bukkit.getMaxPlayers + " players online.")
-            dsender.sendMessage("Players: " + players.filter(MCChatUtils.checkEssentials).map(_.getDisplayName).mkString(", "))
+            dsender.sendMessage("Players: " + players.filter(MCChatUtils.checkEssentials).map(_.getDisplayName).joinToString(", "))
             true
         }
         else false

@@ -77,6 +77,7 @@ object DPUtils {
     val logger: Logger
         get() = DiscordPlugin.plugin?.logger ?: Logger.getLogger("DiscordPlugin")
 
+    // TODO: Create a proxy that supports suspend functions, based on Snowflake data
     fun channelData(config: IHaveConfig, key: String): IConfigData<Mono<MessageChannel>> =
         config.getData(key, { id -> getMessageChannel(key, Snowflake.of(id as Long)) },
             { 0L }, 0L, true) //We can afford to search for the channel in the cache once (instead of using mainServer)

@@ -1,202 +1,143 @@
 package buttondevteam.discordplugin.mcchat
 
-import buttondevteam.core.component.channel.Channel
-import buttondevteam.discordplugin.mcchat.sender.DiscordConnectedPlayer
+import buttondevteam.discordplugin.ChannelconBroadcast
+import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.util.DPState
+import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
-import buttondevteam.lib.architecture.config.IConfigData
-import com.google.common.collect.Lists
-import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
-import reactor.core.scala.publisher.SMono
-
-import java.util
+import reactor.core.publisher.Mono
+import java.util.*
 
 /**
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
  */
-object MinecraftChatModule {
-    var state = DPState.RUNNING
-}
+class MinecraftChatModule : Component<DiscordPlugin>() {
+    companion object {
+        var state = DPState.RUNNING
+    }
 
-class MinecraftChatModule : Component<DiscordPlugin> {
-    fun getListener: MCChatListener = this.listener
-
-    private var listener: MCChatListener = null
-    private[mcchat] var serverWatcher = null
-    private var lpInjector = null
-    private[mcchat] var disabling = false
+    var listener: MCChatListener? = null
+        private set
+    internal var disabling = false
 
     /**
      * A list of commands that can be used in public chats - Warning: Some plugins will treat players as OPs, always test before allowing a command!
      */
-    val whitelistedCommands(): IConfigData[util.ArrayList[String]] = getConfig.getData("whitelistedCommands",
-        Lists.newArrayList("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins"))
+    val whitelistedCommands by config.getData(
+        "whitelistedCommands",
+        listOf("list", "u", "shrug", "tableflip", "unflip", "mwiki", "yeehaw", "lenny", "rp", "plugins")
+    )
 
     /**
      * The channel to use as the public Minecraft chat - everything public gets broadcasted here
      */
-    val chatChannel: IConfigData[Snowflake] = DPUtils.snowflakeData(getConfig, "chatChannel", 0L)
+    val chatChannel by DPUtils.snowflakeData(config, "chatChannel", 0L)
 
-    val chatChannelMono: SMono[MessageChannel] = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
+    val chatChannelMono = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    val modlogChannel: IConfigData[SMono[MessageChannel]] = DPUtils.channelData(getConfig, "modlogChannel")
+    val modlogChannel = DPUtils.channelData(config, "modlogChannel")
+
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
      */
-    val excludedPlugins: IConfigData[Array[String]] = getConfig.getData("excludedPlugins", Array[String]("ProtocolLib", "LibsDisguises", "JourneyMapServer"))
-    /**
-     * If this setting is on then players logged in through the 'mcchat' command will be able to teleport using plugin commands.
-     * They can then use commands like /tpahere to teleport others to that place.<br />
-     * If this is off, then teleporting will have no effect.
-     */
-    val allowFakePlayerTeleports: IConfigData[Boolean] = getConfig.getData("allowFakePlayerTeleports", false)
+    val excludedPlugins by config.getData(
+        "excludedPlugins",
+        arrayOf("ProtocolLib", "LibsDisguises", "JourneyMapServer")
+    )
+
     /**
      * If this is on, each chat channel will have a player list in their description.
      * It only gets added if there's no description yet or there are (at least) two lines of "----" following each other.
      * Note that it will replace <b>everything</b> above the first and below the last "----" but it will only detect exactly four dashes.
      * So if you want to use dashes for something else in the description, make sure it's either less or more dashes in one line.
      */
-    def showPlayerListOnDC: IConfigData[Boolean] = getConfig.getData("showPlayerListOnDC", true)
+    val showPlayerListOnDC by config.getData("showPlayerListOnDC", true)
+
     /**
      * This setting controls whether custom chat connections can be <i>created</i> (existing connections will always work).
      * Custom chat connections can be created using the channelcon command and they allow players to display town chat in a Discord channel for example.
      * See the channelcon command for more details.
      */
-    def allowCustomChat: IConfigData[Boolean] = getConfig.getData("allowCustomChat", true)
+    val allowCustomChat by config.getData("allowCustomChat", true)
+
     /**
      * This setting allows you to control if players can DM the bot to log on the server from Discord.
      * This allows them to both chat and perform any command they can in-game.
      */
-    def allowPrivateChat: IConfigData[Boolean] = getConfig.getData("allowPrivateChat", true)
+    val allowPrivateChat by config.getData("allowPrivateChat", true)
+
     /**
      * If set, message authors appearing on Discord will link to this URL. A 'type' and 'id' parameter will be added with the user's platform (Discord, Minecraft, ...) and ID.
      */
-    def profileURL: IConfigData[String] = getConfig.getData("profileURL", "")
+    val profileURL by config.getData("profileURL", "")
+
     /**
      * Enables support for running vanilla commands through Discord, if you ever need it.
      */
-    def enableVanillaCommands: IConfigData[Boolean] = getConfig.getData("enableVanillaCommands", true)
-    /**
-     * Whether players logged on from Discord (mcchat command) should be recognised by other plugins. Some plugins might break if it's turned off.
-     * But it's really hacky.
-     */
-    final private val addFakePlayersToBukkit = getConfig.getData("addFakePlayersToBukkit", false)
+    val enableVanillaCommands by config.getData("enableVanillaCommands", true)
+
     /**
      * Set by the component to report crashes.
      */
-    final private val serverUp = getConfig.getData("serverUp", false)
-    final private val mcChatCommand = MCChatCommand(this)
-    final private val channelconCommand = ChannelconCommand(this)
+    private var serverUp by config.getData("serverUp", false)
+    private val mcChatCommand = MCChatCommand(this)
 
-    override protected fun enable(): Unit = {
+    override fun enable() {
         if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return Unit
         listener = MCChatListener(this)
-        TBMCCoreAPI.RegisterEventsForExceptions(listener, getPlugin)
-        TBMCCoreAPI.RegisterEventsForExceptions(MCListener(this), getPlugin) //These get undone if restarting/resetting - it will ignore events if disabled
-        getPlugin.manager.registerCommand(mcChatCommand)
-        getPlugin.manager.registerCommand(channelconCommand)
-        val chcons = getConfig.getConfig.getConfigurationSection("chcons")
-        if (chcons == null) { //Fallback to old place
-            getConfig.getConfig.getRoot.getConfigurationSection("chcons")
-        }
-        if (chcons != null) {
-            val chconkeys = chcons.getKeys(false)
-            for (chconkey <- chconkeys.asScala) {
-                val chcon = chcons.getConfigurationSection(chconkey)
-                val mcch = Channel.getChannels.filter((ch: Channel) -> ch.getIdentifier == chcon.getString("mcchid")).findAny
-                val ch = DiscordPlugin.dc.getChannelById(Snowflake.of(chcon.getLong("chid"))).block
-                val did = chcon.getLong("did")
-                val user = DiscordPlugin.dc.getUserById(Snowflake.of(did)).block
-                val groupid = chcon.getString("groupid")
-                val toggles = chcon.getInt("toggles")
-                val brtoggles = chcon.getStringList("brtoggles")
-                if (mcch.isPresent && ch != null && user != null && groupid != null) {
-                    Bukkit.getScheduler.runTask(getPlugin, () -> { //<-- Needed because of occasional ConcurrentModificationExceptions when creating the player (PermissibleBase)
-                        val dcp = DiscordConnectedPlayer.create(user, ch.asInstanceOf[MessageChannel],
-                            UUID.fromString(chcon.getString("mcuid")), chcon.getString("mcname"), this)
-                        MCChatCustom.addCustomChat(ch.asInstanceOf[MessageChannel], groupid, mcch.get, user, dcp, toggles,
-                            brtoggles.asScala.map(TBMCSystemChatEvent.BroadcastTarget.get).filter(Objects.nonNull).toSet)
-                        ()
-                    })
-                }
-            }
-        }
-        // TODO: LPInjector
-        if (addFakePlayersToBukkit.get) try {
-            // TODO: Fake players
-        } catch {
-            case e: Exception ->
-                TBMCCoreAPI.SendException("Failed to hack the server (object)! Disable addFakePlayersToBukkit in the config.", e, this)
-        }
-        if (MinecraftChatModule.state eq DPState.RESTARTING_PLUGIN) { //These will only execute if the chat is enabled
-            sendStateMessage(Color.CYAN, "Discord plugin restarted - chat connected.") //Really important to note the chat, hmm
-            MinecraftChatModule.state = DPState.RUNNING
-        }
-        else if (MinecraftChatModule.state eq DPState.DISABLED_MCCHAT) {
+        TBMCCoreAPI.RegisterEventsForExceptions(listener, plugin)
+        TBMCCoreAPI.RegisterEventsForExceptions(
+            MCListener(this),
+            plugin
+        ) //These get undone if restarting/resetting - it will ignore events if disabled
+        plugin.manager.registerCommand(mcChatCommand)
+        if (state == DPState.RESTARTING_PLUGIN) { //These will only execute if the chat is enabled
+            sendStateMessage(
+                Color.CYAN,
+                "Discord plugin restarted - chat connected."
+            ) //Really important to note the chat, hmm
+            state = DPState.RUNNING
+        } else if (state == DPState.DISABLED_MCCHAT) {
             sendStateMessage(Color.CYAN, "Minecraft chat enabled - chat connected.")
-            MinecraftChatModule.state = DPState.RUNNING
-        }
-        else if (serverUp.get) {
+            state = DPState.RUNNING
+        } else if (serverUp) {
             sendStateMessage(Color.YELLOW, "Server started after a crash - chat connected.")
             val thr = Throwable("The server shut down unexpectedly. See the log of the previous run for more details.")
-            thr.setStackTrace(Array[StackTraceElement](0))
+            thr.setStackTrace(emptyArray<StackTraceElement>())
             TBMCCoreAPI.SendException("The server crashed!", thr, this)
-        }
-        else sendStateMessage(Color.GREEN, "Server started - chat connected.")
-        serverUp.set(true)
+        } else sendStateMessage(Color.GREEN, "Server started - chat connected.")
+        serverUp = true
     }
 
-    override protected fun disable(): Unit = {
+    override fun disable(): Unit {
         disabling = true
-        if (MinecraftChatModule.state eq DPState.RESTARTING_PLUGIN) sendStateMessage(Color.ORANGE, "Discord plugin restarting")
-        else if (MinecraftChatModule.state eq DPState.RUNNING) {
+        if (state == DPState.RESTARTING_PLUGIN) sendStateMessage(Color.ORANGE, "Discord plugin restarting")
+        else if (state == DPState.RUNNING) {
             sendStateMessage(Color.ORANGE, "Minecraft chat disabled")
-            MinecraftChatModule.state = DPState.DISABLED_MCCHAT
-        }
-        else {
-            val kickmsg = if (Bukkit.getOnlinePlayers.size > 0)
-                DPUtils.sanitizeString(Bukkit.getOnlinePlayers.asScala.map(_.getDisplayName).mkString(", ")) +
-                    (if (Bukkit.getOnlinePlayers.size == 1) " was " else " were ") + "thrown out" //TODO: Make configurable
+            state = DPState.DISABLED_MCCHAT
+        } else {
+            val kickmsg = if (Bukkit.getOnlinePlayers().isNotEmpty())
+                DPUtils.sanitizeString(Bukkit.getOnlinePlayers().joinToString(", ") { it.displayName }) +
+                    (if (Bukkit.getOnlinePlayers().size == 1) " was " else " were ") + "thrown out" //TODO: Make configurable
             else ""
-            if (MinecraftChatModule.state eq DPState.RESTARTING_SERVER) sendStateMessage(Color.ORANGE, "Server restarting", kickmsg)
-            else if (MinecraftChatModule.state eq DPState.STOPPING_SERVER) sendStateMessage(Color.RED, "Server stopping", kickmsg)
+            if (state == DPState.RESTARTING_SERVER) sendStateMessage(Color.ORANGE, "Server restarting", kickmsg)
+            else if (state == DPState.STOPPING_SERVER) sendStateMessage(Color.RED, "Server stopping", kickmsg)
             else sendStateMessage(Color.GRAY, "Unknown state, please report.")
-            //If 'restart' is disabled then this isn't shown even if joinleave is enabled}
+            //If 'restart' is disabled then this isn't shown even if joinleave is enabled
         }
-        serverUp.set(false) //Disable even if just the component is disabled because that way it won't falsely report crashes
-        try //If it's not enabled it won't do anything
-            if (serverWatcher != null) {
-                // TODO: ServerWatcher
-            }
-        catch {
-            case e: Exception ->
-                TBMCCoreAPI.SendException("Failed to restore the server object!", e, this)
-        }
-        val chcons = MCChatCustom.getCustomChats
-        val chconsc = getConfig.getConfig.createSection("chcons")
-        for (chcon <- chcons) {
-            val chconc = chconsc.createSection(chcon.channel.getId.asString)
-            chconc.set("mcchid", chcon.mcchannel.getIdentifier)
-            chconc.set("chid", chcon.channel.getId.asLong)
-            chconc.set("did", chcon.dcUser.getId.asLong)
-            chconc.set("mcuid", chcon.dcp.getUniqueId.toString)
-            chconc.set("mcname", chcon.dcp.getName)
-            chconc.set("groupid", chcon.groupID)
-            chconc.set("toggles", chcon.toggles)
-            chconc.set("brtoggles", chcon.brtoggles.map(_.getName).toList)
-        }
+        serverUp =
+            false //Disable even if just the component is disabled because that way it won't falsely report crashes
         if (listener != null) { //Can be null if disabled because of a config error
             listener.stop(true)
         }
-        getPlugin.manager.unregisterCommand(mcChatCommand)
-        getPlugin.manager.unregisterCommand(channelconCommand)
+        plugin.manager.unregisterCommand(mcChatCommand)
         disabling = false
     }
 
@@ -204,14 +145,22 @@ class MinecraftChatModule : Component<DiscordPlugin> {
      * It will block to make sure all messages are sent
      */
     private fun sendStateMessage(color: Color, message: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(ch -> ch.createMessage(
-            EmbedCreateSpec.builder().color(color).title(message).build()).^^()
-                .onErrorResume(_ -> SMono.empty)
-        ), ChannelconBroadcast.RESTART, hookmsg = false).block()
+        MCChatUtils.forCustomAndAllMCChat({
+            it.flatMap { ch ->
+                ch.createMessage(
+                    EmbedCreateSpec.builder().color(color).title(message).build()
+                )
+            }
+                .onErrorResume { Mono.empty() }
+        }, ChannelconBroadcast.RESTART, hookmsg = false).block()
 
     private fun sendStateMessage(color: Color, message: String, extra: String) =
-        MCChatUtils.forCustomAndAllMCChat(_.flatMap(ch -> ch.createMessage(
-            EmbedCreateSpec.builder().color(color).title(message).description(extra).build()).^^()
-                .onErrorResume(_ -> SMono.empty)
-        ), ChannelconBroadcast.RESTART, hookmsg = false).block()
+        MCChatUtils.forCustomAndAllMCChat({
+            it.flatMap { ch ->
+                ch.createMessage(
+                    EmbedCreateSpec.builder().color(color).title(message).description(extra).build()
+                )
+            }
+                .onErrorResume { Mono.empty() }
+        }, ChannelconBroadcast.RESTART, hookmsg = false).block()
 }

@@ -36,7 +36,8 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 
-@ButtonPlugin.ConfigOpts(disableConfigGen = true) class DiscordPlugin : ButtonPlugin() {
+@ButtonPlugin.ConfigOpts(disableConfigGen = true)
+class DiscordPlugin : ButtonPlugin() {
     companion object DiscordPlugin {
         lateinit var dc: GatewayDiscordClient
         var plugin: buttondevteam.discordplugin.DiscordPlugin? = null
@@ -53,6 +54,7 @@ import java.util.Optional
         private set
 
     private var starting = false
+
     /**
      * The prefix to use with Discord commands like /role. It only works in the bot channel.
      */
@@ -74,11 +76,13 @@ import java.util.Optional
      * The (bot) channel to use for Discord commands like /role.
      */
     val commandChannel by DPUtils.snowflakeData(iConfig, "commandChannel", 0L)
+
     /**
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
     val modRole by DPUtils.roleData(iConfig, "modRole", "Moderator")
+
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
      */
@@ -142,7 +146,8 @@ import java.util.Optional
         try {
             if (initialized) { //This is not the first ready event
                 logger.info("Ready event already handled") //TODO: It should probably handle disconnections
-                dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft")))?.subscribe() //Update from the initial presence
+                dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft")))
+                    ?.subscribe() //Update from the initial presence
                 return
             }
             initialized = true
@@ -164,13 +169,15 @@ import java.util.Optional
                 return //Reusing that field to check if stopping while still initializing
             }
             CommonListeners.register(dc.eventDispatcher)
-            server.pluginManager.registerSuspendingEvents(MCListener(), this) // TODO: TBMCCoreAPI.RegisterEventsForExceptions
+            // TODO: TBMCCoreAPI.RegisterEventsForExceptions
+            server.pluginManager.registerSuspendingEvents(MCListener(), this)
             TBMCCoreAPI.RegisterUserClass(DiscordUser::class.java, { DiscordUser() })
-            ChromaGamerBase.addConverter { when (it) {
-                is DiscordSenderBase -> Optional.of(it.getChromaUser())
-                else -> Optional.empty()
-            } }
-            ChromaBot.enabled = true //Initialize ChromaBot
+            ChromaGamerBase.addConverter {
+                when (it) {
+                    is DiscordSenderBase -> Optional.of(it.getChromaUser())
+                    else -> Optional.empty()
+                }
+            }
             Component.registerComponent(this, MinecraftChatModule())
             Component.registerComponent(this, ExceptionListenerModule())
             Component.registerComponent(this, GameRoleModule()) //Needs the mainServer to be set
@@ -187,25 +194,26 @@ import java.util.Optional
             TBMCCoreAPI.SendUnsentExceptions()
             TBMCCoreAPI.SendUnsentDebugMessages()
             // TODO: Removed log watcher (responsible for detecting restarts)
-            if (!TBMCCoreAPI.IsTestServer()) dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft"))).subscribe()
+            if (!TBMCCoreAPI.IsTestServer()) dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft")))
+                .subscribe()
             else dc.updatePresence(ClientPresence.online(ClientActivity.playing("testing"))).subscribe()
             logger.info("Loaded!")
         } catch (e: Exception) {
-                TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e, this)
+            TBMCCoreAPI.SendException("An error occurred while enabling DiscordPlugin!", e, this)
         }
         stopStarting()
     }
 
     override fun pluginPreDisable(): Unit {
         if (MinecraftChatModule.state == DPState.RUNNING) MinecraftChatModule.state = DPState.STOPPING_SERVER
-        this synchronized {
-            if (starting) try wait(10000)
-            catch {
-                case e: InterruptedException ->
-                    e.printStackTrace()
+        synchronized(this) {
+            if (starting) try {
+                wait(10000)
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
             }
         }
-        if (!ChromaBot.enabled) return Unit //Failed to load
+        if (!initialized) return //Failed to load
         val timings = Timings()
         timings.printElapsed("Disable start")
         timings.printElapsed("Updating player list")
@@ -223,7 +231,7 @@ import java.util.Optional
             dc.logout().block()
             initialized = false //Allow ReadyEvent again
         } catch (e: Exception) {
-                TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e, this)
+            TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e, this)
         }
     }
 }

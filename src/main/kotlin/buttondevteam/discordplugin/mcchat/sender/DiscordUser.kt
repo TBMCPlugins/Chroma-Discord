@@ -2,7 +2,6 @@ package buttondevteam.discordplugin.mcchat.sender
 
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.DiscordPlugin
-import buttondevteam.discordplugin.mcchat.MCChatPrivate
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.UserClass
 import discord4j.common.util.Snowflake
