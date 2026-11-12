@@ -7,7 +7,7 @@ import discord4j.core.`object`.entity.channel.MessageChannel
 
 object DebugMessageListener {
     private fun SendMessage(message: String): Unit = {
-        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(classOf[ExceptionListenerModule])) return Unit
+        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(ExceptionListenerModule::class.java)) return Unit
         try {
             val mc = ExceptionListenerModule.getChannel
             if (mc == null) return Unit

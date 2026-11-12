@@ -19,7 +19,7 @@ class UserinfoCommand : ICommand2DC {
             sender.sendMessage("An error occurred.")
             return true
         }
-        val dp = ChromaGamerBase.getUser(target.getId.asString, classOf[DiscordUser])
+        val dp = ChromaGamerBase.getUser(target.getId.asString, DiscordUser::class.java)
         val uinfo = StringBuilder("User info for ").append(target.getUsername).append(":\n")
         uinfo.append(dp.getInfo(InfoTarget.Discord))
         sender.sendMessage(uinfo.toString)

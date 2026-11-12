@@ -67,7 +67,7 @@ import buttondevteam.lib.player.ChromaGamerBase
                         val reddituserclass = ChromaGamerBase.getTypeForFolder("reddit")
                         if (reddituserclass != null) {
                             val user = ChromaGamerBase.getUser(author, reddituserclass)
-                            val id = user.getConnectedID(classOf[DiscordUser])
+                            val id = user.getConnectedID(DiscordUser::class.java)
                             if (id != null) author = "<@" + id + ">"
                         }
                     }

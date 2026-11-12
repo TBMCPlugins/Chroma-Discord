@@ -15,7 +15,7 @@ import java.util.Collections
  */
 @ComponentMetadata(enabledByDefault = false) object GameRoleModule {
     fun handleRoleEvent(roleEvent: RoleEvent): Unit = {
-        val grm = ComponentManager.getIfEnabled(classOf[GameRoleModule])
+        val grm = ComponentManager.getIfEnabled(GameRoleModule::class.java)
         if (grm == null) return Unit
         val GameRoles = grm.GameRoles
         val logChannel = grm.logChannel.get

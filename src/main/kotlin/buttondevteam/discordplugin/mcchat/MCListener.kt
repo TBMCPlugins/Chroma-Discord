@@ -27,7 +27,7 @@ class MCListener(val module: MinecraftChatModule) : Listener {
         Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, () -> {
             fun foo(): Unit = {
                 val p = e.getPlayer
-                val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordUser])
+                val dp = TBMCPlayerBase.getPlayer(p.getUniqueId, TBMCPlayer::class.java).getAs(DiscordUser::class.java)
                 if (dp != null)
                     DiscordPlugin.dc.getUserById(Snowflake.of(dp.getDiscordID)).^^().flatMap(user ->
                         user.getPrivateChannel.^^().flatMap(chan -> module.chatChannelMono.flatMap(cc -> {
@@ -79,7 +79,7 @@ class MCListener(val module: MinecraftChatModule) : Listener {
         if (role == null) return Unit
         val source = e.getAffected.getSource
         if (!source.isPlayer) return Unit
-        val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, classOf[TBMCPlayer]).getAs(classOf[DiscordUser])
+        val p = TBMCPlayerBase.getPlayer(source.getPlayer.getUniqueId, TBMCPlayer::class.java).getAs(DiscordUser::class.java)
         if (p == null) return Unit
         DPUtils.ignoreError(DiscordPlugin.dc.getUserById(Snowflake.of(p.getDiscordID)).^^()
             .flatMap(user -> user.asMember(DiscordPlugin.mainServer.getId).^^())

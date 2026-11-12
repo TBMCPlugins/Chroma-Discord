@@ -1,7 +1,13 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
-import buttondevteam.discordplugin._
+import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.discordplugin.mcchat.sender.DiscordSender
+import buttondevteam.discordplugin.mcchat.sender.DiscordUser
+import buttondevteam.lib.TBMCChatEvent
+import buttondevteam.lib.TBMCChatPreprocessEvent
+import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.player.TBMCPlayer
 import com.vdurmont.emoji.EmojiParser
 import discord4j.common.util.Snowflake
@@ -10,164 +16,125 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Color
 import io.netty.handler.codec.http.HttpResponseStatus
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
+import org.bukkit.ChatColor
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
 import org.bukkit.scheduler.BukkitTask
-import reactor.core.scala.publisher.SMono
 
 import java.time.Instant
-import java.util
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.function.Predicate
+import kotlin.jvm.optionals.getOrNull
 
-object MCChatListener {
-
-    // ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
-    // Offline public chat......x............................................
-    // Online public chat.......x...........................................x
-    // Offline private chat.....x.......................x....................
-    // Online private chat......x.......................x...................x
-    // If online and enabling private chat, don't login
-    // If leaving the server and private chat is enabled (has ConnectedPlayer), call login in a task on lowest priority
-    // If private chat is enabled and joining the server, logout the fake player on highest priority
-    // If online and disabling private chat, don't logout
-    // The maps may not contain the senders for UnconnectedSenders
-    @FunctionalInterface private trait InterruptibleConsumer[T] {
-        @throws[TimeoutException]
-        @throws[InterruptedException]
-        fun accept(value: T): Unit
-    }
-
-}
+// ......................DiscordSender....DiscordConnectedPlayer.DiscordPlayerSender
+// Offline public chat......x............................................
+// Online public chat.......x...........................................x
+// Offline private chat.....x.......................x....................
+// Online private chat......x.......................x...................x
+// If online and enabling private chat, don't login
+// If leaving the server and private chat is enabled (has ConnectedPlayer), call login in a task on lowest priority
+// If private chat is enabled and joining the server, logout the fake player on highest priority
+// If online and disabling private chat, don't logout
+// The maps may not contain the senders for UnconnectedSenders
 
 class MCChatListener(val module: MinecraftChatModule) : Listener {
-    private var sendtask: BukkitTask = null
-    final private val sendevents = LinkedBlockingQueue[util.AbstractMap.SimpleEntry[TBMCChatEvent, Instant]]
-    private var sendrunnable: Runnable = null
-    private var sendthread: Thread = null
+    private var sendtask: BukkitTask? = null
+    private val sendevents = LinkedBlockingQueue<Pair<TBMCChatEvent, Instant>>()
+    private var sendrunnable: Runnable? = null
+    private var sendthread: Thread? = null
     private var stop = false //A new instance will be created on enable
     @EventHandler // Minecraft
-    fun onMCChat(ev: TBMCChatEvent): Unit = {
-        if (!(ComponentManager.isEnabled(classOf[MinecraftChatModule])) || ev.isCancelled) { //SafeMode: Needed so it doesn't restart after server shutdown
-            return Unit
+    fun onMCChat(ev: TBMCChatEvent) {
+        if (!(ComponentManager.isEnabled(MinecraftChatModule::class.java)) || ev.isCancelled) { //SafeMode: Needed so it doesn't restart after server shutdown
+            return
         }
 
-        sendevents.add(util.AbstractMap.SimpleEntry[TBMCChatEvent, Instant](ev, Instant.now))
+        sendevents.add(Pair<TBMCChatEvent, Instant>(ev, Instant.now()))
         if (sendtask != null) {
-            return Unit
+            return
         }
-        sendrunnable = () -> {
-            fun foo(): Unit = {
-                sendthread = Thread.currentThread
-                processMCToDiscord()
-                if (DiscordPlugin.plugin.isEnabled && !(stop)) { //Don't run again if shutting down
-                    sendtask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable)
-                }
+        sendrunnable = Runnable {
+            sendthread = Thread.currentThread()
+            processMCToDiscord()
+            if (DiscordPlugin.plugin!!.isEnabled && !(stop)) { //Don't run again if shutting down
+                sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin!!, sendrunnable!!)
             }
-
-            foo()
         }
-        sendtask = Bukkit.getScheduler.runTaskAsynchronously(DiscordPlugin.plugin, sendrunnable)
+        sendtask = Bukkit.getScheduler().runTaskAsynchronously(DiscordPlugin.plugin!!, sendrunnable!!)
     }
 
-    private fun processMCToDiscord(): Unit = {
+    private fun processMCToDiscord() {
         try {
-            var e: TBMCChatEvent = null
-            var time: Instant = null
-            val se: util.AbstractMap.SimpleEntry[TBMCChatEvent, Instant] = sendevents.take // Wait until an element is available
-            e = se.getKey
-            time = se.getValue
-            val authorPlayer: String = "[" + DPUtils.sanitizeStringNoEscape(e.getChannel.displayName.get) + "] " + //
-                (if ("Minecraft" == e.getOrigin) "" else "[" + e.getOrigin()[0] + "]") +
-                DPUtils.sanitizeStringNoEscape(e.getUser.getName)
-            val color: chat.Color = e.getChannel.color.get
-            val embed = () -> {
+            val (e, time) = sendevents.take() // Wait until an element is available
+            val authorPlayer: String = "[" + DPUtils.sanitizeStringNoEscape(e.channel.displayName.get()) + "] " + //
+                (if ("Minecraft" == e.origin) "" else "[" + e.origin[0] + "]") +
+                DPUtils.sanitizeStringNoEscape(e.user.name)
+            val color: TextColor = e.channel.color
+            val embed = {
                 val ecs = EmbedCreateSpec.builder()
-                ecs.description(e.getMessage).color(Color.of(color.getRed, color.getGreen, color.getBlue))
-                val url: String = module.profileURL.get
-                e.getUser match {
-                    case player: TBMCPlayer ->
-                        DPUtils.embedWithHead(ecs, authorPlayer, e.getUser.getName,
-                            if (url.nonEmpty) url + "?type=minecraft&id=" + player.getUniqueId else null)
-                    case dsender: DiscordUser ->
+                ecs.description(e.message).color(Color.of(color.red(), color.green(), color.blue()))
+                val url: String = module.profileURL
+                when (val user = e.user) {
+                    is TBMCPlayer ->
+                        DPUtils.embedWithHead(ecs, authorPlayer, user.name,
+                            if (url.isNotEmpty()) url + "?type=minecraft&id=" + user.uniqueId else null)
+                    is DiscordUser ->
                         ecs.author(authorPlayer,
-                            if (url.nonEmpty) url + "?type=discord&id=" + dsender.getDiscordID else null,
-                            dsender.getDiscordUser.getAvatarUrl)
-                    case _ ->
-                        DPUtils.embedWithHead(ecs, authorPlayer, e.getUser.getName, null)
+                            if (url.isNotEmpty()) url + "?type=discord&id=" + user.discordID else null,
+                            user.getDiscordUser().avatarUrl)
+                    else ->
+                        DPUtils.embedWithHead(ecs, authorPlayer, e.user.name, null)
                 }
                 ecs.timestamp(time)
             }
-            val nanoTime: Long = System.nanoTime
-            val doit = (lastmsgdata: MCChatUtils.LastMsgData) -> {
-                if (lastmsgdata.message == null
-                    || authorPlayer != lastmsgdata.message.getEmbeds.get(0).getAuthor.toScala.flatMap(_.getName.toScala).orNull
+            val nanoTime: Long = System.nanoTime()
+            val doit = { lastmsgdata: MCChatUtils.LastMsgData ->
+                val message = lastmsgdata.message
+                if (message == null
+                    || authorPlayer != message.embeds[0].author.flatMap { it.name }.getOrNull()
                     || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
-                    || !(lastmsgdata.mcchannel.getIdentifier == e.getChannel.getIdentifier)
-                    || lastmsgdata.content.length + e.getMessage.length + 1 > 2048) {
-                    lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).block
+                    || lastmsgdata.mcchannel?.identifier != e.channel.identifier
+                    || lastmsgdata.content.length + e.message.length + 1 > 2048) {
+                    lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).block()
                     lastmsgdata.time = nanoTime
-                    lastmsgdata.mcchannel = e.getChannel
-                    lastmsgdata.content = e.getMessage
+                    lastmsgdata.mcchannel = e.channel
+                    lastmsgdata.content = e.message
                 }
                 else {
-                    //TODO: The editing shouldn't be blocking, this whole method should be reactive
-                    lastmsgdata.content = lastmsgdata.content + "\n" + e.getMessage // The message object doesn't get updated
+                    //TODO: The editing shouldn't be blocking, this whole method should be suspend fun
+                    lastmsgdata.content = lastmsgdata.content + "\n" + e.message // The message object doesn't get updated
                     try {
-                        lastmsgdata.message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).block
-                    } catch {
-                        case e: ClientException -> {
-                            // The message was deleted
-                            if (e.getStatus ne HttpResponseStatus.NOT_FOUND) {
-                                throw e
-                            }
-                        }
+                        message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).block()
+                    } catch (e: ClientException) {
+                        // The message was deleted
+                        if (e.status != HttpResponseStatus.NOT_FOUND) throw e
                     }
                 }
             }
-            // Checks if the given channel is different than where the message was sent from
+            // Checks if the given channel is different from where the message was sent from
             // Or if it was from MC
-            val isdifferentchannel: Predicate[Snowflake] = {
-                id -> !e.getUser.isInstanceOf[DiscordUser] || e.getUser.asInstanceOf[DiscordSender].getChannel.getId.asLong != id.asLong
+            val isdifferentchannel = { id: Snowflake ->
+                val user = e.user
+                user !is DiscordUser // TODO: We don't know what Discord channel this comes from
             }
-            if (e.getChannel.isGlobal && (e.isFromCommand || isdifferentchannel.test(module.chatChannel.get))) {
+            if (e.channel.isGlobal && (e.isFromCommand || isdifferentchannel(module.chatChannel))) {
                 if (MCChatUtils.lastmsgdata == null)
-                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(module.chatChannelMono.block(), null)
-                doit(MCChatUtils.lastmsgdata)
+                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(module.chatChannelMono!!, null)
+                doit(MCChatUtils.lastmsgdata!!)
             }
-
-            for (data <- MCChatPrivate.lastmsgPerUser) {
-                if ((e.isFromCommand || isdifferentchannel.test(data.channel.getId)) && e.shouldSendTo(data.user)) {
-                    doit(data)
-                }
-            }
-            MCChatCustom.lastmsgCustom synchronized {
-                MCChatCustom.lastmsgCustom.filterInPlace(lmd -> {
-                    if ((e.isFromCommand || isdifferentchannel.test(lmd.channel.getId)) //Test if msg is from Discord
-                        && e.getChannel.getIdentifier == lmd.mcchannel.getIdentifier //If it's from a command, the command msg has been deleted, so we need to send it
-                        && e.getGroupID() == lmd.groupID) { //Check if this is the group we want to test - #58
-                        if (e.shouldSendTo(lmd.dcp.getChromaUser)) { //Check original user's permissions
-                            doit(lmd)
-                            true
-                        }
-                        else {
-                            lmd.channel.createMessage("The user no longer has permission to view the channel, connection removed.").subscribe()
-                            false //If the user no longer has permission, remove the connection
-                        }
-                    }
-                    else true
-                })
-            }
-        } catch {
-            case ex: InterruptedException ->
-                //Stop if interrupted anywhere
-                sendtask.cancel()
-                sendtask = null
-            case ex: Exception ->
-                TBMCCoreAPI.SendException("Error while sending message to Discord!", ex, module)
+        } catch (ex: InterruptedException) {
+            //Stop if interrupted anywhere
+            sendtask?.cancel()
+            sendtask = null
+        } catch (ex: Exception) {
+            TBMCCoreAPI.SendException("Error while sending message to Discord!", ex, module)
         }
     }
 
-    @EventHandler fun onChatPreprocess(event: TBMCChatPreprocessEvent): Unit = {
+    @EventHandler fun onChatPreprocess(event: TBMCChatPreprocessEvent) {
         var start: Int = -(1)
         while ( {
             (start = event.getMessage.indexOf('@', start + 1), start) != ((), -1)
@@ -414,7 +381,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         val cmdlowercased = cmd.toLowerCase
         if (dsender.isInstanceOf[DiscordSender] && notWhitelisted(cmdlowercased)) { // Command not whitelisted
             dsender.sendMessage("Sorry, you can only access these commands from here:\n" + whitelistedCommands +
-                (if (user.getConnectedID(classOf[TBMCPlayer]) == null)
+                (if (user.getConnectedID(TBMCPlayer::class.java) == null)
                     "\nTo access your commands, first please connect your accounts, using /connect in " + DPUtils.botmention
                         + "\nThen y" else "\nY") + "ou can access all of your regular commands (even offline) in private chat: DM me `mcchat`!")
             return Unit

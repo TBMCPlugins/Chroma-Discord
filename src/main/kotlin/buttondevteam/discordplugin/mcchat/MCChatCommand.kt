@@ -23,7 +23,7 @@ class MCChatCommand(private val module: MinecraftChatModule) : ICommand2DC {
             sender.sendMessage("This command can only be issued in a direct message with the bot.")
             return true
         }
-        val user: DiscordUser = ChromaGamerBase.getUser(sender.author.getId.asString, classOf[DiscordUser])
+        val user: DiscordUser = ChromaGamerBase.getUser(sender.author.getId.asString, DiscordUser::class.java)
         val mcchat: Boolean = !user.isMinecraftChatEnabled
         MCChatPrivate.privateMCChat(channel, mcchat, sender.author, user)
         sender.sendMessage("Minecraft chat " +

@@ -35,7 +35,7 @@ object FunModule {
     private var ListC = 0
 
     fun executeMemes(message: Message): Boolean = {
-        val fm = ComponentManager.getIfEnabled(classOf[FunModule])
+        val fm = ComponentManager.getIfEnabled(FunModule::class.java)
         if (fm == null) return false
         val msglowercased = message.getContent.toLowerCase
         lastlist += 1
@@ -66,7 +66,7 @@ object FunModule {
     private var lasttime: Long = 0
 
     fun handleFullHouse(event: PresenceUpdateEvent): Unit = {
-        val fm = ComponentManager.getIfEnabled(classOf[FunModule])
+        val fm = ComponentManager.getIfEnabled(FunModule::class.java)
         if (fm == null) return Unit
         if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return Unit
         if (!Option(event.getOld.orElse(null)).exists(_.getStatus == Status.OFFLINE)

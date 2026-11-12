@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.reactive.asFlow
 import reactor.core.publisher.Mono
 
-import java.util
 import java.util.Comparator
 import java.util.TreeSet
 import java.util.logging.Logger
@@ -32,7 +31,7 @@ object DPUtils {
     private val URL_PATTERN = Pattern.compile("https?://\\S*")
     private val FORMAT_PATTERN = Pattern.compile("[*_~]")
 
-    fun embedWithHead(ecs: EmbedCreateSpec.Builder, displayname: String, playername: String, profileUrl: String): EmbedCreateSpec.Builder =
+    fun embedWithHead(ecs: EmbedCreateSpec.Builder, displayname: String, playername: String, profileUrl: String?): EmbedCreateSpec.Builder =
         ecs.author(displayname, profileUrl, "https://minotar.net/avatar/$playername/32.png")
 
     /**

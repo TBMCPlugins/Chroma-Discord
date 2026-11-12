@@ -10,7 +10,7 @@ class DiscordTest extends AnyFlatSpec {
         mock()
         //new YamlConfiguration().set("asd", "dsa")
         println("Loading Core")
-        load(classOf[MainPlugin], true)
-        load(classOf[DiscordPlugin])
+        load(MainPlugin::class.java, true)
+        load(DiscordPlugin::class.java)
     }
 }

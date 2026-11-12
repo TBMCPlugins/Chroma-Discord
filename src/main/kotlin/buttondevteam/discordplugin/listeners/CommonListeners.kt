@@ -16,24 +16,24 @@ object CommonListeners {
     val timings = Timings
 
     fun register(dispatcher: EventDispatcher): Unit = {
-        dispatcher.on(classOf[MessageCreateEvent]).flatMap((event: MessageCreateEvent) -> {
+        dispatcher.on(MessageCreateEvent::class.java).flatMap((event: MessageCreateEvent) -> {
             SMono.just(event.getMessage).filter(_ -> !DiscordPlugin.SafeMode)
                 .filter(message -> message.getAuthor.filter(!_.isBot).isPresent)
                 .filter(message -> !FunModule.executeMemes(message))
                 .filterWhen(message -> {
-                    Option(Component.getComponents.get(classOf[MinecraftChatModule])).filter(_.isEnabled)
+                    Option(Component.getComponents.get(MinecraftChatModule::class.java)).filter(_.isEnabled)
                         .map(_.asInstanceOf[MinecraftChatModule].getListener.handleDiscord(event))
                         .getOrElse(SMono.just(true)) //Wasn't handled, continue
                 })
         }).onErrorContinue((err, _) -> TBMCCoreAPI.SendException("An error occured while handling a message!", err, DiscordPlugin.plugin)).subscribe()
-        dispatcher.on(classOf[PresenceUpdateEvent]).subscribe((event: PresenceUpdateEvent) -> {
+        dispatcher.on(PresenceUpdateEvent::class.java).subscribe((event: PresenceUpdateEvent) -> {
             if (!DiscordPlugin.SafeMode)
                 FunModule.handleFullHouse(event)
         })
-        dispatcher.on(classOf[RoleCreateEvent]).^^().subscribe(GameRoleModule.handleRoleEvent _)
-        dispatcher.on(classOf[RoleDeleteEvent]).^^().subscribe(GameRoleModule.handleRoleEvent _)
-        dispatcher.on(classOf[RoleUpdateEvent]).^^().subscribe(GameRoleModule.handleRoleEvent _)
-        dispatcher.on(classOf[ChatInputInteractionEvent]).^^().subscribe((event: ChatInputInteractionEvent) -> {
+        dispatcher.on(RoleCreateEvent::class.java).^^().subscribe(GameRoleModule.handleRoleEvent _)
+        dispatcher.on(RoleDeleteEvent::class.java).^^().subscribe(GameRoleModule.handleRoleEvent _)
+        dispatcher.on(RoleUpdateEvent::class.java).^^().subscribe(GameRoleModule.handleRoleEvent _)
+        dispatcher.on(ChatInputInteractionEvent::class.java).^^().subscribe((event: ChatInputInteractionEvent) -> {
             if (event.getCommandName equals "connect") {
                 ConnectCommand().def(Command2DCSender(event), event.getOption("name").get.getValue.get.asString)
             }

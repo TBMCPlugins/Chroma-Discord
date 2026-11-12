@@ -232,7 +232,7 @@ object MCChatUtils {
 
         var message: Message? = null
         var time = 0L
-        var content: String? = null
+        var content: String = ""
         var mcchannel: Channel? = null
 
         protected constructor(channel: MessageChannel, mcchannel: Channel, user: ChromaGamerBase) : this(
