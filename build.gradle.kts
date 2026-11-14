@@ -24,7 +24,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.3.build.+")
     compileOnly("com.discord4j:discord4j-core:3.3.3")
-    compileOnly("com.github.TBMCPlugins.ChromaCore:Chroma-Core:v2.0.0-SNAPSHOT")
+    compileOnly("org.chromagaming:Chroma-Core:2.0-SNAPSHOT")
     compileOnly("com.vdurmont:emoji-java:5.1.1")
     compileOnly("net.essentialsx:EssentialsX:2.21.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

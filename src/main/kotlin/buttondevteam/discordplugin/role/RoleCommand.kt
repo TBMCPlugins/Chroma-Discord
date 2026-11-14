@@ -38,9 +38,9 @@ import discord4j.core.`object`.entity.Role
     @Command2.Subcommand fun list(sender: Command2DCSender): Unit = {
         val sb = StringBuilder
         var b = false
-        for (role <- grm.GameRoles.sorted.iterator.asInstanceOf[Iterable[String]]) {
+        for (role in grm.GameRoles.sorted.iterator.asInstanceOf[Iterable[String]]) {
             sb.append(role)
-            if (!b) for (_ <- 0 until Math.max(1, 20 - role.length)) {
+            if (!b) for (_ in 0 until Math.max(1, 20 - role.length)) {
                 sb.append(" ")
             }
             else sb.append("\n")

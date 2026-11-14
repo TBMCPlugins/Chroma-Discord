@@ -53,7 +53,7 @@ import buttondevteam.lib.player.ChromaGamerBase
             val msgsb = mutable.StringBuilder
             val modmsgsb = mutable.StringBuilder
             var lastanntime = lastAnnouncementTime.get
-            for (i <- json.size - 1 to 0 by -1) {
+            for (i in json.size - 1 to 0 by -1) {
                 val item = json.get(i).getAsJsonObject
                 val data = item.get("data").getAsJsonObject
                 var author = data.get("author").getAsString

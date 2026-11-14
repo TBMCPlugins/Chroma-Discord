@@ -16,7 +16,6 @@ import buttondevteam.discordplugin.util.Timings
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.ButtonPlugin
 import buttondevteam.lib.architecture.Component
-import buttondevteam.lib.architecture.config.IConfigData
 import buttondevteam.lib.player.ChromaGamerBase
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import com.google.common.io.Files
@@ -25,16 +24,13 @@ import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
-import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.presence.ClientActivity
 import discord4j.core.`object`.presence.ClientPresence
-import discord4j.gateway.ShardInfo
 import org.bukkit.configuration.file.YamlConfiguration
 import reactor.core.publisher.Mono
-
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.Optional
+import java.util.*
 
 @ButtonPlugin.ConfigOpts(disableConfigGen = true)
 class DiscordPlugin : ButtonPlugin() {
@@ -47,7 +43,6 @@ class DiscordPlugin : ButtonPlugin() {
         fun getPrefix(): Char = plugin?.prefix ?: '/'
 
         private var initialized = false
-        private val DELIVERED_REACTION = "✅"
     }
 
     lateinit var manager: Command2DC
@@ -99,7 +94,8 @@ class DiscordPlugin : ButtonPlugin() {
             if (tokenFile.exists()) { //Legacy support
                 //noinspection UnstableApiUsage
                 token = Files.readFirstLine(tokenFile, StandardCharsets.UTF_8)
-            } else {
+            }
+            if (token == null) {
                 val privateFile = File(dataFolder, "private.yml")
                 val conf = YamlConfiguration.loadConfiguration(privateFile)
                 token = conf.getString("token")

@@ -6,6 +6,7 @@ import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
+import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
@@ -92,7 +93,7 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
     override fun enable() {
         if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return Unit
         listener = MCChatListener(this)
-        TBMCCoreAPI.RegisterEventsForExceptions(listener, plugin)
+        plugin.server.pluginManager.registerSuspendingEvents(listener!!, plugin)
         TBMCCoreAPI.RegisterEventsForExceptions(
             MCListener(this),
             plugin
@@ -135,7 +136,7 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
         serverUp =
             false //Disable even if just the component is disabled because that way it won't falsely report crashes
         if (listener != null) { //Can be null if disabled because of a config error
-            listener.stop(true)
+            listener!!.stop()
         }
         plugin.manager.unregisterCommand(mcChatCommand)
         disabling = false
