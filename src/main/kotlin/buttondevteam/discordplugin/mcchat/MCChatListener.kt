@@ -111,9 +111,9 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 val user = e.user
                 user !is DiscordUser // TODO: We don't know what Discord channel this comes from
             }
-            if (e.channel.isGlobal && (e.isFromCommand || isdifferentchannel(module.chatChannel))) {
+            if (e.channel.isGlobal && (e.isFromCommand || isdifferentchannel(module.chatChannel.id))) {
                 if (MCChatUtils.lastmsgdata == null)
-                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(module.chatChannelMono!!, null)
+                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(module.chatChannel.getEntity() ?: throw Exception("Could not get chat channel ${module.chatChannel.id.asString()}"), null)
                 doit(MCChatUtils.lastmsgdata!!)
             }
         } catch (ex: Exception) {
@@ -147,7 +147,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
     }
 
     private fun isChatEnabled(channel: MessageChannel): Boolean {
-        val hasPublicChat = channel.id.asLong() == module.chatChannel.asLong()
+        val hasPublicChat = channel.id.asLong() == module.chatChannel.id.asLong()
 
         return hasPublicChat
     }
@@ -228,7 +228,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         }
 
         if (message.type == Message.Type.CHANNEL_PINNED_MESSAGE) {
-            val mcchannel = dsender.getChromaUser().channel.get()
+            val mcchannel = dsender.getChromaUser().channel
             val rtr = mcchannel.getRTR(user)
             TBMCChatAPI.SendSystemMessage(mcchannel, rtr, (when (dsender) {
                 is Player -> dsender.displayName
@@ -269,7 +269,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         if (dsender is DiscordSender && runCustomCommand(dsender, cmdlowercased)) {
             return
         }
-        val channel = user.channel.get()
+        val channel = user.channel
         val ev = TBMCCommandPreprocessEvent(user, channel, dmessage, user)
         Bukkit.getPluginManager().callEvent(ev)
         if (!ev.isCancelled)

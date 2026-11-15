@@ -1,5 +1,7 @@
 package buttondevteam.discordplugin
 
+import buttondevteam.discordplugin.DPUtils.channelData
+import buttondevteam.discordplugin.DPUtils.roleData
 import buttondevteam.discordplugin.announcer.AnnouncerModule
 import buttondevteam.discordplugin.commands.Command2DC
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
@@ -26,6 +28,9 @@ import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
 import discord4j.core.`object`.presence.ClientActivity
 import discord4j.core.`object`.presence.ClientPresence
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.reactive.asFlow
 import org.bukkit.configuration.file.YamlConfiguration
 import reactor.core.publisher.Mono
 import java.io.File
@@ -70,13 +75,13 @@ class DiscordPlugin : ButtonPlugin() {
     /**
      * The (bot) channel to use for Discord commands like /role.
      */
-    val commandChannel by DPUtils.snowflakeData(iConfig, "commandChannel", 0L)
+    val commandChannel = iConfig.channelData("commandChannel")
 
     /**
      * The role that allows using mod-only Discord commands.
      * If empty (&#39;&#39;), then it will only allow for the owner.
      */
-    val modRole by DPUtils.roleData(iConfig, "modRole", "Moderator")
+    val modRole = iConfig.roleData("modRole")
 
     /**
      * The invite link to show by /discord invite. If empty, it defaults to the first invite if the bot has access.
@@ -131,19 +136,16 @@ class DiscordPlugin : ButtonPlugin() {
         }
     }
 
-    private fun stopStarting(): Unit {
-        synchronized(this) {
-            starting = false
-            notifyAll() // TODO
-        }
+    private fun stopStarting() {
+        starting = false // TODO: Cancel the coroutines
     }
 
-    private fun handleReady(event: List<GuildCreateEvent>) {
+    private suspend fun handleReady(event: List<GuildCreateEvent>) {
         try {
             if (initialized) { //This is not the first ready event
                 logger.info("Ready event already handled") //TODO: It should probably handle disconnections
                 dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft")))
-                    ?.subscribe() //Update from the initial presence
+                    .asFlow().firstOrNull() //Update from the initial presence
                 return
             }
             initialized = true
@@ -158,7 +160,7 @@ class DiscordPlugin : ButtonPlugin() {
                 logger.warning("Main server set to first one: " + mainServer?.name)
             }
             SafeMode = false
-            DPUtils.disableIfConfigErrorRes(null, commandChannel, DPUtils.getMessageChannel(commandChannel))
+            DPUtils.disableIfConfigError(null, commandChannel)
             //Won't disable, just prints the warning here
             if (MinecraftChatModule.state == DPState.STOPPING_SERVER) {
                 stopStarting()
@@ -180,7 +182,7 @@ class DiscordPlugin : ButtonPlugin() {
             Component.registerComponent(this, AnnouncerModule())
             Component.registerComponent(this, FunModule())
             MCChatUtils.updatePlayerList() //The MCChatModule is tested to be enabled
-            val applicationId = dc.restClient.applicationId.block()
+            val applicationId = dc.restClient.applicationId.asFlow().first()
             val guildId = mainServer?.id?.asLong()
             manager.registerCommand(VersionCommand(), applicationId, guildId)
             manager.registerCommand(UserinfoCommand(), applicationId, guildId)

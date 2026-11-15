@@ -25,7 +25,6 @@ import java.util.Comparator
 import java.util.TreeSet
 import java.util.logging.Logger
 import java.util.regex.Pattern
-import javax.annotation.Nullable
 
 object DPUtils {
     private val URL_PATTERN = Pattern.compile("https?://\\S*")
@@ -76,24 +75,11 @@ object DPUtils {
     val logger: Logger
         get() = DiscordPlugin.plugin?.logger ?: Logger.getLogger("DiscordPlugin")
 
-    // TODO: Create a proxy that supports suspend functions, based on Snowflake data
-    fun channelData(config: IHaveConfig, key: String): IConfigData<Mono<MessageChannel>> =
-        config.getData(key, { id -> getMessageChannel(key, Snowflake.of(id as Long)) },
-            { 0L }, 0L, true) //We can afford to search for the channel in the cache once (instead of using mainServer)
+    fun IHaveConfig.channelData(key: String): DiscordEntity<MessageChannel> =
+        DiscordEntity(snowflakeData(this, key, 0L), MessageChannel::class)
 
-    fun roleData(config: IHaveConfig, key: String, defName: String): IConfigData<Mono<Role>> =
-        roleData(config, key, defName, Mono.just(DiscordPlugin.plugin!!.mainServer!!))
-
-    /**
-     * Needs to be a [buttondevteam.lib.architecture.ConfigData] for checking if it's set
-     */
-    fun roleData(config: IHaveConfig, key: String, defName: String, guild: Mono<Guild>): IConfigData<Mono<Role>> = config.getData(key, { name ->
-        if (name !is String || name.isEmpty()) Mono.empty<Role>()
-        else guild.flatMapMany({ it.roles }).filter({ it.name == name }).onErrorResume({ e ->
-            logger.warning("Failed to get role data for " + key + "=" + name + " - " + e.message)
-            Mono.empty()
-        }).next()
-    }, { _ -> defName }, defName, true)
+    fun IHaveConfig.roleData(key: String): DiscordEntity<Role> =
+        DiscordEntity(snowflakeData(this, key, 0L), Role::class)
 
     fun snowflakeData(config: IHaveConfig, key: String, defID: Long) =
         config.getData(key, { id -> Snowflake.of(id as Long) }, { it.asLong() }, defID, true)
@@ -105,23 +91,7 @@ object DPUtils {
      */
     fun botmention(): String {
         if (DiscordPlugin.plugin == null) return "#bot"
-        return channelMention(DiscordPlugin.plugin!!.commandChannel)
-    }
-
-    /**
-     * Disables the component if one of the given configs return null. Useful for channel/role configs.
-     *
-     * @param component The component to disable if needed
-     * @param configs   The configs to check for null
-     * @return Whether the component got disabled and a warning logged
-     */
-    fun disableIfConfigError(component: Component<DiscordPlugin>?, vararg configs: IConfigData<*>): Boolean {
-        // TODO: Tie the DP configs to the plugin/component and automate this (disable on error/null)
-        for (config in configs) {
-            val v = config.get()
-            if (disableIfConfigErrorRes(component, config, v)) return true
-        }
-        return false
+        return channelMention(DiscordPlugin.plugin!!.commandChannel.id)
     }
 
     /**
@@ -129,26 +99,20 @@ object DPUtils {
      *
      * @param component The component to disable if needed
      * @param config    The (snowflake) config to check for null
-     * @param result    The result of getting the value
      * @return Whether the component got disabled and a warning logged
      */
-    fun disableIfConfigErrorRes(component: Component<DiscordPlugin>?, config: IConfigData<*>, result: Any?): Boolean {
-        //noinspection ConstantConditions
+    suspend fun disableIfConfigError(component: Component<DiscordPlugin>?, config: DiscordEntity<*>): Boolean {
+        val result = config.getEntity()
         if (result == null) {
-            var path: String? = try {
+            val path = config.data.path
+            try {
                 if (component != null) Component.setComponentEnabled(component, false)
-                config.path
             } catch (e: Exception) {
                     if (component != null) TBMCCoreAPI.SendException("Failed to disable component after config error!", e, component)
                     else TBMCCoreAPI.SendException("Failed to disable component after config error!", e, DiscordPlugin.plugin!!)
-                null
             }
-            logger.warning(
-                "The config value $path isn't set correctly " + (
-                    if (component == null) "in global settings!"
-            else "for component " + component::class.simpleName + "!"))
-            logger.warning("Set the correct ID in the config" + (if (component == null) ""
-            else " or disable this component") + " to remove this message.")
+            logger.warning("The config value $path isn't set correctly " + (if (component == null) "in global settings!" else "for component " + component::class.simpleName + "!"))
+            logger.warning("Set the correct ID in the config" + (if (component == null) "" else " or disable this component") + " to remove this message.")
             return true
         }
         return false

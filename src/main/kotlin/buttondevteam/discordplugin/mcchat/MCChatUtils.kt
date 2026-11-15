@@ -127,11 +127,10 @@ object MCChatUtils {
         return mapOpt?.remove(channel)
     }
 
-    fun forPublicPrivateChat(action: (ch: Mono<MessageChannel>) -> Mono<*>): Mono<*> {
-        if (notEnabled()) return Mono.empty<Any>()
-        val list = listOf(action(Mono.just(module!!.chatChannelMono!!)))
+    suspend fun forPublicPrivateChat(action: suspend (ch: MessageChannel) -> Any?) {
+        if (notEnabled()) return
+        action(module!!.chatChannel.getEntity() ?: throw Exception("Could not find public chat channel with ID ${module!!.chatChannel.id.asString()}"))
         // TODO: Private chat
-        return Mono.whenDelayError(list)
     }
 
     /**
@@ -141,14 +140,14 @@ object MCChatUtils {
      * @param toggle  The toggle to check
      * @param hookmsg Whether the message is also sent from the hook
      */
-    fun forCustomAndAllMCChat(
-        action: ((ch: Mono<MessageChannel>) -> Mono<*>),
+    suspend fun forCustomAndAllMCChat(
+        action: suspend ((ch: MessageChannel) -> Any?),
         toggle: ChannelconBroadcast?,
         hookmsg: Boolean
-    ): Mono<*> {
-        if (notEnabled()) return Mono.empty<Any>()
-        val list = listOf(forPublicPrivateChat(action))
-        return Mono.whenDelayError(list)
+    ) {
+        if (notEnabled()) return
+        forPublicPrivateChat(action)
+        // TODO: Custom
     }
 
     /**
@@ -159,12 +158,11 @@ object MCChatUtils {
      * @param toggle The toggle to check or null to send to all allowed
      */
     fun forAllowedCustomMCChat(
-        action: ((ch: Mono<MessageChannel>) -> Mono<*>),
+        action: suspend ((ch: MessageChannel) -> Any?),
         permUser: ChromaGamerBase?,
         toggle: ChannelconBroadcast?
-    ): Mono<*> {
-        if (notEnabled()) return Mono.empty<Any>()
-        return Mono.empty<Any>()
+    ) {
+        if (notEnabled()) return
     }
 
     /**
@@ -175,15 +173,15 @@ object MCChatUtils {
      * @param toggle  The toggle to check or null to send to all allowed
      * @param hookmsg Whether the message is also sent from the hook
      */
-    fun forAllowedCustomAndAllMCChat(
-        action: ((ch: Mono<MessageChannel>) -> Mono<*>),
+    suspend fun forAllowedCustomAndAllMCChat(
+        action: suspend ((ch: MessageChannel) -> Any?),
         permUser: ChromaGamerBase?,
         toggle: ChannelconBroadcast?,
         hookmsg: Boolean
-    ): Mono<*> {
-        if (notEnabled()) return Mono.empty<Any>()
-        val cc = forAllowedCustomMCChat(action, permUser, toggle)
-        return Mono.whenDelayError(listOf(forPublicPrivateChat(action), cc))
+    ) {
+        if (notEnabled()) return
+        forPublicPrivateChat(action)
+        forAllowedCustomMCChat(action, permUser, toggle)
     }
 
     fun send(message: String): ((ch: Mono<MessageChannel>) -> Mono<*>) = {
@@ -193,11 +191,9 @@ object MCChatUtils {
         }
     }
 
-    fun forAllowedMCChat(action: ((ch: Mono<MessageChannel>) -> Mono<*>), event: TBMCSystemChatEvent): Mono<*> {
-        if (notEnabled()) return Mono.empty<Any>()
-        val list = mutableListOf<Mono<*>>()
-        if (event.channel.isGlobal) list += action(Mono.just(module!!.chatChannelMono!!))
-        return Mono.whenDelayError(list)
+    suspend fun forAllowedMCChat(action: suspend ((ch: MessageChannel) -> Any?), event: TBMCSystemChatEvent) {
+        if (notEnabled()) return
+        if (event.channel.isGlobal) action(module!!.chatChannel.getEntity() ?: throw Exception("Could not find public chat channel with ID ${module!!.chatChannel.id.asString()}"))
     }
 
     /**
@@ -219,8 +215,8 @@ object MCChatUtils {
      */
     fun resetLastMessage(channel: MessageChannel) {
         if (notEnabled()) return
-        if (channel.id.asLong() == module!!.chatChannel.asLong()) {
-            if (lastmsgdata == null) lastmsgdata = LastMsgData(module!!.chatChannelMono!!, null)
+        if (channel.id.asLong() == module!!.chatChannel.id.asLong()) {
+            if (lastmsgdata == null) lastmsgdata = LastMsgData(channel, null)
             else lastmsgdata!!.message = null
             return
         } // Don't set the whole object to null, the player and channel information should be preserved

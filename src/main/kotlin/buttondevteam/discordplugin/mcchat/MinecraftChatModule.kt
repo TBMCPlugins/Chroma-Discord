@@ -2,10 +2,12 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DPUtils.channelData
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.util.DPState
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
+import com.github.shynixn.mccoroutine.bukkit.launch
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
@@ -36,14 +38,12 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
     /**
      * The channel to use as the public Minecraft chat - everything public gets broadcasted here
      */
-    val chatChannel by DPUtils.snowflakeData(config, "chatChannel", 0L)
-
-    val chatChannelMono = DPUtils.getMessageChannel(chatChannel.getPath, chatChannel.get)
+    val chatChannel = config.channelData("chatChannel")
 
     /**
      * The channel where the plugin can log when it mutes a player on Discord because of a Minecraft mute
      */
-    val modlogChannel = DPUtils.channelData(config, "modlogChannel")
+    val modlogChannel = config.channelData("modlogChannel")
 
     /**
      * The plugins to exclude from fake player events used for the 'mcchat' command - some plugins may crash, add them here
@@ -91,13 +91,17 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
     private val mcChatCommand = MCChatCommand(this)
 
     override fun enable() {
-        if (DPUtils.disableIfConfigErrorRes(this, chatChannel, chatChannelMono)) return Unit
+        plugin.launch {
+            enableAsync()
+        }
+    }
+
+    private suspend fun enableAsync() {
+        if (DPUtils.disableIfConfigError(this, chatChannel)) return
         listener = MCChatListener(this)
         plugin.server.pluginManager.registerSuspendingEvents(listener!!, plugin)
-        TBMCCoreAPI.RegisterEventsForExceptions(
-            MCListener(this),
-            plugin
-        ) //These get undone if restarting/resetting - it will ignore events if disabled
+        plugin.server.pluginManager.registerSuspendingEvents(MCListener(this), plugin)
+        //These get undone if restarting/resetting - it will ignore events if disabled
         plugin.manager.registerCommand(mcChatCommand)
         if (state == DPState.RESTARTING_PLUGIN) { //These will only execute if the chat is enabled
             sendStateMessage(
@@ -117,7 +121,11 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
         serverUp = true
     }
 
-    override fun disable(): Unit {
+    override fun disable() {
+        plugin.launch { disableAsnyc() }
+    }
+
+    private suspend fun disableAsnyc() {
         disabling = true
         if (state == DPState.RESTARTING_PLUGIN) sendStateMessage(Color.ORANGE, "Discord plugin restarting")
         else if (state == DPState.RUNNING) {
@@ -142,26 +150,13 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
         disabling = false
     }
 
-    /**
-     * It will block to make sure all messages are sent
-     */
-    private fun sendStateMessage(color: Color, message: String) =
-        MCChatUtils.forCustomAndAllMCChat({
-            it.flatMap { ch ->
-                ch.createMessage(
-                    EmbedCreateSpec.builder().color(color).title(message).build()
-                )
-            }
-                .onErrorResume { Mono.empty() }
-        }, ChannelconBroadcast.RESTART, hookmsg = false).block()
+    private suspend fun sendStateMessage(color: Color, message: String) =
+        MCChatUtils.forCustomAndAllMCChat({ ch ->
+            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).build())
+        }, ChannelconBroadcast.RESTART, hookmsg = false)
 
-    private fun sendStateMessage(color: Color, message: String, extra: String) =
-        MCChatUtils.forCustomAndAllMCChat({
-            it.flatMap { ch ->
-                ch.createMessage(
-                    EmbedCreateSpec.builder().color(color).title(message).description(extra).build()
-                )
-            }
-                .onErrorResume { Mono.empty() }
-        }, ChannelconBroadcast.RESTART, hookmsg = false).block()
+    private suspend fun sendStateMessage(color: Color, message: String, extra: String) =
+        MCChatUtils.forCustomAndAllMCChat({ ch ->
+            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).description(extra).build())
+        }, ChannelconBroadcast.RESTART, hookmsg = false)
 }
