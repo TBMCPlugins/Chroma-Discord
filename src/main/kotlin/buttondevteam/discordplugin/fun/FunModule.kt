@@ -5,13 +5,11 @@ import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.architecture.config.IConfigData
 import com.google.common.collect.Lists
-import discord4j.core.`object`.presence.Status
 import discord4j.core.event.domain.PresenceUpdateEvent
+import discord4j.core.`object`.presence.Status
 import org.bukkit.Bukkit
 import org.bukkit.event.player.PlayerJoinEvent
 import reactor.core.scala.publisher.SMono
-
-import java.util
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream
@@ -21,7 +19,8 @@ import java.util.stream.IntStream
  * The YEEHAW event uses an emoji named :YEEHAW: if available
  */
 object FunModule {
-    private val serverReadyStrings = Array[String]("in one week from now", // Ali
+    private val serverReadyStrings = arrayOf(
+        "in one week from now", // Ali
         "between now and the heat-death of the universe.", // Ghostise
         "soon™", "ask again this time next month", "in about 3 seconds", // Nicolai
         "after we finish 8 plugins", "tomorrow.", "after one tiiiny feature",

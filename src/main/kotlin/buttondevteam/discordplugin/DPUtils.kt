@@ -7,8 +7,8 @@ import buttondevteam.lib.architecture.config.IConfigData
 import com.github.shynixn.mccoroutine.bukkit.launch
 import discord4j.common.util.Snowflake
 import discord4j.core.event.domain.Event
+import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.MessageCreateMono
@@ -76,11 +76,14 @@ object DPUtils {
     val logger: Logger
         get() = DiscordPlugin.plugin?.logger ?: Logger.getLogger("DiscordPlugin")
 
-    fun IHaveConfig.channelData(key: String): DiscordEntity<MessageChannel> =
-        DiscordEntity(snowflakeData(this, key, 0L), MessageChannel::class)
+    fun IHaveConfig.channelData(key: String): DiscordChannelData =
+        DiscordChannelData(snowflakeData(this, key, 0L))
 
-    fun IHaveConfig.roleData(key: String): DiscordEntity<Role> =
-        DiscordEntity(snowflakeData(this, key, 0L), Role::class)
+    fun IHaveConfig.roleData(key: String, guild: Guild = DiscordPlugin.plugin!!.mainServer!!): DiscordRoleData =
+        roleData(key) { guild }
+
+    fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild?): DiscordRoleData =
+        DiscordRoleData(snowflakeData(this, key, 0L), guildGetter)
 
     fun snowflakeData(config: IHaveConfig, key: String, defID: Long) =
         config.getData(key, { id -> Snowflake.of(id as Long) }, { it.asLong() }, defID, true)

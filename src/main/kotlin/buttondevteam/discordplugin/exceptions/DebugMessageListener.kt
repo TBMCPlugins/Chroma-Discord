@@ -1,31 +1,27 @@
 package buttondevteam.discordplugin.exceptions
 
 import buttondevteam.core.ComponentManager
+import buttondevteam.discordplugin.DiscordChannelData
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.lib.TBMCDebugMessageEvent
-import discord4j.core.`object`.entity.channel.MessageChannel
+import kotlinx.coroutines.reactive.awaitFirstOrNull
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
 
-object DebugMessageListener {
-    private fun SendMessage(message: String): Unit = {
-        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(ExceptionListenerModule::class.java)) return Unit
-        try {
-            val mc = ExceptionListenerModule.getChannel
-            if (mc == null) return Unit
-            val sb = StringBuilder
-            sb.append("```").append("\n")
-            sb.append(if (message.length > 2000) message.substring(0, 2000) else message).append("\n")
-            sb.append("```")
-            mc.flatMap((ch: MessageChannel) -> ch.createMessage(sb.toString).^^()).subscribe()
-        } catch {
-            case ex: Exception ->
-                ex.printStackTrace()
-        }
+class DebugMessageListener(val channel: DiscordChannelData) : Listener {
+    private suspend fun sendMessage(message: String) {
+        if (DiscordPlugin.SafeMode || !ComponentManager.isEnabled(ExceptionListenerModule::class.java)) return
+        val mc = channel.getEntity() ?: return
+        val sb = StringBuilder()
+        sb.append("```").append("\n")
+        sb.append(if (message.length > 2000) message.substring(0, 2000) else message).append("\n")
+        sb.append("```")
+        mc.createMessage(sb.toString()).awaitFirstOrNull()
     }
-}
 
-class DebugMessageListener : Listener {
-    @EventHandler fun onDebugMessage(e: TBMCDebugMessageEvent): Unit = {
-        DebugMessageListener.SendMessage(e.getDebugMessage)
+    @EventHandler
+    suspend fun onDebugMessage(e: TBMCDebugMessageEvent) {
+        sendMessage(e.debugMessage)
         e.setSent()
     }
 }
