@@ -6,8 +6,7 @@ import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.UserClass
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.User
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirst
 
 @UserClass(foldername = "discord")
 class DiscordUser : ChromaGamerBase() {
@@ -16,7 +15,7 @@ class DiscordUser : ChromaGamerBase() {
     val discordID get() = fileName
 
     suspend fun getDiscordUser(): User {
-        val user = discordUser ?: DiscordPlugin.dc.getUserById(Snowflake.of(discordID)).asFlow().first()
+        val user = discordUser ?: DiscordPlugin.dc.getUserById(Snowflake.of(discordID)).awaitFirst()
         discordUser = user
         return user
     }

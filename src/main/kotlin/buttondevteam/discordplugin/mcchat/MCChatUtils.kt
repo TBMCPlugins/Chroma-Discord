@@ -17,9 +17,9 @@ import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.`object`.entity.channel.TextChannel
 import io.netty.util.collection.LongObjectHashMap
+import kotlinx.coroutines.reactive.awaitFirst
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import reactor.core.publisher.Mono
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -184,11 +184,9 @@ object MCChatUtils {
         forAllowedCustomMCChat(action, permUser, toggle)
     }
 
-    fun send(message: String): ((ch: Mono<MessageChannel>) -> Mono<*>) = {
-        it.flatMap { mc ->
-            resetLastMessage(mc)
-            mc.createMessage(DPUtils.sanitizeString(message))
-        }
+    fun send(message: String): suspend ((ch: MessageChannel) -> Any?) = {
+        resetLastMessage(it)
+        it.createMessage(DPUtils.sanitizeString(message)).awaitFirst()
     }
 
     suspend fun forAllowedMCChat(action: suspend ((ch: MessageChannel) -> Any?), event: TBMCSystemChatEvent) {

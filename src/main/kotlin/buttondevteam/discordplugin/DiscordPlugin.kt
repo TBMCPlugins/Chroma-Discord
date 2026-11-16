@@ -19,6 +19,7 @@ import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.ButtonPlugin
 import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.player.ChromaGamerBase
+import com.github.shynixn.mccoroutine.bukkit.launch
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import com.google.common.io.Files
 import discord4j.common.util.Snowflake
@@ -28,9 +29,8 @@ import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
 import discord4j.core.`object`.presence.ClientActivity
 import discord4j.core.`object`.presence.ClientPresence
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bukkit.configuration.file.YamlConfiguration
 import reactor.core.publisher.Mono
 import java.io.File
@@ -52,8 +52,6 @@ class DiscordPlugin : ButtonPlugin() {
 
     lateinit var manager: Command2DC
         private set
-
-    private var starting = false
 
     /**
      * The prefix to use with Discord commands like /role. It only works in the bot channel.
@@ -113,7 +111,6 @@ class DiscordPlugin : ButtonPlugin() {
                     return
                 }
             }
-            starting = true
             val cb = DiscordClientBuilder.create(token).build().gateway()
             cb.setInitialPresence({ si -> ClientPresence.doNotDisturb(ClientActivity.playing("booting")) })
             cb.login().doOnError({ t ->
@@ -127,7 +124,7 @@ class DiscordPlugin : ButtonPlugin() {
                 dc.on(ReadyEvent::class.java).map { it.guilds.size }
                     .flatMap { dc.on(GuildCreateEvent::class.java).take(it.toLong()).collectList() }
                     .doOnError { _ -> stopStarting() }
-                    .subscribe { this.handleReady(it) } // Take all received GuildCreateEvents and make it a List
+                    .subscribe { launch { this@DiscordPlugin.handleReady(it) } } // Take all received GuildCreateEvents and make it a List
             }) /* All guilds have been received, client is fully connected */
         } catch (e: Exception) {
             TBMCCoreAPI.SendException("Failed to enable the Discord plugin!", e, this)
@@ -137,7 +134,7 @@ class DiscordPlugin : ButtonPlugin() {
     }
 
     private fun stopStarting() {
-        starting = false // TODO: Cancel the coroutines
+        // TODO: Cancel the coroutines
     }
 
     private suspend fun handleReady(event: List<GuildCreateEvent>) {
@@ -145,7 +142,7 @@ class DiscordPlugin : ButtonPlugin() {
             if (initialized) { //This is not the first ready event
                 logger.info("Ready event already handled") //TODO: It should probably handle disconnections
                 dc.updatePresence(ClientPresence.online(ClientActivity.playing("Minecraft")))
-                    .asFlow().firstOrNull() //Update from the initial presence
+                    .awaitFirstOrNull() //Update from the initial presence
                 return
             }
             initialized = true
@@ -182,7 +179,7 @@ class DiscordPlugin : ButtonPlugin() {
             Component.registerComponent(this, AnnouncerModule())
             Component.registerComponent(this, FunModule())
             MCChatUtils.updatePlayerList() //The MCChatModule is tested to be enabled
-            val applicationId = dc.restClient.applicationId.asFlow().first()
+            val applicationId = dc.restClient.applicationId.awaitFirst()
             val guildId = mainServer?.id?.asLong()
             manager.registerCommand(VersionCommand(), applicationId, guildId)
             manager.registerCommand(UserinfoCommand(), applicationId, guildId)
@@ -204,13 +201,7 @@ class DiscordPlugin : ButtonPlugin() {
 
     override fun pluginPreDisable(): Unit {
         if (MinecraftChatModule.state == DPState.RUNNING) MinecraftChatModule.state = DPState.STOPPING_SERVER
-        synchronized(this) {
-            if (starting) try {
-                wait(10000)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
+        // TODO: Test if the deafult coroutine disposal strategy works well with Discord
         if (!initialized) return //Failed to load
         val timings = Timings()
         timings.printElapsed("Disable start")

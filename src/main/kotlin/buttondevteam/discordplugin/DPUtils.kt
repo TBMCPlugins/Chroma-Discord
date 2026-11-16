@@ -4,25 +4,26 @@ import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
 import buttondevteam.lib.architecture.IHaveConfig
 import buttondevteam.lib.architecture.config.IConfigData
+import com.github.shynixn.mccoroutine.bukkit.launch
 import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.Guild
+import discord4j.core.event.domain.Event
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.MessageCreateMono
-import discord4j.core.spec.legacy.LegacySpec
 import discord4j.discordjson.json.MessageReferenceData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-
-import java.util.Comparator
-import java.util.TreeSet
+import java.util.*
 import java.util.logging.Logger
 import java.util.regex.Pattern
 
@@ -126,7 +127,7 @@ object DPUtils {
      * @return A mono to send the message
      */
     suspend fun reply(original: Message, message: String): MessageCreateMono {
-        return original.channel.asFlow().first().createMessage(message).withMessageReference(MessageReferenceData.builder().messageId(original.id.asString()).build())
+        return original.channel.awaitFirst().createMessage(message).withMessageReference(MessageReferenceData.builder().messageId(original.id.asString()).build())
     }
 
     fun nickMention(userId: Snowflake): String = "<@!" + userId.asString() + ">"
@@ -144,7 +145,7 @@ object DPUtils {
         if (id.asLong() == 0L) return null
 
         try {
-            val channel = DiscordPlugin.dc.getChannelById(id).asFlow().firstOrNull()
+            val channel = DiscordPlugin.dc.getChannelById(id).awaitFirstOrNull()
             return channel as? MessageChannel
         } catch (e: Exception) {
             if (e is CancellationException) {
@@ -159,4 +160,12 @@ object DPUtils {
         getMessageChannel(config.path, config.get())
 
     fun <T : Any> ignoreError(mono: Mono<T>): Mono<T> = mono.onErrorResume { Mono.empty() }
+
+    fun net.kyori.adventure.text.Component.asString(): String {
+        return PlainTextComponentSerializer.plainText().serialize(this)
+    }
+
+    fun <T : Event> Flux<T>.addHandler(handler: FlowCollector<T>) {
+        DiscordPlugin.plugin!!.launch { this@addHandler.asFlow().collect(handler) }
+    }
 }

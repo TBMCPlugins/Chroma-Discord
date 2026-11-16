@@ -16,16 +16,10 @@ import buttondevteam.lib.chat.commands.MCCommandSettings
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.TBMCPlayer
 import buttondevteam.lib.player.TBMCPlayerBase
-import discord4j.core.`object`.ExtendedInvite
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import reactor.core.publisher.Mono
-import reactor.core.publisher.Signal.subscribe
-
 import java.lang.reflect.Method
 
 @CommandClass(
@@ -132,7 +126,7 @@ class DiscordMCCommand : ICommand2MC() {
             return
         }
         try {
-            val invite = DiscordPlugin.plugin!!.mainServer!!.invites.asFlow().firstOrNull()
+            val invite = DiscordPlugin.plugin!!.mainServer!!.invites.awaitFirstOrNull()
             if (invite == null) {
                 sender.sendMessage("§cNo invites found for the server.")
             } else {

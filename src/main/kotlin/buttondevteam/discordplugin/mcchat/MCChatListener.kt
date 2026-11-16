@@ -21,10 +21,10 @@ import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.http.client.ClientException
 import discord4j.rest.util.Color
 import io.netty.handler.codec.http.HttpResponseStatus
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -98,7 +98,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 else {
                     lastmsgdata.content = lastmsgdata.content + "\n" + e.message // The message object doesn't get updated
                     try {
-                        message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).asFlow().firstOrNull()
+                        message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).awaitFirstOrNull()
                     } catch (e: ClientException) {
                         // The message was deleted
                         if (e.status != HttpResponseStatus.NOT_FOUND) throw e
@@ -139,7 +139,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
     // Discord
     suspend fun handleDiscord(ev: MessageCreateEvent): Boolean {
         val author = ev.message.author.orElse(null)
-        val channel = ev.message.channel.asFlow().first()
+        val channel = ev.message.channel.awaitFirst()
         if (author == null || !isChatEnabled(channel)) return true
         MCChatUtils.resetLastMessage(channel)
         processDiscordToMC(author, ev.message)
@@ -161,7 +161,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             suspend fun replaceUserMentions() {
                 for (u in message.userMentions) { //TODO: Role mentions
                     dmessage = dmessage.replace(u.mention, "@" + u.username) // TODO: IG Formatting
-                    val m = u.asMember(DiscordPlugin.plugin!!.mainServer!!.id).onErrorResume { _ -> Mono.empty() } .asFlow().firstOrNull()
+                    val m = u.asMember(DiscordPlugin.plugin!!.mainServer!!.id).onErrorResume { _ -> Mono.empty() } .awaitFirstOrNull()
                     if (m != null) {
                         val nick: String = m.displayName
                         dmessage = dmessage.replace(m.mention, "@$nick")
@@ -172,7 +172,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             replaceUserMentions()
 
             suspend fun replaceChannelMentions() {
-                val guild = message.guild.asFlow().firstOrNull()
+                val guild = message.guild.awaitFirstOrNull()
                 if (guild != null) {
                     for (ch in guild.channels.asFlow().toList()) {
                         dmessage = dmessage.replace(ch.mention, "#" + ch.name)
@@ -194,12 +194,12 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 try {
                     val lmfd = MCChatUtils.lastmsgfromd.get(message.channelId.asLong())
                     if (lmfd != null)
-                        lmfd.removeSelfReaction(DELIVERED_REACTION).asFlow().firstOrNull() // Remove it no matter what, we know it's there 99.99% of the time
+                        lmfd.removeSelfReaction(DELIVERED_REACTION).awaitFirstOrNull() // Remove it no matter what, we know it's there 99.99% of the time
                 } catch (e: Exception) {
                     TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e, module)
                 }
                 MCChatUtils.lastmsgfromd.put(message.channelId.asLong(), message)
-                message.addReaction(DELIVERED_REACTION).asFlow().firstOrNull()
+                message.addReaction(DELIVERED_REACTION).awaitFirstOrNull()
             }
 
             if (dmessage.startsWith("/")) // Ingame command
@@ -257,7 +257,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
 
         val whitelistedCommands = module.whitelistedCommands.joinToString(", ") { "/$it" }
 
-        message.delete().asFlow().firstOrNull()
+        message.delete().awaitFirstOrNull()
         val cmd = dmessage.substring(1)
         val cmdlowercased = cmd.lowercase(getDefault())
         if (dsender is DiscordSender && notWhitelisted(cmdlowercased)) { // Command not whitelisted
