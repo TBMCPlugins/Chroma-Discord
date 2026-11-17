@@ -10,8 +10,7 @@ import discord4j.core.`object`.entity.channel.MessageChannel
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.scheduler.BukkitTask
-
-import java.util.UUID
+import java.util.*
 
 /**
  *
@@ -44,7 +43,7 @@ abstract class DiscordSenderBase protected constructor(var user: User?, var chan
         return chromaUser!!
     }
 
-    override fun sendMessage(message: String): Unit = try {
+    override fun sendMessage(message: String) = try {
         val broadcast = MCChatUtils.broadcastedMessages.contains(message);
         if (broadcast) { //We're catching broadcasts using the Bukkit event
             if (MCChatUtils.broadcastedMessages.size >= 4) { // We really don't need to store messages for long

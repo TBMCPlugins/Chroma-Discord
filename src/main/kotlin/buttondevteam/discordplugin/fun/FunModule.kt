@@ -64,7 +64,7 @@ object FunModule {
 
     private var lasttime: Long = 0
 
-    fun handleFullHouse(event: PresenceUpdateEvent): Unit = {
+    fun handleFullHouse(event: PresenceUpdateEvent) {
         val fm = ComponentManager.getIfEnabled(FunModule::class.java)
         if (fm == null) return Unit
         if (Calendar.getInstance.get(Calendar.DAY_OF_MONTH) % 5 != 0) return Unit
@@ -107,18 +107,18 @@ class FunModule : Component<DiscordPlugin> with Listener {
     final private fun serverReadyAnswers(): IConfigData[util.ArrayList[String]] =
         getConfig.getData("serverReadyAnswers", Lists.newArrayList(FunModule.serverReadyStrings: _*))
 
-    private fun createUsableServerReadyStrings(): Unit =
+    private fun createUsableServerReadyStrings() =
         IntStream.range(0, serverReadyAnswers.get.size).forEach((i: Int) -> FunModule.usableServerReadyStrings.add(i.toShort))
 
-    override protected fun enable(): Unit = registerListener(this)
+    override protected fun enable() registerListener(this)
 
-    override protected fun disable(): Unit = {
+    override protected fun disable() {
         FunModule.lastlist = 0
         FunModule.lastlistp = 0
         FunModule.ListC = 0
     }
 
-    @EventHandler fun onPlayerJoin(event: PlayerJoinEvent): Unit = FunModule.ListC = 0
+    @EventHandler fun onPlayerJoin(event: PlayerJoinEvent) = FunModule.ListC = 0
 
     /**
      * If all of the people who have this role are online, the bot will post a full house.

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 // Needed for the tests (because of Vault)
 configurations.all {
     resolutionStrategy.capabilitiesResolution.withCapability("org.bukkit:bukkit") {
@@ -39,4 +41,8 @@ java {
 
 kotlin {
     jvmToolchain(25)
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-XXLanguage:+UnnamedLocalVariables"))
 }

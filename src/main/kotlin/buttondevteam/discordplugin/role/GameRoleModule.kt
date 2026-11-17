@@ -1,118 +1,126 @@
 package buttondevteam.discordplugin.role
 
 import buttondevteam.core.ComponentManager
+import buttondevteam.discordplugin.DPUtils.channelData
+import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.lib.architecture.Component
+import buttondevteam.lib.architecture.ComponentMetadata
+import com.github.shynixn.mccoroutine.bukkit.launch
+import discord4j.core.event.domain.role.RoleCreateEvent
+import discord4j.core.event.domain.role.RoleDeleteEvent
+import discord4j.core.event.domain.role.RoleEvent
+import discord4j.core.event.domain.role.RoleUpdateEvent
 import discord4j.core.`object`.entity.Role
-import discord4j.core.`object`.entity.channel.MessageChannel
 import discord4j.rest.util.Color
-import org.bukkit.Bukkit
-import reactor.core.scala.publisher.SMono
-
-import java.util.Collections
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * Automatically collects roles with a certain color.
  * Users can add these roles to themselves using the /role Discord command.
  */
-@ComponentMetadata(enabledByDefault = false) object GameRoleModule {
-    fun handleRoleEvent(roleEvent: RoleEvent): Unit = {
-        val grm = ComponentManager.getIfEnabled(GameRoleModule::class.java)
-        if (grm == null) return Unit
-        val GameRoles = grm.GameRoles
-        val logChannel = grm.logChannel.get
-        val notMainServer = (_: Role).getGuildId.asLong != DiscordPlugin.mainServer.getId.asLong
+@ComponentMetadata(enabledByDefault = false)
+class GameRoleModule : Component<DiscordPlugin>() {
+    companion object {
+        suspend fun handleRoleEvent(roleEvent: RoleEvent) {
+            val grm = ComponentManager.getIfEnabled(GameRoleModule::class.java) ?: return
+            val GameRoles = grm.GameRoles
+            val logChannel = grm.logChannel.getEntity()
+            val notMainServer =
+                { role: Role -> role.guildId.asLong() != DiscordPlugin.plugin!!.mainServer!!.id.asLong() }
 
-        fun removeFromList = (name: String) -> {
-            val c = GameRoles.size
-            GameRoles.subtractOne(name)
-            c > GameRoles.size
-        }
-
-        roleEvent match {
-            case roleCreateEvent: RoleCreateEvent -> Bukkit.getScheduler.runTaskLaterAsynchronously(DiscordPlugin.plugin, () -> {
-                val role = roleCreateEvent.getRole
-                if (!notMainServer(role)) {
-                    grm.isGameRole(role).flatMap(b -> {
-                        if (!b) SMono.empty //Deleted or not a game role
-                        else {
-                            GameRoles.addOne(role.getName)
-                            if (logChannel != null)
-                                logChannel.flatMap(_.createMessage("Added " + role.getName + " as game role." +
-                                    " If you don't want this, change the role's color from the game role color.").^^())
-                            else
-                                SMono.empty
+            when (roleEvent) {
+                is RoleCreateEvent -> {
+                    val role = roleEvent.role
+                    if (!notMainServer(role)) {
+                        if (grm.isGameRole(role)) {
+                            GameRoles += role.name
+                            logChannel
+                                ?.createMessage("Added ${role.name} as game role. If you don't want this, change the role's color from the game role color.")
+                                ?.awaitFirstOrNull()
                         }
-                    }).subscribe()
-                    ()
-                }
-            }, 100)
-            case roleDeleteEvent: RoleDeleteEvent ->
-                val role = roleDeleteEvent.getRole.orElse(null)
-                if (role == null) return Unit
-                if (notMainServer(role)) return Unit
-                if (removeFromList(role.getName) && logChannel != null)
-                    logChannel.flatMap(_.createMessage("Removed " + role.getName + " as a game role.").^^()).subscribe()
-            case roleUpdateEvent: RoleUpdateEvent ->
-                if (!roleUpdateEvent.getOld.isPresent) {
-                    grm.logWarn("Old role not stored, cannot update game role!")
-                    return Unit
-                }
-                val or = roleUpdateEvent.getOld.get
-                if (notMainServer(or)) return Unit
-                val cr = roleUpdateEvent.getCurrent
-                grm.isGameRole(cr).flatMap(isGameRole -> {
-                    if (!isGameRole)
-                        if (removeFromList(or.getName) && logChannel != null)
-                            logChannel.flatMap(_.createMessage("Removed " + or.getName + " as a game role because its color changed.").^^())
-                        else
-                            SMono.empty
-                    else if (GameRoles.contains(or.getName) && or.getName == cr.getName)
-                        SMono.empty
-                    else {
-                        val removed = removeFromList(or.getName) //Regardless of whether it was a game role
-                        GameRoles.addOne(cr.getName) //Add it because it has no color
-                        if (logChannel != null)
-                            if (removed)
-                                logChannel.flatMap((ch: MessageChannel) -> ch.createMessage("Changed game role from " + or.getName + " to " + cr.getName + ".").^^())
-                            else
-                                logChannel.flatMap((ch: MessageChannel) -> ch.createMessage("Added " + cr.getName + " as game role because it has the color of one.").^^())
-                        else
-                            SMono.empty
                     }
-                }).subscribe()
-            case _ ->
+                }
+
+                is RoleDeleteEvent -> {
+                    val role = roleEvent.role.getOrNull() ?: return
+                    if (notMainServer(role)) return
+                    if (GameRoles.remove(role.name) && logChannel != null) {
+                        logChannel.createMessage("Removed ${role.name} as a game role.").awaitFirstOrNull()
+                    }
+                }
+
+                is RoleUpdateEvent -> {
+                    val or = roleEvent.old.getOrNull()
+                    if (or == null) {
+                        grm.logWarn("Old role not stored, cannot update game role!")
+                        return
+                    }
+                    if (notMainServer(or)) return
+                    val cr = roleEvent.current
+                    if (!grm.isGameRole(cr)) {
+                        if (GameRoles.remove(cr.name) && logChannel != null) {
+                            logChannel.createMessage("Removed ${cr.name} as a game role because its color changed.")
+                                .awaitFirstOrNull()
+                        }
+                    } else {
+                        if (GameRoles.contains(or.name) && or.name == cr.name) return
+                        val removed = GameRoles.remove(or.name); //Regardless of whether it was a game role
+                        GameRoles.add(cr.name) //Add it because it has no color
+                        if (logChannel != null) {
+                            if (removed) logChannel.createMessage("Changed game role from ${or.name} to ${cr.name}.")
+                                .awaitFirstOrNull()
+                            else logChannel.createMessage("Added ${cr.name} as game role because it has the color of one.")
+                                .awaitFirstOrNull()
+                        }
+                    }
+                }
+            }
         }
     }
-}
 
-@ComponentMetadata(enabledByDefault = false) class GameRoleModule : Component<DiscordPlugin> {
-    var GameRoles: mutable.Buffer[String] = null
-    final private val command = RoleCommand(this)
+    var GameRoles = mutableListOf<String>()
+    private val command = RoleCommand(this)
 
-    override protected fun enable(): Unit = {
-        getPlugin.manager.registerCommand(command)
-        GameRoles = DiscordPlugin.mainServer.getRoles.^^().filterWhen(this.isGameRole).map(_.getName).collectSeq().block().toBuffer
+    override fun enable() {
+        plugin.manager.registerCommand(command)
+        plugin.launch { enableAsync() }
     }
 
-    override protected fun disable(): Unit = getPlugin.manager.unregisterCommand(command)
+    private suspend fun enableAsync() {
+        GameRoles.clear()
+        DiscordPlugin.plugin!!.mainServer!!.roles.asFlow().filter { this.isGameRole(it) }.map { it.name }
+            .toList(GameRoles)
+    }
+
+    override fun disable(): Unit = plugin.manager.unregisterCommand(command)
 
     /**
      * The channel where the bot logs when it detects a role change that results in a new game role or one being removed.
      */
-    final private val logChannel = DPUtils.channelData(getConfig, "logChannel")
+    private val logChannel = config.channelData("logChannel")
+
     /**
      * The role color that is used by game roles.
      * Defaults to the second to last in the upper row - #95a5a6.
      */
-    final private fun roleColor = getConfig.getData("roleColor", Color.of(149, 165, 166),
-        (rgb: Any) -> Color.of(Integer.parseInt(rgb.asInstanceOf[String].substring(1), 16)),
-        (color: Color) -> String.format("#%08x", color.getRGB), true)
+    private var roleColor by config.getData(
+        "roleColor", Color.of(149, 165, 166),
+        { rgb -> Color.of(Integer.parseInt((rgb as String).substring(1), 16)) },
+        { color -> String.format("#%08x", color.rgb) }, true
+    )
 
-    private fun isGameRole(r: Role): SMono[Boolean] = {
-        if (r.getGuildId.asLong != DiscordPlugin.mainServer.getId.asLong) return SMono.just(false) //Only allow on the main server
-        val rc = roleColor.get
-        if (r.getColor equals rc)
-            DiscordPlugin.dc.getSelf.^^().flatMap(u -> u.asMember(DiscordPlugin.mainServer.getId).^^())
-                .flatMap(_.hasHigherRoles(Collections.singleton(r.getId)).^^().map(b -> b: Boolean)).defaultIfEmpty(false) //Below one of our roles
-        else SMono.just(false)
+    private suspend fun isGameRole(r: Role): Boolean {
+        if (r.guildId.asLong() != DiscordPlugin.plugin!!.mainServer!!.id.asLong()) return false //Only allow on the main server
+        val rc = roleColor
+        if (r.primaryColor == rc)
+            return DiscordPlugin.dc.self.awaitFirstOrNull()
+                ?.asMember(DiscordPlugin.plugin!!.mainServer!!.id)?.awaitFirstOrNull()
+                ?.hasHigherRoles(setOf(r.id))?.awaitFirstOrNull() ?: false
+        else return false
     }
 }

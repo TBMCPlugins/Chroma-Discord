@@ -12,7 +12,6 @@ import org.bukkit.permissions.Permission
 import org.bukkit.permissions.PermissionAttachment
 import org.bukkit.permissions.PermissionAttachmentInfo
 import org.bukkit.plugin.Plugin
-import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : DiscordSenderBase(user, channel), CommandSender {
@@ -41,9 +40,9 @@ class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : Disc
 
     override fun addAttachment(plugin: Plugin, ticks: Int): PermissionAttachment? = perm.addAttachment(plugin, ticks)
 
-    override fun removeAttachment(attachment: PermissionAttachment): Unit = perm.removeAttachment(attachment)
+    override fun removeAttachment(attachment: PermissionAttachment) = perm.removeAttachment(attachment)
 
-    override fun recalculatePermissions(): Unit = perm.recalculatePermissions()
+    override fun recalculatePermissions() = perm.recalculatePermissions()
 
     override fun getEffectivePermissions(): Set<PermissionAttachmentInfo> = perm.effectivePermissions
 

@@ -7,6 +7,6 @@ object ChromaBot {
 
     val enabled get() = _enabled
 
-    fun updatePlayerList(): Unit =
+    fun updatePlayerList() =
         MCChatUtils.updatePlayerList()
 }

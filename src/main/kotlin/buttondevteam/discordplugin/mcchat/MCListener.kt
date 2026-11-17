@@ -123,7 +123,7 @@ class MCListener(val module: MinecraftChatModule) : Listener {
     }
 
     @EventHandler
-    fun onNickChange(event: NickChangeEvent): Unit = MCChatUtils.updatePlayerList()
+    fun onNickChange(event: NickChangeEvent) = MCChatUtils.updatePlayerList()
 
     @EventHandler
     suspend fun onTabComplete(event: TabCompleteEvent) {

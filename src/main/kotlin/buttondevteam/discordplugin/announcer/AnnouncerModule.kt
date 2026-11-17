@@ -1,6 +1,5 @@
 package buttondevteam.discordplugin.announcer
 
-import buttondevteam.discordplugin.DPUtils.MonoExtensions
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.player.ChromaGamerBase
@@ -32,7 +31,7 @@ import buttondevteam.lib.player.ChromaGamerBase
      */
     final private val subredditURL = getConfig.getData("subredditURL", "https://www.reddit.com/r/ChromaGamers")
 
-    override protected fun enable(): Unit = {
+    override protected fun enable() {
         if (DPUtils.disableIfConfigError(this, channel, modChannel)) return Unit
         AnnouncerModule.stop = false //If not the first time
         val kp = keepPinned.get
@@ -42,10 +41,10 @@ import buttondevteam.lib.player.ChromaGamerBase
         Thread(() -> this.AnnouncementGetterThreadMethod()).start()
     }
 
-    override protected fun disable(): Unit = AnnouncerModule.stop = true
+    override protected fun disable() AnnouncerModule.stop = true
 
     @tailrec
-    private fun AnnouncementGetterThreadMethod(): Unit = {
+    private fun AnnouncementGetterThreadMethod() {
         if (AnnouncerModule.stop) return Unit
         if (isEnabled) try { //If not enabled, just wait
             val body = TBMCCoreAPI.DownloadString(subredditURL.get + "/new/.json?limit=10")
