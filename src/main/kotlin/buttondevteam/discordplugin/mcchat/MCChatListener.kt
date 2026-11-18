@@ -140,10 +140,10 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
     suspend fun handleDiscord(ev: MessageCreateEvent): Boolean {
         val author = ev.message.author.orElse(null)
         val channel = ev.message.channel.awaitFirst()
-        if (author == null || !isChatEnabled(channel)) return true
+        if (author == null || !isChatEnabled(channel)) return false
         MCChatUtils.resetLastMessage(channel)
         processDiscordToMC(author, ev.message)
-        return false
+        return true
     }
 
     private fun isChatEnabled(channel: MessageChannel): Boolean {

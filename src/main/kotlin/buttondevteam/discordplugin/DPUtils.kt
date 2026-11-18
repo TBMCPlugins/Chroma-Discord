@@ -98,6 +98,15 @@ object DPUtils {
         return channelMention(DiscordPlugin.plugin!!.commandChannel.id)
     }
 
+    suspend fun disableIfConfigErrorAny(component: Component<DiscordPlugin>?, vararg configs: DiscordEntity<*>): Boolean {
+        var result = false
+        for (config in configs) {
+            // Print all warnings even if we already disabled the component
+            result = result || disableIfConfigError(component, config)
+        }
+        return result
+    }
+
     /**
      * Disables the component if one of the given configs return null. Useful for channel/role configs.
      *

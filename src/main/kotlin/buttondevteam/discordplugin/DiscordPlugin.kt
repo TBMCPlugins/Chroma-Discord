@@ -2,9 +2,9 @@ package buttondevteam.discordplugin
 
 import buttondevteam.discordplugin.DPUtils.channelData
 import buttondevteam.discordplugin.DPUtils.roleData
-import buttondevteam.discordplugin.announcer.AnnouncerModule
 import buttondevteam.discordplugin.commands.Command2DC
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
+import buttondevteam.discordplugin.`fun`.FunModule
 import buttondevteam.discordplugin.listeners.CommonListeners
 import buttondevteam.discordplugin.listeners.MCListener
 import buttondevteam.discordplugin.mcchat.MCChatUtils
@@ -176,7 +176,6 @@ class DiscordPlugin : ButtonPlugin() {
             Component.registerComponent(this, MinecraftChatModule())
             Component.registerComponent(this, ExceptionListenerModule())
             Component.registerComponent(this, GameRoleModule()) //Needs the mainServer to be set
-            Component.registerComponent(this, AnnouncerModule())
             Component.registerComponent(this, FunModule())
             MCChatUtils.updatePlayerList() //The MCChatModule is tested to be enabled
             val applicationId = dc.restClient.applicationId.awaitFirst()

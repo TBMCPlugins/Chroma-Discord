@@ -37,7 +37,7 @@ object MCChatUtils {
 
     fun updatePlayerList(): Unit {
         val mod = getModule()
-        if (mod == null || !mod.showPlayerListOnDC) return Unit
+        if (mod == null || !mod.showPlayerListOnDC) return
         lastmsgdata?.let { updatePL(it) }
     }
 

@@ -1,16 +1,16 @@
 package buttondevteam.discordplugin.listeners
 
+import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.DPUtils
 import buttondevteam.discordplugin.DPUtils.addHandler
 import buttondevteam.discordplugin.DiscordPlugin
-import buttondevteam.discordplugin.FunModule
 import buttondevteam.discordplugin.commands.Command2DCSender
 import buttondevteam.discordplugin.commands.ConnectCommand
+import buttondevteam.discordplugin.`fun`.FunModule
 import buttondevteam.discordplugin.mcchat.MinecraftChatModule
 import buttondevteam.discordplugin.role.GameRoleModule
 import buttondevteam.discordplugin.util.Timings
 import buttondevteam.lib.TBMCCoreAPI
-import buttondevteam.lib.architecture.Component
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.PresenceUpdateEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
@@ -29,10 +29,9 @@ object CommonListeners {
         dispatcher.on(MessageCreateEvent::class.java).addHandler { event ->
             try {
                 if (DiscordPlugin.SafeMode || event.message.author.filter { !it.isBot }.isEmpty) return@addHandler
-                if (!FunModule.executeMemes(event.message)) return@addHandler
-                val component = Component.components[MinecraftChatModule::class.java] as MinecraftChatModule?
-                if (component == null || !component.isEnabled) return@addHandler
-                if (!(component.listener?.handleDiscord(event) ?: true)) return@addHandler
+                ComponentManager.getIfEnabled(FunModule::class.java)?.executeMemes(event.message)?.let { if (it) return@addHandler }
+                val component = ComponentManager.getIfEnabled(MinecraftChatModule::class.java) ?: return@addHandler
+                component.listener?.handleDiscord(event)?.let { if (it) return@addHandler }
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     currentCoroutineContext().ensureActive()
@@ -41,7 +40,7 @@ object CommonListeners {
             }
         }
         dispatcher.on(PresenceUpdateEvent::class.java).addHandler { event ->
-            if (!DiscordPlugin.SafeMode) FunModule.handleFullHouse(event)
+            if (!DiscordPlugin.SafeMode) ComponentManager.getIfEnabled(FunModule::class.java)?.handleFullHouse(event)
         }
         dispatcher.on(RoleCreateEvent::class.java).addHandler(GameRoleModule::handleRoleEvent)
         dispatcher.on(RoleDeleteEvent::class.java).addHandler(GameRoleModule::handleRoleEvent)
