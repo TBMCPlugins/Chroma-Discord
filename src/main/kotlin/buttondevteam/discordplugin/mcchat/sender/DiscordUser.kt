@@ -24,7 +24,7 @@ class DiscordUser : ChromaGamerBase() {
      * Returns true if player has the private Minecraft chat enabled. For setting the value, see
      * [[MCChatPrivate.privateMCChat]]
      */
-    fun isMinecraftChatEnabled(): Boolean = MCChatPrivate.isMinecraftChatEnabled(this)
+    fun isMinecraftChatEnabled(): Boolean = false
 
     override fun checkChannelInGroup(group: String?): Channel.RecipientTestResult = TODO()
 
@@ -32,5 +32,5 @@ class DiscordUser : ChromaGamerBase() {
 
     override fun sendMessage(message: Array<String>): Unit = TODO()
 
-    override fun getName(): String = TODO()
+    override val name: String = TODO()
 }

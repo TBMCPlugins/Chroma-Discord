@@ -89,7 +89,7 @@ class MCListener(val module: MinecraftChatModule) : Listener {
         val p = TBMCPlayerBase.getPlayer(source.player.uniqueId, TBMCPlayer::class.java).getAs(DiscordUser::class.java)
             ?: return
         val user = p.getDiscordUser()
-            .asMember(DiscordPlugin.plugin!!.mainServer!!.id) // TODO: Utility to get as member & error handling
+            .asMember(DiscordPlugin.plugin.mainServer!!.id) // TODO: Utility to get as member & error handling
             .awaitFirst()
         if (e.value) user.addRole(role.id).awaitFirst()
         else user.removeRole(role.id)
@@ -117,7 +117,7 @@ class MCListener(val module: MinecraftChatModule) : Listener {
             else -> event.sender.name
         }
         //Channel channel = ChromaGamerBase.getFromSender(event.getSender()).channel().get(); - TODO
-        val emoji = DiscordPlugin.plugin!!.mainServer!!.emojis.filter { e -> "YEEHAW" == e.name }.awaitFirstOrNull()
+        val emoji = DiscordPlugin.plugin.mainServer!!.emojis.filter { e -> "YEEHAW" == e.name }.awaitFirstOrNull()
         MCChatUtils.forPublicPrivateChat(MCChatUtils.send(name + (emoji?.let { " <:YEEHAW:" + emoji.id.asString() + ">" }
             ?: " YEEHAWs")))
     }
@@ -131,11 +131,12 @@ class MCListener(val module: MinecraftChatModule) : Listener {
         val t = event.buffer.substring(i + 1) //0 if not found
         if (!t.startsWith("@")) return
         val token = t.substring(1)
-        DiscordPlugin.plugin!!.mainServer!!.members.flatMap { m -> Flux.just(m.username, m.nickname.orElse("")) }
+        DiscordPlugin.plugin.mainServer!!.members.flatMap { m -> Flux.just(m.username, m.nickname.orElse("")) }
             .filter { it.startsWith(token) }.map { "@$it" }.asFlow().collect { event.completions.add(it) }
     }
 
-    @EventHandler suspend fun onVanish(event: VanishStatusChangeEvent) {
+    @EventHandler
+    suspend fun onVanish(event: VanishStatusChangeEvent) {
         if (event.isCancelled) return
         delay(1.milliseconds)
         MCChatUtils.updatePlayerList()

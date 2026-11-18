@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DPUtils.channelData
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.util.DPState
@@ -12,8 +13,6 @@ import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import org.bukkit.Bukkit
-import reactor.core.publisher.Mono
-import java.util.*
 
 /**
  * Provides Minecraft chat connection to Discord. Commands may be used either in a public chat (limited) or in a DM.
@@ -133,7 +132,7 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
             state = DPState.DISABLED_MCCHAT
         } else {
             val kickmsg = if (Bukkit.getOnlinePlayers().isNotEmpty())
-                DPUtils.sanitizeString(Bukkit.getOnlinePlayers().joinToString(", ") { it.displayName }) +
+                DPUtils.sanitizeString(Bukkit.getOnlinePlayers().joinToString(", ") { it.displayName().asString() }) +
                     (if (Bukkit.getOnlinePlayers().size == 1) " was " else " were ") + "thrown out" //TODO: Make configurable
             else ""
             if (state == DPState.RESTARTING_SERVER) sendStateMessage(Color.ORANGE, "Server restarting", kickmsg)

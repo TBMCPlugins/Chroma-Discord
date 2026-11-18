@@ -17,11 +17,11 @@ import kotlin.jvm.optionals.getOrNull
 class MCListener : Listener {
     @EventHandler
     fun onPlayerJoin(e: PlayerJoinEvent) {
-        if (ConnectCommand.WaitingToConnect.containsKey(e.player.name)) {
+        if (ConnectCommand.WaitingToConnect.containsKey(e.player.uniqueId)) {
             @SuppressWarnings("ConstantConditions") val user =
-                DiscordPlugin.dc.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect[e.player.name]!!)).block()
+                DiscordPlugin.dc.getUserById(Snowflake.of(ConnectCommand.WaitingToConnect[e.player.uniqueId]!!)).block()
                     ?: return
-            e.player.sendMessage("§bTo connect with the Discord account @" + user.username + "#" + user.discriminator + " do /discord accept")
+            e.player.sendMessage("§bTo connect with the Discord account @" + user.username + " do /discord accept")
             e.player.sendMessage("§bIf it wasn't you, do /discord decline")
         }
     }
@@ -31,8 +31,8 @@ class MCListener : Listener {
         if (DiscordPlugin.SafeMode) return
         val dp = e.player?.getAs(DiscordUser::class.java)
         val user = dp?.getDiscordUser() ?: return
-        e.addInfo("Discord tag: " + user.username + "#" + user.discriminator)
-        val member = user.asMember(DiscordPlugin.plugin!!.mainServer!!.id).awaitFirst()
+        e.addInfo("Discord tag: " + user.username)
+        val member = user.asMember(DiscordPlugin.plugin.mainServer!!.id).awaitFirst()
         val presence = member.presence.awaitFirst()
         e.addInfo(presence.status.toString())
         val activity = presence.activity.getOrNull()

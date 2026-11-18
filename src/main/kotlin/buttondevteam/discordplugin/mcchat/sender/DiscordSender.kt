@@ -14,9 +14,12 @@ import org.bukkit.permissions.PermissionAttachmentInfo
 import org.bukkit.plugin.Plugin
 import kotlin.jvm.optionals.getOrNull
 
-class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : DiscordSenderBase(user, channel), CommandSender {
+class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : DiscordSenderBase(user, channel),
+    CommandSender {
     private val perm = PermissibleBase(this)
-    private val senderName: String = pname ?: user?.asMember(DiscordPlugin.plugin!!.mainServer!!.id)?.blockOptional()?.getOrNull()?.displayName ?: "Discord user"
+    private val senderName: String =
+        pname ?: user?.asMember(DiscordPlugin.plugin.mainServer!!.id)?.blockOptional()?.getOrNull()?.displayName
+        ?: "Discord user"
 
     constructor(user: User, channel: MessageChannel) : this(user, channel, null) {
     }
@@ -32,11 +35,13 @@ class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : Disc
 
     override fun hasPermission(perm: Permission): Boolean = this.perm.hasPermission(perm)
 
-    override fun addAttachment(plugin: Plugin, name: String, value: Boolean): PermissionAttachment = perm.addAttachment(plugin, name, value)
+    override fun addAttachment(plugin: Plugin, name: String, value: Boolean): PermissionAttachment =
+        perm.addAttachment(plugin, name, value)
 
     override fun addAttachment(plugin: Plugin): PermissionAttachment = perm.addAttachment(plugin)
 
-    override fun addAttachment(plugin: Plugin, name: String, value: Boolean, ticks: Int): PermissionAttachment? = perm.addAttachment(plugin, name, value, ticks)
+    override fun addAttachment(plugin: Plugin, name: String, value: Boolean, ticks: Int): PermissionAttachment? =
+        perm.addAttachment(plugin, name, value, ticks)
 
     override fun addAttachment(plugin: Plugin, ticks: Int): PermissionAttachment? = perm.addAttachment(plugin, ticks)
 

@@ -29,14 +29,15 @@ object CommonListeners {
         dispatcher.on(MessageCreateEvent::class.java).addHandler { event ->
             try {
                 if (DiscordPlugin.SafeMode || event.message.author.filter { !it.isBot }.isEmpty) return@addHandler
-                ComponentManager.getIfEnabled(FunModule::class.java)?.executeMemes(event.message)?.let { if (it) return@addHandler }
+                ComponentManager.getIfEnabled(FunModule::class.java)?.executeMemes(event.message)
+                    ?.let { if (it) return@addHandler }
                 val component = ComponentManager.getIfEnabled(MinecraftChatModule::class.java) ?: return@addHandler
                 component.listener?.handleDiscord(event)?.let { if (it) return@addHandler }
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     currentCoroutineContext().ensureActive()
                 }
-                TBMCCoreAPI.SendException("An error occured while handling a message!", e, DiscordPlugin.plugin!!)
+                TBMCCoreAPI.SendException("An error occured while handling a message!", e, DiscordPlugin.plugin)
             }
         }
         dispatcher.on(PresenceUpdateEvent::class.java).addHandler { event ->

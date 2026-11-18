@@ -14,17 +14,18 @@ class Command2DC : Command2<ICommand2DC, Command2DCSender>('/', false) {
 
     fun registerCommand(command: ICommand2DC, appId: Long, guildId: Long? = null) {
         val mainNode = super.registerCommandSuper(command) //Needs to be configurable for the helps
-        println("Main node name is " + mainNode[0].getName())
+        println("Main node name is " + mainNode[0].name)
         // TODO: Go through all subcommands and register them
         val greetCmdRequest = ApplicationCommandRequest.builder()
-            .name(mainNode.getName)
+            .name(mainNode[0].name)
             .description("Connect your Minecraft account.") //TODO: Description
-            .addOption(ApplicationCommandOptionData.builder()
-                .name("name")
-                .description("Your name")
-                .type(ApplicationCommandOption.Type.STRING.value)
-                .required(true)
-                .build()
+            .addOption(
+                ApplicationCommandOptionData.builder()
+                    .name("name")
+                    .description("Your name")
+                    .type(ApplicationCommandOption.Type.STRING.value)
+                    .required(true)
+                    .build()
             ).build()
         val service = DiscordPlugin.dc.restClient.applicationService
         when (guildId) {

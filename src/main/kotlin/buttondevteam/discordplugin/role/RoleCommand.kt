@@ -18,7 +18,10 @@ class RoleCommand internal constructor(var grm: GameRoleModule) : ICommand2DC() 
             "This command adds a role to your account."
         ]
     )
-    suspend fun add(sender: Command2DCSender, @Command2.TextArg rolename: String): Boolean { // TODO: Suspend command handler support
+    suspend fun add(
+        sender: Command2DCSender,
+        @Command2.TextArg rolename: String
+    ): Boolean { // TODO: Suspend command handler support
         val role = checkAndGetRole(sender, rolename) ?: return true
         try {
             sender.authorAsMember?.addRole(role.id)?.subscribe { sender.sendMessage("Added role.") }
@@ -74,7 +77,7 @@ class RoleCommand internal constructor(var grm: GameRoleModule) : ICommand2DC() 
             rname = orn
         }
         val frname = rname
-        val roles = DiscordPlugin.plugin!!.mainServer!!.roles.filter { r -> r.name == frname }.asFlow().toList()
+        val roles = DiscordPlugin.plugin.mainServer!!.roles.filter { r -> r.name == frname }.asFlow().toList()
         if (roles.isEmpty()) {
             sender.sendMessage("the specified role cannot be found on Discord! Removing from the list.")
             grm.GameRoles.remove(rolename)

@@ -2,7 +2,7 @@ package buttondevteam.discordplugin
 
 import buttondevteam.discordplugin.DPUtils.channelData
 import buttondevteam.discordplugin.DPUtils.roleData
-import buttondevteam.discordplugin.commands.Command2DC
+import buttondevteam.discordplugin.commands.*
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
 import buttondevteam.discordplugin.`fun`.FunModule
 import buttondevteam.discordplugin.listeners.CommonListeners
@@ -41,11 +41,11 @@ import java.util.*
 class DiscordPlugin : ButtonPlugin() {
     companion object DiscordPlugin {
         lateinit var dc: GatewayDiscordClient
-        var plugin: buttondevteam.discordplugin.DiscordPlugin? = null
+        lateinit var plugin: buttondevteam.discordplugin.DiscordPlugin
             private set
         var SafeMode = true
 
-        fun getPrefix(): Char = plugin?.prefix ?: '/'
+        fun getPrefix(): Char = plugin.prefix
 
         private var initialized = false
     }
@@ -68,7 +68,7 @@ class DiscordPlugin : ButtonPlugin() {
                 logger.warning("Failed to get guild: " + t.message)
                 Mono.empty()
             }).block()
-    }, { g -> g?.id?.asLong() ?: 0L }, 0L, true)
+    }, { g -> g?.id?.asLong() ?: 0L }, 0L, true) // TDOO: Read-only but it's set by the code
 
     /**
      * The (bot) channel to use for Discord commands like /role.
@@ -95,8 +95,7 @@ class DiscordPlugin : ButtonPlugin() {
             var token: String? = null
             val tokenFile = File("TBMC", "Token.txt")
             if (tokenFile.exists()) { //Legacy support
-                //noinspection UnstableApiUsage
-                token = Files.readFirstLine(tokenFile, StandardCharsets.UTF_8)
+                token = Files.asCharSource(tokenFile, StandardCharsets.UTF_8).readFirstLine()
             }
             if (token == null) {
                 val privateFile = File(dataFolder, "private.yml")

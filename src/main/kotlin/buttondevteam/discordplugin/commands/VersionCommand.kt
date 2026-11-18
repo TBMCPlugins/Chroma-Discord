@@ -1,19 +1,20 @@
 package buttondevteam.discordplugin.commands
 
 import buttondevteam.discordplugin.DiscordPlugin
+import buttondevteam.lib.chat.Command2
+import buttondevteam.lib.chat.CommandClass
 
-@CommandClass(helpText = arrayOf("Version", "Returns the plugin's version"))
-object VersionCommand {
-    fun getVersion(): Array[String] = {
-        val desc = DiscordPlugin.plugin.getDescription
-        Array[String](desc.getFullName, desc.getWebsite)
+@CommandClass(helpText = ["Version", "Returns the plugin's version"])
+class VersionCommand : ICommand2DC() {
+    @Command2.Subcommand override fun def(sender: Command2DCSender): Boolean {
+        sender.sendMessage(getVersion())
+        return true
     }
-}
 
-@CommandClass(helpText = arrayOf("Version", "Returns the plugin's version"))
-class VersionCommand : ICommand2DC {
-    @Command2.Subcommand override fun def(sender: Command2DCSender): Boolean = {
-        sender.sendMessage(VersionCommand.getVersion)
-        true
+    companion object {
+        fun getVersion(): Array<String> {
+            val desc = DiscordPlugin.plugin.description
+            return arrayOf(desc.fullName, desc.website).filterNotNull().toTypedArray()
+        }
     }
 }

@@ -4,7 +4,7 @@ import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.lib.chat.CommandClass
 import buttondevteam.lib.chat.ICommand2
 
-abstract class ICommand2DC : ICommand2<Command2DCSender>(DiscordPlugin.plugin!!.manager) {
+abstract class ICommand2DC : ICommand2<Command2DCSender>(DiscordPlugin.plugin.manager) {
     private var modOnly = false
 
     init {

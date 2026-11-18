@@ -16,6 +16,9 @@ import buttondevteam.lib.chat.commands.MCCommandSettings
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.TBMCPlayer
 import buttondevteam.lib.player.TBMCPlayerBase
+import com.github.shynixn.mccoroutine.bukkit.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
@@ -23,16 +26,13 @@ import org.bukkit.entity.Player
 import java.lang.reflect.Method
 
 @CommandClass(
-    path = "discord", helpText = arrayOf(
-        "Discord",
-        "This command allows performing Discord-related actions."
-    )
+    path = "discord", helpText = ["Discord", "This command allows performing Discord-related actions."]
 )
 class DiscordMCCommand : ICommand2MC() {
     @Command2.Subcommand
     fun accept(player: Player): Boolean {
         if (checkSafeMode(player)) return true
-        val did = ConnectCommand.WaitingToConnect[player.name]
+        val did = ConnectCommand.WaitingToConnect[player.uniqueId]
         if (did == null) {
             player.sendMessage("§cYou don't have a pending connection to Discord.")
             return true
@@ -40,7 +40,7 @@ class DiscordMCCommand : ICommand2MC() {
         val dp = ChromaGamerBase.getUser(did, DiscordUser::class.java)
         val mcp = TBMCPlayerBase.getPlayer(player.uniqueId, TBMCPlayer::class.java)
         dp.connectWith(mcp)
-        ConnectCommand.WaitingToConnect.remove(player.name)
+        ConnectCommand.WaitingToConnect.remove(player.uniqueId)
         MCChatUtils.UnconnectedSenders.remove(did) //Remove all unconnected, will be recreated where needed
         player.sendMessage("§bAccounts connected.")
         return true
@@ -49,7 +49,7 @@ class DiscordMCCommand : ICommand2MC() {
     @Command2.Subcommand
     fun decline(player: Player): Boolean {
         if (checkSafeMode(player)) return true
-        val did = ConnectCommand.WaitingToConnect.remove(player.name)
+        val did = ConnectCommand.WaitingToConnect.remove(player.uniqueId)
         if (did == null) {
             player.sendMessage("§cYou don't have a pending connection to Discord.")
             return true
@@ -59,26 +59,20 @@ class DiscordMCCommand : ICommand2MC() {
     }
 
     @Command2.Subcommand(
-        helpText = arrayOf(
-            "Reload Discord plugin",
-            "Reloads the config. To apply some changes, you may need to also run /discord restart."
-        )
+        helpText = ["Reload Discord plugin", "Reloads the config. To apply some changes, you may need to also run /discord restart."]
     )
     @MCCommandSettings(permGroup = MCCommandSettings.MOD_GROUP)
     fun reload(sender: CommandSender): Unit =
-        if (DiscordPlugin.plugin!!.tryReloadConfig()) sender.sendMessage("§bConfig reloaded.")
+        if (DiscordPlugin.plugin.tryReloadConfig()) sender.sendMessage("§bConfig reloaded.")
         else sender.sendMessage("§cFailed to reload config.")
 
     @Command2.Subcommand(
-        helpText = arrayOf(
-            "Restart the plugin", //
-            "This command disables and then enables the plugin." //
-        )
+        helpText = ["Restart the plugin", "This command disables and then enables the plugin."]
     )
     @MCCommandSettings(permGroup = MCCommandSettings.MOD_GROUP)
     fun restart(sender: CommandSender) {
         val task: Runnable = task@{
-            if (!DiscordPlugin.plugin!!.tryReloadConfig()) {
+            if (!DiscordPlugin.plugin.tryReloadConfig()) {
                 sender.sendMessage("§cFailed to reload config so not restarting. Check the console.")
                 return@task
             }
@@ -101,40 +95,39 @@ class DiscordMCCommand : ICommand2MC() {
     }
 
     @Command2.Subcommand(
-        helpText = arrayOf(
-            "Version command",
-            "Prints the plugin version"
-        )
+        helpText = ["Version command", "Prints the plugin version"]
     )
-    fun version(sender: CommandSender): Unit {
-        sender.sendMessage(VersionCommand.getVersion())
+    fun version(sender: CommandSender) {
+        sender.sendMessage(*VersionCommand.getVersion())
     }
 
     @Command2.Subcommand(
-        helpText = arrayOf(
-            "Invite",
-            "Shows an invite link to the server"
-        )
+        helpText = ["Invite", "Shows an invite link to the server"]
     )
     fun invite(sender: CommandSender) {
         if (checkSafeMode(sender)) {
             return
         }
-        val invi: String = DiscordPlugin.plugin!!.inviteLink
+        val invi: String = DiscordPlugin.plugin.inviteLink
         if (invi.isNotEmpty()) {
             sender.sendMessage("§bInvite link: $invi")
             return
         }
-        try {
-            val invite = DiscordPlugin.plugin!!.mainServer!!.invites.awaitFirstOrNull()
-            if (invite == null) {
-                sender.sendMessage("§cNo invites found for the server.")
-            } else {
-                sender.sendMessage("§bInvite link: https://discord.gg/" + invite.code)
+        plugin.launch {
+            try {
+                val invite = DiscordPlugin.plugin.mainServer!!.invites.awaitFirstOrNull()
+                if (invite == null) {
+                    sender.sendMessage("§cNo invites found for the server.")
+                } else {
+                    sender.sendMessage("§bInvite link: https://discord.gg/" + invite.code)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) {
+                    ensureActive()
+                }
+                e.printStackTrace()
+                sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it.")
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            sender.sendMessage("§cThe invite link is not set and the bot has no permission to get it.")
         }
     }
 

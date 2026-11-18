@@ -31,7 +31,12 @@ object DPUtils {
     private val URL_PATTERN = Pattern.compile("https?://\\S*")
     private val FORMAT_PATTERN = Pattern.compile("[*_~]")
 
-    fun embedWithHead(ecs: EmbedCreateSpec.Builder, displayname: String, playername: String, profileUrl: String?): EmbedCreateSpec.Builder =
+    fun embedWithHead(
+        ecs: EmbedCreateSpec.Builder,
+        displayname: String,
+        playername: String,
+        profileUrl: String?
+    ): EmbedCreateSpec.Builder =
         ecs.author(displayname, profileUrl, "https://minotar.net/avatar/$playername/32.png")
 
     /**
@@ -51,8 +56,7 @@ object DPUtils {
             if (string[i] == '§') {
                 i += 1 // Skips the data value, the 4 in "§4Alisolarflare"
                 random = string[i] == 'k'
-            }
-            else if (!random) { // Skip random/obfuscated characters
+            } else if (!random) { // Skip random/obfuscated characters
                 sanitizedString.append(string[i])
             }
             i += 1
@@ -68,18 +72,23 @@ object DPUtils {
         val sb = StringBuffer()
         //Find a URL start <= our start
         //Check if URL end < our start
-        while (matcher.find()) matcher.appendReplacement(sb, if ((ts.floor(arrayOf(matcher.start(), 0))?.get(1) ?: -1) < matcher.start()) ("\\\\" + matcher.group()) else matcher.group())
+        while (matcher.find()) matcher.appendReplacement(
+            sb,
+            if ((ts.floor(arrayOf(matcher.start(), 0))?.get(1)
+                    ?: -1) < matcher.start()
+            ) ("\\\\" + matcher.group()) else matcher.group()
+        )
         matcher.appendTail(sb)
         return sb.toString()
     }
 
     val logger: Logger
-        get() = DiscordPlugin.plugin?.logger ?: Logger.getLogger("DiscordPlugin")
+        get() = DiscordPlugin.plugin.logger
 
     fun IHaveConfig.channelData(key: String): DiscordChannelData =
         DiscordChannelData(snowflakeData(this, key, 0L))
 
-    fun IHaveConfig.roleData(key: String, guild: Guild = DiscordPlugin.plugin!!.mainServer!!): DiscordRoleData =
+    fun IHaveConfig.roleData(key: String, guild: Guild = DiscordPlugin.plugin.mainServer!!): DiscordRoleData =
         roleData(key) { guild }
 
     fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild?): DiscordRoleData =
@@ -94,11 +103,13 @@ object DPUtils {
      * @return The string for mentioning the channel
      */
     fun botmention(): String {
-        if (DiscordPlugin.plugin == null) return "#bot"
-        return channelMention(DiscordPlugin.plugin!!.commandChannel.id)
+        return channelMention(DiscordPlugin.plugin.commandChannel.id)
     }
 
-    suspend fun disableIfConfigErrorAny(component: Component<DiscordPlugin>?, vararg configs: DiscordEntity<*>): Boolean {
+    suspend fun disableIfConfigErrorAny(
+        component: Component<DiscordPlugin>?,
+        vararg configs: DiscordEntity<*>
+    ): Boolean {
         var result = false
         for (config in configs) {
             // Print all warnings even if we already disabled the component
@@ -121,8 +132,16 @@ object DPUtils {
             try {
                 if (component != null) Component.setComponentEnabled(component, false)
             } catch (e: Exception) {
-                    if (component != null) TBMCCoreAPI.SendException("Failed to disable component after config error!", e, component)
-                    else TBMCCoreAPI.SendException("Failed to disable component after config error!", e, DiscordPlugin.plugin!!)
+                if (component != null) TBMCCoreAPI.SendException(
+                    "Failed to disable component after config error!",
+                    e,
+                    component
+                )
+                else TBMCCoreAPI.SendException(
+                    "Failed to disable component after config error!",
+                    e,
+                    DiscordPlugin.plugin
+                )
             }
             logger.warning("The config value $path isn't set correctly " + (if (component == null) "in global settings!" else "for component " + component::class.simpleName + "!"))
             logger.warning("Set the correct ID in the config" + (if (component == null) "" else " or disable this component") + " to remove this message.")
@@ -139,7 +158,8 @@ object DPUtils {
      * @return A mono to send the message
      */
     suspend fun reply(original: Message, message: String): MessageCreateMono {
-        return original.channel.awaitFirst().createMessage(message).withMessageReference(MessageReferenceData.builder().messageId(original.id.asString()).build())
+        return original.channel.awaitFirst().createMessage(message)
+            .withMessageReference(MessageReferenceData.builder().messageId(original.id.asString()).build())
     }
 
     fun nickMention(userId: Snowflake): String = "<@!" + userId.asString() + ">"
@@ -178,6 +198,6 @@ object DPUtils {
     }
 
     fun <T : Event> Flux<T>.addHandler(handler: FlowCollector<T>) {
-        DiscordPlugin.plugin!!.launch { this@addHandler.asFlow().collect(handler) }
+        DiscordPlugin.plugin.launch { this@addHandler.asFlow().collect(handler) }
     }
 }

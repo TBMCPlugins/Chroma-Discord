@@ -2,6 +2,7 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordSender
 import buttondevteam.discordplugin.mcchat.sender.DiscordSenderBase
@@ -50,6 +51,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
     private val DELIVERED_REACTION = Emoji.unicode("✅")
 
     private var stop = false //A new instance will be created on enable
+
     @EventHandler // Minecraft
     suspend fun onMCChat(ev: TBMCChatEvent) {
         if (!(ComponentManager.isEnabled(MinecraftChatModule::class.java)) || ev.isCancelled) { //SafeMode: Needed so it doesn't restart after server shutdown
@@ -71,12 +73,18 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 val url: String = module.profileURL
                 when (val user = e.user) {
                     is TBMCPlayer ->
-                        DPUtils.embedWithHead(ecs, authorPlayer, user.name,
-                            if (url.isNotEmpty()) url + "?type=minecraft&id=" + user.uniqueId else null)
+                        DPUtils.embedWithHead(
+                            ecs, authorPlayer, user.name,
+                            if (url.isNotEmpty()) url + "?type=minecraft&id=" + user.uniqueId else null
+                        )
+
                     is DiscordUser ->
-                        ecs.author(authorPlayer,
+                        ecs.author(
+                            authorPlayer,
                             if (url.isNotEmpty()) url + "?type=discord&id=" + user.discordID else null,
-                            user.getDiscordUser().avatarUrl)
+                            user.getDiscordUser().avatarUrl
+                        )
+
                     else ->
                         DPUtils.embedWithHead(ecs, authorPlayer, e.user.name, null)
                 }
@@ -89,14 +97,15 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                     || authorPlayer != message.embeds[0].author.flatMap { it.name }.getOrNull()
                     || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
                     || lastmsgdata.mcchannel?.identifier != e.channel.identifier
-                    || lastmsgdata.content.length + e.message.length + 1 > 2048) {
+                    || lastmsgdata.content.length + e.message.length + 1 > 2048
+                ) {
                     lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).block()
                     lastmsgdata.time = nanoTime
                     lastmsgdata.mcchannel = e.channel
                     lastmsgdata.content = e.message
-                }
-                else {
-                    lastmsgdata.content = lastmsgdata.content + "\n" + e.message // The message object doesn't get updated
+                } else {
+                    lastmsgdata.content =
+                        lastmsgdata.content + "\n" + e.message // The message object doesn't get updated
                     try {
                         message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).awaitFirstOrNull()
                     } catch (e: ClientException) {
@@ -113,7 +122,10 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             }
             if (e.channel.isGlobal && (e.isFromCommand || isdifferentchannel(module.chatChannel.id))) {
                 if (MCChatUtils.lastmsgdata == null)
-                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(module.chatChannel.getEntity() ?: throw Exception("Could not get chat channel ${module.chatChannel.id.asString()}"), null)
+                    MCChatUtils.lastmsgdata = MCChatUtils.LastMsgData(
+                        module.chatChannel.getEntity()
+                            ?: throw Exception("Could not get chat channel ${module.chatChannel.id.asString()}"), null
+                    )
                 doit(MCChatUtils.lastmsgdata!!)
             }
         } catch (ex: Exception) {
@@ -161,7 +173,8 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             suspend fun replaceUserMentions() {
                 for (u in message.userMentions) { //TODO: Role mentions
                     dmessage = dmessage.replace(u.mention, "@" + u.username) // TODO: IG Formatting
-                    val m = u.asMember(DiscordPlugin.plugin!!.mainServer!!.id).onErrorResume { _ -> Mono.empty() } .awaitFirstOrNull()
+                    val m = u.asMember(DiscordPlugin.plugin.mainServer!!.id).onErrorResume { _ -> Mono.empty() }
+                        .awaitFirstOrNull()
                     if (m != null) {
                         val nick: String = m.displayName
                         dmessage = dmessage.replace(m.mention, "@$nick")
@@ -183,9 +196,18 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             replaceChannelMentions()
 
             fun replaceEmojis() {
-                dmessage = EmojiParser.parseToAliases(dmessage, EmojiParser.FitzpatrickAction.PARSE) //Converts emoji to text- TODO: Add option to disable (resource pack?)
-                dmessage = dmessage.replace(Regex(":(\\S+)\\|type_(?:(\\d)|(1)_2):"), ":$1::skin-tone-$2:") //Convert to Discord's format so it still shows up
-                dmessage = dmessage.replace(Regex("<a?:(\\S+):(\\d+)>"), ":$1:") //We don't need info about the custom emojis, just display their text
+                dmessage = EmojiParser.parseToAliases(
+                    dmessage,
+                    EmojiParser.FitzpatrickAction.PARSE
+                ) //Converts emoji to text- TODO: Add option to disable (resource pack?)
+                dmessage = dmessage.replace(
+                    Regex(":(\\S+)\\|type_(?:(\\d)|(1)_2):"),
+                    ":$1::skin-tone-$2:"
+                ) //Convert to Discord's format so it still shows up
+                dmessage = dmessage.replace(
+                    Regex("<a?:(\\S+):(\\d+)>"),
+                    ":$1:"
+                ) //We don't need info about the custom emojis, just display their text
             }
 
             replaceEmojis()
@@ -194,7 +216,8 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 try {
                     val lmfd = MCChatUtils.lastmsgfromd.get(message.channelId.asLong())
                     if (lmfd != null)
-                        lmfd.removeSelfReaction(DELIVERED_REACTION).awaitFirstOrNull() // Remove it no matter what, we know it's there 99.99% of the time
+                        lmfd.removeSelfReaction(DELIVERED_REACTION)
+                            .awaitFirstOrNull() // Remove it no matter what, we know it's there 99.99% of the time
                 } catch (e: Exception) {
                     TBMCCoreAPI.SendException("An error occured while removing reactions from chat!", e, module)
                 }
@@ -220,7 +243,12 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
      * @param user      The Chroma user of the sender
      * @return Whether the bot should react with a checkmark
      */
-    private fun handleIngameMessage(message: Message, dmessage: String, dsender: DiscordSenderBase, user: DiscordUser): Boolean {
+    private fun handleIngameMessage(
+        message: Message,
+        dmessage: String,
+        dsender: DiscordSenderBase,
+        user: DiscordUser
+    ): Boolean {
         fun getAttachmentText(): String {
             val att = message.attachments
             return if (att.isNotEmpty()) att.joinToString("\n") { it.url }
@@ -230,13 +258,14 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         if (message.type == Message.Type.CHANNEL_PINNED_MESSAGE) {
             val mcchannel = dsender.getChromaUser().channel
             val rtr = mcchannel.getRTR(user)
-            TBMCChatAPI.SendSystemMessage(mcchannel, rtr, (when (dsender) {
-                is Player -> dsender.displayName
-                else -> dsender.name
-            }) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL)
+            TBMCChatAPI.SendSystemMessage(
+                mcchannel, rtr, (when (dsender) {
+                    is Player -> dsender.displayName().asString()
+                    else -> dsender.name
+                }) + " pinned a message on Discord.", TBMCSystemChatEvent.BroadcastTarget.ALL
+            )
             return false
-        }
-        else {
+        } else {
             val cmb = ChatMessage.builder(user, dmessage + getAttachmentText()).fromCommand(false)
             TBMCChatAPI.sendChatMessage(cmb.build())
             return true
@@ -252,7 +281,12 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
      * @param user      The Chroma user of the sender
      * @return
      */
-    private suspend fun handleIngameCommand(message: Message, dmessage: String, dsender: DiscordSenderBase, user: DiscordUser) {
+    private suspend fun handleIngameCommand(
+        message: Message,
+        dmessage: String,
+        dsender: DiscordSenderBase,
+        user: DiscordUser
+    ) {
         fun notWhitelisted(cmd: String) = module.whitelistedCommands.none { cmd == it || cmd.startsWith("$it ") }
 
         val whitelistedCommands = module.whitelistedCommands.joinToString(", ") { "/$it" }
@@ -298,10 +332,10 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             val count = players.count(MCChatUtils::checkEssentials)
             val maxPlayers = Bukkit.getMaxPlayers()
             dsender.sendMessage("There are $count out of $maxPlayers players online.")
-            val playerNames = players.filter(MCChatUtils::checkEssentials).joinToString(", ") { it.displayName }
+            val playerNames =
+                players.filter(MCChatUtils::checkEssentials).joinToString(", ") { it.displayName().asString() }
             dsender.sendMessage("Players: $playerNames")
             return true
-        }
-        else return false
+        } else return false
     }
 }

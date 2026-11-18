@@ -5,6 +5,7 @@ import buttondevteam.core.MainPlugin
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils
+import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordSender
 import buttondevteam.discordplugin.mcchat.sender.DiscordSenderBase
@@ -78,7 +79,7 @@ object MCChatUtils {
                 gid == mcchannel.getGroupID(ChromaGamerBase.getFromSender(p))
             }
         }.filter { checkEssentials(it) } //If they can see it
-            .filter { C.incrementAndGet() > 0 }.joinToString(", ") { p -> DPUtils.sanitizeString(p.displayName) }
+            .filter { C.incrementAndGet() > 0 }.joinToString(", ") { p -> DPUtils.sanitizeString(p.displayName().asString()) }
         s[0] = "$C player${if (C.get() != 1) "s" else ""} online"
         lmd.channel.edit().withTopic(s.joinToString("\n----\n")).withReason("Player list update")
             .subscribe() //Don't wait
@@ -104,7 +105,7 @@ object MCChatUtils {
     ): T {
         val mapOpt = senders[did]
         val map = mapOpt ?: ConcurrentHashMap<Snowflake, T>()
-        map[sender.getChannel().id] = sender
+        map[sender.channel.id] = sender
         senders[did] = map
         return sender
     }

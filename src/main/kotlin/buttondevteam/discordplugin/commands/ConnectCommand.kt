@@ -8,6 +8,7 @@ import buttondevteam.lib.player.TBMCPlayerBase
 import com.google.common.collect.HashBiMap
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import java.util.*
 
 @CommandClass(
     helpText = [
@@ -21,7 +22,7 @@ class ConnectCommand : ICommand2DC() {
          * Key: Minecraft name<br>
          * Value: Discord ID
          */
-        var WaitingToConnect: HashBiMap<String, String> = HashBiMap.create()
+        val WaitingToConnect: HashBiMap<UUID, String> = HashBiMap.create()
     }
 
     @Command2.Subcommand
@@ -34,20 +35,16 @@ class ConnectCommand : ICommand2DC() {
             WaitingToConnect.inverse().remove(author.id.asString())
         }
         val p = Bukkit.getOfflinePlayer(Minecraftname)
-        if (p == null) {
-            sender.event.reply("The specified Minecraft player cannot be found").subscribe()
-            return true
-        }
         val pl = TBMCPlayerBase.getPlayer(p.uniqueId, TBMCPlayer::class.java)
         val dp = pl.getAs(DiscordUser::class.java)
         if (dp != null && author.id.asString() == dp.discordID) {
             sender.event.reply("You already have this account connected.").subscribe()
             return true
         }
-        WaitingToConnect[p.name] = author.id.asString()
+        WaitingToConnect[p.uniqueId] = author.id.asString()
         sender.event.reply("Alright! Now accept the connection in Minecraft from the account $Minecraftname before the next server restart. You can also adjust the Minecraft name you want to connect to by running this command again.")
             .subscribe()
-        if (p is Player) p.sendMessage("§bTo connect with the Discord account " + author.username + "#" + author.discriminator + " do /discord accept")
+        if (p is Player) p.sendMessage("§bTo connect with the Discord account " + author.username + " do /discord accept")
         return true
     }
 }
