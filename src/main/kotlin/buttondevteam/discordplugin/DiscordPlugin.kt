@@ -86,7 +86,7 @@ class DiscordPlugin : ButtonPlugin() {
      */
     val inviteLink by iConfig.getData("inviteLink", "")
 
-    override fun pluginEnable(): Unit {
+    override fun pluginEnable() {
         try {
             logger.info("Initializing...")
             plugin = this
@@ -197,7 +197,7 @@ class DiscordPlugin : ButtonPlugin() {
         stopStarting()
     }
 
-    override fun pluginPreDisable(): Unit {
+    override fun pluginPreDisable() {
         if (MinecraftChatModule.state == DPState.RUNNING) MinecraftChatModule.state = DPState.STOPPING_SERVER
         // TODO: Test if the deafult coroutine disposal strategy works well with Discord
         if (!initialized) return //Failed to load

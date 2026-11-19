@@ -88,10 +88,7 @@ object DPUtils {
     fun IHaveConfig.channelData(key: String): DiscordChannelData =
         DiscordChannelData(snowflakeData(this, key, 0L))
 
-    fun IHaveConfig.roleData(key: String, guild: Guild = DiscordPlugin.plugin.mainServer!!): DiscordRoleData =
-        roleData(key) { guild }
-
-    fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild?): DiscordRoleData =
+    fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild? = { DiscordPlugin.plugin.mainServer }): DiscordRoleData =
         DiscordRoleData(snowflakeData(this, key, 0L), guildGetter)
 
     fun snowflakeData(config: IHaveConfig, key: String, defID: Long) =
