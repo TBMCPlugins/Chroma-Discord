@@ -12,6 +12,7 @@ plugins {
     kotlin("jvm") version "2.4.21"
     id("xyz.jpenilla.run-paper") version "3.1.0"
     id("com.google.devtools.ksp") version "2.3.10"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 repositories {
@@ -29,12 +30,10 @@ dependencies {
     compileOnly("org.chromagaming:Chroma-Core:2.0-SNAPSHOT")
     runPlugins("org.chromagaming:Chroma-Core:2.0-SNAPSHOT")
     compileOnly("net.essentialsx:EssentialsX:2.21.2")
-    implementation("com.discord4j:discord4j-core:3.3.3")
+    implementation("com.discord4j:discord4j-core:3.3.3") {
+        exclude(group = "org.reactivestreams", module = "reactive-streams")
+    }
     implementation("com.vdurmont:emoji-java:5.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.11.0")
-    implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-api:2.23.0")
-    implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-core:2.23.0")
     ksp("org.chromagaming:ButtonProcessor:2.0-SNAPSHOT")
 }
 
@@ -55,7 +54,7 @@ tasks {
 
     processResources {
         val props = mapOf("version" to version.toString().replace("-SNAPSHOT", ""))
-        filesMatching("plugin.yml") {
+        filesMatching("paper-plugin.yml") {
             expand(props)
         }
     }

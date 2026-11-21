@@ -1,0 +1,17 @@
+name: Chroma-Discord
+version: '${version}'
+main: buttondevteam.discordplugin.DiscordPlugin
+loader: buttondevteam.discordplugin.DiscordPluginLoader
+api-version: '26.3'
+author: NorbiPeti
+website: 'https://github.com'
+dependencies:
+  server:
+    Chroma-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    Essentials:
+      load: BEFORE
+      required: false
+      join-classpath: true
