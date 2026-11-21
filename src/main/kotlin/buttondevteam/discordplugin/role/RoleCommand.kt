@@ -77,7 +77,7 @@ class RoleCommand internal constructor(var grm: GameRoleModule) : ICommand2DC() 
             rname = orn
         }
         val frname = rname
-        val roles = DiscordPlugin.plugin.mainServer!!.roles.filter { r -> r.name == frname }.asFlow().toList()
+        val roles = DiscordPlugin.plugin.mainServer.roles.filter { r -> r.name == frname }.asFlow().toList()
         if (roles.isEmpty()) {
             sender.sendMessage("the specified role cannot be found on Discord! Removing from the list.")
             grm.GameRoles.remove(rolename)

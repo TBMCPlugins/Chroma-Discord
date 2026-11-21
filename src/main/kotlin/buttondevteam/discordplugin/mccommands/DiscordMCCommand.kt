@@ -115,7 +115,7 @@ class DiscordMCCommand : ICommand2MC() {
         }
         plugin.launch {
             try {
-                val invite = DiscordPlugin.plugin.mainServer!!.invites.awaitFirstOrNull()
+                val invite = DiscordPlugin.plugin.mainServer.invites.awaitFirstOrNull()
                 if (invite == null) {
                     sender.sendMessage("§cNo invites found for the server.")
                 } else {

@@ -47,6 +47,7 @@ tasks {
 
         downloadPlugins {
             github("MilkBowl", "Vault", "1.7.3", "Vault.jar")
+            github("EssentialsX", "Essentials", "2.22.0", "EssentialsX-2.22.0.jar")
         }
 
         pluginJars.from(runPlugins)

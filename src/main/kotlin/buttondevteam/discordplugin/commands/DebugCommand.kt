@@ -14,10 +14,10 @@ class DebugCommand : ICommand2DC() {
         DiscordPlugin.plugin.launch {
             val member = sender.authorAsMember
             // Support DMs
-                ?: sender.author.asMember(DiscordPlugin.plugin.mainServer!!.id).awaitFirstOrNull()
+                ?: sender.author.asMember(DiscordPlugin.plugin.mainServer.id).awaitFirstOrNull()
                 ?: return@launch
             val isMod = member.roleIds.any { it.asLong() == DiscordPlugin.plugin.modRole.id.asLong() }
-            val isOwner = DiscordPlugin.plugin.mainServer!!.ownerId.asLong() == member.id.asLong()
+            val isOwner = DiscordPlugin.plugin.mainServer.ownerId.asLong() == member.id.asLong()
             if (isMod || isOwner) {
                 CommonListeners.debug = !CommonListeners.debug
                 sender.sendMessage("debug " + (if (CommonListeners.debug) "enabled" else "disabled"))

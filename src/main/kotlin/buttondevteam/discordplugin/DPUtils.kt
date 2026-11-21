@@ -85,14 +85,17 @@ object DPUtils {
     val logger: Logger
         get() = DiscordPlugin.plugin.logger
 
+    fun IHaveConfig.guildData(key: String): DiscordGuildData =
+        DiscordGuildData(snowflakeData(this, key, 0L))
+
     fun IHaveConfig.channelData(key: String): DiscordChannelData =
         DiscordChannelData(snowflakeData(this, key, 0L))
 
-    fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild? = { DiscordPlugin.plugin.mainServer }): DiscordRoleData =
+    fun IHaveConfig.roleData(key: String, guildGetter: suspend () -> Guild? = { DiscordPlugin.plugin.mainServerConfig.getEntity() }): DiscordRoleData =
         DiscordRoleData(snowflakeData(this, key, 0L), guildGetter)
 
     fun snowflakeData(config: IHaveConfig, key: String, defID: Long) =
-        config.getData(key, { id -> Snowflake.of(id as Long) }, { it.asLong() }, defID, true)
+        config.getData(key, { id -> Snowflake.of(id as Long) }, { it.asLong() }, defID)
 
     /**
      * Mentions the <b>bot channel</b>. Useful for help texts.

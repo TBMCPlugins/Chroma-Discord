@@ -32,5 +32,5 @@ class DiscordUser : ChromaGamerBase() {
 
     override fun sendMessage(message: Array<String>): Unit = TODO()
 
-    override val name: String = TODO()
+    override var name: String = "Discord user"
 }

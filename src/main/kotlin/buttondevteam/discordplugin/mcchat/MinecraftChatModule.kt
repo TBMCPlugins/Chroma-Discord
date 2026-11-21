@@ -12,6 +12,7 @@ import com.github.shynixn.mccoroutine.bukkit.launch
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bukkit.Bukkit
 
 /**
@@ -121,7 +122,7 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
     }
 
     override fun disable() {
-        plugin.launch { disableAsnyc() }
+        plugin.launch { disableAsnyc() } // TODO: Need to wait if the plugin is being disabled
     }
 
     private suspend fun disableAsnyc() {
@@ -140,8 +141,8 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
             else sendStateMessage(Color.GRAY, "Unknown state, please report.")
             //If 'restart' is disabled then this isn't shown even if joinleave is enabled
         }
-        serverUp =
-            false //Disable even if just the component is disabled because that way it won't falsely report crashes
+        //Disable even if just the component is disabled because that way it won't falsely report crashes
+        serverUp = false
         if (listener != null) { //Can be null if disabled because of a config error
             listener!!.stop()
         }
@@ -151,11 +152,11 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
 
     private suspend fun sendStateMessage(color: Color, message: String) =
         MCChatUtils.forCustomAndAllMCChat({ ch ->
-            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).build())
+            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).build()).awaitFirstOrNull()
         }, ChannelconBroadcast.RESTART, hookmsg = false)
 
     private suspend fun sendStateMessage(color: Color, message: String, extra: String) =
         MCChatUtils.forCustomAndAllMCChat({ ch ->
-            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).description(extra).build())
+            ch.createMessage(EmbedCreateSpec.builder().color(color).title(message).description(extra).build()).awaitFirstOrNull()
         }, ChannelconBroadcast.RESTART, hookmsg = false)
 }

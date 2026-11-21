@@ -94,7 +94,7 @@ class FunModule : Component<DiscordPlugin>(), Listener {
      * Questions that the bot will choose a random answer to give to.
      */
     private val serverReady by
-        config.getData("serverReady", arrayOf(
+        config.getListData("serverReady", listOf(
             "when will the server be open", "when will the server be ready",
             "when will the server be done", "when will the server be complete",
             "when will the server be finished", "when's the server ready",

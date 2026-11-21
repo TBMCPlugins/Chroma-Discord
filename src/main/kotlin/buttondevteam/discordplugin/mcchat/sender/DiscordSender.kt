@@ -18,7 +18,7 @@ class DiscordSender(user: User?, channel: MessageChannel, pname: String?) : Disc
     CommandSender {
     private val perm = PermissibleBase(this)
     private val senderName: String =
-        pname ?: user?.asMember(DiscordPlugin.plugin.mainServer!!.id)?.blockOptional()?.getOrNull()?.displayName
+        pname ?: user?.asMember(DiscordPlugin.plugin.mainServer.id)?.blockOptional()?.getOrNull()?.displayName
         ?: "Discord user"
 
     constructor(user: User, channel: MessageChannel) : this(user, channel, null) {

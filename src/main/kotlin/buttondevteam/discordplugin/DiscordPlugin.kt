@@ -1,6 +1,7 @@
 package buttondevteam.discordplugin
 
 import buttondevteam.discordplugin.DPUtils.channelData
+import buttondevteam.discordplugin.DPUtils.guildData
 import buttondevteam.discordplugin.DPUtils.roleData
 import buttondevteam.discordplugin.commands.*
 import buttondevteam.discordplugin.exceptions.ExceptionListenerModule
@@ -22,17 +23,18 @@ import buttondevteam.lib.player.ChromaGamerBase
 import com.github.shynixn.mccoroutine.bukkit.launch
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import com.google.common.io.Files
-import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.lifecycle.ReadyEvent
+import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.presence.ClientActivity
 import discord4j.core.`object`.presence.ClientPresence
+import discord4j.gateway.intent.Intent
+import discord4j.gateway.intent.IntentSet
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bukkit.configuration.file.YamlConfiguration
-import reactor.core.publisher.Mono
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -61,14 +63,12 @@ class DiscordPlugin : ButtonPlugin() {
     /**
      * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
      */
-    var mainServer by iConfig.getData("mainServer", { id -> //It attempts to get the default as well
-        if ((id as Long) == 0L) null
-        else dc.getGuildById(Snowflake.of(id))
-            .onErrorResume({ t ->
-                logger.warning("Failed to get guild: " + t.message)
-                Mono.empty()
-            }).block()
-    }, { g -> g?.id?.asLong() ?: 0L }, 0L, true) // TDOO: Read-only but it's set by the code
+    var mainServerConfig = iConfig.guildData("mainServer")
+
+    /**
+     * The main server where the roles and other information is pulled from. It's automatically set to the first server the bot's invited to.
+     */
+    lateinit var mainServer: Guild private set
 
     /**
      * The (bot) channel to use for Discord commands like /role.
@@ -111,6 +111,7 @@ class DiscordPlugin : ButtonPlugin() {
                 }
             }
             val cb = DiscordClientBuilder.create(token).build().gateway()
+            cb.setEnabledIntents(IntentSet.nonPrivileged().or(IntentSet.of(Intent.MESSAGE_CONTENT)))
             cb.setInitialPresence({ si -> ClientPresence.doNotDisturb(ClientActivity.playing("booting")) })
             cb.login().doOnError({ t ->
                 fun foo(t: Throwable): Unit {
@@ -145,16 +146,25 @@ class DiscordPlugin : ButtonPlugin() {
                 return
             }
             initialized = true
-            if (mainServer == null) {
+            if (mainServerConfig.getEntity() == null) {
                 if (event.isEmpty()) {
                     logger.severe("Main server not found! Invite the bot and do /discord restart")
-                    dc.applicationInfo.subscribe({ info -> logger.severe("Click here: https://discordapp.com/oauth2/authorize?client_id=" + info.id.asString() + "&scope=bot&permissions=268509264") })
+                    dc.applicationInfo.awaitFirstOrNull()?.let { info ->
+                        logger.severe("Click here: https://discordapp.com/oauth2/authorize?client_id=${info.id.asString()}&scope=bot&permissions=268509264")
+                    }
+                    dc.applicationInfo.subscribe({ info ->  })
                     saveConfig() //Put default there
                     return //We should have all guilds by now, no need to retry
                 }
-                mainServer = event[0].guild
-                logger.warning("Main server set to first one: " + mainServer?.name)
+                mainServerConfig.id = event[0].guild.id
+                val server = mainServerConfig.getEntity()
+                if (server == null) {
+                    logger.severe("Internal error: got servers but still couldn't fetch the main server, please report.")
+                    return
+                }
+                logger.warning("Main server set to first one: " + server.name)
             }
+            mainServer = mainServerConfig.getEntity()!!
             SafeMode = false
             DPUtils.disableIfConfigError(null, commandChannel)
             //Won't disable, just prints the warning here
@@ -165,7 +175,7 @@ class DiscordPlugin : ButtonPlugin() {
             CommonListeners.register(dc.eventDispatcher)
             // TODO: TBMCCoreAPI.RegisterEventsForExceptions
             server.pluginManager.registerSuspendingEvents(MCListener(), this)
-            TBMCCoreAPI.RegisterUserClass(DiscordUser::class.java, { DiscordUser() })
+            TBMCCoreAPI.RegisterUserClass(DiscordUser::class.java) { DiscordUser() }
             ChromaGamerBase.addConverter {
                 when (it) {
                     is DiscordSenderBase -> Optional.of(it.getChromaUser())
@@ -178,7 +188,7 @@ class DiscordPlugin : ButtonPlugin() {
             Component.registerComponent(this, FunModule())
             MCChatUtils.updatePlayerList() //The MCChatModule is tested to be enabled
             val applicationId = dc.restClient.applicationId.awaitFirst()
-            val guildId = mainServer?.id?.asLong()
+            val guildId = mainServer.id.asLong()
             manager.registerCommand(VersionCommand(), applicationId, guildId)
             manager.registerCommand(UserinfoCommand(), applicationId, guildId)
             manager.registerCommand(HelpCommand(), applicationId, guildId)

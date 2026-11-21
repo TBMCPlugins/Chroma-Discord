@@ -31,7 +31,7 @@ class GameRoleModule : Component<DiscordPlugin>() {
             val GameRoles = grm.GameRoles
             val logChannel = grm.logChannel.getEntity()
             val notMainServer =
-                { role: Role -> role.guildId.asLong() != DiscordPlugin.plugin.mainServer!!.id.asLong() }
+                { role: Role -> role.guildId.asLong() != DiscordPlugin.plugin.mainServer.id.asLong() }
 
             when (roleEvent) {
                 is RoleCreateEvent -> {
@@ -93,7 +93,7 @@ class GameRoleModule : Component<DiscordPlugin>() {
 
     private suspend fun enableAsync() {
         GameRoles.clear()
-        DiscordPlugin.plugin.mainServer!!.roles.asFlow().filter { this.isGameRole(it) }.map { it.name }
+        DiscordPlugin.plugin.mainServer.roles.asFlow().filter { this.isGameRole(it) }.map { it.name }
             .toList(GameRoles)
     }
 
@@ -115,11 +115,11 @@ class GameRoleModule : Component<DiscordPlugin>() {
     )
 
     private suspend fun isGameRole(r: Role): Boolean {
-        if (r.guildId.asLong() != DiscordPlugin.plugin.mainServer!!.id.asLong()) return false //Only allow on the main server
+        if (r.guildId.asLong() != DiscordPlugin.plugin.mainServer.id.asLong()) return false //Only allow on the main server
         val rc = roleColor
         if (r.primaryColor == rc)
             return DiscordPlugin.dc.self.awaitFirstOrNull()
-                ?.asMember(DiscordPlugin.plugin.mainServer!!.id)?.awaitFirstOrNull()
+                ?.asMember(DiscordPlugin.plugin.mainServer.id)?.awaitFirstOrNull()
                 ?.hasHigherRoles(setOf(r.id))?.awaitFirstOrNull() ?: false
         else return false
     }

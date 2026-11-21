@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -67,9 +68,10 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                 (if ("Minecraft" == e.origin) "" else "[" + e.origin[0] + "]") +
                 DPUtils.sanitizeStringNoEscape(e.user.name)
             val color: TextColor = e.channel.color
+            val messageText = e.message.asString()
             val embed = suspend {
                 val ecs = EmbedCreateSpec.builder()
-                ecs.description(e.message).color(Color.of(color.red(), color.green(), color.blue()))
+                ecs.description(messageText).color(Color.of(color.red(), color.green(), color.blue()))
                 val url: String = module.profileURL
                 when (val user = e.user) {
                     is TBMCPlayer ->
@@ -97,15 +99,15 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
                     || authorPlayer != message.embeds[0].author.flatMap { it.name }.getOrNull()
                     || lastmsgdata.time / 1000000000f < nanoTime / 1000000000f - 120
                     || lastmsgdata.mcchannel?.identifier != e.channel.identifier
-                    || lastmsgdata.content.length + e.message.length + 1 > 2048
+                    || lastmsgdata.content.length + messageText.length + 1 > 2048
                 ) {
-                    lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).block()
+                    lastmsgdata.message = lastmsgdata.channel.createMessage(embed().build()).awaitFirstOrNull()
                     lastmsgdata.time = nanoTime
                     lastmsgdata.mcchannel = e.channel
-                    lastmsgdata.content = e.message
+                    lastmsgdata.content = messageText
                 } else {
                     lastmsgdata.content =
-                        lastmsgdata.content + "\n" + e.message // The message object doesn't get updated
+                        lastmsgdata.content + "\n" + messageText // The message object doesn't get updated
                     try {
                         message.edit().withEmbeds(embed().description(lastmsgdata.content).build()).awaitFirstOrNull()
                     } catch (e: ClientException) {
@@ -169,11 +171,12 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
         try {
             val dsender: DiscordSenderBase = MCChatUtils.getSender(message.channelId, sender)
             val user: DiscordUser = dsender.getChromaUser()
+            user.name = dsender.name // TODO: Simplify this API and set name asynchronously somehow
 
             suspend fun replaceUserMentions() {
                 for (u in message.userMentions) { //TODO: Role mentions
                     dmessage = dmessage.replace(u.mention, "@" + u.username) // TODO: IG Formatting
-                    val m = u.asMember(DiscordPlugin.plugin.mainServer!!.id).onErrorResume { _ -> Mono.empty() }
+                    val m = u.asMember(DiscordPlugin.plugin.mainServer.id).onErrorResume { _ -> Mono.empty() }
                         .awaitFirstOrNull()
                     if (m != null) {
                         val nick: String = m.displayName
@@ -266,7 +269,7 @@ class MCChatListener(val module: MinecraftChatModule) : Listener {
             )
             return false
         } else {
-            val cmb = ChatMessage.builder(user, dmessage + getAttachmentText()).fromCommand(false)
+            val cmb = ChatMessage.builder(user, Component.text(dmessage + getAttachmentText())).fromCommand(false)
             TBMCChatAPI.sendChatMessage(cmb.build())
             return true
         }
