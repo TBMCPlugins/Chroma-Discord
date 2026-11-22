@@ -2,12 +2,12 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.core.ComponentManager
 import buttondevteam.discordplugin.DPUtils
-import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordSender
 import buttondevteam.discordplugin.mcchat.sender.DiscordSenderBase
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
 import buttondevteam.lib.*
+import buttondevteam.lib.ChromaUtils.asString
 import buttondevteam.lib.chat.ChatMessage
 import buttondevteam.lib.chat.TBMCChatAPI
 import buttondevteam.lib.player.TBMCPlayer

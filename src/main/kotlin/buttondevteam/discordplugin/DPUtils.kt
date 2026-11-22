@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
@@ -192,10 +191,6 @@ object DPUtils {
         getMessageChannel(config.path, config.get())
 
     fun <T : Any> ignoreError(mono: Mono<T>): Mono<T> = mono.onErrorResume { Mono.empty() }
-
-    fun net.kyori.adventure.text.Component.asString(): String {
-        return PlainTextComponentSerializer.plainText().serialize(this)
-    }
 
     fun <T : Event> Flux<T>.addHandler(handler: FlowCollector<T>) {
         DiscordPlugin.plugin.launch { this@addHandler.asFlow().collect(handler) }

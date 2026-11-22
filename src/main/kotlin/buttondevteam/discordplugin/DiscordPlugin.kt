@@ -55,6 +55,9 @@ class DiscordPlugin : ButtonPlugin() {
     lateinit var manager: Command2DC
         private set
 
+    var pluginDisabling = false
+        private set
+
     /**
      * The prefix to use with Discord commands like /role. It only works in the bot channel.
      */
@@ -88,6 +91,7 @@ class DiscordPlugin : ButtonPlugin() {
 
     override fun pluginEnable() {
         try {
+            pluginDisabling = false
             logger.info("Initializing...")
             plugin = this
             manager = Command2DC()
@@ -216,6 +220,7 @@ class DiscordPlugin : ButtonPlugin() {
         timings.printElapsed("Updating player list")
         MCChatUtils.updatePlayerList()
         timings.printElapsed("Done")
+        pluginDisabling = true
     }
 
     override fun pluginDisable() {
@@ -227,6 +232,7 @@ class DiscordPlugin : ButtonPlugin() {
             timings.printElapsed("Logging out...")
             dc.logout().block()
             initialized = false //Allow ReadyEvent again
+            pluginDisabling = false
         } catch (e: Exception) {
             TBMCCoreAPI.SendException("An error occured while disabling DiscordPlugin!", e, this)
         }

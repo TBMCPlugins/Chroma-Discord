@@ -2,10 +2,10 @@ package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils
-import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DPUtils.channelData
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.util.DPState
+import buttondevteam.lib.ChromaUtils.asString
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.architecture.Component
 import com.github.shynixn.mccoroutine.bukkit.launch
@@ -13,6 +13,7 @@ import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.runBlocking
 import org.bukkit.Bukkit
 
 /**
@@ -122,7 +123,11 @@ class MinecraftChatModule : Component<DiscordPlugin>() {
     }
 
     override fun disable() {
-        plugin.launch { disableAsnyc() } // TODO: Need to wait if the plugin is being disabled
+        if (plugin.pluginDisabling) {
+            runBlocking { disableAsnyc() }
+        } else {
+            plugin.launch { disableAsnyc() }
+        }
     }
 
     private suspend fun disableAsnyc() {

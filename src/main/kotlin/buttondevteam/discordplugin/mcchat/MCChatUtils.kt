@@ -5,10 +5,10 @@ import buttondevteam.core.MainPlugin
 import buttondevteam.core.component.channel.Channel
 import buttondevteam.discordplugin.ChannelconBroadcast
 import buttondevteam.discordplugin.DPUtils
-import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordSender
 import buttondevteam.discordplugin.mcchat.sender.DiscordSenderBase
+import buttondevteam.lib.ChromaUtils.asString
 import buttondevteam.lib.TBMCCoreAPI
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.ChromaGamerBase

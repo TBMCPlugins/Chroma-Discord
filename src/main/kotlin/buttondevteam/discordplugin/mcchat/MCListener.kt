@@ -1,10 +1,10 @@
 package buttondevteam.discordplugin.mcchat
 
 import buttondevteam.discordplugin.ChannelconBroadcast
-import buttondevteam.discordplugin.DPUtils.asString
 import buttondevteam.discordplugin.DPUtils.roleData
 import buttondevteam.discordplugin.DiscordPlugin
 import buttondevteam.discordplugin.mcchat.sender.DiscordUser
+import buttondevteam.lib.ChromaUtils.asString
 import buttondevteam.lib.TBMCSystemChatEvent
 import buttondevteam.lib.player.ChromaGamerBase
 import buttondevteam.lib.player.TBMCPlayer
